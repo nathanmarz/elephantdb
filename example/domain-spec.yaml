@@ -1,0 +1,4 @@
+# This conf is generated via the MapReduce job
+
+num_shards: 64
+local_persistence: elephantdb.persistence.JavaBerkDB

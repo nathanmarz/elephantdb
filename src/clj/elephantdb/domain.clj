@@ -1,0 +1,36 @@
+(ns elephantdb.domain
+  (:require [elephantdb [shard :as s]])
+  (:use [elephantdb util thrift]))
+
+;; domain-status is an atom around a DomainStatus thrift object
+;; domain-data is an atom map from shard to local persistence (or nil if it's not loaded yet)
+(defstruct domain-info-struct ::shard-index ::domain-status ::domain-data)
+
+(defn init-domain-info [hosts numshards replication]
+  (struct domain-info-struct (s/shard-domain hosts numshards replication)
+                             (atom (loading-status))
+                             (atom nil)))
+
+(defn domain-data [domain-info shard]
+  (@(::domain-data domain-info) shard))
+
+(defn set-domain-data! [domain-info domain-data]
+  (reset! (::domain-data domain-info) domain-data))
+
+(defn domain-status [domain-info]
+  @(::domain-status domain-info))
+
+(defn set-domain-status! [domain-info status]
+  (reset! (::domain-status domain-info) status))
+
+(defn shard-index [domain-info]
+  (::shard-index domain-info))
+
+(defn host-shards
+  ([domain-info]
+    (host-shards domain-info (local-hostname)))
+  ([domain-info host]
+    (s/host-shards (::shard-index domain-info) host)))
+
+(defn key-hosts [domain-info #^bytes key]
+  (s/key-hosts (::shard-index domain-info) key))
