@@ -19,6 +19,12 @@
     (if (instance? Path str-or-path) str-or-path (Path. str-or-path)))
   ([parent child] (Path. parent child)))
 
+(defn str-path
+  ([part1]
+    part1)
+  ([part1 part2 & components]
+    (apply str-path (str (path part1 (str part2))) components)))
+
 (defn configuration [conf-map]
   (let [ret (Configuration.)]
     (doall

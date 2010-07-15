@@ -1,5 +1,5 @@
 (ns elephantdb.shard
-  (:use [elephantdb util])
+  (:use [elephantdb util config])
   (:import [elephantdb Utils]))
 
 (defstruct shard-index ::hosts-to-shards ::shards-to-hosts)
@@ -17,6 +17,16 @@
         hosts-to-shards (second (reduce host-shard-assigner [(repeat-seq hosts) {}] shards))]
       (struct shard-index hosts-to-shards (map-mapvals set (reverse-multimap hosts-to-shards)))
     ))
+
+(defn shard-domains [fs global-config]
+  (into {}
+    (dofor [[domain remote-location] (:domains global-config)]
+      (let [domain-spec (read-domain-spec fs remote-location)]
+        [domain (shard-domain
+                  (:hosts global-config)
+                  (:num-shards domain-spec)
+                  (:replication global-config))]
+          ))))
 
 (defn host-shards [index host]
   ((::hosts-to-shards index) host))

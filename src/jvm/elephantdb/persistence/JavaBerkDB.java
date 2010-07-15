@@ -6,7 +6,12 @@ import java.util.Map;
 public class JavaBerkDB extends LocalPersistenceFactory {
 
     @Override
-    public LocalPersistence getPersistence(String root, Map options) {
+    public LocalPersistence openPersistence(String root, Map options) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public LocalPersistence createPersistence(String root, Map options) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

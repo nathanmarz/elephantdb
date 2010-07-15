@@ -1,7 +1,8 @@
 (ns elephantdb.config
   (:require [clojure.contrib [duck-streams :as d]])
   (:use [elephantdb hadoop])
-  (:import [elephantdb DomainSpec Utils]))
+  (:import [elephantdb DomainSpec Utils])
+  (:import [elephantdb.persistence LocalPersistenceFactory]))
 
 
 ; { :replication 2
@@ -24,6 +25,9 @@
 
 (defstruct domain-spec-struct :persistence-factory :num-shards)
 
+(defn local-global-config-cache [local-dir]
+  (str-path local-dir "GLOBAL-CONF.clj"))
+
 (defn read-clj-config [fs str-path]
   (with-in-str (Utils/convertStreamToString (.open fs (path str-path))) (read)))
 
@@ -32,9 +36,6 @@
     (.print w conf)
     ))
 
-(defn global-domain-root [conf domain]
-  ((:domains conf) domain))
-
 (defn read-domain-spec [fs path]
   (let [spec (DomainSpec/readFromFileSystem fs path)]
     (struct domain-spec-struct (.getLPFactory spec) (.getNumShards spec))))
@@ -42,3 +43,11 @@
 (defn write-domain-spec! [spec-map fs path]
   (let [spec (DomainSpec. (:persistence-factory spec-map) (:num-shards spec-map))]
     (.writeToFileSystem spec fs path)))
+
+(defmulti persistence-str class)
+(defmethod persistence-str String [persistence] persistence)
+(defmethod persistence-str Class [persistence] (.getName persistence))
+(defmethod persistence-str LocalPersistenceFactory [persistence] (.getName (class persistence)))
+
+(defn persistence-options [local-config persistence]
+  ((:local-db-conf local-config) (persistence-str persistence)))
