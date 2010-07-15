@@ -3,7 +3,6 @@
   (:use [elephantdb util hadoop config]))
 
 
-;; use futures
 
 (defn- shard-path [domain-version shard]
   (str-path domain-version shard))

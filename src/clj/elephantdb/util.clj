@@ -1,5 +1,6 @@
 (ns elephantdb.util
-  (:import [java.net InetAddress]))
+  (:import [java.net InetAddress])
+  (:import [java.util.concurrent.locks ReentrantReadWriteLock]))
 
 (defn repeat-seq
   ([aseq]
@@ -32,3 +33,23 @@
 
 (defmacro dofor [bindings & body]
   `(doall (for ~bindings (do ~@body))))
+
+(defn remove-val [v aseq]
+  (filter (partial not= v) aseq))
+
+(defn mk-rw-lock []
+  (ReentrantReadWriteLock.))
+
+(defmacro read-locked [rw-lock & body]
+  `(let [rlock# (.readLock ~rw-lock)]
+      (try
+        (.lock rlock#)
+        ~@body
+      (finally (.unlock rlock#)))))
+
+(defmacro write-locked [rw-lock & body]
+  `(let [wlock# (.writeLock ~rw-lock)]
+      (try
+        (.lock wlock#)
+        ~@body
+      (finally (.unlock wlock#)))))

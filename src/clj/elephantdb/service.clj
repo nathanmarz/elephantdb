@@ -1,6 +1,7 @@
 (ns elephantdb.service
+  (:import [java.util.concurrent.locks ReentrantReadWriteLock])
   (:import [elephantdb.generated ElephantDB ElephantDB$Iface])
-  (:import [elephantdb Shutdownable])
+  (:import [elephantdb Shutdownable client])
   (:require [elephantdb [domain :as domain] [thrift :as thrift] [shard :as shard]])
   (:use [elephantdb config log util hadoop loader]))
 
@@ -16,13 +17,7 @@
   ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
   ; 
   ; Value directGet(1: string domain, 2: binary key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle, 4: WrongHostException whe);
-  ; Value directGetString(1: string domain, 2: string key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle, 4: WrongHostException whe);
-  ; Value directGetInt(1: string domain, 2: i32 key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle, 4: WrongHostException whe);
-  ; Value directGetLong(1: string domain, 2: i64 key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle, 4: WrongHostException whe);
+  ;   throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
   ; 
   ; DomainStatus getDomainStatus(1: string domain);
   ; list<string> getDomains();
@@ -97,39 +92,59 @@
       domains-info ))
 
 (defn service-handler [global-config local-config token]
-  (let [domains-info (sync-data global-config local-config token)]
-    (proxy [ElephantDB$Iface Shutdownable] []
-      (shutdown []
-        (log-message "ElephantDB received shutdown notice...")
-        ;; TODO: shutdown logic (read-write lock to close dbs)
-        )
-      (get [#^String domain #^bytes key]
-        )
-      (getString [#^String domain #^String key]
-        )
-      (getInt [#^String domain key]
-        )
+  (let [domains-info (sync-data global-config local-config token)
+        client (atom nil)
+        #^ReentrantReadWriteLock rw-lock (mk-rw-lock)
+        ret (proxy [ElephantDB$Iface Shutdownable] []
+              (shutdown []
+                (log-message "ElephantDB received shutdown notice...")
+                (write-locked rw-lock
+                  (dofor [[_ info] domains-info]
+                    (domain/set-domain-status! info (thrift/shutdown-status))))
+                  ;; 2. TODO close every LP (make sure to handle case where shutdown during loading)
+                )
 
-      (directGet [#^String domain key]
-        )
-      (directGetString [#^String domain #^String key]
-        )
-      (directGetInt [#^String domain key]
-        )
-      (directGetLong [#^String domain key]
-        )
+              (get [#^String domain #^bytes key]
+                (.get @client domain key))
 
-      (getDomainStatus [#^String domain]
-        )
-      (getDomains []
-        )
-      (getStatus []
-        )
-      (isFullyLoaded []
-        )
+              (getString [#^String domain #^String key]
+                (.getString @client domain key))
 
-      (updateAll []
-        )
-      (update [#^String domain]
-        )
-      )))
+              (getInt [#^String domain key]
+                (.getInt @client domain key))
+
+              (getLong [#^String domain key]
+                (.getLong @client domain key))
+
+              (directGet [#^String domain key]
+                (read-locked rw-lock
+                  ;; TODO
+                  ;; 1. validate domain exists and is loaded on this host
+                  ;; 2. get shard for key, validate this is a valid host
+                  ;; 3. find the local LP and return the data from it wrapped in a value struct
+                  ))
+
+              (getDomainStatus [#^String domain]
+                ;; TODO
+                )
+
+              (getDomains []
+                (keys domains-info))
+
+              (getStatus []
+                ;; TODO
+                )
+
+              (isFullyLoaded []
+                ;; TODO
+                )
+
+              (updateAll []
+                ;; TODO
+                )
+
+              (update [#^String domain]
+                ;; TODO
+                ))]
+      (reset! client (client. ret (:hdfs-conf local-config) (global-config)))
+      ret ))

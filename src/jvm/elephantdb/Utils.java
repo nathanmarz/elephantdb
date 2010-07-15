@@ -1,12 +1,17 @@
 package elephantdb;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Utils {
 
@@ -51,5 +56,36 @@ public class Utils {
             is.close();
         }
         return sb.toString();
+    }
+
+    public static byte[] serializeInt(int i) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(4);
+        DataOutputStream dos = new DataOutputStream(bos);
+        try {
+            dos.writeInt(i);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return bos.toByteArray();
+    }
+
+    public static byte[] serializeLong(long l) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(4);
+        DataOutputStream dos = new DataOutputStream(bos);
+        try {
+            dos.writeLong(l);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return bos.toByteArray();
+
+    }
+
+    public static byte[] serializeString(String s) {
+        try {
+            return s.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

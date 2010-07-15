@@ -31,12 +31,14 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
   private static final TField READY_FIELD_DESC = new TField("ready", TType.STRUCT, (short)1);
   private static final TField LOADING_FIELD_DESC = new TField("loading", TType.STRUCT, (short)2);
   private static final TField FAILED_FIELD_DESC = new TField("failed", TType.STRUCT, (short)3);
+  private static final TField SHUTDOWN_FIELD_DESC = new TField("shutdown", TType.STRUCT, (short)4);
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements TFieldIdEnum {
     READY((short)1, "ready"),
     LOADING((short)2, "loading"),
-    FAILED((short)3, "failed");
+    FAILED((short)3, "failed"),
+    SHUTDOWN((short)4, "shutdown");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -57,6 +59,8 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
           return LOADING;
         case 3: // FAILED
           return FAILED;
+        case 4: // SHUTDOWN
+          return SHUTDOWN;
         default:
           return null;
       }
@@ -105,6 +109,8 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
         new StructMetaData(TType.STRUCT, LoadingStatus.class)));
     tmpMap.put(_Fields.FAILED, new FieldMetaData("failed", TFieldRequirementType.DEFAULT, 
         new StructMetaData(TType.STRUCT, FailedStatus.class)));
+    tmpMap.put(_Fields.SHUTDOWN, new FieldMetaData("shutdown", TFieldRequirementType.DEFAULT, 
+        new StructMetaData(TType.STRUCT, ShutdownStatus.class)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     FieldMetaData.addStructMetaDataMap(DomainStatus.class, metaDataMap);
   }
@@ -142,6 +148,12 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
     return x;
   }
 
+  public static DomainStatus shutdown(ShutdownStatus value) {
+    DomainStatus x = new DomainStatus();
+    x.set_shutdown(value);
+    return x;
+  }
+
 
   @Override
   protected void checkType(_Fields setField, Object value) throws ClassCastException {
@@ -161,6 +173,11 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
           break;
         }
         throw new ClassCastException("Was expecting value of type FailedStatus for field 'failed', but got " + value.getClass().getSimpleName());
+      case SHUTDOWN:
+        if (value instanceof ShutdownStatus) {
+          break;
+        }
+        throw new ClassCastException("Was expecting value of type ShutdownStatus for field 'shutdown', but got " + value.getClass().getSimpleName());
       default:
         throw new IllegalArgumentException("Unknown field id " + setField);
     }
@@ -201,6 +218,16 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
             TProtocolUtil.skip(iprot, field.type);
             return null;
           }
+        case SHUTDOWN:
+          if (field.type == SHUTDOWN_FIELD_DESC.type) {
+            ShutdownStatus shutdown;
+            shutdown = new ShutdownStatus();
+            shutdown.read(iprot);
+            return shutdown;
+          } else {
+            TProtocolUtil.skip(iprot, field.type);
+            return null;
+          }
         default:
           throw new IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
@@ -225,6 +252,10 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
         FailedStatus failed = (FailedStatus)value_;
         failed.write(oprot);
         return;
+      case SHUTDOWN:
+        ShutdownStatus shutdown = (ShutdownStatus)value_;
+        shutdown.write(oprot);
+        return;
       default:
         throw new IllegalStateException("Cannot write union with unknown field " + setField_);
     }
@@ -239,6 +270,8 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
         return LOADING_FIELD_DESC;
       case FAILED:
         return FAILED_FIELD_DESC;
+      case SHUTDOWN:
+        return SHUTDOWN_FIELD_DESC;
       default:
         throw new IllegalArgumentException("Unknown field id " + setField);
     }
@@ -293,6 +326,20 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
   public void set_failed(FailedStatus value) {
     if (value == null) throw new NullPointerException();
     setField_ = _Fields.FAILED;
+    value_ = value;
+  }
+
+  public ShutdownStatus get_shutdown() {
+    if (getSetField() == _Fields.SHUTDOWN) {
+      return (ShutdownStatus)getFieldValue();
+    } else {
+      throw new RuntimeException("Cannot get field 'shutdown' because union is currently set to " + getFieldDesc(getSetField()).name);
+    }
+  }
+
+  public void set_shutdown(ShutdownStatus value) {
+    if (value == null) throw new NullPointerException();
+    setField_ = _Fields.SHUTDOWN;
     value_ = value;
   }
 

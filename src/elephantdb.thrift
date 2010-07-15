@@ -18,10 +18,15 @@ struct FailedStatus {
   1: string error_message;
 }
 
+struct ShutdownStatus {
+  
+}
+
 union DomainStatus {
   1: ReadyStatus ready;
   2: LoadingStatus loading;
   3: FailedStatus failed;
+  4: ShutdownStatus shutdown;
 }
 
 struct Status {
@@ -61,13 +66,7 @@ service ElephantDB {
     throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
 
   Value directGet(1: string domain, 2: binary key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle, 4: WrongHostException whe);
-  Value directGetString(1: string domain, 2: string key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle, 4: WrongHostException whe);
-  Value directGetInt(1: string domain, 2: i32 key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle, 4: WrongHostException whe);
-  Value directGetLong(1: string domain, 2: i64 key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle, 4: WrongHostException whe);
+    throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
   
   DomainStatus getDomainStatus(1: string domain);
   list<string> getDomains();
