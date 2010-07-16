@@ -1,6 +1,7 @@
 (ns elephantdb.domain
   (:require [elephantdb [shard :as s]])
-  (:use [elephantdb util thrift config]))
+  (:use [elephantdb util thrift config])
+  (:import [elephantdb Utils]))
 
 ;; domain-status is an atom around a DomainStatus thrift object
 ;; domain-data is an atom map from shard to local persistence (or nil if it's not loaded yet)
@@ -34,3 +35,8 @@
 
 (defn key-hosts [domain-info #^bytes key]
   (s/key-hosts (::shard-index domain-info) key))
+
+(defn key-shard [domain-info key]
+  (let [index (shard-index domain-info)]
+    (Utils/keyShard key (s/num-shards index))
+    ))

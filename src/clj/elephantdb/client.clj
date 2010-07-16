@@ -1,8 +1,9 @@
 (ns elephantdb.client
   (:use [clojure.contrib.seq-utils :only [shuffle includes?]])
-  (:use [elephantdb thrift hadoop config types util])
+  (:use [elephantdb thrift hadoop config types util log])
   (:require [elephantdb [shard :as shard]])
-  (:import [elephantdb.generated ElephantDB$Iface])
+  (:import [elephantdb.generated ElephantDB$Iface WrongHostException DomainNotFoundException DomainNotLoadedException])
+  (:import [org.apache.thrift TException])
   (:gen-class
      :init init
      :implements [elephantdb.client.IElephantClient]
@@ -24,6 +25,9 @@
     (when-not index (throw (domain-not-found-ex domain)))
     index ))
 
+(defn- my-local-elephant [this]
+  (:local-elephant (. this state)))
+
 (defn- my-local-hostname [this]
   (:local-hostname (. this state)))
 
@@ -38,8 +42,25 @@
   (:port (:global-conf (. this state))))
 
 (defn- try-get [this domain key totry]
-  ;; TODO
-  )
+  (try
+    (if (and (my-local-elephant this) (= totry (my-local-hostname this)))
+      (.directGet (my-local-elephant this) domain key)
+     (with-elephant-connection totry (ring-port this) client
+       (.directGet client domain key)
+       ))
+  (catch TException e
+    ;; try next host
+    (log-error e "Thrift exception on " totry ":" domain "/" key) nil)
+  (catch WrongHostException e
+    (log-error e "Fatal exception on " totry ":" domain "/" key)
+    (throw (TException. "Fatal exception when performing get" e)))
+  (catch DomainNotFoundException e
+    (log-error e "Could not find domain when executing read on " totry ":" domain "/" key)
+    (throw e))
+  (catch DomainNotLoadedException e
+    (log-error e "Domain not loaded when executing read on " totry ":" domain "/" key)
+    (throw e))
+  ))
 
 (defn -get [this domain key]
   (let [hosts (get-priority-hosts this domain key)]

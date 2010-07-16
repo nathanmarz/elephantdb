@@ -1,7 +1,10 @@
 (ns elephantdb.thrift
   (:import [elephantdb.generated LoadingStatus DomainStatus DomainStatus$_Fields ReadyStatus
-              FailedStatus ShutdownStatus
-              DomainNotFoundException DomainNotLoadedException HostsDownException WrongHostException]))
+              FailedStatus ShutdownStatus ElephantDB$Client Value Status
+              DomainNotFoundException DomainNotLoadedException HostsDownException WrongHostException])
+  (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol])
+  (:import [org.apache.thrift.transport TTransport TFramedTransport TSocket])
+  )
 
 (defn loading-status []
   (DomainStatus/loading (LoadingStatus.)))
@@ -31,3 +34,23 @@
 
 (defn hosts-down-ex [hosts]
   (HostsDownException. hosts))
+
+(defn mk-value [val]
+  (doto (Value.) (.set_data val)))
+
+(defn elephant-status [domain-status-map]
+  (Status. domain-status-map))
+
+(defn elephant-client-and-conn [host port]
+  (let [transport (TFramedTransport. (TSocket. host port))
+        prot (TBinaryProtocol. transport)
+        client (ElephantDB$Client. prot)]
+        (.open transport)
+        [client transport] ))
+
+(defmacro with-elephant-connection [host port client-sym & body]
+  `(let [[#^ElephantDB$Client ~client-sym #^TTransport conn#] (elephant-client-and-conn ~host ~port)]
+      (try
+        ~@body
+      (finally (.close conn#)))
+    ))

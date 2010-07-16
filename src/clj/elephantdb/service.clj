@@ -2,34 +2,10 @@
   (:import [java.util.concurrent.locks ReentrantReadWriteLock])
   (:import [elephantdb.generated ElephantDB ElephantDB$Iface])
   (:import [elephantdb Shutdownable client])
+  (:import [elephantdb.persistence LocalPersistence])
   (:require [elephantdb [domain :as domain] [thrift :as thrift] [shard :as shard]])
   (:use [elephantdb config log util hadoop loader]))
 
-
-
-  ; Value get(1: string domain, 2: binary key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  ; Value getString(1: string domain, 2: string key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  ; Value getInt(1: string domain, 2: i32 key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  ; Value getLong(1: string domain, 2: i64 key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  ; 
-  ; Value directGet(1: string domain, 2: binary key)
-  ;   throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
-  ; 
-  ; DomainStatus getDomainStatus(1: string domain);
-  ; list<string> getDomains();
-  ; Status getStatus();
-  ; bool isFullyLoaded();
-  ; 
-  ; /*
-  ;   This method will re-download the global configuration file and add any new domains
-  ; */
-  ; void updateAll() throws (1: InvalidConfigurationException ice);
-  ; //returns whether it's updating or not
-  ; bool update(1: string domain);
 ; { :replication 2
 ;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
 ;   :port 3578
@@ -91,6 +67,22 @@
               ))))
       domains-info ))
 
+(defn- close-lps [domains-info]
+  (dofor [[domain info] domains-info]
+    (dofor [[shard lp] @info]
+      (log-message "Closing LP for " domain "/" shard)
+      (.close lp)
+      (log-message "Closed LP for " domain "/" shard)
+      )))
+
+(defn- get-readable-domain-info [domains-info domain]
+  (let [info (domains-info domain)]
+    (when-not info
+      (throw (thrift/domain-not-found-ex domain)))
+    (when-not (thrift/status-ready? (domain/domain-status info))
+      (throw (thrift/domain-not-loaded-ex domain)))
+    info ))
+
 (defn service-handler [global-config local-config token]
   (let [domains-info (sync-data global-config local-config token)
         client (atom nil)
@@ -101,8 +93,7 @@
                 (write-locked rw-lock
                   (dofor [[_ info] domains-info]
                     (domain/set-domain-status! info (thrift/shutdown-status))))
-                  ;; 2. TODO close every LP (make sure to handle case where shutdown during loading)
-                )
+                (close-lps domains-info))
 
               (get [#^String domain #^bytes key]
                 (.get @client domain key))
@@ -118,26 +109,30 @@
 
               (directGet [#^String domain key]
                 (read-locked rw-lock
-                  ;; TODO
-                  ;; 1. validate domain exists and is loaded on this host
-                  ;; 2. get shard for key, validate this is a valid host
-                  ;; 3. find the local LP and return the data from it wrapped in a value struct
-                  ))
+                  (let [info                   (get-readable-domain-info domains-info domain)
+                        shard                  (domain/key-shard info key)
+                        #^LocalPersistence lp  (domain/domain-data info shard)]
+                        (when-not lp
+                          (throw (thrift/wrong-host-ex)))
+                        (thrift/mk-value (.get lp key))
+                      )))
 
               (getDomainStatus [#^String domain]
-                ;; TODO
-                )
+                (let [info (domains-info domain)]
+                  (when-not info
+                    (throw (thrift/domain-not-found-ex domain)))
+                  (domain/domain-status info)))
 
               (getDomains []
                 (keys domains-info))
 
               (getStatus []
-                ;; TODO
-                )
+                (thrift/elephant-status
+                  (into {} (for [[d i] domains-info] [d (domain/domain-status i)]))))
 
               (isFullyLoaded []
-                ;; TODO
-                )
+                (let [stat (.get_domain_statuses (.getStatus this))]
+                  (every? thrift/status-ready? (vals stat))))
 
               (updateAll []
                 ;; TODO

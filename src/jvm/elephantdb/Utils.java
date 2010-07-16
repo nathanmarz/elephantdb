@@ -38,6 +38,10 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
+    
+    public static Object newInstance(String klassname) {
+        return newInstance(classForName(klassname));
+    }
 
     public static int keyShard(byte[] key, int numShards) {
         BigInteger hash = new BigInteger(md5Hash(key));
