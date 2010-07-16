@@ -9,7 +9,7 @@
   (:use [elephantdb config log hadoop])
   (:gen-class))
 
-(defn launch-server [global-config local-config token]
+(defn launch-server! [global-config local-config token]
   (let
     [global-config (merge DEFAULT-GLOBAL-CONFIG global-config)
      local-config (merge DEFAULT-LOCAL-CONFIG local-config)
@@ -31,4 +31,4 @@
   (let [local-config (read-clj-config (local-filesystem) local-config-path)
         fs (filesystem (:hdfs-conf local-config))
         global-config (read-clj-config fs global-config-hdfs-path)]
-        (launch-server global-config local-config (Long/parseLong token))))
+        (launch-server! global-config local-config (Long/parseLong token))))

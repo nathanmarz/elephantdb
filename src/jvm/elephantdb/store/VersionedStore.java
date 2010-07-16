@@ -1,5 +1,6 @@
 package elephantdb.store;
 
+import elephantdb.Utils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +19,7 @@ public class VersionedStore {
     private FileSystem _fs;
 
     public VersionedStore(String path) throws IOException {
-      this(getFS(path), path);
+      this(Utils.getFS(path, new Configuration()), path);
     }
     
     public VersionedStore(FileSystem fs, String path) throws IOException {
@@ -151,7 +152,4 @@ public class VersionedStore {
         }
     }
 
-    protected static FileSystem getFS(String path) throws IOException {
-        return new Path(path).getFileSystem(new Configuration());
-    }
 }

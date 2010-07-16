@@ -64,7 +64,7 @@
           (domain/set-domain-status!
              (domains-info domain)
              (thrift/failed-status t))
-              ))))
+             ))))
       domains-info ))
 
 (defn- close-lps [domains-info]
@@ -141,5 +141,5 @@
               (update [#^String domain]
                 ;; TODO
                 ))]
-      (reset! client (client. ret (:hdfs-conf local-config) (global-config)))
+      (reset! client (client. ret (:hdfs-conf local-config) global-config))
       ret ))

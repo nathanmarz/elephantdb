@@ -46,11 +46,11 @@
     (if (and (my-local-elephant this) (= totry (my-local-hostname this)))
       (.directGet (my-local-elephant this) domain key)
      (with-elephant-connection totry (ring-port this) client
-       (.directGet client domain key)
-       ))
+       (.directGet client domain key)))
   (catch TException e
     ;; try next host
-    (log-error e "Thrift exception on " totry ":" domain "/" key) nil)
+    (log-error e "Thrift exception on " totry ":" domain "/" key)
+    nil )
   (catch WrongHostException e
     (log-error e "Fatal exception on " totry ":" domain "/" key)
     (throw (TException. "Fatal exception when performing get" e)))

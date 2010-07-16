@@ -20,7 +20,7 @@
     (do
       (log-message "Shard " remote-shard-path " did not exist. Creating empty LP")
       (.close (.createPersistence persistence-factory local-shard-path (persistence-options local-config persistence-factory)))))
-    (let [ret (.openPersistence persistence-factory local-shard-path (persistence-options local-config persistence-factory))]
+    (let [ret (.openPersistenceForRead persistence-factory local-shard-path (persistence-options local-config persistence-factory))]
       (log-message "Opened LP " local-shard-path)
       ret ))
 

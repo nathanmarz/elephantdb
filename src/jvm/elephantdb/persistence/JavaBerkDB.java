@@ -19,8 +19,13 @@ public class JavaBerkDB extends LocalPersistenceFactory {
 
 
     @Override
-    public LocalPersistence openPersistence(String root, Map options) {
+    public LocalPersistence openPersistenceForRead(String root, Map options) {
         return new JavaBerkDBPersistence(root, options, true);
+    }
+
+    @Override
+    public LocalPersistence openPersistenceForAppend(String root, Map options) {
+        return new JavaBerkDBPersistence(root, options, false);
     }
 
     @Override
@@ -35,6 +40,7 @@ public class JavaBerkDB extends LocalPersistenceFactory {
         private static final String DATABASE_NAME = "elephant";
 
         public JavaBerkDBPersistence(String root, Map options, boolean readOnly) {
+            new File(root).mkdirs();
             EnvironmentConfig envConf = new EnvironmentConfig();
             envConf.setAllowCreate(true);
             envConf.setReadOnly(readOnly);
