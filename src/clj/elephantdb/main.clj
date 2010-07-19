@@ -28,7 +28,7 @@
 ;; elephantdb just uses whatever is local
 (defn -main [#^String global-config-hdfs-path #^String local-config-path #^String token]
   (PropertyConfigurator/configure "log4j/log4j.properties")
-  (let [local-config (read-clj-config (local-filesystem) local-config-path)
+  (let [local-config (merge DEFAULT-LOCAL-CONFIG (read-clj-config (local-filesystem) local-config-path))
         fs (filesystem (:hdfs-conf local-config))
-        global-config (read-clj-config fs global-config-hdfs-path)]
+        global-config (merge DEFAULT-GLOBAL-CONFIG (read-clj-config fs global-config-hdfs-path))]
         (launch-server! global-config local-config (Long/parseLong token))))

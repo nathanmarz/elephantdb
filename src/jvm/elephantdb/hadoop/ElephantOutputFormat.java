@@ -47,6 +47,10 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
             this.spec = spec;
             this.outputDirHdfs = outputDirHdfs;
         }
+        
+        public void setTmpDirs(List<String> dirs) {
+            this.tmpDirs = dirs;
+        }
     }
 
 
@@ -191,5 +195,4 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
             throw new InvalidJobConfException("Shards to update does not exist " + args.updateDirHdfs);
         }
     }
-    
 }

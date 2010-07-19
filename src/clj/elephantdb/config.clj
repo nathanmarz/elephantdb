@@ -28,6 +28,7 @@
 (defn local-global-config-cache [local-dir]
   (str-path local-dir "GLOBAL-CONF.clj"))
 
+;; TODO: do an eval? any security risks with that?
 (defn read-clj-config [fs str-path]
   (with-in-str (Utils/convertStreamToString (.open fs (path str-path))) (read)))
 
@@ -36,12 +37,18 @@
     (.print w conf)
     ))
 
+(defn convert-java-domain-spec [spec]
+  (struct domain-spec-struct (.getLPFactory spec) (.getNumShards spec)))
+
+(defn convert-clj-domain-spec [spec-map]
+  (DomainSpec. (:persistence-factory spec-map) (:num-shards spec-map)))
+
 (defn read-domain-spec [fs path]
   (let [spec (DomainSpec/readFromFileSystem fs path)]
-    (struct domain-spec-struct (.getLPFactory spec) (.getNumShards spec))))
+    (convert-java-domain-spec spec)))
 
 (defn write-domain-spec! [spec-map fs path]
-  (let [spec (DomainSpec. (:persistence-factory spec-map) (:num-shards spec-map))]
+  (let [spec (convert-clj-domain-spec spec-map)]
     (.writeToFileSystem spec fs path)))
 
 (defmulti persistence-str class)

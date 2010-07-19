@@ -41,25 +41,29 @@ public class VersionedStore {
     }
 
     public String mostRecentVersionPath() throws IOException {
-        return versionPath(mostRecentVersion());
+        Long v = mostRecentVersion();
+        if(v==null) return null;
+        return versionPath(v);
     }
 
     public String mostRecentVersionPath(long maxVersion) throws IOException {
-        return versionPath(mostRecentVersion(maxVersion));
+        Long v = mostRecentVersion(maxVersion);
+        if(v==null) return null;
+        return versionPath(v);
     }
 
-    public long mostRecentVersion() throws IOException {
+    public Long mostRecentVersion() throws IOException {
         List<Long> all = getAllVersions();
-        if(all.size()==0) throw new RuntimeException("Versioned store is empty!");
+        if(all.size()==0) return null;
         return all.get(0);
     }
 
-    public long mostRecentVersion(long maxVersion) throws IOException {
+    public Long mostRecentVersion(long maxVersion) throws IOException {
         List<Long> all = getAllVersions();
         for(Long v: all) {
             if(v <= maxVersion) return v;
         }
-        throw new RuntimeException("Could not find a version older than " + maxVersion);
+        return null;
     }
 
     public String createVersion() throws IOException {
@@ -68,7 +72,7 @@ public class VersionedStore {
 
     public String createVersion(long version) throws IOException {
         String ret = versionPath(version);
-        if(_fs.exists(new Path(ret)) || getAllVersions().contains(version))
+        if(getAllVersions().contains(version))
             throw new RuntimeException("Version already exists or data already exists");
         else
             return ret;
@@ -102,7 +106,7 @@ public class VersionedStore {
         for(FileStatus s: _fs.listStatus(new Path(_root))) {
             Path p = s.getPath();
             Long v = parseVersion(p.toString());
-            if(v==null || !keepers.contains(v)) {
+            if(v!=null && !keepers.contains(v)) {
                 _fs.delete(p, true);
             }
         }

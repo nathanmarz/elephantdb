@@ -89,6 +89,7 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public void writeToFileSystem(FileSystem fs, String dirpath) throws IOException {
+        fs.mkdirs(new Path(dirpath));
         FSDataOutputStream os = fs.create(new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME));
         writeToStream(os);
         os.close();
