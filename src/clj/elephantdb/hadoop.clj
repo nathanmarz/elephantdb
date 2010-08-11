@@ -47,7 +47,7 @@
 
 (defn clear-dir [fs path]
   (delete fs path true)
-  (mkdirs path))
+  (mkdirs fs path))
 
 (defn local-filesystem [] (FileSystem/getLocal (Configuration.)))
 

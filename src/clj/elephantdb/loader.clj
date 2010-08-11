@@ -34,7 +34,7 @@
         remote-vs          (VersionedStore. fs remote-path)
         remote-version     (.mostRecentVersion remote-vs token)
         local-version-path (.createVersion local-vs remote-version)
-        _                  (.mkdirs lfs local-domain-root)
+        _                  (mkdirs lfs local-version-path)
         shard-loaders      (dofor [s shards]
                              [s (future
                                   (load-domain-shard

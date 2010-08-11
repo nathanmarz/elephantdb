@@ -41,11 +41,11 @@
 ;; returns map of domain to domain info and launches futures that will fill in the domain info
 (defn- sync-data [global-config local-config token]
   (let [fs (filesystem (:hdfs-conf local-config))
-        domains-info (init-domain-info-map-global global-config)
+        domains-info (init-domain-info-map-global fs global-config)
         local-dir (:local-dir local-config)
         lfs (doto (local-filesystem) (clear-dir local-dir))]
     (write-clj-config! (assoc global-config :token token) lfs (local-global-config-cache local-dir))
-    (dofor [[domain remote-location] (:domains global-config)]
+    (doseq [[domain remote-location] (:domains global-config)]
       (future
         (try
           (domain/set-domain-data! (domains-info domain)
@@ -53,8 +53,8 @@
               fs
               local-config
               (str (path local-dir domain))
-              token
               remote-location
+              token
               (domain/host-shards (domains-info domain))))
            (domain/set-domain-status!
              (domains-info domain)
@@ -68,8 +68,8 @@
       domains-info ))
 
 (defn- close-lps [domains-info]
-  (dofor [[domain info] domains-info]
-    (dofor [[shard lp] @info]
+  (doseq [[domain info] domains-info]
+    (doseq [[shard lp] @info]
       (log-message "Closing LP for " domain "/" shard)
       (.close lp)
       (log-message "Closed LP for " domain "/" shard)
@@ -88,58 +88,72 @@
         client (atom nil)
         #^ReentrantReadWriteLock rw-lock (mk-rw-lock)
         ret (proxy [ElephantDB$Iface Shutdownable] []
-              (shutdown []
-                (log-message "ElephantDB received shutdown notice...")
-                (write-locked rw-lock
-                  (dofor [[_ info] domains-info]
-                    (domain/set-domain-status! info (thrift/shutdown-status))))
-                (close-lps domains-info))
+              (shutdown
+               []
+               (log-message "ElephantDB received shutdown notice...")
+               (write-locked
+                rw-lock
+                (dofor [[_ info] domains-info]
+                       (domain/set-domain-status! info (thrift/shutdown-status))))
+               (close-lps domains-info))
+              
+              (get
+               [#^String domain #^bytes key]
+               (.get @client domain key))
 
-              (get [#^String domain #^bytes key]
-                (.get @client domain key))
+              (getString
+               [#^String domain #^String key]
+               (.getString @client domain key))
 
-              (getString [#^String domain #^String key]
-                (.getString @client domain key))
+              (getInt
+               [#^String domain key]
+               (.getInt @client domain key))
 
-              (getInt [#^String domain key]
-                (.getInt @client domain key))
+              (getLong
+               [#^String domain key]
+               (.getLong @client domain key))
 
-              (getLong [#^String domain key]
-                (.getLong @client domain key))
+              (directGet
+               [#^String domain key]
+               (read-locked
+                rw-lock
+                (let [info                   (get-readable-domain-info domains-info domain)
+                      shard                  (domain/key-shard info key)
+                      #^LocalPersistence lp  (domain/domain-data info shard)]
+                  (when-not lp
+                    (throw (thrift/wrong-host-ex)))
+                  (thrift/mk-value (.get lp key))
+                  )))
+              
+              (getDomainStatus
+               [#^String domain]
+               (let [info (domains-info domain)]
+                 (when-not info
+                   (throw (thrift/domain-not-found-ex domain)))
+                 (domain/domain-status info)))
+              
+              (getDomains
+               []
+               (keys domains-info))
 
-              (directGet [#^String domain key]
-                (read-locked rw-lock
-                  (let [info                   (get-readable-domain-info domains-info domain)
-                        shard                  (domain/key-shard info key)
-                        #^LocalPersistence lp  (domain/domain-data info shard)]
-                        (when-not lp
-                          (throw (thrift/wrong-host-ex)))
-                        (thrift/mk-value (.get lp key))
-                      )))
+              (getStatus
+               []
+               (thrift/elephant-status
+                (into {} (for [[d i] domains-info] [d (domain/domain-status i)]))))
+              
+              (isFullyLoaded
+               []
+               (let [stat (.get_domain_statuses (.getStatus this))]
+                 (every? thrift/status-ready? (vals stat))))
 
-              (getDomainStatus [#^String domain]
-                (let [info (domains-info domain)]
-                  (when-not info
-                    (throw (thrift/domain-not-found-ex domain)))
-                  (domain/domain-status info)))
+              (updateAll
+               []
+               ;; TODO
+               )
 
-              (getDomains []
-                (keys domains-info))
-
-              (getStatus []
-                (thrift/elephant-status
-                  (into {} (for [[d i] domains-info] [d (domain/domain-status i)]))))
-
-              (isFullyLoaded []
-                (let [stat (.get_domain_statuses (.getStatus this))]
-                  (every? thrift/status-ready? (vals stat))))
-
-              (updateAll []
-                ;; TODO
-                )
-
-              (update [#^String domain]
-                ;; TODO
-                ))]
+              (update
+               [#^String domain]
+               ;; TODO
+               ))]
       (reset! client (client. ret (:hdfs-conf local-config) global-config))
       ret ))

@@ -21,7 +21,7 @@
           (.set_update_status (when loading? (loading-status))))))
 
 (defn status-ready? [#^DomainStatus domain-status]
-  (= (.getSetField domain-status DomainStatus$_Fields/READY)))
+  (= (.getSetField domain-status) DomainStatus$_Fields/READY))
 
 (defn domain-not-found-ex [domain]
   (DomainNotFoundException. domain))

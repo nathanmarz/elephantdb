@@ -14,14 +14,17 @@
 ; }
 
 (def DEFAULT-GLOBAL-CONFIG
-  { :replication 1
-    :port 3578
-  })
+     {
+      :replication 1
+      :port 3578
+      })
 
 (def DEFAULT-LOCAL-CONFIG
-  { :max-online-download-rate-kb-s 128
-    :local-db-conf {}
-  })
+     {
+      :max-online-download-rate-kb-s 128
+      :local-db-conf {}
+      :hdfs-conf {}
+      })
 
 (defstruct domain-spec-struct :persistence-factory :num-shards)
 
@@ -57,4 +60,7 @@
 (defmethod persistence-str LocalPersistenceFactory [persistence] (.getName (class persistence)))
 
 (defn persistence-options [local-config persistence]
-  ((:local-db-conf local-config) (persistence-str persistence)))
+  (if-let [local-db-conf (:local-db-conf local-config)]
+    (get local-db-conf (persistence-str persistence {}))
+    {}
+    ))

@@ -23,6 +23,7 @@
 (defn- get-index [this domain]
   (let [index ((:domain-shard-indexes (. this state)) domain)]
     (when-not index (throw (domain-not-found-ex domain)))
+    (println "CCC" index)
     index ))
 
 (defn- my-local-elephant [this]
@@ -32,7 +33,7 @@
   (:local-hostname (. this state)))
 
 (defn get-priority-hosts [this domain key]
-  (let [hosts (shuffle (shard/key-hosts (get-index this domain key)))
+  (let [hosts (shuffle (shard/key-hosts (get-index this domain) key))
         localhost (my-local-hostname this)]
     (if (includes? hosts localhost)
       (cons localhost (remove-val localhost hosts))
@@ -41,12 +42,15 @@
 (defn- ring-port [this]
   (:port (:global-conf (. this state))))
 
+(defn get-remote [host port domain key]
+  (with-elephant-connection host port client
+    (.directGet client domain key)))
+
 (defn- try-get [this domain key totry]
   (try
     (if (and (my-local-elephant this) (= totry (my-local-hostname this)))
       (.directGet (my-local-elephant this) domain key)
-     (with-elephant-connection totry (ring-port this) client
-       (.directGet client domain key)))
+      (get-remote totry (ring-port this) domain key))
   (catch TException e
     ;; try next host
     (log-error e "Thrift exception on " totry ":" domain "/" key)

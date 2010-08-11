@@ -8,26 +8,6 @@
   (:import [java.util ArrayList])
   (:import [org.apache.hadoop.mapred JobConf]))
 
-;; getRecordWriter(FileSystem fs, JobConf conf, String string, Progressable progressable)
-
-(defn mk-writer [shards factory output-dir tmpdir]
-  (.getRecordWriter
-    (ElephantOutputFormat.)
-    nil
-    (doto
-      (JobConf.)
-      (Utils/setObject
-        ElephantOutputFormat/ARGS_CONF
-        (doto
-          (ElephantOutputFormat$Args.
-            (convert-clj-domain-spec
-              {:num-shards shards
-               :persistence-factory factory})
-            output-dir)
-          (.setTmpDirs (ArrayList. [tmpdir])))))
-    nil
-    nil ))
-
 (defn write-data [writer data]
   (dofor [[s records] data]
     (dofor [[k v] records]
@@ -54,11 +34,12 @@
 (deffstest test-output-format [fs output-dir]
   (with-local-tmp [lfs etmp tmp2]
     (let [data {0 {"0a" "00" "0b" "01"} 4 {"4a" "40"}}
-          writer  (mk-writer 10 (JavaBerkDB.) output-dir etmp)]
+          writer  (mk-elephant-writer 10 (JavaBerkDB.) output-dir etmp)]
       (write-data writer data)
       (.close writer nil)
       (is (= 2 (count (.listStatus fs (path output-dir)))))
       (check-shards fs lfs output-dir tmp2 (JavaBerkDB.) data)
       )))
 
-(deftest test-errors)
+(deffstest test-errors
+  )

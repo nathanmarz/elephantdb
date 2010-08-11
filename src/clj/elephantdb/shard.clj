@@ -10,11 +10,17 @@
     [hosts (assoc hosts-to-shards host (conj existing shard))]
     ))
 
-(defn shard-domain [hosts numshards replication]
+
+(defn compute-host-to-shards [domain hosts numshards replication]
   (when (> replication (count hosts))
     (throw (IllegalArgumentException. "Replication greater than number of servers")))
   (let [shards (repeat-seq replication (range numshards))
         hosts-to-shards (second (reduce host-shard-assigner [(repeat-seq hosts) {}] shards))]
+    hosts-to-shards
+    ))
+
+(defn shard-domain [domain hosts numshards replication]
+  (let [hosts-to-shards (compute-host-to-shards domain hosts numshards replication)]
       (struct shard-index hosts-to-shards (map-mapvals set (reverse-multimap hosts-to-shards)))
     ))
 
@@ -23,6 +29,7 @@
     (dofor [[domain remote-location] (:domains global-config)]
       (let [domain-spec (read-domain-spec fs remote-location)]
         [domain (shard-domain
+                  domain
                   (:hosts global-config)
                   (:num-shards domain-spec)
                   (:replication global-config))]
