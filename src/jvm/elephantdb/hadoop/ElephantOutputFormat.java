@@ -54,7 +54,6 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         }
     }
 
-
     public class ElephantRecordWriter implements RecordWriter<IntWritable, ElephantRecordWritable> {
 
         FileSystem _fs;

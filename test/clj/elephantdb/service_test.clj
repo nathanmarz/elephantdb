@@ -5,7 +5,6 @@
             DomainNotFoundException])
   (:use [elephantdb service testing util]))
 
-
 (defn get-val [elephant d k]
   (.get_data (.get elephant d k)))
 
@@ -51,6 +50,9 @@
       (is (barr=
            (barr 0 0)
            (get-val elephant "test1" (barr 0))))
+      (is (barr=
+           (barr 20 0)
+           (get-val elephant "test1" (barr 20))))
       (is (=
            nil
            (get-val elephant "test1" (barr 2))))
