@@ -23,7 +23,6 @@
 (defn- get-index [this domain]
   (let [index ((:domain-shard-indexes (. this state)) domain)]
     (when-not index (throw (domain-not-found-ex domain)))
-    (println "CCC" index)
     index ))
 
 (defn- my-local-elephant [this]
