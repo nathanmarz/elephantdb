@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.ChecksumFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.InvalidJobConfException;
@@ -132,7 +133,14 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
                             options)
                          .close();
                 } else {
-                    _fs.copyToLocalFile(new Path(_args.updateDirHdfs + "/" + shard), new Path(localLPDir));
+                    String copyDir = _args.updateDirHdfs + "/" + shard;
+                    if(!_fs.exists(new Path(copyDir))) {
+                        fact.createPersistence(localLPDir,
+                                               options)
+                            .close();
+                    } else {
+                        ((ChecksumFileSystem)_fs).copyToLocalFile(new Path(copyDir), new Path(localLPDir), false);
+                    }
                 }
                 lp = fact.openPersistenceForAppend(localLPDir, options);
                 _lps.put(shard.get(), lp);

@@ -33,7 +33,7 @@
   (:local-hostname (. this state)))
 
 (defn get-priority-hosts [this domain key]
-  (let [hosts (shuffle (shard/key-hosts (get-index this domain) key))
+  (let [hosts (shuffle (shard/key-hosts domain (get-index this domain) key))
         localhost (my-local-hostname this)]
     (if (includes? hosts localhost)
       (cons localhost (remove-val localhost hosts))

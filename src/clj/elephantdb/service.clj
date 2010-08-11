@@ -118,7 +118,7 @@
                (read-locked
                 rw-lock
                 (let [info                   (get-readable-domain-info domains-info domain)
-                      shard                  (domain/key-shard info key)
+                      shard                  (domain/key-shard domain info key)
                       #^LocalPersistence lp  (domain/domain-data info shard)]
                   (when-not lp
                     (throw (thrift/wrong-host-ex)))

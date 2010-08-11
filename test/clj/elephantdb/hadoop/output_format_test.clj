@@ -1,10 +1,13 @@
 (ns elephantdb.hadoop.output-format-test
   (:use clojure.test)
   (:use [elephantdb testing hadoop config util])
-  (:import [elephantdb.hadoop ElephantOutputFormat ElephantOutputFormat$Args ElephantRecordWritable])
+  (:import [elephantdb.hadoop ElephantOutputFormat ElephantOutputFormat$Args ElephantRecordWritable
+            ElephantUpdater])
   (:import [org.apache.hadoop.io IntWritable])
   (:import [elephantdb.persistence JavaBerkDB])
   (:import [elephantdb Utils])
+  (:import [elephantdb.store VersionedStore])
+  (:import [elephantdb.test StringAppendUpdater])
   (:import [java.util ArrayList])
   (:import [org.apache.hadoop.mapred JobConf]))
 
@@ -41,5 +44,24 @@
       (check-shards fs lfs output-dir tmp2 (JavaBerkDB.) data)
       )))
 
-(deffstest test-errors
+(deffstest test-incremental [fs dir1 dir2]
+  (with-local-tmp [lfs ltmp1 ltmp2]
+    (mk-presharded-domain fs dir1 (JavaBerkDB.)
+                          {0 [[(.getBytes "a") (.getBytes "1")]]
+                           1 [[(.getBytes "b") (.getBytes "2")]
+                              [(.getBytes "c") (.getBytes "3")]]})
+    (let [data {0 {"a" "2" "d" "4"} 1 {"c" "4" "e" "4"} 2 {"x" "x"}}
+          writer (mk-elephant-writer 3 (JavaBerkDB.) dir2 ltmp1
+                                     :updater (StringAppendUpdater.)
+                                     :update-dir (.mostRecentVersionPath
+                                                  (VersionedStore. dir1)))]
+      (write-data writer data)
+      (.close writer nil)
+      (check-shards fs lfs dir2 ltmp2 (JavaBerkDB.)
+                    {0 {"a" "12" "d" "4"}
+                     1 {"b" "2" "c" "34" "e" "4"}
+                     2 {"x" "x"}})
+      )))
+
+(deffstest test-errors [fs dir1]
   )

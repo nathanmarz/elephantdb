@@ -33,10 +33,10 @@
   ([domain-info host]
     (s/host-shards (::shard-index domain-info) host)))
 
-(defn key-hosts [domain-info #^bytes key]
-  (s/key-hosts (::shard-index domain-info) key))
+(defn key-hosts [domain domain-info #^bytes key]
+  (s/key-hosts domain (::shard-index domain-info) key))
 
-(defn key-shard [domain-info key]
+(defn key-shard [domain domain-info key]
   (let [index (shard-index domain-info)]
-    (Utils/keyShard key (s/num-shards index))
+    (s/key-shard domain key (s/num-shards index))
     ))

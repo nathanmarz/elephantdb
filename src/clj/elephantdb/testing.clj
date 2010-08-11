@@ -21,12 +21,12 @@
   (let [tmp-paths (mapcat (fn [t] [t '(str "/tmp/unittests/" (uuid))]) tmp-syms)]
     `(let [~fs-sym (filesystem)
            ~@tmp-paths]
-        (.mkdirs ~fs-sym (path "/tmp/unittests"))
+       (.mkdirs ~fs-sym (path "/tmp/unittests"))
         (try
           ~@body
-        (finally
-          (delete-all ~fs-sym ~(vec tmp-syms)))
-    ))))
+          (finally
+         (delete-all ~fs-sym ~(vec tmp-syms)))
+        ))))
 
 (defmacro deffstest [name fs-args & body]
   `(deftest ~name
@@ -43,9 +43,9 @@
       (try
         ~@body
       (finally
-        (delete-all ~fs-sym ~(vec tmp-syms)))
-        ))
-  ))
+       (delete-all ~fs-sym ~(vec tmp-syms)))
+      ))
+    ))
 
 (defmacro deflocalfstest [name local-args & body]
   `(deftest ~name
@@ -66,23 +66,28 @@
   (Utils/keyShard key numshards)
   )
 
-(defn mk-elephant-writer [shards factory output-dir tmpdir]
-  (.getRecordWriter
-    (ElephantOutputFormat.)
-    nil
-    (doto
-      (JobConf.)
-      (Utils/setObject
-        ElephantOutputFormat/ARGS_CONF
-        (doto
-          (ElephantOutputFormat$Args.
-            (convert-clj-domain-spec
-              {:num-shards shards
-               :persistence-factory factory})
-            output-dir)
-          (.setTmpDirs (ArrayList. [tmpdir])))))
-    nil
-    nil ))
+(defn mk-elephant-writer [shards factory output-dir tmpdir & kargs]
+  (let [kargs (apply hash-map kargs)
+        args (ElephantOutputFormat$Args.
+              (convert-clj-domain-spec
+               {:num-shards shards
+                :persistence-factory factory})
+              output-dir)
+        ]
+    (.setTmpDirs args (ArrayList. [tmpdir]))
+    (if-let [upd (:updater kargs)]
+      (set! (. args updater) upd))
+    (if-let [update-dir (:update-dir kargs)]
+      (set! (. args updateDirHdfs) update-dir))
+    (.getRecordWriter (ElephantOutputFormat.)
+                      nil
+                      (doto
+                          (JobConf.)
+                        (Utils/setObject
+                         ElephantOutputFormat/ARGS_CONF
+                         args ))
+                      nil
+                      nil )))
 
 (defn mk-sharded-domain [fs path domain-spec keyvals]
   (with-local-tmp [lfs localtmp]
@@ -101,26 +106,33 @@
                   localtmp)]
       (write-domain-spec! domain-spec fs path)
       (doseq [[s k v] shardedkeyvals]
-             (.write writer
-                     (IntWritable. s)
-                     (ElephantRecordWritable. k v)))
+        (when v
+          (.write writer
+                  (IntWritable. s)
+                  (ElephantRecordWritable. k v))))
       (.close writer nil)
       (.succeedVersion vs dpath)    
       )))
 
-(defn mk-presharded-domain [fs path domain-spec shardmap]
+(defn reverse-pre-sharded [shardmap]
+  (map-mapvals
+   first
+   (reverse-multimap
+    (map-mapvals #(map (fn [x] (ByteArray. (first x))) %) shardmap))))
+
+(defn mk-presharded-domain [fs path factory shardmap]
   (let [keyvals (apply concat (vals shardmap))
-        shards (map-mapvals
-                first
-                (reverse-multimap
-                 (map-mapvals #(map (fn [x] (ByteArray. (first x))) %) shardmap)))
+        shards (reverse-pre-sharded shardmap)
+        domain-spec {:num-shards (count shardmap) :persistence-factory factory}
         ]
     (binding [test-key-to-shard (fn [k _] (shards (ByteArray. k)))]
       (mk-sharded-domain fs path domain-spec keyvals))
     ))
 
 (defn mk-service-handler [global-config localdir token domain-to-host-to-shards]
-  (binding [compute-host-to-shards (fn [d _ _ _] (domain-to-host-to-shards d))]
+  (binding [compute-host-to-shards (if domain-to-host-to-shards
+                                     (fn [d _ _ _] (domain-to-host-to-shards d))
+                                     compute-host-to-shards)]
     (let [handler (service-handler global-config {:local-dir localdir} token)]
       (while (not (.isFullyLoaded handler))
         (println "waiting...")
@@ -133,14 +145,21 @@
      ~@body
      ))
 
-(defmacro with-presharded-domain [[pathsym factory shardmap] & body]
+(defmacro with-presharded-domain [[dname pathsym factory shardmap] & body]
   `(with-fs-tmp [fs# ~pathsym]
      (mk-presharded-domain
       fs#
       ~pathsym
-      {:num-shards ~(count shardmap) :persistence-factory ~factory}
+      ~factory
       ~shardmap)
-     ~@body
+     (binding [key-shard (let [prev# key-shard
+                               rev# (reverse-pre-sharded ~shardmap)]
+                           (fn [d# k# a#]
+                             (if (= d# ~dname)
+                               (rev# (ByteArray. k#))
+                               (prev# d# k# a#)
+                               )))]
+       ~@body)
      ))
 
 (defmacro with-service-handler

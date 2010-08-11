@@ -39,10 +39,13 @@
   ((::hosts-to-shards index) host))
 
 (defn shard-hosts [index shard]
-  ((:shards-to-hosts index) shard))
+  ((::shards-to-hosts index) shard))
 
 (defn num-shards [index]
   (count (keys (::shards-to-hosts index))))
 
-(defn key-hosts [index #^bytes key]
-  (shard-hosts index (Utils/keyShard key (num-shards index))))
+(defn key-shard [domain key amt]
+  (Utils/keyShard key amt))
+
+(defn key-hosts [domain index #^bytes key]
+  (shard-hosts index (key-shard domain key (num-shards index))))
