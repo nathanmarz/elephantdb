@@ -179,7 +179,9 @@
 (defn check-domain-pred [domain-name handler pairs pred]
   (doseq [[k v] pairs]
     (let [newv (-> handler (.get domain-name k) (.get_data))]
-      (is (pred v newv) (str (seq k) (seq v) (seq newv)))
+      (if (nil? v)
+        (is (nil? newv))
+        (is (pred v newv) (str (seq k) (seq v) (seq newv))))
       )))
 
 (defn barr [& vals]
