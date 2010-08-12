@@ -51,6 +51,17 @@ public class DomainSpec implements Writable, Serializable {
     public String toString() {
         return mapify().toString();
     }
+    
+    @Override
+    public boolean equals(Object other) {
+        DomainSpec o = (DomainSpec) other;
+        return mapify().equals(o.mapify());
+    }
+    
+    @Override
+    public int hashCode() {
+        return mapify().hashCode();
+    }
 
     public int getNumShards() {
         return _numShards;
@@ -65,6 +76,10 @@ public class DomainSpec implements Writable, Serializable {
         DomainSpec ret = parseFromStream(is);
         is.close();
         return ret;
+    }
+    
+    public static boolean exists(FileSystem fs, String dirpath) throws IOException {
+        return fs.exists(new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME));
     }
 
     public static DomainSpec parseFromStream(InputStream is) {
