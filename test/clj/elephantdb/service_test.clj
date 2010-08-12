@@ -30,6 +30,28 @@
       (is (= nil (get-val elephant "test1" (barr 3))))
       )))
 
+(deftest test-multi-domain
+  (let [data1 [[(barr 0) (barr 0 0)]
+               [(barr 10) (barr 10 1)]
+               [(barr 20) (barr 20 2)]
+               [(barr 30) (barr 30 3)]]
+        data2 [[(barr 5) (barr 5 0)]
+               [(barr 15) (barr 15 15)]
+               [(barr 105) (barr 110)]
+               ]]
+    (with-sharded-domain [dpath1
+                          {:num-shards 2 :persistence-factory (JavaBerkDB.)}
+                          data1]
+      (with-sharded-domain [dpath2
+                            {:num-shards 3 :persistence-factory (JavaBerkDB.)}
+                            data2]
+        (with-single-service-handler [handler {"d1" dpath1 "d2" dpath2}]
+          (check-domain "d1" handler data1)
+          (check-domain "d2" handler data2)
+          (check-domain-not "d1" handler data2)
+          (check-domain-not "d2" handler data1)
+          )))))
+
 (deftest test-multi-server
   (with-presharded-domain
     ["test1"

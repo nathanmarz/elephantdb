@@ -170,8 +170,26 @@
          ~@body
          ))))
 
+(defmacro with-single-service-handler
+  [[handler-sym domains-conf] & body]
+  `(with-service-handler [~handler-sym [(local-hostname)] ~domains-conf nil]
+     ~@body
+     ))
+
+(defn check-domain-pred [domain-name handler pairs pred]
+  (doseq [[k v] pairs]
+    (let [newv (-> handler (.get domain-name k) (.get_data))]
+      (is (pred v newv) (str (seq k) (seq v) (seq newv)))
+      )))
+
 (defn barr [& vals]
   (byte-array (map byte vals)))
 
 (defn barr= [& vals]
   (apply = (map #(ByteArray. %) vals)))
+
+(defn check-domain [domain-name handler pairs]
+  (check-domain-pred domain-name handler pairs barr=))
+
+(defn check-domain-not [domain-name handler pairs]
+  (check-domain-pred domain-name handler pairs (complement barr=)))
