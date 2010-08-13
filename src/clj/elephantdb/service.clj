@@ -14,7 +14,6 @@
 ;             }
 ; }
 
-
 (defn- init-domain-info-map-global [fs global-config]
   (let [domain-shards (shard/shard-domains fs global-config)]
     (into {}
@@ -69,10 +68,13 @@
 
 (defn- close-lps [domains-info]
   (doseq [[domain info] domains-info]
-    (doseq [[shard lp] @info]
-      (log-message "Closing LP for " domain "/" shard)
-      (.close lp)
-      (log-message "Closed LP for " domain "/" shard)
+    (doseq [shard (domain/host-shards info)]
+      (let [lp (domain/domain-data info shard)]
+        (log-message "Closing LP for " domain "/" shard)
+        (if lp
+          (.close lp)
+          (log-message "LP not loaded"))
+        (log-message "Closed LP for " domain "/" shard))
       )))
 
 (defn- get-readable-domain-info [domains-info domain]
