@@ -167,7 +167,9 @@
   (let [global-conf {:replication 1 :hosts hosts :domains domains-conf}]
     `(with-local-tmp [lfs# localtmp#]
        (let [~handler-sym (mk-service-handler ~global-conf localtmp# (System/currentTimeMillis) ~domain-to-host-to-shards)]
-         ~@body
+         (try
+           ~@body
+           (finally (.shutdown ~handler-sym)))         
          ))))
 
 (defmacro with-single-service-handler
