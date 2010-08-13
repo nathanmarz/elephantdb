@@ -18,7 +18,7 @@
       (.delete fs (path t) true))))
 
 (defmacro with-fs-tmp [[fs-sym & tmp-syms] & body]
-  (let [tmp-paths (mapcat (fn [t] [t '(str "/tmp/unittests/" (uuid))]) tmp-syms)]
+  (let [tmp-paths (mapcat (fn [t] [t `(str "/tmp/unittests/" (uuid))]) tmp-syms)]
     `(let [~fs-sym (filesystem)
            ~@tmp-paths]
        (.mkdirs ~fs-sym (path "/tmp/unittests"))
