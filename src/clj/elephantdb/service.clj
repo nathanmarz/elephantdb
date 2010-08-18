@@ -25,17 +25,6 @@
   (throw (RuntimeException. "not implemented"))
   )
 
-
-;; for version cache:
-;;  1. before loading, write the global configs locally with token
-;;  2. you know a domain is downloaded when the domain spec is written in the domain dir
-;;  3. when starting up, only refresh those domains where a newer version exists that is less than or equal to the token (ignore global-config if token is the same as what's written locally)
-
-;; (defn write-clj-config! [conf fs str-path]
-
-;; if token is the same as what is local, initialize using the local data. token is the maximum version to load from hdfs
-;; otherwise, read what's globally available
-
 ;; should delete any domains that don't exist in config as well 
 ;; returns map of domain to domain info and launches futures that will fill in the domain info
 (defn- sync-data [global-config local-config token]
@@ -84,6 +73,16 @@
     (when-not (thrift/status-ready? (domain/domain-status info))
       (throw (thrift/domain-not-loaded-ex domain)))
     info ))
+
+;; 1. after *first* load finishes, right the global config with the token within
+;; 2. when receive an update, open up the version and mkdir immediately,
+;;    start loading
+;; 3. when starting up, if token is written start up immediately,
+;;    start up loaders for anything with incomplete version, clearing dir first
+;; 4. when loaders finish, complete the version and delete the old
+;;    version (on startup should delete old versions) - does deletion
+;;    need to be throttled?
+;; 5. Create Hadoop FS on demand... need retry logic if loaders fail?
 
 (defn service-handler [global-config local-config token]
   (let [domains-info (sync-data global-config local-config token)
