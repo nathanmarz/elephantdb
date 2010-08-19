@@ -14,46 +14,72 @@
 ;             }
 ; }
 
-(defn- init-domain-info-map-global [fs global-config]
+(defn- init-domain-info-map [fs global-config]
   (let [domain-shards (shard/shard-domains fs global-config)]
     (into {}
       (dofor [domain (keys (:domains global-config))]
           [domain (domain/init-domain-info (domain-shards domain))]
             ))))
 
-(defn- init-domain-info-map-local [local-config]
-  (throw (RuntimeException. "not implemented"))
-  )
+(defn sync-data-scratch [domains-info global-config local-config]
+  (let [fs (filesystem (:hdfs-conf local-config))
+        local-dir (:local-dir local-config)]
+    (dofor [[domain remote-location] (:domains global-config)]
+           (future
+            (try
+              (domain/set-domain-data! (domains-info domain)
+                                       (load-domain
+                                        fs
+                                        local-config
+                                        (str (path local-dir domain))
+                                        remote-location
+                                        (domain/host-shards (domains-info domain))))
+              (domain/set-domain-status!
+               (domains-info domain)
+               (thrift/ready-status false))
+              (catch Throwable t
+                (log-error t "Error when loading domain " domain)
+                (domain/set-domain-status!
+                 (domains-info domain)
+                 (thrift/failed-status t))
+                ))))
+    ))
+
+(defn- sync-global [global-config local-config token]
+  (let [fs (filesystem (:hdfs-conf local-config))
+        domains-info (init-domain-info-map fs global-config)
+        local-dir (:local-dir local-config)
+        lfs (doto (local-filesystem) (clear-dir local-dir))
+        domain-loaders (sync-data-scratch domains-info global-config local-config)]
+    (future
+     ;;TODO: split this into domain copying and domain loading
+     (doseq [l domain-loaders] (.get l))
+     (cache-global-config! local-config (assoc global-config :token token)))
+    domains-info ))
+
+
+
+(defn sync-local [global-config local-config]
+  (let [lfs (local-filesystem)
+        local-dir (:local-dir local-config)
+        domains-map (into {}
+                          (map (fn [[k v]]
+                                 [k (str-path local-dir k)])
+                               (:domains global-config)))
+        domains-info (init-domain-info-map
+                      lfs
+                      (assoc global-config :domains domains-map))]
+    ;;TODO: load em up in a future
+    domains-info
+    ))
 
 ;; should delete any domains that don't exist in config as well 
 ;; returns map of domain to domain info and launches futures that will fill in the domain info
 (defn- sync-data [global-config local-config token]
-  (let [fs (filesystem (:hdfs-conf local-config))
-        domains-info (init-domain-info-map-global fs global-config)
-        local-dir (:local-dir local-config)
-        lfs (doto (local-filesystem) (clear-dir local-dir))]
-    (write-clj-config! (assoc global-config :token token) lfs (local-global-config-cache local-dir))
-    (doseq [[domain remote-location] (:domains global-config)]
-      (future
-        (try
-          (domain/set-domain-data! (domains-info domain)
-            (load-domain
-              fs
-              local-config
-              (str (path local-dir domain))
-              remote-location
-              token
-              (domain/host-shards (domains-info domain))))
-           (domain/set-domain-status!
-             (domains-info domain)
-             (thrift/ready-status false))
-        (catch Throwable t
-          (log-error t "Error when loading domain " domain)
-          (domain/set-domain-status!
-             (domains-info domain)
-             (thrift/failed-status t))
-             ))))
-      domains-info ))
+  (if (cache? global-config token)
+    (sync-local global-config local-config)
+    (sync-global global-config local-config token)
+    ))
 
 (defn- close-lps [domains-info]
   (doseq [[domain info] domains-info]

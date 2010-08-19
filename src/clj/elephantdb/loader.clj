@@ -26,13 +26,13 @@
 
 
 ;; returns a map from shard to LP
-(defn load-domain [fs local-config local-domain-root remote-path token shards]
+(defn load-domain [fs local-config local-domain-root remote-path shards]
   (log-message "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs                (local-filesystem)
         domain-spec        (read-domain-spec fs remote-path)
         local-vs           (VersionedStore. lfs local-domain-root)
         remote-vs          (VersionedStore. fs remote-path)
-        remote-version     (.mostRecentVersion remote-vs token)
+        remote-version     (.mostRecentVersion remote-vs)
         local-version-path (.createVersion local-vs remote-version)
         _                  (mkdirs lfs local-version-path)
         shard-loaders      (dofor [s shards]

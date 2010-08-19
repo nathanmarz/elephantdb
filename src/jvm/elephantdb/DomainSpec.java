@@ -72,7 +72,12 @@ public class DomainSpec implements Writable, Serializable {
     }    
 
     public static DomainSpec readFromFileSystem(FileSystem fs, String dirpath) throws IOException {
-        FSDataInputStream is = fs.open(new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME));
+        Path filePath = new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME);
+        if(!fs.exists(filePath)) {
+            return null;
+        }
+
+        FSDataInputStream is = fs.open(filePath);
         DomainSpec ret = parseFromStream(is);
         is.close();
         return ret;
