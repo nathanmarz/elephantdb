@@ -34,6 +34,10 @@
 (defmacro dofor [bindings & body]
   `(doall (for ~bindings (do ~@body))))
 
+(defn future-values [futures]
+  (dofor [f futures]
+    (.get f)))
+
 (defn remove-val [v aseq]
   (filter (partial not= v) aseq))
 
@@ -53,3 +57,14 @@
         (.lock wlock#)
         ~@body
       (finally (.unlock wlock#)))))
+
+(defmacro with-ret-binded [[sym val] & body]
+  `(let [~sym ~val]
+     ~@body
+     ~sym
+     ))
+
+(defmacro with-ret [val & body]
+  `(with-ret-binded [ret# ~val]
+     ~@body
+     ))
