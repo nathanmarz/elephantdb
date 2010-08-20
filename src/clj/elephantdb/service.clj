@@ -21,39 +21,44 @@
           [domain (domain/init-domain-info (domain-shards domain))]
             ))))
 
+(defn load-and-sync-status [domains-info loader-fn]
+  (let [loaders (dofor [domain (keys domains-info)]
+                       (future
+                        (try
+                          (domain/set-domain-data! (domains-info domain)
+                                                   (loader-fn domain))
+                          (domain/set-domain-status!
+                           (domains-info domain)
+                           (thrift/ready-status false))
+                          (catch Throwable t
+                            (log-error t "Error when loading domain " domain)
+                            (domain/set-domain-status!
+                             (domains-info domain)
+                             (thrift/failed-status t))
+                            ))))]
+    (future-values loaders)
+    ))
+
 (defn sync-data-scratch [domains-info global-config local-config]
   (let [fs (filesystem (:hdfs-conf local-config))
         local-dir (:local-dir local-config)]
-    (dofor [[domain remote-location] (:domains global-config)]
-           (future
-            (try
-              (domain/set-domain-data! (domains-info domain)
-                                       (load-domain
-                                        fs
-                                        local-config
-                                        (str (path local-dir domain))
-                                        remote-location
-                                        (domain/host-shards (domains-info domain))))
-              (domain/set-domain-status!
-               (domains-info domain)
-               (thrift/ready-status false))
-              (catch Throwable t
-                (log-error t "Error when loading domain " domain)
-                (domain/set-domain-status!
-                 (domains-info domain)
-                 (thrift/failed-status t))
-                ))))
+    (load-and-sync-status domains-info
+                          (fn [domain]
+                            (load-domain
+                             fs
+                             local-config
+                             (str (path local-dir domain))
+                             (-> global-config (:domains) (get domain))
+                             (domain/host-shards (domains-info domain)))))
     ))
 
 (defn- sync-global [global-config local-config token]
   (let [fs (filesystem (:hdfs-conf local-config))
         domains-info (init-domain-info-map fs global-config)
         local-dir (:local-dir local-config)
-        lfs (doto (local-filesystem) (clear-dir local-dir))
-        domain-loaders (sync-data-scratch domains-info global-config local-config)]
+        lfs (doto (local-filesystem) (clear-dir local-dir))]
     (future
-     ;;TODO: split this into domain copying and domain loading
-     (doseq [l domain-loaders] (.get l))
+     (sync-data-scratch domains-info global-config local-config)
      (cache-global-config! local-config (assoc global-config :token token)))
     domains-info ))
 
@@ -69,7 +74,14 @@
         domains-info (init-domain-info-map
                       lfs
                       (assoc global-config :domains domains-map))]
-    ;;TODO: load em up in a future
+    (future
+     (load-and-sync-status domains-info
+                           (fn [domain]
+                             (open-domain
+                              local-config
+                              (str (path local-dir domain))
+                              (domain/host-shards (domains-info domain))
+                              ))))
     domains-info
     ))
 
