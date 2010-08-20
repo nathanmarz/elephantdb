@@ -53,6 +53,7 @@
     ))
 
 (defn- sync-global [global-config local-config token]
+  (log-message "Loading remote data")
   (let [fs (filesystem (:hdfs-conf local-config))
         domains-info (init-domain-info-map fs global-config)
         local-dir (:local-dir local-config)
@@ -65,6 +66,7 @@
 
 
 (defn sync-local [global-config local-config]
+  (log-message "Loading cached data")
   (let [lfs (local-filesystem)
         local-dir (:local-dir local-config)
         domains-map (into {}

@@ -3,7 +3,7 @@
   (:import [elephantdb.persistence JavaBerkDB])
   (:import [elephantdb.generated WrongHostException
             DomainNotFoundException])
-  (:use [elephantdb service testing util]))
+  (:use [elephantdb service testing util config]))
 
 (defn get-val [elephant d k]
   (.get_data (.get elephant d k)))
@@ -82,3 +82,41 @@
            WrongHostException
            (direct-get-val elephant "test1" (barr 10))))
       )))
+
+(deftest test-caching
+  (with-local-tmp [lfs local-dir]
+    (with-fs-tmp [fs dtmp gtmp]
+      (let [domain-spec {:num-shards 4 :persistence-factory (JavaBerkDB.)}
+            local-config (mk-local-config local-dir)]
+        (write-clj-config! {:replication 1
+                            :hosts [(local-hostname)]
+                            :domains {"test" dtmp}}
+                           fs
+                           gtmp)
+        (mk-sharded-domain fs dtmp domain-spec
+                           [[(barr 0) (barr 0 0)]
+                            [(barr 1) (barr 1 1)]
+                            [(barr 2) (barr 2 2)]
+                            [(barr 3) (barr 3 3)]])
+        ;; NOTE: should really just to the read global config in mk-service-handler
+        (.shutdown
+         (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil))
+        (mk-sharded-domain fs dtmp domain-spec
+                           [[(barr 0) (barr 0 1)]
+                            [(barr 3) (barr 3 4)]
+                            [(barr 4) (barr 4 5)]])
+        (let [handler (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil)]
+          (is (barr= (barr 0 0)
+                     (get-val handler "test" (barr 0))))
+          (is (barr= (barr 2 2)
+                     (get-val handler "test" (barr 2))))
+          (is (= nil (get-val handler "test" (barr 4))))
+          (.shutdown handler))
+        (let [handler (mk-service-handler (read-global-config gtmp local-config "112") local-dir "112" nil)]
+          (is (barr= (barr 0 1)
+                     (get-val handler "test" (barr 0))))
+          (is (barr= (barr 4 5)
+                     (get-val handler "test" (barr 4))))
+          (is (= nil (get-val handler "test" (barr 2))))
+          (.shutdown handler))
+        ))))

@@ -83,3 +83,14 @@
     (get local-db-conf (persistence-str persistence {}))
     {}
     ))
+
+(defn read-global-config [global-config-path local-config token]
+  (let [lfs (local-filesystem)
+        cached-global (read-cached-global-config local-config)]
+    (if (and cached-global (cache? cached-global token))
+      cached-global
+      (merge DEFAULT-GLOBAL-CONFIG
+             (read-clj-config
+              (filesystem (:hdfs-conf local-config))
+              global-config-path)))
+    ))

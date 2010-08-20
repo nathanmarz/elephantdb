@@ -3,7 +3,7 @@
   (:import [elephantdb Utils ByteArray])
   (:import [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
             ElephantOutputFormat$Args])
-  (:import [elephantdb.store VersionedStore])
+  (:import [elephantdb.store DomainStore])
   (:import [org.apache.hadoop.io IntWritable])
   (:import [org.apache.hadoop.mapred JobConf])
   (:use [elephantdb util hadoop config shard service])
@@ -91,7 +91,7 @@
 
 (defn mk-sharded-domain [fs path domain-spec keyvals]
   (with-local-tmp [lfs localtmp]
-    (let [vs (VersionedStore. fs path)
+    (let [vs (DomainStore. fs path (convert-clj-domain-spec domain-spec))
           dpath (.createVersion vs)
           shardedkeyvals (map
                           (fn [[k v]]
@@ -104,14 +104,13 @@
                   (:persistence-factory domain-spec)
                   dpath
                   localtmp)]
-      (write-domain-spec! domain-spec fs path)
       (doseq [[s k v] shardedkeyvals]
         (when v
           (.write writer
                   (IntWritable. s)
                   (ElephantRecordWritable. k v))))
       (.close writer nil)
-      (.succeedVersion vs dpath)    
+      (.succeedVersion vs dpath)
       )))
 
 (defn reverse-pre-sharded [shardmap]
@@ -129,11 +128,14 @@
       (mk-sharded-domain fs path domain-spec keyvals))
     ))
 
+(defn mk-local-config [local-dir]
+  {:local-dir local-dir})
+
 (defn mk-service-handler [global-config localdir token domain-to-host-to-shards]
   (binding [compute-host-to-shards (if domain-to-host-to-shards
                                      (fn [d _ _ _] (domain-to-host-to-shards d))
                                      compute-host-to-shards)]
-    (let [handler (service-handler global-config {:local-dir localdir} token)]
+    (let [handler (service-handler global-config (mk-local-config localdir) token)]
       (while (not (.isFullyLoaded handler))
         (println "waiting...")
         (Thread/sleep 500))

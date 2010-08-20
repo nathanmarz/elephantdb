@@ -11,9 +11,7 @@
 
 (defn launch-server! [global-config local-config token]
   (let
-    [global-config (merge DEFAULT-GLOBAL-CONFIG global-config)
-     local-config (merge DEFAULT-LOCAL-CONFIG local-config)
-     options (THsHaServer$Options.)
+    [options (THsHaServer$Options.)
      _ (set! (. options maxWorkerThreads) 64)
      service-handler (service/service-handler global-config local-config token)
      server (THsHaServer.
@@ -31,11 +29,5 @@
   (let [lfs (local-filesystem)
         local-config (merge DEFAULT-LOCAL-CONFIG
                             (read-clj-config lfs local-config-path))
-        cached-global (read-cached-global-config local-config)
-        global-config (if (and cached-global (cache? cached-global token))
-                        cached-global
-                        (merge DEFAULT-GLOBAL-CONFIG
-                               (read-clj-config
-                                (filesystem (:hdfs-conf local-config))
-                                global-config-hdfs-path)))]
-        (launch-server! global-config local-config token)))
+        global-config (read-global-config global-config-hdfs-path local-config token)]
+    (launch-server! global-config local-config token)))
