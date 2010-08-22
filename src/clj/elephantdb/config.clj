@@ -80,7 +80,7 @@
 
 (defn persistence-options [local-config persistence]
   (if-let [local-db-conf (:local-db-conf local-config)]
-    (get local-db-conf (persistence-str persistence {}))
+    (get local-db-conf (persistence-str persistence) {})
     {}
     ))
 
