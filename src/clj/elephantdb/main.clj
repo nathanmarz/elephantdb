@@ -11,16 +11,16 @@
 
 (defn launch-server! [global-config local-config token]
   (let
-    [options (THsHaServer$Options.)
-     _ (set! (. options maxWorkerThreads) 64)
-     service-handler (service/service-handler global-config local-config token)
-     server (THsHaServer.
-       (ElephantDB$Processor. service-handler)
-       (TNonblockingServerSocket. (:port global-config))
-       (TBinaryProtocol$Factory.) options)]
-  (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.shutdown service-handler) (.stop server))))
-  (log-message "Starting ElephantDB server...")
-  (.serve server)))
+      [options (THsHaServer$Options.)
+       _ (set! (. options maxWorkerThreads) 64)
+       service-handler (service/service-handler global-config local-config token)
+       server (THsHaServer.
+               (ElephantDB$Processor. service-handler)
+               (TNonblockingServerSocket. (:port global-config))
+               (TBinaryProtocol$Factory.) options)]
+    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.shutdown service-handler) (.stop server))))
+    (log-message "Starting ElephantDB server...")
+    (.serve server)))
 
 ;; the token is stored locally. If the token changes and there's newer data on the server, elephantdb will load it. Otherwise,
 ;; elephantdb just uses whatever is local
