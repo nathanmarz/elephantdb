@@ -6,3 +6,6 @@
 
 (defn log-error [e & args]
   (log/error (apply str args) e))
+
+(defn log-debug [& args]
+  (log/debug (apply str args)))

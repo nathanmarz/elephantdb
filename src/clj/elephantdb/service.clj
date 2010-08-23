@@ -91,10 +91,11 @@
 ;; should delete any domains that don't exist in config as well 
 ;; returns map of domain to domain info and launches futures that will fill in the domain info
 (defn- sync-data [global-config local-config token]
-  (if (cache? global-config token)
-    (sync-local global-config local-config)
-    (sync-global global-config local-config token)
-    ))
+  (with-ret (if (cache? global-config token)
+              (sync-local global-config local-config)
+              (sync-global global-config local-config token)
+              )
+    (log-message "Successfully loaded all domains")))
 
 (defn- close-lps [domains-info]
   (doseq [[domain info] domains-info]
@@ -162,6 +163,7 @@
                 (let [info                   (get-readable-domain-info domains-info domain)
                       shard                  (domain/key-shard domain info key)
                       #^LocalPersistence lp  (domain/domain-data info shard)]
+                  (log-debug "Direct get key" (seq key) "at shard" shard)
                   (when-not lp
                     (throw (thrift/wrong-host-ex)))
                   (thrift/mk-value (.get lp key))

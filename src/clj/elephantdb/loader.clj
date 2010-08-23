@@ -29,7 +29,8 @@
                              (shard-path local-version-path s)
                              ))])
         ]
-    (into {} (dofor [[s f] future-lps] [s (.get f)]))
+    (with-ret (into {} (dofor [[s f] future-lps] [s (.get f)]))
+      (log-message "Finished opening domain at " local-domain-root))
     ))
 
 ;; returns LP
