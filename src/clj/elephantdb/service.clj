@@ -36,7 +36,8 @@
                              (domains-info domain)
                              (thrift/failed-status t))
                             ))))]
-    (future-values loaders)
+    (with-ret (future-values loaders)
+      (log-message "Successfully loaded all domains"))
     ))
 
 (defn sync-data-scratch [domains-info global-config local-config]
@@ -91,11 +92,10 @@
 ;; should delete any domains that don't exist in config as well 
 ;; returns map of domain to domain info and launches futures that will fill in the domain info
 (defn- sync-data [global-config local-config token]
-  (with-ret (if (cache? global-config token)
-              (sync-local global-config local-config)
-              (sync-global global-config local-config token)
-              )
-    (log-message "Successfully loaded all domains")))
+  (if (cache? global-config token)
+    (sync-local global-config local-config)
+    (sync-global global-config local-config token)
+    ))
 
 (defn- close-lps [domains-info]
   (doseq [[domain info] domains-info]

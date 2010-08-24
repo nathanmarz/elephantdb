@@ -38,7 +38,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
 
         public ElephantUpdater updater = new ReplaceUpdater();
         public String updateDirHdfs = null;
-        public Map<String, Map<String, Object>> persistenceOptions = new HashMap<String, Map<String, Object>>();
+        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
     
         public List<String> tmpDirs = new ArrayList<String>() {{
             add("/tmp");
@@ -121,7 +121,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         public void write(IntWritable shard, ElephantRecordWritable record) throws IOException {
             LocalPersistence lp = null;
             LocalPersistenceFactory fact = _args.spec.getLPFactory();
-            Map<String, Object> options = Utils.getPersistenceOptions(_args.persistenceOptions, fact);
+            Map<String, Object> options = _args.persistenceOptions;
             if(_lps.containsKey(shard.get())) {
                 lp = _lps.get(shard.get());
             } else {

@@ -160,4 +160,11 @@ public class Utils {
         return opts.get(fact.getClass().getName());
     }
 
+    public static Object get(Map m, Object key, Object defaultVal) {
+        if(!m.containsKey(key))
+            return defaultVal;
+        else
+            return m.get(key);
+    }
+
 }
