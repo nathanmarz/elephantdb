@@ -19,17 +19,17 @@ public class JavaBerkDB extends LocalPersistenceFactory {
 
 
     @Override
-    public LocalPersistence openPersistenceForRead(String root, Map options) {
+    public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
         return new JavaBerkDBPersistence(root, options, true);
     }
 
     @Override
-    public LocalPersistence openPersistenceForAppend(String root, Map options) {
+    public LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException {
         return new JavaBerkDBPersistence(root, options, false);
     }
 
     @Override
-    public LocalPersistence createPersistence(String root, Map options) {
+    public LocalPersistence createPersistence(String root, Map options) throws IOException {
         return new JavaBerkDBPersistence(root, options, false);
     }
 
