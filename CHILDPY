@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cp -R src/py/* $1
+touch $1/__init__.py
+touch $1/NANNY
