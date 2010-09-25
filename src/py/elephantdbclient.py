@@ -57,13 +57,13 @@ class ElephantDBClient:
     def _exec(self, func, trynum=1):
         self._connect()
         try:
-            func(self._client)
+            return func(self._client)
         except (TException, TTransportException), e:
             if trynum >= 5:
                 raise e
             else:
                 self._reset()
-                self._exec(func, trynum+1)
+                return self._exec(func, trynum+1)
     
     def _connect(self):
         if self._conn is None:
