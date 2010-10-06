@@ -15,34 +15,34 @@ class ElephantDBClient:
         self._reset()
         self._connect()
     
-    def get(domain, key):
+    def get(self, domain, key):
         return self._exec(lambda client: client.get(domain, key))
     
-    def getString(domain, key):
+    def getString(self, domain, key):
         return self._exec(lambda client: client.getString(domain, key))
     
-    def getInt(domain, key):
+    def getInt(self, domain, key):
         return self._exec(lambda client: client.getInt(domain, key))
     
-    def getLong(domain, key):
+    def getLong(self, domain, key):
         return self._exec(lambda client: client.getLong(domain, key))
     
-    def getThrift(domain, key):
+    def getThrift(self, domain, key):
         return self._exec(lambda client: client.get(domain, serialize(key)))
     
-    def directGet(domain, key):
+    def directGet(self, domain, key):
         return self._exec(lambda client: client.directGet(domain, key))
     
-    def getDomainStatus(domain):
+    def getDomainStatus(self, domain):
         return self._exec(lambda client: client.getDomainStatus(domain))
     
-    def getDomains():
+    def getDomains(self):
         return self._exec(lambda client: client.getDomains())
     
-    def getStatus():
+    def getStatus(self):
         return self._exec(lambda client: client.getStatus())
     
-    def isFullyLoaded():
+    def isFullyLoaded(self):
         return self._exec(lambda client: client.isFullyLoaded())
     
     def close(self):
@@ -68,5 +68,8 @@ class ElephantDBClient:
     def _connect(self):
         if self._conn is None:
             self._conn = TTransport.TFramedTransport(TSocket.TSocket(self._host, self._port))
-            self._client = Collector.Client(TBinaryProtocol.TBinaryProtocol(self._conn))
+            self._client = ElephantDB.Client(TBinaryProtocol.TBinaryProtocol(self._conn))
             self._conn.open()
+    
+    def __del__(self):
+        self.close()
