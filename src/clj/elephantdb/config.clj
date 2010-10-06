@@ -44,14 +44,17 @@
     (.print w conf)
     ))
 
+
+;; Configs are read/written this way b/c hadoop forks the process using the write-clj-config! method
 (defn read-cached-global-config [local-config]
   (let [p (local-global-config-cache local-config)]
-    (read-clj-config (local-filesystem) p)
+    (when (.exists (d/file-str p))
+      (with-in-str (slurp p) (read)))
     ))
 
 (defn cache-global-config! [local-config global-config]
   (let [p (local-global-config-cache local-config)]
-    (write-clj-config! global-config (local-filesystem) p)
+    (d/spit p global-config)
     ))
 
 (defn cache? [global-config token]

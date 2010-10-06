@@ -62,9 +62,14 @@
         cache-config (assoc global-config :token token)]
     (log-message "Domains info:" domains-info)
     (future
-     (sync-data-scratch domains-info global-config local-config)
-     (log-message "Caching global config " cache-config)
-     (cache-global-config! local-config cache-config))
+     (try
+       (sync-data-scratch domains-info global-config local-config)
+       (log-message "Caching global config " cache-config)
+       (cache-global-config! local-config cache-config)
+       (log-message "Cached config " (read-cached-global-config local-config))
+       (log-message "Finished loading all domains from remote")
+       (catch Throwable t (log-error t "Error when syncing data") (throw t))
+     ))
     domains-info ))
 
 
