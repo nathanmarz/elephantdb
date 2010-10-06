@@ -58,11 +58,13 @@
   (let [fs (filesystem (:hdfs-conf local-config))
         domains-info (init-domain-info-map fs global-config)
         local-dir (:local-dir local-config)
-        lfs (doto (local-filesystem) (clear-dir local-dir))]
+        lfs (doto (local-filesystem) (clear-dir local-dir))
+        cache-config (assoc global-config :token token)]
     (log-message "Domains info:" domains-info)
     (future
      (sync-data-scratch domains-info global-config local-config)
-     (cache-global-config! local-config (assoc global-config :token token)))
+     (log-message "Caching global config " cache-config)
+     (cache-global-config! local-config cache-config))
     domains-info ))
 
 
