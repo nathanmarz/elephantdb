@@ -9,7 +9,9 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import java.io.File;
 
 
 public class VersionedStore {
@@ -25,7 +27,7 @@ public class VersionedStore {
     public VersionedStore(FileSystem fs, String path) throws IOException {
       _fs = fs;
       _root = path;
-      _fs.mkdirs(new Path(_root));
+      mkdirs(_root);
     }
 
     public FileSystem getFileSystem() {
@@ -89,7 +91,7 @@ public class VersionedStore {
 
     public void succeedVersion(String path) throws IOException {
         long version = validateAndGetVersion(path);
-        _fs.createNewFile(new Path(tokenPath(version)));
+        createNewFile(tokenPath(version));
     }
 
     public void cleanup() throws IOException {
@@ -103,8 +105,7 @@ public class VersionedStore {
         }
         HashSet<Long> keepers = new HashSet<Long>(versions);
 
-        for(FileStatus s: _fs.listStatus(new Path(_root))) {
-            Path p = s.getPath();
+        for(Path p: listDir(_root)) {
             Long v = parseVersion(p.toString());
             if(v!=null && !keepers.contains(v)) {
                 _fs.delete(p, true);
@@ -117,9 +118,9 @@ public class VersionedStore {
      */
     public List<Long> getAllVersions() throws IOException {
         List<Long> ret = new ArrayList<Long>();
-        for(FileStatus s: _fs.listStatus(new Path(_root))) {
-            if(!s.isDir() && s.getPath().getName().endsWith(FINISHED_VERSION_SUFFIX)) {
-                ret.add(validateAndGetVersion(s.getPath().toString()));
+        for(Path p: listDir(_root)) {
+            if(p.getName().endsWith(FINISHED_VERSION_SUFFIX)) {
+                ret.add(validateAndGetVersion(p.toString()));
             }
         }
         Collections.sort(ret);
@@ -156,4 +157,32 @@ public class VersionedStore {
         }
     }
 
+    private void createNewFile(String path) throws IOException {
+        if(_fs instanceof LocalFileSystem)
+            new File(path).createNewFile();
+        else 
+            _fs.createNewFile(new Path(path));
+    }
+
+    private void mkdirs(String path) throws IOException {
+        if(_fs instanceof LocalFileSystem)
+            new File(path).mkdirs();
+        else
+            _fs.mkdirs(new Path(path));            
+    }
+
+
+    private List<Path> listDir(String dir) throws IOException {
+        List<Path> ret = new ArrayList<Path>();
+        if(_fs instanceof LocalFileSystem) {
+            for(File f: new File(dir).listFiles()) {
+                ret.add(new Path(f.getAbsolutePath()));
+            }
+        } else {
+            for(FileStatus fs: _fs.listStatus(new Path(dir))) {
+                ret.add(fs.getPath());
+            }
+        }
+        return ret;
+    }
 }

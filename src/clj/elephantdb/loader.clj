@@ -8,6 +8,7 @@
   (str-path domain-version shard))
 
 (defn open-domain-shard [persistence-factory local-config local-shard-path]
+  (log-message "Opening LP " local-shard-path)
   (with-ret (.openPersistenceForRead
              persistence-factory
              local-shard-path
@@ -33,16 +34,15 @@
       (log-message "Finished opening domain at " local-domain-root))
     ))
 
-;; returns LP
 (defn load-domain-shard [fs persistence-factory local-config local-shard-path remote-shard-path]
   ;; TODO: respect the max copy rate
   ;; TODO: do a streaming recursive copy that can be rate limited (rate limited with the other shards...)
   (if (.exists fs (path remote-shard-path))
     (do
       (log-message "Copying " remote-shard-path " to " local-shard-path)
-      (.copyToLocalFile fs (path remote-shard-path) (path local-shard-path))
+      (copy-local fs remote-shard-path local-shard-path)
       (log-message "Copied " remote-shard-path " to " local-shard-path)
-      (log-message "Opening LP " local-shard-path))
+      )
     (do
       (log-message "Shard " remote-shard-path " did not exist. Creating empty LP")
       (.close (.createPersistence persistence-factory local-shard-path (persistence-options local-config persistence-factory)))))
