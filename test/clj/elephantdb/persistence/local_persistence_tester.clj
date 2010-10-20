@@ -29,6 +29,21 @@
     (is (= "11" (get-string db "a")))
     (.close db)))
 
+(defn is-db-pairs? [fact t pairs]
+  (let [db (.openPersistenceForRead fact t {})]
+    (is (= (set pairs) (set (get-string-kvpairs db))))
+    (.close db)
+    ))
+
+(deflocalfstest test-iterate [lfs t]
+  (create-string-pairs factory t [["a" "1"]])
+  (is-db-pairs? factory t [["a" "1"]])
+  (append-string-pairs factory t [["c" "3"] ["b" "4"]])
+  (is-db-pairs? factory t [["a" "1"] ["b" "4"] ["c" "3"]])
+  (append-string-pairs factory t [["a" "4"] ["d" "5"]])
+  (is-db-pairs? factory t [["a" "4"] ["b" "4"] ["c" "3"] ["d" "5"]])
+  )
+
 )]]
 `(do ~@exprs)
 ))

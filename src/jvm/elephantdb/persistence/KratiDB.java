@@ -70,6 +70,11 @@ public class KratiDB extends LocalPersistenceFactory {
             _datastore.sync();
             LOG.info("Done closing Krati");
         }
+
+        public CloseableIterator<KeyValuePair> iterator() {
+            //TODO: finish
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
       
 
     }

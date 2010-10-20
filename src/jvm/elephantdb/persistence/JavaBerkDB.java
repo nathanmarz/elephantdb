@@ -1,6 +1,8 @@
 package elephantdb.persistence;
 
 import com.sleepycat.je.CheckpointConfig;
+import com.sleepycat.je.Cursor;
+import com.sleepycat.je.CursorConfig;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
@@ -10,6 +12,7 @@ import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 import org.apache.log4j.Logger;
 
@@ -90,6 +93,54 @@ public class JavaBerkDB extends LocalPersistenceFactory {
 
             _db.close();
             _env.close();
+        }
+
+        public CloseableIterator<KeyValuePair> iterator() {
+            return new CloseableIterator<KeyValuePair>() {
+                Cursor cursor = null;
+                KeyValuePair next = null;
+
+                private void cacheNext() {
+                    DatabaseEntry key = new DatabaseEntry();
+                    DatabaseEntry val = new DatabaseEntry();
+                    OperationStatus stat = cursor.getNext(key, val, LockMode.READ_UNCOMMITTED);
+                    if(stat == OperationStatus.SUCCESS) {
+                        next = new KeyValuePair(key.getData(), val.getData());
+                    } else {
+                        next = null;
+                        close();
+                    }
+                }
+
+                private void initCursor() {
+                    if(cursor==null) {
+                        cursor = _db.openCursor(null, null);
+                        cacheNext();
+                    }                    
+                }
+                
+                public boolean hasNext() {
+                    initCursor();
+                    return next!=null;
+                }
+
+                public KeyValuePair next() {
+                    initCursor();
+                    if(next==null) throw new RuntimeException("No key/value pair available");
+                    KeyValuePair ret = next;
+                    cacheNext();
+                    return ret;
+                }
+
+                public void remove() {
+                    throw new UnsupportedOperationException("Not supported.");
+                }
+
+                public void close() {
+                    if(cursor!=null) cursor.close();
+                }
+                
+            };
         }
         
     }

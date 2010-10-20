@@ -60,6 +60,29 @@
     (String. r)
     nil ))
 
+(defn get-kvpairs [db]
+  (doall
+   (for [kvp (seq db)]
+     [(. kvp key) (. kvp value)]
+     )))
+
+(defn get-string-kvpairs [db]
+  (for [[k v] (get-kvpairs db)]
+    [(String. k) (String. v)]
+    ))
+
+(defn append-string-pairs [factory t pairs]
+  (let [db (.openPersistenceForAppend factory t {})]
+    (doseq [[k v] pairs]
+      (add-string db k v))
+    (.close db)))
+
+(defn create-string-pairs [factory t pairs]
+  (let [db (.createPersistence factory t {})]
+    (doseq [[k v] pairs]
+      (add-string db k v))
+    (.close db)))
+
 
 ;bind this to get different behavior when making sharded domains
 (defn test-key-to-shard [key numshards]
