@@ -4,18 +4,14 @@ import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.persistence.LocalPersistence;
 import elephantdb.persistence.LocalPersistenceFactory;
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.ChecksumFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.InvalidJobConfException;
@@ -58,64 +54,23 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
 
         FileSystem _fs;
         Args _args;
-        File _dirFlag;
-        String _localRoot;
         Map<Integer, LocalPersistence> _lps = new HashMap<Integer, LocalPersistence>();
         Progressable _progressable;
+        LocalElephantManager _localManager;
 
         int _numWritten = 0;
         long _lastCheckpoint = System.currentTimeMillis();
 
-        private void clearStaleFlags(List<String> tmpDirs) {
-            //delete any flags more than an hour old
-            for(String tmp: tmpDirs) {
-                File flagDir = new File(flagDir(tmp));
-                flagDir.mkdirs();
-                for(File flag: flagDir.listFiles()) {
-                    if(flag.lastModified() < System.currentTimeMillis() - 1000*60*60) {
-                        flag.delete();
-                    }
-                }
-            }
-        }
-
-        private String flagDir(String tmpDir) {
-            return tmpDir + "/flags";
-        }
-
-        private String localPersistenceDir(Integer shard) {
-            return _localRoot + "/" + shard;
-        }
-
-        private String selectAndFlagRoot(List<String> tmpDirs) throws IOException {
-            clearStaleFlags(tmpDirs);
-            Map<String, Integer> flagCounts = new HashMap<String, Integer>();
-            for(String tmp: tmpDirs) {
-                File flagDir = new File(flagDir(tmp));
-                flagDir.mkdirs();
-                flagCounts.put(tmp, flagDir.list().length);
-            }
-            String best = null;
-            Integer bestCount = null;
-            for(Entry<String, Integer> e: flagCounts.entrySet()) {
-                if(best==null || e.getValue() < bestCount) {
-                    best = e.getKey();
-                    bestCount = e.getValue();
-                }
-            }
-            String token = UUID.randomUUID().toString();
-            _dirFlag = new File(flagDir(best) + "/" + token);
-            _dirFlag.createNewFile();
-            return best + "/" + token;
-        }
-
-
         public ElephantRecordWriter(Configuration conf, Args args, Progressable progressable) throws IOException {
             _fs = Utils.getFS(args.outputDirHdfs, conf);
             _args = args;
-            _localRoot = selectAndFlagRoot(args.tmpDirs);
             _progressable = progressable;
+            _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions, args.tmpDirs);
+        }
 
+        private String remoteUpdateDirForShard(int shard) {
+            if(_args.updateDirHdfs==null) return null;
+            else return _args.updateDirHdfs + "/" + shard;
         }
 
         public void write(IntWritable shard, ElephantRecordWritable record) throws IOException {
@@ -125,23 +80,9 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
             if(_lps.containsKey(shard.get())) {
                 lp = _lps.get(shard.get());
             } else {
-                String localLPDir = localPersistenceDir(shard.get());
-                if(_args.updateDirHdfs==null) {
-                    fact.createPersistence(
-                            localLPDir,
-                            options)
-                         .close();
-                } else {
-                    String copyDir = _args.updateDirHdfs + "/" + shard;
-                    if(!_fs.exists(new Path(copyDir))) {
-                        fact.createPersistence(localLPDir,
-                                               options)
-                            .close();
-                    } else {
-                        ((ChecksumFileSystem)_fs).copyToLocalFile(new Path(copyDir), new Path(localLPDir), false);
-                    }
-                }
-                lp = fact.openPersistenceForAppend(localLPDir, options);
+                String updateDir = remoteUpdateDirForShard(shard.get());
+                String localShard = _localManager.downloadRemoteShard("" + shard.get(), updateDir);
+                lp = fact.openPersistenceForAppend(localShard, options);
                 _lps.put(shard.get(), lp);
                 progress();
             }
@@ -152,15 +93,15 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
             if(_numWritten % 25000 == 0) {
                 long now = System.currentTimeMillis();
                 long delta = now - _lastCheckpoint;
-                _lastCheckpoint = delta;
+                _lastCheckpoint = now;
                 LOG.info("Wrote last 25000 records in " + delta + " ms");
-                _dirFlag.setLastModified(now);
+                _localManager.progress();
             }
         }
 
         public void close(Reporter reporter) throws IOException {
             for(Integer shard: _lps.keySet()) {
-                String lpDir = localPersistenceDir(shard);
+                String lpDir = _localManager.localTmpDir("" + shard);
                 LOG.info("Closing LP for shard " + shard + " at " + lpDir);
                 _lps.get(shard).close();
                 LOG.info("Closed LP for shard " + shard + " at " + lpDir);
@@ -176,8 +117,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
                 LOG.info("Copied " + lpDir + " to " + remoteDir);
                 progress();
             }
-            FileSystem.getLocal(new Configuration()).delete(new Path(_localRoot), true);
-            _dirFlag.delete();
+            _localManager.cleanup();
         }
 
         private void progress() {
