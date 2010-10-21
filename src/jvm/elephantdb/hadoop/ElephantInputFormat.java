@@ -17,7 +17,6 @@ import java.util.Map;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -143,6 +142,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             spec = new DomainSpec();
             spec.readFields(di);
             shardPath = WritableUtils.readString(di);
+            conf = new JobConf();
             conf.readFields(di);
         }     
     }
@@ -159,17 +159,18 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             versionPath = store.versionPath(args.version);
         }
         DomainSpec spec = store.getSpec();
-        InputSplit[] ret = new InputSplit[spec.getNumShards()];
+        List<InputSplit> ret = new ArrayList<InputSplit>();
         for(int i=0; i<spec.getNumShards(); i++) {
             String shardPath = versionPath + "/" + i;
-            ret[i] = new ElephantInputSplit(shardPath, spec, jc);
+            if(fs.exists(new Path(shardPath))) {
+                ret.add(new ElephantInputSplit(shardPath, spec, jc));
+            }
         }
-        return ret;
+        return ret.toArray(new InputSplit[ret.size()]);
     }
 
 
     public RecordReader<BytesWritable, BytesWritable> getRecordReader(InputSplit is, JobConf jc, Reporter reporter) throws IOException {
         return new ElephantRecordReader((ElephantInputSplit) is, reporter);
     }
-
 }

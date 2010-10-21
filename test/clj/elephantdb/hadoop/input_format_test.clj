@@ -53,6 +53,4 @@
       (is (kv-pairs= pairs (read-domain dpath)))
       )))
 
-;; TODO: test serializers
-
 ;; TODO: test read specific version vs read most recent

@@ -93,6 +93,14 @@ public class Utils {
         }
     }
 
+    public static int deserializeInt(BytesWritable ser) {
+        try {
+            return new DataInputStream(new ByteArrayInputStream(ser.getBytes(), 0, ser.getLength())).readInt();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static byte[] serializeLong(long l) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(4);
         DataOutputStream dos = new DataOutputStream(bos);
@@ -107,6 +115,14 @@ public class Utils {
     public static long deserializeLong(byte[] ser) {
         try {
             return new DataInputStream(new ByteArrayInputStream(ser)).readLong();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static long deserializeLong(BytesWritable ser) {
+        try {
+            return new DataInputStream(new ByteArrayInputStream(ser.getBytes(), 0, ser.getLength())).readLong();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -127,7 +143,15 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
-    
+
+    public static String deserializeString(BytesWritable ser) {
+        try {
+            return new String(ser.getBytes(), 0, ser.getLength(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void setObject(JobConf conf, String key, Object o) {
         conf.set(key, StringUtils.byteToHexString(serializeObject(o)));
     }
