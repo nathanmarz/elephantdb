@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.StringUtils;
 
@@ -83,6 +85,14 @@ public class Utils {
         return bos.toByteArray();
     }
 
+    public static int deserializeInt(byte[] ser) {
+        try {
+            return new DataInputStream(new ByteArrayInputStream(ser)).readInt();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static byte[] serializeLong(long l) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(4);
         DataOutputStream dos = new DataOutputStream(bos);
@@ -92,12 +102,27 @@ public class Utils {
             throw new RuntimeException(e);
         }
         return bos.toByteArray();
+    }
 
+    public static long deserializeLong(byte[] ser) {
+        try {
+            return new DataInputStream(new ByteArrayInputStream(ser)).readLong();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static byte[] serializeString(String s) {
         try {
             return s.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String deserializeString(byte[] ser) {
+        try {
+            return new String(ser, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -165,6 +190,13 @@ public class Utils {
             return defaultVal;
         else
             return m.get(key);
+    }
+
+    public static byte[] getBytes(BytesWritable bw) {
+        byte[] padded = bw.getBytes();
+        byte[] ret = new byte[bw.getLength()];
+        System.arraycopy(padded, 0, ret, 0, ret.length);
+        return ret;
     }
 
 }

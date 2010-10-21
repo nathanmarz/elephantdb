@@ -217,6 +217,15 @@
 (defn barr= [& vals]
   (apply = (map #(ByteArray. %) vals)))
 
+(defn- objify-kvpairs [pairs]
+  (for [[k v] pairs]
+    [(ByteArray. k) (ByteArray. v)]))
+
+(defn kv-pairs= [& pairs-seq]
+  (let [pairs-seq (map objify-kvpairs pairs-seq)]
+    (apply = (map set pairs-seq))
+    ))
+
 (defn check-domain [domain-name handler pairs]
   (check-domain-pred domain-name handler pairs barr=))
 
