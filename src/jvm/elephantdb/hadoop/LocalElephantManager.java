@@ -42,7 +42,11 @@ public class LocalElephantManager {
                             _persistenceOptions)
                          .close();
             } else {
-               ((ChecksumFileSystem)_fs).copyToLocalFile(new Path(remotePath), new Path(returnDir), false);
+                if(_fs instanceof ChecksumFileSystem) {
+                   ((ChecksumFileSystem)_fs).copyToLocalFile(new Path(remotePath), new Path(returnDir), false);
+                } else {
+                    _fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
+                }
             }
             return returnDir;
         }
