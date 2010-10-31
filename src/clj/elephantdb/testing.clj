@@ -2,7 +2,7 @@
   (:import [java.util UUID ArrayList])
   (:import [elephantdb Utils ByteArray])
   (:import [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
-            ElephantOutputFormat$Args])
+            ElephantOutputFormat$Args LocalElephantManager])
   (:import [elephantdb.store DomainStore])
   (:import [org.apache.hadoop.io IntWritable])
   (:import [org.apache.hadoop.mapred JobConf])
@@ -18,14 +18,16 @@
       (.delete fs (path t) true))))
 
 (defmacro with-fs-tmp [[fs-sym & tmp-syms] & body]
-  (let [tmp-paths (mapcat (fn [t] [t `(str "/tmp/unittests/" (uuid))]) tmp-syms)]
+  (let [tmp-paths (mapcat (fn [t]
+                            [t `(str "/tmp/unittests/" (uuid))])
+                          tmp-syms)]
     `(let [~fs-sym (filesystem)
            ~@tmp-paths]
        (.mkdirs ~fs-sym (path "/tmp/unittests"))
         (try
           ~@body
           (finally
-         (delete-all ~fs-sym ~(vec tmp-syms)))
+           (delete-all ~fs-sym ~(vec tmp-syms)))
         ))))
 
 (defmacro deffstest [name fs-args & body]
@@ -97,7 +99,6 @@
                 :persistence-factory factory})
               output-dir)
         ]
-    (.setTmpDirs args (ArrayList. [tmpdir]))
     (if-let [upd (:updater kargs)]
       (set! (. args updater) upd))
     (if-let [update-dir (:update-dir kargs)]
@@ -108,7 +109,8 @@
                           (JobConf.)
                         (Utils/setObject
                          ElephantOutputFormat/ARGS_CONF
-                         args ))
+                         args )
+                        (LocalElephantManager/setTmpDirs [tmpdir]))
                       nil
                       nil )))
 

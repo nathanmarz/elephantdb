@@ -4,6 +4,7 @@ import elephantdb.DomainSpec;
 import elephantdb.persistence.LocalPersistenceFactory;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,25 @@ import org.apache.hadoop.fs.Path;
 
 
 public class LocalElephantManager {
+        public static final String TMP_DIRS_CONF = "elephantdb.local.tmp.dirs";
+
+        public static void setTmpDirs(Configuration conf, List<String> dirs) {
+            conf.setStrings(TMP_DIRS_CONF, dirs.toArray(new String[dirs.size()]));
+        }
+
+        public static List<String> getTmpDirs(Configuration conf) {
+            String[] res = conf.getStrings(TMP_DIRS_CONF, new String[0]);
+            List<String> ret =  new ArrayList<String>();
+            if(res.length==0) {
+                ret.add("/tmp");
+            } else {
+                for(String s: res) {
+                    ret.add(s);
+                }
+            }
+            return ret;
+        }
+
         FileSystem _fs;
         File _dirFlag;
         String _localRoot;
@@ -101,6 +121,7 @@ public class LocalElephantManager {
             String token = UUID.randomUUID().toString();
             _dirFlag = new File(flagDir(best) + "/" + token);
             _dirFlag.createNewFile();
+            new File(best).mkdirs();
             return best + "/" + token;
         }
 }

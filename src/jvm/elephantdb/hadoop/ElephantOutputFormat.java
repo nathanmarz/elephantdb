@@ -34,20 +34,12 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
 
         public ElephantUpdater updater = new ReplaceUpdater();
         public String updateDirHdfs = null;
-        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
-    
-        public List<String> tmpDirs = new ArrayList<String>() {{
-            add("/tmp");
-        }};
+        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();    
 
         public Args(DomainSpec spec, String outputDirHdfs) {
             this.spec = spec;
             this.outputDirHdfs = outputDirHdfs;
-        }
-        
-        public void setTmpDirs(List<String> dirs) {
-            this.tmpDirs = dirs;
-        }
+        }        
     }
 
     public class ElephantRecordWriter implements RecordWriter<IntWritable, ElephantRecordWritable> {
@@ -65,7 +57,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
             _fs = Utils.getFS(args.outputDirHdfs, conf);
             _args = args;
             _progressable = progressable;
-            _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions, args.tmpDirs);
+            _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions, LocalElephantManager.getTmpDirs(conf));
         }
 
         private String remoteUpdateDirForShard(int shard) {

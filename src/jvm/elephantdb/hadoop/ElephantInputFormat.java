@@ -31,18 +31,11 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
     public static class Args implements Serializable {
         public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
         public String inputDirHdfs;
-        public List<String> tmpDirs = new ArrayList<String>() {{
-            add("/tmp");
-        }};
         public Long version = null;
 
         public Args(String inputDirHdfs) {
             this.inputDirHdfs = inputDirHdfs;
-        }
-        
-        public void setTmpDirs(List<String> dirs) {
-            this.tmpDirs = dirs;
-        }
+        }        
     }
 
     public static class ElephantRecordReader implements RecordReader<BytesWritable, BytesWritable> {
@@ -60,7 +53,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             _reporter = reporter;
             _args = (Args) Utils.getObject(_split.conf, ARGS_CONF);
             _manager = new LocalElephantManager(Utils.getFS(_split.shardPath, split.conf),
-                    _split.spec, _args.persistenceOptions, _args.tmpDirs);
+                    _split.spec, _args.persistenceOptions, LocalElephantManager.getTmpDirs(_split.conf));
             String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
            _lp = _split.spec.getLPFactory().openPersistenceForRead(localpath, _args.persistenceOptions);
            _iterator = _lp.iterator();
