@@ -1,5 +1,5 @@
 (ns elephantdb.client
-  (:use [clojure.contrib.seq-utils :only [shuffle includes?]])
+  (:use [clojure.contrib.seq-utils :only [includes?]])
   (:use [elephantdb thrift hadoop config types util log])
   (:require [elephantdb [shard :as shard]])
   (:import [elephantdb.generated ElephantDB$Iface WrongHostException DomainNotFoundException DomainNotLoadedException])
