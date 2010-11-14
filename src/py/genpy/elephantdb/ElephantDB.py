@@ -48,7 +48,39 @@ class Iface:
     """
     pass
 
-  def directGet(self, domain, key):
+  def multiGet(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    pass
+
+  def multiGetString(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    pass
+
+  def multiGetInt(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    pass
+
+  def multiGetLong(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    pass
+
+  def directMultiGet(self, domain, key):
     """
     Parameters:
      - domain
@@ -242,32 +274,184 @@ class Client(Iface):
       raise result.dnle
     raise TApplicationException(TApplicationException.MISSING_RESULT, "getLong failed: unknown result");
 
-  def directGet(self, domain, key):
+  def multiGet(self, domain, key):
     """
     Parameters:
      - domain
      - key
     """
-    self.send_directGet(domain, key)
-    return self.recv_directGet()
+    self.send_multiGet(domain, key)
+    return self.recv_multiGet()
 
-  def send_directGet(self, domain, key):
-    self._oprot.writeMessageBegin('directGet', TMessageType.CALL, self._seqid)
-    args = directGet_args()
+  def send_multiGet(self, domain, key):
+    self._oprot.writeMessageBegin('multiGet', TMessageType.CALL, self._seqid)
+    args = multiGet_args()
     args.domain = domain
     args.key = key
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_directGet(self, ):
+  def recv_multiGet(self, ):
     (fname, mtype, rseqid) = self._iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(self._iprot)
       self._iprot.readMessageEnd()
       raise x
-    result = directGet_result()
+    result = multiGet_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success != None:
+      return result.success
+    if result.dnfe != None:
+      raise result.dnfe
+    if result.hde != None:
+      raise result.hde
+    if result.dnle != None:
+      raise result.dnle
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "multiGet failed: unknown result");
+
+  def multiGetString(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    self.send_multiGetString(domain, key)
+    return self.recv_multiGetString()
+
+  def send_multiGetString(self, domain, key):
+    self._oprot.writeMessageBegin('multiGetString', TMessageType.CALL, self._seqid)
+    args = multiGetString_args()
+    args.domain = domain
+    args.key = key
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_multiGetString(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = multiGetString_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success != None:
+      return result.success
+    if result.dnfe != None:
+      raise result.dnfe
+    if result.hde != None:
+      raise result.hde
+    if result.dnle != None:
+      raise result.dnle
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "multiGetString failed: unknown result");
+
+  def multiGetInt(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    self.send_multiGetInt(domain, key)
+    return self.recv_multiGetInt()
+
+  def send_multiGetInt(self, domain, key):
+    self._oprot.writeMessageBegin('multiGetInt', TMessageType.CALL, self._seqid)
+    args = multiGetInt_args()
+    args.domain = domain
+    args.key = key
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_multiGetInt(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = multiGetInt_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success != None:
+      return result.success
+    if result.dnfe != None:
+      raise result.dnfe
+    if result.hde != None:
+      raise result.hde
+    if result.dnle != None:
+      raise result.dnle
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "multiGetInt failed: unknown result");
+
+  def multiGetLong(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    self.send_multiGetLong(domain, key)
+    return self.recv_multiGetLong()
+
+  def send_multiGetLong(self, domain, key):
+    self._oprot.writeMessageBegin('multiGetLong', TMessageType.CALL, self._seqid)
+    args = multiGetLong_args()
+    args.domain = domain
+    args.key = key
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_multiGetLong(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = multiGetLong_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success != None:
+      return result.success
+    if result.dnfe != None:
+      raise result.dnfe
+    if result.hde != None:
+      raise result.hde
+    if result.dnle != None:
+      raise result.dnle
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "multiGetLong failed: unknown result");
+
+  def directMultiGet(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    self.send_directMultiGet(domain, key)
+    return self.recv_directMultiGet()
+
+  def send_directMultiGet(self, domain, key):
+    self._oprot.writeMessageBegin('directMultiGet', TMessageType.CALL, self._seqid)
+    args = directMultiGet_args()
+    args.domain = domain
+    args.key = key
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_directMultiGet(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = directMultiGet_result()
     result.read(self._iprot)
     self._iprot.readMessageEnd()
     if result.success != None:
@@ -278,7 +462,7 @@ class Client(Iface):
       raise result.dnle
     if result.whe != None:
       raise result.whe
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "directGet failed: unknown result");
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "directMultiGet failed: unknown result");
 
   def getDomainStatus(self, domain):
     """
@@ -449,7 +633,11 @@ class Processor(Iface, TProcessor):
     self._processMap["getString"] = Processor.process_getString
     self._processMap["getInt"] = Processor.process_getInt
     self._processMap["getLong"] = Processor.process_getLong
-    self._processMap["directGet"] = Processor.process_directGet
+    self._processMap["multiGet"] = Processor.process_multiGet
+    self._processMap["multiGetString"] = Processor.process_multiGetString
+    self._processMap["multiGetInt"] = Processor.process_multiGetInt
+    self._processMap["multiGetLong"] = Processor.process_multiGetLong
+    self._processMap["directMultiGet"] = Processor.process_directMultiGet
     self._processMap["getDomainStatus"] = Processor.process_getDomainStatus
     self._processMap["getDomains"] = Processor.process_getDomains
     self._processMap["getStatus"] = Processor.process_getStatus
@@ -544,20 +732,92 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_directGet(self, seqid, iprot, oprot):
-    args = directGet_args()
+  def process_multiGet(self, seqid, iprot, oprot):
+    args = multiGet_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = directGet_result()
+    result = multiGet_result()
     try:
-      result.success = self._handler.directGet(args.domain, args.key)
+      result.success = self._handler.multiGet(args.domain, args.key)
+    except DomainNotFoundException, dnfe:
+      result.dnfe = dnfe
+    except HostsDownException, hde:
+      result.hde = hde
+    except DomainNotLoadedException, dnle:
+      result.dnle = dnle
+    oprot.writeMessageBegin("multiGet", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_multiGetString(self, seqid, iprot, oprot):
+    args = multiGetString_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = multiGetString_result()
+    try:
+      result.success = self._handler.multiGetString(args.domain, args.key)
+    except DomainNotFoundException, dnfe:
+      result.dnfe = dnfe
+    except HostsDownException, hde:
+      result.hde = hde
+    except DomainNotLoadedException, dnle:
+      result.dnle = dnle
+    oprot.writeMessageBegin("multiGetString", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_multiGetInt(self, seqid, iprot, oprot):
+    args = multiGetInt_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = multiGetInt_result()
+    try:
+      result.success = self._handler.multiGetInt(args.domain, args.key)
+    except DomainNotFoundException, dnfe:
+      result.dnfe = dnfe
+    except HostsDownException, hde:
+      result.hde = hde
+    except DomainNotLoadedException, dnle:
+      result.dnle = dnle
+    oprot.writeMessageBegin("multiGetInt", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_multiGetLong(self, seqid, iprot, oprot):
+    args = multiGetLong_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = multiGetLong_result()
+    try:
+      result.success = self._handler.multiGetLong(args.domain, args.key)
+    except DomainNotFoundException, dnfe:
+      result.dnfe = dnfe
+    except HostsDownException, hde:
+      result.hde = hde
+    except DomainNotLoadedException, dnle:
+      result.dnle = dnle
+    oprot.writeMessageBegin("multiGetLong", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_directMultiGet(self, seqid, iprot, oprot):
+    args = directMultiGet_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = directMultiGet_result()
+    try:
+      result.success = self._handler.directMultiGet(args.domain, args.key)
     except DomainNotFoundException, dnfe:
       result.dnfe = dnfe
     except DomainNotLoadedException, dnle:
       result.dnle = dnle
     except WrongHostException, whe:
       result.whe = whe
-    oprot.writeMessageBegin("directGet", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("directMultiGet", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -1286,7 +1546,7 @@ class getLong_result:
   def __ne__(self, other):
     return not (self == other)
 
-class directGet_args:
+class multiGet_args:
   """
   Attributes:
    - domain
@@ -1296,7 +1556,7 @@ class directGet_args:
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'domain', None, None, ), # 1
-    (2, TType.STRING, 'key', None, None, ), # 2
+    (2, TType.LIST, 'key', (TType.STRING,None), None, ), # 2
   )
 
   def __init__(self, domain=None, key=None,):
@@ -1318,8 +1578,13 @@ class directGet_args:
         else:
           iprot.skip(ftype)
       elif fid == 2:
-        if ftype == TType.STRING:
-          self.key = iprot.readString();
+        if ftype == TType.LIST:
+          self.key = []
+          (_etype26, _size23) = iprot.readListBegin()
+          for _i27 in xrange(_size23):
+            _elem28 = iprot.readString();
+            self.key.append(_elem28)
+          iprot.readListEnd()
         else:
           iprot.skip(ftype)
       else:
@@ -1331,14 +1596,17 @@ class directGet_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('directGet_args')
+    oprot.writeStructBegin('multiGet_args')
     if self.domain != None:
       oprot.writeFieldBegin('domain', TType.STRING, 1)
       oprot.writeString(self.domain.encode('utf-8'));
       oprot.writeFieldEnd()
     if self.key != None:
-      oprot.writeFieldBegin('key', TType.STRING, 2)
-      oprot.writeString(self.key);
+      oprot.writeFieldBegin('key', TType.LIST, 2)
+      oprot.writeListBegin(TType.STRING, len(self.key))
+      for iter29 in self.key:
+        oprot.writeString(iter29);
+      oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1354,7 +1622,723 @@ class directGet_args:
   def __ne__(self, other):
     return not (self == other)
 
-class directGet_result:
+class multiGet_result:
+  """
+  Attributes:
+   - success
+   - dnfe
+   - hde
+   - dnle
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT,(Value, Value.thrift_spec)), None, ), # 0
+    (1, TType.STRUCT, 'dnfe', (DomainNotFoundException, DomainNotFoundException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'hde', (HostsDownException, HostsDownException.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'dnle', (DomainNotLoadedException, DomainNotLoadedException.thrift_spec), None, ), # 3
+  )
+
+  def __init__(self, success=None, dnfe=None, hde=None, dnle=None,):
+    self.success = success
+    self.dnfe = dnfe
+    self.hde = hde
+    self.dnle = dnle
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype33, _size30) = iprot.readListBegin()
+          for _i34 in xrange(_size30):
+            _elem35 = Value()
+            _elem35.read(iprot)
+            self.success.append(_elem35)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.dnfe = DomainNotFoundException()
+          self.dnfe.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.hde = HostsDownException()
+          self.hde.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.dnle = DomainNotLoadedException()
+          self.dnle.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('multiGet_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter36 in self.success:
+        iter36.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    if self.dnfe != None:
+      oprot.writeFieldBegin('dnfe', TType.STRUCT, 1)
+      self.dnfe.write(oprot)
+      oprot.writeFieldEnd()
+    if self.hde != None:
+      oprot.writeFieldBegin('hde', TType.STRUCT, 2)
+      self.hde.write(oprot)
+      oprot.writeFieldEnd()
+    if self.dnle != None:
+      oprot.writeFieldBegin('dnle', TType.STRUCT, 3)
+      self.dnle.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class multiGetString_args:
+  """
+  Attributes:
+   - domain
+   - key
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'domain', None, None, ), # 1
+    (2, TType.LIST, 'key', (TType.STRING,None), None, ), # 2
+  )
+
+  def __init__(self, domain=None, key=None,):
+    self.domain = domain
+    self.key = key
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.domain = iprot.readString().decode('utf-8');
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.LIST:
+          self.key = []
+          (_etype40, _size37) = iprot.readListBegin()
+          for _i41 in xrange(_size37):
+            _elem42 = iprot.readString().decode('utf-8');
+            self.key.append(_elem42)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('multiGetString_args')
+    if self.domain != None:
+      oprot.writeFieldBegin('domain', TType.STRING, 1)
+      oprot.writeString(self.domain.encode('utf-8'));
+      oprot.writeFieldEnd()
+    if self.key != None:
+      oprot.writeFieldBegin('key', TType.LIST, 2)
+      oprot.writeListBegin(TType.STRING, len(self.key))
+      for iter43 in self.key:
+        oprot.writeString(iter43.encode('utf-8'));
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class multiGetString_result:
+  """
+  Attributes:
+   - success
+   - dnfe
+   - hde
+   - dnle
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT,(Value, Value.thrift_spec)), None, ), # 0
+    (1, TType.STRUCT, 'dnfe', (DomainNotFoundException, DomainNotFoundException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'hde', (HostsDownException, HostsDownException.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'dnle', (DomainNotLoadedException, DomainNotLoadedException.thrift_spec), None, ), # 3
+  )
+
+  def __init__(self, success=None, dnfe=None, hde=None, dnle=None,):
+    self.success = success
+    self.dnfe = dnfe
+    self.hde = hde
+    self.dnle = dnle
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype47, _size44) = iprot.readListBegin()
+          for _i48 in xrange(_size44):
+            _elem49 = Value()
+            _elem49.read(iprot)
+            self.success.append(_elem49)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.dnfe = DomainNotFoundException()
+          self.dnfe.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.hde = HostsDownException()
+          self.hde.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.dnle = DomainNotLoadedException()
+          self.dnle.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('multiGetString_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter50 in self.success:
+        iter50.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    if self.dnfe != None:
+      oprot.writeFieldBegin('dnfe', TType.STRUCT, 1)
+      self.dnfe.write(oprot)
+      oprot.writeFieldEnd()
+    if self.hde != None:
+      oprot.writeFieldBegin('hde', TType.STRUCT, 2)
+      self.hde.write(oprot)
+      oprot.writeFieldEnd()
+    if self.dnle != None:
+      oprot.writeFieldBegin('dnle', TType.STRUCT, 3)
+      self.dnle.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class multiGetInt_args:
+  """
+  Attributes:
+   - domain
+   - key
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'domain', None, None, ), # 1
+    (2, TType.LIST, 'key', (TType.I32,None), None, ), # 2
+  )
+
+  def __init__(self, domain=None, key=None,):
+    self.domain = domain
+    self.key = key
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.domain = iprot.readString().decode('utf-8');
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.LIST:
+          self.key = []
+          (_etype54, _size51) = iprot.readListBegin()
+          for _i55 in xrange(_size51):
+            _elem56 = iprot.readI32();
+            self.key.append(_elem56)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('multiGetInt_args')
+    if self.domain != None:
+      oprot.writeFieldBegin('domain', TType.STRING, 1)
+      oprot.writeString(self.domain.encode('utf-8'));
+      oprot.writeFieldEnd()
+    if self.key != None:
+      oprot.writeFieldBegin('key', TType.LIST, 2)
+      oprot.writeListBegin(TType.I32, len(self.key))
+      for iter57 in self.key:
+        oprot.writeI32(iter57)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class multiGetInt_result:
+  """
+  Attributes:
+   - success
+   - dnfe
+   - hde
+   - dnle
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT,(Value, Value.thrift_spec)), None, ), # 0
+    (1, TType.STRUCT, 'dnfe', (DomainNotFoundException, DomainNotFoundException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'hde', (HostsDownException, HostsDownException.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'dnle', (DomainNotLoadedException, DomainNotLoadedException.thrift_spec), None, ), # 3
+  )
+
+  def __init__(self, success=None, dnfe=None, hde=None, dnle=None,):
+    self.success = success
+    self.dnfe = dnfe
+    self.hde = hde
+    self.dnle = dnle
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype61, _size58) = iprot.readListBegin()
+          for _i62 in xrange(_size58):
+            _elem63 = Value()
+            _elem63.read(iprot)
+            self.success.append(_elem63)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.dnfe = DomainNotFoundException()
+          self.dnfe.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.hde = HostsDownException()
+          self.hde.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.dnle = DomainNotLoadedException()
+          self.dnle.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('multiGetInt_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter64 in self.success:
+        iter64.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    if self.dnfe != None:
+      oprot.writeFieldBegin('dnfe', TType.STRUCT, 1)
+      self.dnfe.write(oprot)
+      oprot.writeFieldEnd()
+    if self.hde != None:
+      oprot.writeFieldBegin('hde', TType.STRUCT, 2)
+      self.hde.write(oprot)
+      oprot.writeFieldEnd()
+    if self.dnle != None:
+      oprot.writeFieldBegin('dnle', TType.STRUCT, 3)
+      self.dnle.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class multiGetLong_args:
+  """
+  Attributes:
+   - domain
+   - key
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'domain', None, None, ), # 1
+    (2, TType.LIST, 'key', (TType.I64,None), None, ), # 2
+  )
+
+  def __init__(self, domain=None, key=None,):
+    self.domain = domain
+    self.key = key
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.domain = iprot.readString().decode('utf-8');
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.LIST:
+          self.key = []
+          (_etype68, _size65) = iprot.readListBegin()
+          for _i69 in xrange(_size65):
+            _elem70 = iprot.readI64();
+            self.key.append(_elem70)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('multiGetLong_args')
+    if self.domain != None:
+      oprot.writeFieldBegin('domain', TType.STRING, 1)
+      oprot.writeString(self.domain.encode('utf-8'));
+      oprot.writeFieldEnd()
+    if self.key != None:
+      oprot.writeFieldBegin('key', TType.LIST, 2)
+      oprot.writeListBegin(TType.I64, len(self.key))
+      for iter71 in self.key:
+        oprot.writeI64(iter71)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class multiGetLong_result:
+  """
+  Attributes:
+   - success
+   - dnfe
+   - hde
+   - dnle
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT,(Value, Value.thrift_spec)), None, ), # 0
+    (1, TType.STRUCT, 'dnfe', (DomainNotFoundException, DomainNotFoundException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'hde', (HostsDownException, HostsDownException.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'dnle', (DomainNotLoadedException, DomainNotLoadedException.thrift_spec), None, ), # 3
+  )
+
+  def __init__(self, success=None, dnfe=None, hde=None, dnle=None,):
+    self.success = success
+    self.dnfe = dnfe
+    self.hde = hde
+    self.dnle = dnle
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype75, _size72) = iprot.readListBegin()
+          for _i76 in xrange(_size72):
+            _elem77 = Value()
+            _elem77.read(iprot)
+            self.success.append(_elem77)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.dnfe = DomainNotFoundException()
+          self.dnfe.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.hde = HostsDownException()
+          self.hde.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.dnle = DomainNotLoadedException()
+          self.dnle.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('multiGetLong_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter78 in self.success:
+        iter78.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    if self.dnfe != None:
+      oprot.writeFieldBegin('dnfe', TType.STRUCT, 1)
+      self.dnfe.write(oprot)
+      oprot.writeFieldEnd()
+    if self.hde != None:
+      oprot.writeFieldBegin('hde', TType.STRUCT, 2)
+      self.hde.write(oprot)
+      oprot.writeFieldEnd()
+    if self.dnle != None:
+      oprot.writeFieldBegin('dnle', TType.STRUCT, 3)
+      self.dnle.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class directMultiGet_args:
+  """
+  Attributes:
+   - domain
+   - key
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'domain', None, None, ), # 1
+    (2, TType.LIST, 'key', (TType.STRING,None), None, ), # 2
+  )
+
+  def __init__(self, domain=None, key=None,):
+    self.domain = domain
+    self.key = key
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.domain = iprot.readString().decode('utf-8');
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.LIST:
+          self.key = []
+          (_etype82, _size79) = iprot.readListBegin()
+          for _i83 in xrange(_size79):
+            _elem84 = iprot.readString();
+            self.key.append(_elem84)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('directMultiGet_args')
+    if self.domain != None:
+      oprot.writeFieldBegin('domain', TType.STRING, 1)
+      oprot.writeString(self.domain.encode('utf-8'));
+      oprot.writeFieldEnd()
+    if self.key != None:
+      oprot.writeFieldBegin('key', TType.LIST, 2)
+      oprot.writeListBegin(TType.STRING, len(self.key))
+      for iter85 in self.key:
+        oprot.writeString(iter85);
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class directMultiGet_result:
   """
   Attributes:
    - success
@@ -1364,7 +2348,7 @@ class directGet_result:
   """
 
   thrift_spec = (
-    (0, TType.STRUCT, 'success', (Value, Value.thrift_spec), None, ), # 0
+    (0, TType.LIST, 'success', (TType.STRUCT,(Value, Value.thrift_spec)), None, ), # 0
     (1, TType.STRUCT, 'dnfe', (DomainNotFoundException, DomainNotFoundException.thrift_spec), None, ), # 1
     (2, TType.STRUCT, 'dnle', (DomainNotLoadedException, DomainNotLoadedException.thrift_spec), None, ), # 2
     (3, TType.STRUCT, 'whe', (WrongHostException, WrongHostException.thrift_spec), None, ), # 3
@@ -1386,9 +2370,14 @@ class directGet_result:
       if ftype == TType.STOP:
         break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = Value()
-          self.success.read(iprot)
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype89, _size86) = iprot.readListBegin()
+          for _i90 in xrange(_size86):
+            _elem91 = Value()
+            _elem91.read(iprot)
+            self.success.append(_elem91)
+          iprot.readListEnd()
         else:
           iprot.skip(ftype)
       elif fid == 1:
@@ -1418,10 +2407,13 @@ class directGet_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('directGet_result')
+    oprot.writeStructBegin('directMultiGet_result')
     if self.success != None:
-      oprot.writeFieldBegin('success', TType.STRUCT, 0)
-      self.success.write(oprot)
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter92 in self.success:
+        iter92.write(oprot)
+      oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.dnfe != None:
       oprot.writeFieldBegin('dnfe', TType.STRUCT, 1)
@@ -1624,10 +2616,10 @@ class getDomains_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype26, _size23) = iprot.readListBegin()
-          for _i27 in xrange(_size23):
-            _elem28 = iprot.readString().decode('utf-8');
-            self.success.append(_elem28)
+          (_etype96, _size93) = iprot.readListBegin()
+          for _i97 in xrange(_size93):
+            _elem98 = iprot.readString().decode('utf-8');
+            self.success.append(_elem98)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1644,8 +2636,8 @@ class getDomains_result:
     if self.success != None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter29 in self.success:
-        oprot.writeString(iter29.encode('utf-8'));
+      for iter99 in self.success:
+        oprot.writeString(iter99.encode('utf-8'));
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()

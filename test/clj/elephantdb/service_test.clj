@@ -9,7 +9,7 @@
   (.get_data (.get elephant d k)))
 
 (defn direct-get-val [elephant d k]
-  (.get_data (.directGet elephant d k)))
+  (.get_data (first (.directMultiGet elephant d [k]))))
 
 (deftest test-basic
   (with-sharded-domain [dpath
@@ -79,7 +79,7 @@
            nil
            (get-val elephant "test1" (barr 2))))
       (is (thrown?
-           WrongHostException
+           Exception
            (direct-get-val elephant "test1" (barr 10))))
       )))
 

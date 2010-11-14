@@ -25,7 +25,11 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '  Value getString(string domain, string key)'
   print '  Value getInt(string domain, i32 key)'
   print '  Value getLong(string domain, i64 key)'
-  print '  Value directGet(string domain, string key)'
+  print '   multiGet(string domain,  key)'
+  print '   multiGetString(string domain,  key)'
+  print '   multiGetInt(string domain,  key)'
+  print '   multiGetLong(string domain,  key)'
+  print '   directMultiGet(string domain,  key)'
   print '  DomainStatus getDomainStatus(string domain)'
   print '   getDomains()'
   print '  Status getStatus()'
@@ -104,11 +108,35 @@ elif cmd == 'getLong':
     sys.exit(1)
   pp.pprint(client.getLong(args[0],eval(args[1]),))
 
-elif cmd == 'directGet':
+elif cmd == 'multiGet':
   if len(args) != 2:
-    print 'directGet requires 2 args'
+    print 'multiGet requires 2 args'
     sys.exit(1)
-  pp.pprint(client.directGet(args[0],args[1],))
+  pp.pprint(client.multiGet(args[0],eval(args[1]),))
+
+elif cmd == 'multiGetString':
+  if len(args) != 2:
+    print 'multiGetString requires 2 args'
+    sys.exit(1)
+  pp.pprint(client.multiGetString(args[0],eval(args[1]),))
+
+elif cmd == 'multiGetInt':
+  if len(args) != 2:
+    print 'multiGetInt requires 2 args'
+    sys.exit(1)
+  pp.pprint(client.multiGetInt(args[0],eval(args[1]),))
+
+elif cmd == 'multiGetLong':
+  if len(args) != 2:
+    print 'multiGetLong requires 2 args'
+    sys.exit(1)
+  pp.pprint(client.multiGetLong(args[0],eval(args[1]),))
+
+elif cmd == 'directMultiGet':
+  if len(args) != 2:
+    print 'directMultiGet requires 2 args'
+    sys.exit(1)
+  pp.pprint(client.directMultiGet(args[0],eval(args[1]),))
 
 elif cmd == 'getDomainStatus':
   if len(args) != 1:

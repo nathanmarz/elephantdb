@@ -38,7 +38,15 @@ public class ElephantDB {
 
     public Value getLong(String domain, long key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException;
 
-    public Value directGet(String domain, byte[] key) throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, TException;
+    public List<Value> multiGet(String domain, List<byte[]> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException;
+
+    public List<Value> multiGetString(String domain, List<String> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException;
+
+    public List<Value> multiGetInt(String domain, List<Integer> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException;
+
+    public List<Value> multiGetLong(String domain, List<Long> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException;
+
+    public List<Value> directMultiGet(String domain, List<byte[]> key) throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, TException;
 
     public DomainStatus getDomainStatus(String domain) throws TException;
 
@@ -64,7 +72,15 @@ public class ElephantDB {
 
     public void getLong(String domain, long key, AsyncMethodCallback<AsyncClient.getLong_call> resultHandler) throws TException;
 
-    public void directGet(String domain, byte[] key, AsyncMethodCallback<AsyncClient.directGet_call> resultHandler) throws TException;
+    public void multiGet(String domain, List<byte[]> key, AsyncMethodCallback<AsyncClient.multiGet_call> resultHandler) throws TException;
+
+    public void multiGetString(String domain, List<String> key, AsyncMethodCallback<AsyncClient.multiGetString_call> resultHandler) throws TException;
+
+    public void multiGetInt(String domain, List<Integer> key, AsyncMethodCallback<AsyncClient.multiGetInt_call> resultHandler) throws TException;
+
+    public void multiGetLong(String domain, List<Long> key, AsyncMethodCallback<AsyncClient.multiGetLong_call> resultHandler) throws TException;
+
+    public void directMultiGet(String domain, List<byte[]> key, AsyncMethodCallback<AsyncClient.directMultiGet_call> resultHandler) throws TException;
 
     public void getDomainStatus(String domain, AsyncMethodCallback<AsyncClient.getDomainStatus_call> resultHandler) throws TException;
 
@@ -301,16 +317,16 @@ public class ElephantDB {
       throw new TApplicationException(TApplicationException.MISSING_RESULT, "getLong failed: unknown result");
     }
 
-    public Value directGet(String domain, byte[] key) throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, TException
+    public List<Value> multiGet(String domain, List<byte[]> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException
     {
-      send_directGet(domain, key);
-      return recv_directGet();
+      send_multiGet(domain, key);
+      return recv_multiGet();
     }
 
-    public void send_directGet(String domain, byte[] key) throws TException
+    public void send_multiGet(String domain, List<byte[]> key) throws TException
     {
-      oprot_.writeMessageBegin(new TMessage("directGet", TMessageType.CALL, ++seqid_));
-      directGet_args args = new directGet_args();
+      oprot_.writeMessageBegin(new TMessage("multiGet", TMessageType.CALL, ++seqid_));
+      multiGet_args args = new multiGet_args();
       args.set_domain(domain);
       args.set_key(key);
       args.write(oprot_);
@@ -318,7 +334,7 @@ public class ElephantDB {
       oprot_.getTransport().flush();
     }
 
-    public Value recv_directGet() throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, TException
+    public List<Value> recv_multiGet() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException
     {
       TMessage msg = iprot_.readMessageBegin();
       if (msg.type == TMessageType.EXCEPTION) {
@@ -327,9 +343,193 @@ public class ElephantDB {
         throw x;
       }
       if (msg.seqid != seqid_) {
-        throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, "directGet failed: out of sequence response");
+        throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, "multiGet failed: out of sequence response");
       }
-      directGet_result result = new directGet_result();
+      multiGet_result result = new multiGet_result();
+      result.read(iprot_);
+      iprot_.readMessageEnd();
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.dnfe != null) {
+        throw result.dnfe;
+      }
+      if (result.hde != null) {
+        throw result.hde;
+      }
+      if (result.dnle != null) {
+        throw result.dnle;
+      }
+      throw new TApplicationException(TApplicationException.MISSING_RESULT, "multiGet failed: unknown result");
+    }
+
+    public List<Value> multiGetString(String domain, List<String> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException
+    {
+      send_multiGetString(domain, key);
+      return recv_multiGetString();
+    }
+
+    public void send_multiGetString(String domain, List<String> key) throws TException
+    {
+      oprot_.writeMessageBegin(new TMessage("multiGetString", TMessageType.CALL, ++seqid_));
+      multiGetString_args args = new multiGetString_args();
+      args.set_domain(domain);
+      args.set_key(key);
+      args.write(oprot_);
+      oprot_.writeMessageEnd();
+      oprot_.getTransport().flush();
+    }
+
+    public List<Value> recv_multiGetString() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException
+    {
+      TMessage msg = iprot_.readMessageBegin();
+      if (msg.type == TMessageType.EXCEPTION) {
+        TApplicationException x = TApplicationException.read(iprot_);
+        iprot_.readMessageEnd();
+        throw x;
+      }
+      if (msg.seqid != seqid_) {
+        throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, "multiGetString failed: out of sequence response");
+      }
+      multiGetString_result result = new multiGetString_result();
+      result.read(iprot_);
+      iprot_.readMessageEnd();
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.dnfe != null) {
+        throw result.dnfe;
+      }
+      if (result.hde != null) {
+        throw result.hde;
+      }
+      if (result.dnle != null) {
+        throw result.dnle;
+      }
+      throw new TApplicationException(TApplicationException.MISSING_RESULT, "multiGetString failed: unknown result");
+    }
+
+    public List<Value> multiGetInt(String domain, List<Integer> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException
+    {
+      send_multiGetInt(domain, key);
+      return recv_multiGetInt();
+    }
+
+    public void send_multiGetInt(String domain, List<Integer> key) throws TException
+    {
+      oprot_.writeMessageBegin(new TMessage("multiGetInt", TMessageType.CALL, ++seqid_));
+      multiGetInt_args args = new multiGetInt_args();
+      args.set_domain(domain);
+      args.set_key(key);
+      args.write(oprot_);
+      oprot_.writeMessageEnd();
+      oprot_.getTransport().flush();
+    }
+
+    public List<Value> recv_multiGetInt() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException
+    {
+      TMessage msg = iprot_.readMessageBegin();
+      if (msg.type == TMessageType.EXCEPTION) {
+        TApplicationException x = TApplicationException.read(iprot_);
+        iprot_.readMessageEnd();
+        throw x;
+      }
+      if (msg.seqid != seqid_) {
+        throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, "multiGetInt failed: out of sequence response");
+      }
+      multiGetInt_result result = new multiGetInt_result();
+      result.read(iprot_);
+      iprot_.readMessageEnd();
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.dnfe != null) {
+        throw result.dnfe;
+      }
+      if (result.hde != null) {
+        throw result.hde;
+      }
+      if (result.dnle != null) {
+        throw result.dnle;
+      }
+      throw new TApplicationException(TApplicationException.MISSING_RESULT, "multiGetInt failed: unknown result");
+    }
+
+    public List<Value> multiGetLong(String domain, List<Long> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException
+    {
+      send_multiGetLong(domain, key);
+      return recv_multiGetLong();
+    }
+
+    public void send_multiGetLong(String domain, List<Long> key) throws TException
+    {
+      oprot_.writeMessageBegin(new TMessage("multiGetLong", TMessageType.CALL, ++seqid_));
+      multiGetLong_args args = new multiGetLong_args();
+      args.set_domain(domain);
+      args.set_key(key);
+      args.write(oprot_);
+      oprot_.writeMessageEnd();
+      oprot_.getTransport().flush();
+    }
+
+    public List<Value> recv_multiGetLong() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException
+    {
+      TMessage msg = iprot_.readMessageBegin();
+      if (msg.type == TMessageType.EXCEPTION) {
+        TApplicationException x = TApplicationException.read(iprot_);
+        iprot_.readMessageEnd();
+        throw x;
+      }
+      if (msg.seqid != seqid_) {
+        throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, "multiGetLong failed: out of sequence response");
+      }
+      multiGetLong_result result = new multiGetLong_result();
+      result.read(iprot_);
+      iprot_.readMessageEnd();
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.dnfe != null) {
+        throw result.dnfe;
+      }
+      if (result.hde != null) {
+        throw result.hde;
+      }
+      if (result.dnle != null) {
+        throw result.dnle;
+      }
+      throw new TApplicationException(TApplicationException.MISSING_RESULT, "multiGetLong failed: unknown result");
+    }
+
+    public List<Value> directMultiGet(String domain, List<byte[]> key) throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, TException
+    {
+      send_directMultiGet(domain, key);
+      return recv_directMultiGet();
+    }
+
+    public void send_directMultiGet(String domain, List<byte[]> key) throws TException
+    {
+      oprot_.writeMessageBegin(new TMessage("directMultiGet", TMessageType.CALL, ++seqid_));
+      directMultiGet_args args = new directMultiGet_args();
+      args.set_domain(domain);
+      args.set_key(key);
+      args.write(oprot_);
+      oprot_.writeMessageEnd();
+      oprot_.getTransport().flush();
+    }
+
+    public List<Value> recv_directMultiGet() throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, TException
+    {
+      TMessage msg = iprot_.readMessageBegin();
+      if (msg.type == TMessageType.EXCEPTION) {
+        TApplicationException x = TApplicationException.read(iprot_);
+        iprot_.readMessageEnd();
+        throw x;
+      }
+      if (msg.seqid != seqid_) {
+        throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, "directMultiGet failed: out of sequence response");
+      }
+      directMultiGet_result result = new directMultiGet_result();
       result.read(iprot_);
       iprot_.readMessageEnd();
       if (result.is_set_success()) {
@@ -344,7 +544,7 @@ public class ElephantDB {
       if (result.whe != null) {
         throw result.whe;
       }
-      throw new TApplicationException(TApplicationException.MISSING_RESULT, "directGet failed: unknown result");
+      throw new TApplicationException(TApplicationException.MISSING_RESULT, "directMultiGet failed: unknown result");
     }
 
     public DomainStatus getDomainStatus(String domain) throws TException
@@ -713,37 +913,173 @@ public class ElephantDB {
       }
     }
 
-    public void directGet(String domain, byte[] key, AsyncMethodCallback<directGet_call> resultHandler) throws TException {
+    public void multiGet(String domain, List<byte[]> key, AsyncMethodCallback<multiGet_call> resultHandler) throws TException {
       checkReady();
-      directGet_call method_call = new directGet_call(domain, key, resultHandler, this, protocolFactory, transport);
+      multiGet_call method_call = new multiGet_call(domain, key, resultHandler, this, protocolFactory, transport);
       manager.call(method_call);
     }
 
-    public static class directGet_call extends TAsyncMethodCall {
+    public static class multiGet_call extends TAsyncMethodCall {
       private String domain;
-      private byte[] key;
-      public directGet_call(String domain, byte[] key, AsyncMethodCallback<directGet_call> resultHandler, TAsyncClient client, TProtocolFactory protocolFactory, TNonblockingTransport transport) throws TException {
+      private List<byte[]> key;
+      public multiGet_call(String domain, List<byte[]> key, AsyncMethodCallback<multiGet_call> resultHandler, TAsyncClient client, TProtocolFactory protocolFactory, TNonblockingTransport transport) throws TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.domain = domain;
         this.key = key;
       }
 
       public void write_args(TProtocol prot) throws TException {
-        prot.writeMessageBegin(new TMessage("directGet", TMessageType.CALL, 0));
-        directGet_args args = new directGet_args();
+        prot.writeMessageBegin(new TMessage("multiGet", TMessageType.CALL, 0));
+        multiGet_args args = new multiGet_args();
         args.set_domain(domain);
         args.set_key(key);
         args.write(prot);
         prot.writeMessageEnd();
       }
 
-      public Value getResult() throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, TException {
+      public List<Value> getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException {
         if (getState() != State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
         TMemoryInputTransport memoryTransport = new TMemoryInputTransport(getFrameBuffer().array());
         TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
-        return (new Client(prot)).recv_directGet();
+        return (new Client(prot)).recv_multiGet();
+      }
+    }
+
+    public void multiGetString(String domain, List<String> key, AsyncMethodCallback<multiGetString_call> resultHandler) throws TException {
+      checkReady();
+      multiGetString_call method_call = new multiGetString_call(domain, key, resultHandler, this, protocolFactory, transport);
+      manager.call(method_call);
+    }
+
+    public static class multiGetString_call extends TAsyncMethodCall {
+      private String domain;
+      private List<String> key;
+      public multiGetString_call(String domain, List<String> key, AsyncMethodCallback<multiGetString_call> resultHandler, TAsyncClient client, TProtocolFactory protocolFactory, TNonblockingTransport transport) throws TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.domain = domain;
+        this.key = key;
+      }
+
+      public void write_args(TProtocol prot) throws TException {
+        prot.writeMessageBegin(new TMessage("multiGetString", TMessageType.CALL, 0));
+        multiGetString_args args = new multiGetString_args();
+        args.set_domain(domain);
+        args.set_key(key);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public List<Value> getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException {
+        if (getState() != State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        TMemoryInputTransport memoryTransport = new TMemoryInputTransport(getFrameBuffer().array());
+        TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_multiGetString();
+      }
+    }
+
+    public void multiGetInt(String domain, List<Integer> key, AsyncMethodCallback<multiGetInt_call> resultHandler) throws TException {
+      checkReady();
+      multiGetInt_call method_call = new multiGetInt_call(domain, key, resultHandler, this, protocolFactory, transport);
+      manager.call(method_call);
+    }
+
+    public static class multiGetInt_call extends TAsyncMethodCall {
+      private String domain;
+      private List<Integer> key;
+      public multiGetInt_call(String domain, List<Integer> key, AsyncMethodCallback<multiGetInt_call> resultHandler, TAsyncClient client, TProtocolFactory protocolFactory, TNonblockingTransport transport) throws TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.domain = domain;
+        this.key = key;
+      }
+
+      public void write_args(TProtocol prot) throws TException {
+        prot.writeMessageBegin(new TMessage("multiGetInt", TMessageType.CALL, 0));
+        multiGetInt_args args = new multiGetInt_args();
+        args.set_domain(domain);
+        args.set_key(key);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public List<Value> getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException {
+        if (getState() != State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        TMemoryInputTransport memoryTransport = new TMemoryInputTransport(getFrameBuffer().array());
+        TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_multiGetInt();
+      }
+    }
+
+    public void multiGetLong(String domain, List<Long> key, AsyncMethodCallback<multiGetLong_call> resultHandler) throws TException {
+      checkReady();
+      multiGetLong_call method_call = new multiGetLong_call(domain, key, resultHandler, this, protocolFactory, transport);
+      manager.call(method_call);
+    }
+
+    public static class multiGetLong_call extends TAsyncMethodCall {
+      private String domain;
+      private List<Long> key;
+      public multiGetLong_call(String domain, List<Long> key, AsyncMethodCallback<multiGetLong_call> resultHandler, TAsyncClient client, TProtocolFactory protocolFactory, TNonblockingTransport transport) throws TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.domain = domain;
+        this.key = key;
+      }
+
+      public void write_args(TProtocol prot) throws TException {
+        prot.writeMessageBegin(new TMessage("multiGetLong", TMessageType.CALL, 0));
+        multiGetLong_args args = new multiGetLong_args();
+        args.set_domain(domain);
+        args.set_key(key);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public List<Value> getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, TException {
+        if (getState() != State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        TMemoryInputTransport memoryTransport = new TMemoryInputTransport(getFrameBuffer().array());
+        TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_multiGetLong();
+      }
+    }
+
+    public void directMultiGet(String domain, List<byte[]> key, AsyncMethodCallback<directMultiGet_call> resultHandler) throws TException {
+      checkReady();
+      directMultiGet_call method_call = new directMultiGet_call(domain, key, resultHandler, this, protocolFactory, transport);
+      manager.call(method_call);
+    }
+
+    public static class directMultiGet_call extends TAsyncMethodCall {
+      private String domain;
+      private List<byte[]> key;
+      public directMultiGet_call(String domain, List<byte[]> key, AsyncMethodCallback<directMultiGet_call> resultHandler, TAsyncClient client, TProtocolFactory protocolFactory, TNonblockingTransport transport) throws TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.domain = domain;
+        this.key = key;
+      }
+
+      public void write_args(TProtocol prot) throws TException {
+        prot.writeMessageBegin(new TMessage("directMultiGet", TMessageType.CALL, 0));
+        directMultiGet_args args = new directMultiGet_args();
+        args.set_domain(domain);
+        args.set_key(key);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public List<Value> getResult() throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, TException {
+        if (getState() != State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        TMemoryInputTransport memoryTransport = new TMemoryInputTransport(getFrameBuffer().array());
+        TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_directMultiGet();
       }
     }
 
@@ -932,7 +1268,11 @@ public class ElephantDB {
       processMap_.put("getString", new getString());
       processMap_.put("getInt", new getInt());
       processMap_.put("getLong", new getLong());
-      processMap_.put("directGet", new directGet());
+      processMap_.put("multiGet", new multiGet());
+      processMap_.put("multiGetString", new multiGetString());
+      processMap_.put("multiGetInt", new multiGetInt());
+      processMap_.put("multiGetLong", new multiGetLong());
+      processMap_.put("directMultiGet", new directMultiGet());
       processMap_.put("getDomainStatus", new getDomainStatus());
       processMap_.put("getDomains", new getDomains());
       processMap_.put("getStatus", new getStatus());
@@ -1134,25 +1474,193 @@ public class ElephantDB {
 
     }
 
-    private class directGet implements ProcessFunction {
+    private class multiGet implements ProcessFunction {
       public void process(int seqid, TProtocol iprot, TProtocol oprot) throws TException
       {
-        directGet_args args = new directGet_args();
+        multiGet_args args = new multiGet_args();
         try {
           args.read(iprot);
         } catch (TProtocolException e) {
           iprot.readMessageEnd();
           TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());
-          oprot.writeMessageBegin(new TMessage("directGet", TMessageType.EXCEPTION, seqid));
+          oprot.writeMessageBegin(new TMessage("multiGet", TMessageType.EXCEPTION, seqid));
           x.write(oprot);
           oprot.writeMessageEnd();
           oprot.getTransport().flush();
           return;
         }
         iprot.readMessageEnd();
-        directGet_result result = new directGet_result();
+        multiGet_result result = new multiGet_result();
         try {
-          result.success = iface_.directGet(args.domain, args.key);
+          result.success = iface_.multiGet(args.domain, args.key);
+        } catch (DomainNotFoundException dnfe) {
+          result.dnfe = dnfe;
+        } catch (HostsDownException hde) {
+          result.hde = hde;
+        } catch (DomainNotLoadedException dnle) {
+          result.dnle = dnle;
+        } catch (Throwable th) {
+          LOGGER.error("Internal error processing multiGet", th);
+          TApplicationException x = new TApplicationException(TApplicationException.INTERNAL_ERROR, "Internal error processing multiGet");
+          oprot.writeMessageBegin(new TMessage("multiGet", TMessageType.EXCEPTION, seqid));
+          x.write(oprot);
+          oprot.writeMessageEnd();
+          oprot.getTransport().flush();
+          return;
+        }
+        oprot.writeMessageBegin(new TMessage("multiGet", TMessageType.REPLY, seqid));
+        result.write(oprot);
+        oprot.writeMessageEnd();
+        oprot.getTransport().flush();
+      }
+
+    }
+
+    private class multiGetString implements ProcessFunction {
+      public void process(int seqid, TProtocol iprot, TProtocol oprot) throws TException
+      {
+        multiGetString_args args = new multiGetString_args();
+        try {
+          args.read(iprot);
+        } catch (TProtocolException e) {
+          iprot.readMessageEnd();
+          TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());
+          oprot.writeMessageBegin(new TMessage("multiGetString", TMessageType.EXCEPTION, seqid));
+          x.write(oprot);
+          oprot.writeMessageEnd();
+          oprot.getTransport().flush();
+          return;
+        }
+        iprot.readMessageEnd();
+        multiGetString_result result = new multiGetString_result();
+        try {
+          result.success = iface_.multiGetString(args.domain, args.key);
+        } catch (DomainNotFoundException dnfe) {
+          result.dnfe = dnfe;
+        } catch (HostsDownException hde) {
+          result.hde = hde;
+        } catch (DomainNotLoadedException dnle) {
+          result.dnle = dnle;
+        } catch (Throwable th) {
+          LOGGER.error("Internal error processing multiGetString", th);
+          TApplicationException x = new TApplicationException(TApplicationException.INTERNAL_ERROR, "Internal error processing multiGetString");
+          oprot.writeMessageBegin(new TMessage("multiGetString", TMessageType.EXCEPTION, seqid));
+          x.write(oprot);
+          oprot.writeMessageEnd();
+          oprot.getTransport().flush();
+          return;
+        }
+        oprot.writeMessageBegin(new TMessage("multiGetString", TMessageType.REPLY, seqid));
+        result.write(oprot);
+        oprot.writeMessageEnd();
+        oprot.getTransport().flush();
+      }
+
+    }
+
+    private class multiGetInt implements ProcessFunction {
+      public void process(int seqid, TProtocol iprot, TProtocol oprot) throws TException
+      {
+        multiGetInt_args args = new multiGetInt_args();
+        try {
+          args.read(iprot);
+        } catch (TProtocolException e) {
+          iprot.readMessageEnd();
+          TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());
+          oprot.writeMessageBegin(new TMessage("multiGetInt", TMessageType.EXCEPTION, seqid));
+          x.write(oprot);
+          oprot.writeMessageEnd();
+          oprot.getTransport().flush();
+          return;
+        }
+        iprot.readMessageEnd();
+        multiGetInt_result result = new multiGetInt_result();
+        try {
+          result.success = iface_.multiGetInt(args.domain, args.key);
+        } catch (DomainNotFoundException dnfe) {
+          result.dnfe = dnfe;
+        } catch (HostsDownException hde) {
+          result.hde = hde;
+        } catch (DomainNotLoadedException dnle) {
+          result.dnle = dnle;
+        } catch (Throwable th) {
+          LOGGER.error("Internal error processing multiGetInt", th);
+          TApplicationException x = new TApplicationException(TApplicationException.INTERNAL_ERROR, "Internal error processing multiGetInt");
+          oprot.writeMessageBegin(new TMessage("multiGetInt", TMessageType.EXCEPTION, seqid));
+          x.write(oprot);
+          oprot.writeMessageEnd();
+          oprot.getTransport().flush();
+          return;
+        }
+        oprot.writeMessageBegin(new TMessage("multiGetInt", TMessageType.REPLY, seqid));
+        result.write(oprot);
+        oprot.writeMessageEnd();
+        oprot.getTransport().flush();
+      }
+
+    }
+
+    private class multiGetLong implements ProcessFunction {
+      public void process(int seqid, TProtocol iprot, TProtocol oprot) throws TException
+      {
+        multiGetLong_args args = new multiGetLong_args();
+        try {
+          args.read(iprot);
+        } catch (TProtocolException e) {
+          iprot.readMessageEnd();
+          TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());
+          oprot.writeMessageBegin(new TMessage("multiGetLong", TMessageType.EXCEPTION, seqid));
+          x.write(oprot);
+          oprot.writeMessageEnd();
+          oprot.getTransport().flush();
+          return;
+        }
+        iprot.readMessageEnd();
+        multiGetLong_result result = new multiGetLong_result();
+        try {
+          result.success = iface_.multiGetLong(args.domain, args.key);
+        } catch (DomainNotFoundException dnfe) {
+          result.dnfe = dnfe;
+        } catch (HostsDownException hde) {
+          result.hde = hde;
+        } catch (DomainNotLoadedException dnle) {
+          result.dnle = dnle;
+        } catch (Throwable th) {
+          LOGGER.error("Internal error processing multiGetLong", th);
+          TApplicationException x = new TApplicationException(TApplicationException.INTERNAL_ERROR, "Internal error processing multiGetLong");
+          oprot.writeMessageBegin(new TMessage("multiGetLong", TMessageType.EXCEPTION, seqid));
+          x.write(oprot);
+          oprot.writeMessageEnd();
+          oprot.getTransport().flush();
+          return;
+        }
+        oprot.writeMessageBegin(new TMessage("multiGetLong", TMessageType.REPLY, seqid));
+        result.write(oprot);
+        oprot.writeMessageEnd();
+        oprot.getTransport().flush();
+      }
+
+    }
+
+    private class directMultiGet implements ProcessFunction {
+      public void process(int seqid, TProtocol iprot, TProtocol oprot) throws TException
+      {
+        directMultiGet_args args = new directMultiGet_args();
+        try {
+          args.read(iprot);
+        } catch (TProtocolException e) {
+          iprot.readMessageEnd();
+          TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());
+          oprot.writeMessageBegin(new TMessage("directMultiGet", TMessageType.EXCEPTION, seqid));
+          x.write(oprot);
+          oprot.writeMessageEnd();
+          oprot.getTransport().flush();
+          return;
+        }
+        iprot.readMessageEnd();
+        directMultiGet_result result = new directMultiGet_result();
+        try {
+          result.success = iface_.directMultiGet(args.domain, args.key);
         } catch (DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
         } catch (DomainNotLoadedException dnle) {
@@ -1160,15 +1668,15 @@ public class ElephantDB {
         } catch (WrongHostException whe) {
           result.whe = whe;
         } catch (Throwable th) {
-          LOGGER.error("Internal error processing directGet", th);
-          TApplicationException x = new TApplicationException(TApplicationException.INTERNAL_ERROR, "Internal error processing directGet");
-          oprot.writeMessageBegin(new TMessage("directGet", TMessageType.EXCEPTION, seqid));
+          LOGGER.error("Internal error processing directMultiGet", th);
+          TApplicationException x = new TApplicationException(TApplicationException.INTERNAL_ERROR, "Internal error processing directMultiGet");
+          oprot.writeMessageBegin(new TMessage("directMultiGet", TMessageType.EXCEPTION, seqid));
           x.write(oprot);
           oprot.writeMessageEnd();
           oprot.getTransport().flush();
           return;
         }
-        oprot.writeMessageBegin(new TMessage("directGet", TMessageType.REPLY, seqid));
+        oprot.writeMessageBegin(new TMessage("directMultiGet", TMessageType.REPLY, seqid));
         result.write(oprot);
         oprot.writeMessageEnd();
         oprot.getTransport().flush();
@@ -5108,14 +5616,14 @@ public class ElephantDB {
 
   }
 
-  public static class directGet_args implements TBase<directGet_args, directGet_args._Fields>, java.io.Serializable, Cloneable   {
-    private static final TStruct STRUCT_DESC = new TStruct("directGet_args");
+  public static class multiGet_args implements TBase<multiGet_args, multiGet_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("multiGet_args");
 
     private static final TField DOMAIN_FIELD_DESC = new TField("domain", TType.STRING, (short)1);
-    private static final TField KEY_FIELD_DESC = new TField("key", TType.STRING, (short)2);
+    private static final TField KEY_FIELD_DESC = new TField("key", TType.LIST, (short)2);
 
     private String domain;
-    private byte[] key;
+    private List<byte[]> key;
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements TFieldIdEnum {
@@ -5186,17 +5694,18 @@ public class ElephantDB {
       tmpMap.put(_Fields.DOMAIN, new FieldMetaData("domain", TFieldRequirementType.DEFAULT, 
           new FieldValueMetaData(TType.STRING)));
       tmpMap.put(_Fields.KEY, new FieldMetaData("key", TFieldRequirementType.DEFAULT, 
-          new FieldValueMetaData(TType.STRING)));
+          new ListMetaData(TType.LIST, 
+              new FieldValueMetaData(TType.STRING))));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
-      FieldMetaData.addStructMetaDataMap(directGet_args.class, metaDataMap);
+      FieldMetaData.addStructMetaDataMap(multiGet_args.class, metaDataMap);
     }
 
-    public directGet_args() {
+    public multiGet_args() {
     }
 
-    public directGet_args(
+    public multiGet_args(
       String domain,
-      byte[] key)
+      List<byte[]> key)
     {
       this();
       this.domain = domain;
@@ -5206,23 +5715,28 @@ public class ElephantDB {
     /**
      * Performs a deep copy on <i>other</i>.
      */
-    public directGet_args(directGet_args other) {
+    public multiGet_args(multiGet_args other) {
       if (other.is_set_domain()) {
         this.domain = other.domain;
       }
       if (other.is_set_key()) {
-        this.key = new byte[other.key.length];
-        System.arraycopy(other.key, 0, key, 0, other.key.length);
+        List<byte[]> __this__key = new ArrayList<byte[]>();
+        for (byte[] other_element : other.key) {
+          byte[] temp_binary_element = new byte[other_element.length];
+          System.arraycopy(other_element, 0, temp_binary_element, 0, other_element.length);
+          __this__key.add(temp_binary_element);
+        }
+        this.key = __this__key;
       }
     }
 
-    public directGet_args deepCopy() {
-      return new directGet_args(this);
+    public multiGet_args deepCopy() {
+      return new multiGet_args(this);
     }
 
     @Deprecated
-    public directGet_args clone() {
-      return new directGet_args(this);
+    public multiGet_args clone() {
+      return new multiGet_args(this);
     }
 
     public String get_domain() {
@@ -5248,11 +5762,26 @@ public class ElephantDB {
       }
     }
 
-    public byte[] get_key() {
+    public int get_key_size() {
+      return (this.key == null) ? 0 : this.key.size();
+    }
+
+    public java.util.Iterator<byte[]> get_key_iterator() {
+      return (this.key == null) ? null : this.key.iterator();
+    }
+
+    public void add_to_key(byte[] elem) {
+      if (this.key == null) {
+        this.key = new ArrayList<byte[]>();
+      }
+      this.key.add(elem);
+    }
+
+    public List<byte[]> get_key() {
       return this.key;
     }
 
-    public void set_key(byte[] key) {
+    public void set_key(List<byte[]> key) {
       this.key = key;
     }
 
@@ -5285,7 +5814,7 @@ public class ElephantDB {
         if (value == null) {
           unset_key();
         } else {
-          set_key((byte[])value);
+          set_key((List<byte[]>)value);
         }
         break;
 
@@ -5331,12 +5860,12 @@ public class ElephantDB {
     public boolean equals(Object that) {
       if (that == null)
         return false;
-      if (that instanceof directGet_args)
-        return this.equals((directGet_args)that);
+      if (that instanceof multiGet_args)
+        return this.equals((multiGet_args)that);
       return false;
     }
 
-    public boolean equals(directGet_args that) {
+    public boolean equals(multiGet_args that) {
       if (that == null)
         return false;
 
@@ -5354,7 +5883,7 @@ public class ElephantDB {
       if (this_present_key || that_present_key) {
         if (!(this_present_key && that_present_key))
           return false;
-        if (!java.util.Arrays.equals(this.key, that.key))
+        if (!this.key.equals(that.key))
           return false;
       }
 
@@ -5378,13 +5907,13 @@ public class ElephantDB {
       return builder.toHashCode();
     }
 
-    public int compareTo(directGet_args other) {
+    public int compareTo(multiGet_args other) {
       if (!getClass().equals(other.getClass())) {
         return getClass().getName().compareTo(other.getClass().getName());
       }
 
       int lastComparison = 0;
-      directGet_args typedOther = (directGet_args)other;
+      multiGet_args typedOther = (multiGet_args)other;
 
       lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
       if (lastComparison != 0) {
@@ -5425,8 +5954,18 @@ public class ElephantDB {
             }
             break;
           case 2: // KEY
-            if (field.type == TType.STRING) {
-              this.key = iprot.readBinary();
+            if (field.type == TType.LIST) {
+              {
+                TList _list13 = iprot.readListBegin();
+                this.key = new ArrayList<byte[]>(_list13.size);
+                for (int _i14 = 0; _i14 < _list13.size; ++_i14)
+                {
+                  byte[] _elem15;
+                  _elem15 = iprot.readBinary();
+                  this.key.add(_elem15);
+                }
+                iprot.readListEnd();
+              }
             } else { 
               TProtocolUtil.skip(iprot, field.type);
             }
@@ -5451,7 +5990,14 @@ public class ElephantDB {
       }
       if (this.key != null) {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
-        oprot.writeBinary(this.key);
+        {
+          oprot.writeListBegin(new TList(TType.STRING, this.key.size()));
+          for (byte[] _iter16 : this.key)
+          {
+            oprot.writeBinary(_iter16);
+          }
+          oprot.writeListEnd();
+        }
         oprot.writeFieldEnd();
       }
       oprot.writeFieldStop();
@@ -5460,7 +6006,7 @@ public class ElephantDB {
 
     @Override
     public String toString() {
-      StringBuilder sb = new StringBuilder("directGet_args(");
+      StringBuilder sb = new StringBuilder("multiGet_args(");
       boolean first = true;
 
       sb.append("domain:");
@@ -5475,12 +6021,7 @@ public class ElephantDB {
       if (this.key == null) {
         sb.append("null");
       } else {
-          int __key_size = Math.min(this.key.length, 128);
-          for (int i = 0; i < __key_size; i++) {
-            if (i != 0) sb.append(" ");
-            sb.append(Integer.toHexString(this.key[i]).length() > 1 ? Integer.toHexString(this.key[i]).substring(Integer.toHexString(this.key[i]).length() - 2).toUpperCase() : "0" + Integer.toHexString(this.key[i]).toUpperCase());
-          }
-          if (this.key.length > 128) sb.append(" ...");
+        sb.append(this.key);
       }
       first = false;
       sb.append(")");
@@ -5493,15 +6034,4073 @@ public class ElephantDB {
 
   }
 
-  public static class directGet_result implements TBase<directGet_result, directGet_result._Fields>, java.io.Serializable, Cloneable   {
-    private static final TStruct STRUCT_DESC = new TStruct("directGet_result");
+  public static class multiGet_result implements TBase<multiGet_result, multiGet_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("multiGet_result");
 
-    private static final TField SUCCESS_FIELD_DESC = new TField("success", TType.STRUCT, (short)0);
+    private static final TField SUCCESS_FIELD_DESC = new TField("success", TType.LIST, (short)0);
+    private static final TField DNFE_FIELD_DESC = new TField("dnfe", TType.STRUCT, (short)1);
+    private static final TField HDE_FIELD_DESC = new TField("hde", TType.STRUCT, (short)2);
+    private static final TField DNLE_FIELD_DESC = new TField("dnle", TType.STRUCT, (short)3);
+
+    private List<Value> success;
+    private DomainNotFoundException dnfe;
+    private HostsDownException hde;
+    private DomainNotLoadedException dnle;
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      DNFE((short)1, "dnfe"),
+      HDE((short)2, "hde"),
+      DNLE((short)3, "dnle");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // DNFE
+            return DNFE;
+          case 2: // HDE
+            return HDE;
+          case 3: // DNLE
+            return DNLE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new FieldMetaData("success", TFieldRequirementType.DEFAULT, 
+          new ListMetaData(TType.LIST, 
+              new StructMetaData(TType.STRUCT, Value.class))));
+      tmpMap.put(_Fields.DNFE, new FieldMetaData("dnfe", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      tmpMap.put(_Fields.HDE, new FieldMetaData("hde", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      tmpMap.put(_Fields.DNLE, new FieldMetaData("dnle", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      FieldMetaData.addStructMetaDataMap(multiGet_result.class, metaDataMap);
+    }
+
+    public multiGet_result() {
+    }
+
+    public multiGet_result(
+      List<Value> success,
+      DomainNotFoundException dnfe,
+      HostsDownException hde,
+      DomainNotLoadedException dnle)
+    {
+      this();
+      this.success = success;
+      this.dnfe = dnfe;
+      this.hde = hde;
+      this.dnle = dnle;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public multiGet_result(multiGet_result other) {
+      if (other.is_set_success()) {
+        List<Value> __this__success = new ArrayList<Value>();
+        for (Value other_element : other.success) {
+          __this__success.add(new Value(other_element));
+        }
+        this.success = __this__success;
+      }
+      if (other.is_set_dnfe()) {
+        this.dnfe = new DomainNotFoundException(other.dnfe);
+      }
+      if (other.is_set_hde()) {
+        this.hde = new HostsDownException(other.hde);
+      }
+      if (other.is_set_dnle()) {
+        this.dnle = new DomainNotLoadedException(other.dnle);
+      }
+    }
+
+    public multiGet_result deepCopy() {
+      return new multiGet_result(this);
+    }
+
+    @Deprecated
+    public multiGet_result clone() {
+      return new multiGet_result(this);
+    }
+
+    public int get_success_size() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    public java.util.Iterator<Value> get_success_iterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void add_to_success(Value elem) {
+      if (this.success == null) {
+        this.success = new ArrayList<Value>();
+      }
+      this.success.add(elem);
+    }
+
+    public List<Value> get_success() {
+      return this.success;
+    }
+
+    public void set_success(List<Value> success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been asigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public DomainNotFoundException get_dnfe() {
+      return this.dnfe;
+    }
+
+    public void set_dnfe(DomainNotFoundException dnfe) {
+      this.dnfe = dnfe;
+    }
+
+    public void unset_dnfe() {
+      this.dnfe = null;
+    }
+
+    /** Returns true if field dnfe is set (has been asigned a value) and false otherwise */
+    public boolean is_set_dnfe() {
+      return this.dnfe != null;
+    }
+
+    public void set_dnfe_isSet(boolean value) {
+      if (!value) {
+        this.dnfe = null;
+      }
+    }
+
+    public HostsDownException get_hde() {
+      return this.hde;
+    }
+
+    public void set_hde(HostsDownException hde) {
+      this.hde = hde;
+    }
+
+    public void unset_hde() {
+      this.hde = null;
+    }
+
+    /** Returns true if field hde is set (has been asigned a value) and false otherwise */
+    public boolean is_set_hde() {
+      return this.hde != null;
+    }
+
+    public void set_hde_isSet(boolean value) {
+      if (!value) {
+        this.hde = null;
+      }
+    }
+
+    public DomainNotLoadedException get_dnle() {
+      return this.dnle;
+    }
+
+    public void set_dnle(DomainNotLoadedException dnle) {
+      this.dnle = dnle;
+    }
+
+    public void unset_dnle() {
+      this.dnle = null;
+    }
+
+    /** Returns true if field dnle is set (has been asigned a value) and false otherwise */
+    public boolean is_set_dnle() {
+      return this.dnle != null;
+    }
+
+    public void set_dnle_isSet(boolean value) {
+      if (!value) {
+        this.dnle = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((List<Value>)value);
+        }
+        break;
+
+      case DNFE:
+        if (value == null) {
+          unset_dnfe();
+        } else {
+          set_dnfe((DomainNotFoundException)value);
+        }
+        break;
+
+      case HDE:
+        if (value == null) {
+          unset_hde();
+        } else {
+          set_hde((HostsDownException)value);
+        }
+        break;
+
+      case DNLE:
+        if (value == null) {
+          unset_dnle();
+        } else {
+          set_dnle((DomainNotLoadedException)value);
+        }
+        break;
+
+      }
+    }
+
+    public void setFieldValue(int fieldID, Object value) {
+      setFieldValue(_Fields.findByThriftIdOrThrow(fieldID), value);
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case DNFE:
+        return get_dnfe();
+
+      case HDE:
+        return get_hde();
+
+      case DNLE:
+        return get_dnle();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    public Object getFieldValue(int fieldId) {
+      return getFieldValue(_Fields.findByThriftIdOrThrow(fieldId));
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been asigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case DNFE:
+        return is_set_dnfe();
+      case HDE:
+        return is_set_hde();
+      case DNLE:
+        return is_set_dnle();
+      }
+      throw new IllegalStateException();
+    }
+
+    public boolean isSet(int fieldID) {
+      return isSet(_Fields.findByThriftIdOrThrow(fieldID));
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof multiGet_result)
+        return this.equals((multiGet_result)that);
+      return false;
+    }
+
+    public boolean equals(multiGet_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_dnfe = true && this.is_set_dnfe();
+      boolean that_present_dnfe = true && that.is_set_dnfe();
+      if (this_present_dnfe || that_present_dnfe) {
+        if (!(this_present_dnfe && that_present_dnfe))
+          return false;
+        if (!this.dnfe.equals(that.dnfe))
+          return false;
+      }
+
+      boolean this_present_hde = true && this.is_set_hde();
+      boolean that_present_hde = true && that.is_set_hde();
+      if (this_present_hde || that_present_hde) {
+        if (!(this_present_hde && that_present_hde))
+          return false;
+        if (!this.hde.equals(that.hde))
+          return false;
+      }
+
+      boolean this_present_dnle = true && this.is_set_dnle();
+      boolean that_present_dnle = true && that.is_set_dnle();
+      if (this_present_dnle || that_present_dnle) {
+        if (!(this_present_dnle && that_present_dnle))
+          return false;
+        if (!this.dnle.equals(that.dnle))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      boolean present_dnfe = true && (is_set_dnfe());
+      builder.append(present_dnfe);
+      if (present_dnfe)
+        builder.append(dnfe);
+
+      boolean present_hde = true && (is_set_hde());
+      builder.append(present_hde);
+      if (present_hde)
+        builder.append(hde);
+
+      boolean present_dnle = true && (is_set_dnle());
+      builder.append(present_dnle);
+      if (present_dnle)
+        builder.append(dnle);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(multiGet_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      multiGet_result typedOther = (multiGet_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {        lastComparison = TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnfe()).compareTo(typedOther.is_set_dnfe());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnfe()) {        lastComparison = TBaseHelper.compareTo(this.dnfe, typedOther.dnfe);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_hde()).compareTo(typedOther.is_set_hde());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_hde()) {        lastComparison = TBaseHelper.compareTo(this.hde, typedOther.hde);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnle()).compareTo(typedOther.is_set_dnle());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnle()) {        lastComparison = TBaseHelper.compareTo(this.dnle, typedOther.dnle);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public void read(TProtocol iprot) throws TException {
+      TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 0: // SUCCESS
+            if (field.type == TType.LIST) {
+              {
+                TList _list17 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list17.size);
+                for (int _i18 = 0; _i18 < _list17.size; ++_i18)
+                {
+                  Value _elem19;
+                  _elem19 = new Value();
+                  _elem19.read(iprot);
+                  this.success.add(_elem19);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 1: // DNFE
+            if (field.type == TType.STRUCT) {
+              this.dnfe = new DomainNotFoundException();
+              this.dnfe.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // HDE
+            if (field.type == TType.STRUCT) {
+              this.hde = new HostsDownException();
+              this.hde.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 3: // DNLE
+            if (field.type == TType.STRUCT) {
+              this.dnle = new DomainNotLoadedException();
+              this.dnle.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(TProtocol oprot) throws TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_success()) {
+        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+        {
+          oprot.writeListBegin(new TList(TType.STRUCT, this.success.size()));
+          for (Value _iter20 : this.success)
+          {
+            _iter20.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnfe()) {
+        oprot.writeFieldBegin(DNFE_FIELD_DESC);
+        this.dnfe.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_hde()) {
+        oprot.writeFieldBegin(HDE_FIELD_DESC);
+        this.hde.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnle()) {
+        oprot.writeFieldBegin(DNLE_FIELD_DESC);
+        this.dnle.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("multiGet_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnfe:");
+      if (this.dnfe == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnfe);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("hde:");
+      if (this.hde == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.hde);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnle:");
+      if (this.dnle == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnle);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws TException {
+      // check for required fields
+    }
+
+  }
+
+  public static class multiGetString_args implements TBase<multiGetString_args, multiGetString_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("multiGetString_args");
+
+    private static final TField DOMAIN_FIELD_DESC = new TField("domain", TType.STRING, (short)1);
+    private static final TField KEY_FIELD_DESC = new TField("key", TType.LIST, (short)2);
+
+    private String domain;
+    private List<String> key;
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements TFieldIdEnum {
+      DOMAIN((short)1, "domain"),
+      KEY((short)2, "key");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // DOMAIN
+            return DOMAIN;
+          case 2: // KEY
+            return KEY;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.DOMAIN, new FieldMetaData("domain", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRING)));
+      tmpMap.put(_Fields.KEY, new FieldMetaData("key", TFieldRequirementType.DEFAULT, 
+          new ListMetaData(TType.LIST, 
+              new FieldValueMetaData(TType.STRING))));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      FieldMetaData.addStructMetaDataMap(multiGetString_args.class, metaDataMap);
+    }
+
+    public multiGetString_args() {
+    }
+
+    public multiGetString_args(
+      String domain,
+      List<String> key)
+    {
+      this();
+      this.domain = domain;
+      this.key = key;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public multiGetString_args(multiGetString_args other) {
+      if (other.is_set_domain()) {
+        this.domain = other.domain;
+      }
+      if (other.is_set_key()) {
+        List<String> __this__key = new ArrayList<String>();
+        for (String other_element : other.key) {
+          __this__key.add(other_element);
+        }
+        this.key = __this__key;
+      }
+    }
+
+    public multiGetString_args deepCopy() {
+      return new multiGetString_args(this);
+    }
+
+    @Deprecated
+    public multiGetString_args clone() {
+      return new multiGetString_args(this);
+    }
+
+    public String get_domain() {
+      return this.domain;
+    }
+
+    public void set_domain(String domain) {
+      this.domain = domain;
+    }
+
+    public void unset_domain() {
+      this.domain = null;
+    }
+
+    /** Returns true if field domain is set (has been asigned a value) and false otherwise */
+    public boolean is_set_domain() {
+      return this.domain != null;
+    }
+
+    public void set_domain_isSet(boolean value) {
+      if (!value) {
+        this.domain = null;
+      }
+    }
+
+    public int get_key_size() {
+      return (this.key == null) ? 0 : this.key.size();
+    }
+
+    public java.util.Iterator<String> get_key_iterator() {
+      return (this.key == null) ? null : this.key.iterator();
+    }
+
+    public void add_to_key(String elem) {
+      if (this.key == null) {
+        this.key = new ArrayList<String>();
+      }
+      this.key.add(elem);
+    }
+
+    public List<String> get_key() {
+      return this.key;
+    }
+
+    public void set_key(List<String> key) {
+      this.key = key;
+    }
+
+    public void unset_key() {
+      this.key = null;
+    }
+
+    /** Returns true if field key is set (has been asigned a value) and false otherwise */
+    public boolean is_set_key() {
+      return this.key != null;
+    }
+
+    public void set_key_isSet(boolean value) {
+      if (!value) {
+        this.key = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case DOMAIN:
+        if (value == null) {
+          unset_domain();
+        } else {
+          set_domain((String)value);
+        }
+        break;
+
+      case KEY:
+        if (value == null) {
+          unset_key();
+        } else {
+          set_key((List<String>)value);
+        }
+        break;
+
+      }
+    }
+
+    public void setFieldValue(int fieldID, Object value) {
+      setFieldValue(_Fields.findByThriftIdOrThrow(fieldID), value);
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return get_domain();
+
+      case KEY:
+        return get_key();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    public Object getFieldValue(int fieldId) {
+      return getFieldValue(_Fields.findByThriftIdOrThrow(fieldId));
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been asigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return is_set_domain();
+      case KEY:
+        return is_set_key();
+      }
+      throw new IllegalStateException();
+    }
+
+    public boolean isSet(int fieldID) {
+      return isSet(_Fields.findByThriftIdOrThrow(fieldID));
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof multiGetString_args)
+        return this.equals((multiGetString_args)that);
+      return false;
+    }
+
+    public boolean equals(multiGetString_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_domain = true && this.is_set_domain();
+      boolean that_present_domain = true && that.is_set_domain();
+      if (this_present_domain || that_present_domain) {
+        if (!(this_present_domain && that_present_domain))
+          return false;
+        if (!this.domain.equals(that.domain))
+          return false;
+      }
+
+      boolean this_present_key = true && this.is_set_key();
+      boolean that_present_key = true && that.is_set_key();
+      if (this_present_key || that_present_key) {
+        if (!(this_present_key && that_present_key))
+          return false;
+        if (!this.key.equals(that.key))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_domain = true && (is_set_domain());
+      builder.append(present_domain);
+      if (present_domain)
+        builder.append(domain);
+
+      boolean present_key = true && (is_set_key());
+      builder.append(present_key);
+      if (present_key)
+        builder.append(key);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(multiGetString_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      multiGetString_args typedOther = (multiGetString_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_domain()) {        lastComparison = TBaseHelper.compareTo(this.domain, typedOther.domain);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_key()).compareTo(typedOther.is_set_key());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_key()) {        lastComparison = TBaseHelper.compareTo(this.key, typedOther.key);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public void read(TProtocol iprot) throws TException {
+      TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // DOMAIN
+            if (field.type == TType.STRING) {
+              this.domain = iprot.readString();
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // KEY
+            if (field.type == TType.LIST) {
+              {
+                TList _list21 = iprot.readListBegin();
+                this.key = new ArrayList<String>(_list21.size);
+                for (int _i22 = 0; _i22 < _list21.size; ++_i22)
+                {
+                  String _elem23;
+                  _elem23 = iprot.readString();
+                  this.key.add(_elem23);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(TProtocol oprot) throws TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.domain != null) {
+        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
+        oprot.writeString(this.domain);
+        oprot.writeFieldEnd();
+      }
+      if (this.key != null) {
+        oprot.writeFieldBegin(KEY_FIELD_DESC);
+        {
+          oprot.writeListBegin(new TList(TType.STRING, this.key.size()));
+          for (String _iter24 : this.key)
+          {
+            oprot.writeString(_iter24);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("multiGetString_args(");
+      boolean first = true;
+
+      sb.append("domain:");
+      if (this.domain == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.domain);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("key:");
+      if (this.key == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.key);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws TException {
+      // check for required fields
+    }
+
+  }
+
+  public static class multiGetString_result implements TBase<multiGetString_result, multiGetString_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("multiGetString_result");
+
+    private static final TField SUCCESS_FIELD_DESC = new TField("success", TType.LIST, (short)0);
+    private static final TField DNFE_FIELD_DESC = new TField("dnfe", TType.STRUCT, (short)1);
+    private static final TField HDE_FIELD_DESC = new TField("hde", TType.STRUCT, (short)2);
+    private static final TField DNLE_FIELD_DESC = new TField("dnle", TType.STRUCT, (short)3);
+
+    private List<Value> success;
+    private DomainNotFoundException dnfe;
+    private HostsDownException hde;
+    private DomainNotLoadedException dnle;
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      DNFE((short)1, "dnfe"),
+      HDE((short)2, "hde"),
+      DNLE((short)3, "dnle");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // DNFE
+            return DNFE;
+          case 2: // HDE
+            return HDE;
+          case 3: // DNLE
+            return DNLE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new FieldMetaData("success", TFieldRequirementType.DEFAULT, 
+          new ListMetaData(TType.LIST, 
+              new StructMetaData(TType.STRUCT, Value.class))));
+      tmpMap.put(_Fields.DNFE, new FieldMetaData("dnfe", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      tmpMap.put(_Fields.HDE, new FieldMetaData("hde", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      tmpMap.put(_Fields.DNLE, new FieldMetaData("dnle", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      FieldMetaData.addStructMetaDataMap(multiGetString_result.class, metaDataMap);
+    }
+
+    public multiGetString_result() {
+    }
+
+    public multiGetString_result(
+      List<Value> success,
+      DomainNotFoundException dnfe,
+      HostsDownException hde,
+      DomainNotLoadedException dnle)
+    {
+      this();
+      this.success = success;
+      this.dnfe = dnfe;
+      this.hde = hde;
+      this.dnle = dnle;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public multiGetString_result(multiGetString_result other) {
+      if (other.is_set_success()) {
+        List<Value> __this__success = new ArrayList<Value>();
+        for (Value other_element : other.success) {
+          __this__success.add(new Value(other_element));
+        }
+        this.success = __this__success;
+      }
+      if (other.is_set_dnfe()) {
+        this.dnfe = new DomainNotFoundException(other.dnfe);
+      }
+      if (other.is_set_hde()) {
+        this.hde = new HostsDownException(other.hde);
+      }
+      if (other.is_set_dnle()) {
+        this.dnle = new DomainNotLoadedException(other.dnle);
+      }
+    }
+
+    public multiGetString_result deepCopy() {
+      return new multiGetString_result(this);
+    }
+
+    @Deprecated
+    public multiGetString_result clone() {
+      return new multiGetString_result(this);
+    }
+
+    public int get_success_size() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    public java.util.Iterator<Value> get_success_iterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void add_to_success(Value elem) {
+      if (this.success == null) {
+        this.success = new ArrayList<Value>();
+      }
+      this.success.add(elem);
+    }
+
+    public List<Value> get_success() {
+      return this.success;
+    }
+
+    public void set_success(List<Value> success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been asigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public DomainNotFoundException get_dnfe() {
+      return this.dnfe;
+    }
+
+    public void set_dnfe(DomainNotFoundException dnfe) {
+      this.dnfe = dnfe;
+    }
+
+    public void unset_dnfe() {
+      this.dnfe = null;
+    }
+
+    /** Returns true if field dnfe is set (has been asigned a value) and false otherwise */
+    public boolean is_set_dnfe() {
+      return this.dnfe != null;
+    }
+
+    public void set_dnfe_isSet(boolean value) {
+      if (!value) {
+        this.dnfe = null;
+      }
+    }
+
+    public HostsDownException get_hde() {
+      return this.hde;
+    }
+
+    public void set_hde(HostsDownException hde) {
+      this.hde = hde;
+    }
+
+    public void unset_hde() {
+      this.hde = null;
+    }
+
+    /** Returns true if field hde is set (has been asigned a value) and false otherwise */
+    public boolean is_set_hde() {
+      return this.hde != null;
+    }
+
+    public void set_hde_isSet(boolean value) {
+      if (!value) {
+        this.hde = null;
+      }
+    }
+
+    public DomainNotLoadedException get_dnle() {
+      return this.dnle;
+    }
+
+    public void set_dnle(DomainNotLoadedException dnle) {
+      this.dnle = dnle;
+    }
+
+    public void unset_dnle() {
+      this.dnle = null;
+    }
+
+    /** Returns true if field dnle is set (has been asigned a value) and false otherwise */
+    public boolean is_set_dnle() {
+      return this.dnle != null;
+    }
+
+    public void set_dnle_isSet(boolean value) {
+      if (!value) {
+        this.dnle = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((List<Value>)value);
+        }
+        break;
+
+      case DNFE:
+        if (value == null) {
+          unset_dnfe();
+        } else {
+          set_dnfe((DomainNotFoundException)value);
+        }
+        break;
+
+      case HDE:
+        if (value == null) {
+          unset_hde();
+        } else {
+          set_hde((HostsDownException)value);
+        }
+        break;
+
+      case DNLE:
+        if (value == null) {
+          unset_dnle();
+        } else {
+          set_dnle((DomainNotLoadedException)value);
+        }
+        break;
+
+      }
+    }
+
+    public void setFieldValue(int fieldID, Object value) {
+      setFieldValue(_Fields.findByThriftIdOrThrow(fieldID), value);
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case DNFE:
+        return get_dnfe();
+
+      case HDE:
+        return get_hde();
+
+      case DNLE:
+        return get_dnle();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    public Object getFieldValue(int fieldId) {
+      return getFieldValue(_Fields.findByThriftIdOrThrow(fieldId));
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been asigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case DNFE:
+        return is_set_dnfe();
+      case HDE:
+        return is_set_hde();
+      case DNLE:
+        return is_set_dnle();
+      }
+      throw new IllegalStateException();
+    }
+
+    public boolean isSet(int fieldID) {
+      return isSet(_Fields.findByThriftIdOrThrow(fieldID));
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof multiGetString_result)
+        return this.equals((multiGetString_result)that);
+      return false;
+    }
+
+    public boolean equals(multiGetString_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_dnfe = true && this.is_set_dnfe();
+      boolean that_present_dnfe = true && that.is_set_dnfe();
+      if (this_present_dnfe || that_present_dnfe) {
+        if (!(this_present_dnfe && that_present_dnfe))
+          return false;
+        if (!this.dnfe.equals(that.dnfe))
+          return false;
+      }
+
+      boolean this_present_hde = true && this.is_set_hde();
+      boolean that_present_hde = true && that.is_set_hde();
+      if (this_present_hde || that_present_hde) {
+        if (!(this_present_hde && that_present_hde))
+          return false;
+        if (!this.hde.equals(that.hde))
+          return false;
+      }
+
+      boolean this_present_dnle = true && this.is_set_dnle();
+      boolean that_present_dnle = true && that.is_set_dnle();
+      if (this_present_dnle || that_present_dnle) {
+        if (!(this_present_dnle && that_present_dnle))
+          return false;
+        if (!this.dnle.equals(that.dnle))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      boolean present_dnfe = true && (is_set_dnfe());
+      builder.append(present_dnfe);
+      if (present_dnfe)
+        builder.append(dnfe);
+
+      boolean present_hde = true && (is_set_hde());
+      builder.append(present_hde);
+      if (present_hde)
+        builder.append(hde);
+
+      boolean present_dnle = true && (is_set_dnle());
+      builder.append(present_dnle);
+      if (present_dnle)
+        builder.append(dnle);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(multiGetString_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      multiGetString_result typedOther = (multiGetString_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {        lastComparison = TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnfe()).compareTo(typedOther.is_set_dnfe());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnfe()) {        lastComparison = TBaseHelper.compareTo(this.dnfe, typedOther.dnfe);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_hde()).compareTo(typedOther.is_set_hde());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_hde()) {        lastComparison = TBaseHelper.compareTo(this.hde, typedOther.hde);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnle()).compareTo(typedOther.is_set_dnle());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnle()) {        lastComparison = TBaseHelper.compareTo(this.dnle, typedOther.dnle);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public void read(TProtocol iprot) throws TException {
+      TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 0: // SUCCESS
+            if (field.type == TType.LIST) {
+              {
+                TList _list25 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list25.size);
+                for (int _i26 = 0; _i26 < _list25.size; ++_i26)
+                {
+                  Value _elem27;
+                  _elem27 = new Value();
+                  _elem27.read(iprot);
+                  this.success.add(_elem27);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 1: // DNFE
+            if (field.type == TType.STRUCT) {
+              this.dnfe = new DomainNotFoundException();
+              this.dnfe.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // HDE
+            if (field.type == TType.STRUCT) {
+              this.hde = new HostsDownException();
+              this.hde.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 3: // DNLE
+            if (field.type == TType.STRUCT) {
+              this.dnle = new DomainNotLoadedException();
+              this.dnle.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(TProtocol oprot) throws TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_success()) {
+        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+        {
+          oprot.writeListBegin(new TList(TType.STRUCT, this.success.size()));
+          for (Value _iter28 : this.success)
+          {
+            _iter28.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnfe()) {
+        oprot.writeFieldBegin(DNFE_FIELD_DESC);
+        this.dnfe.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_hde()) {
+        oprot.writeFieldBegin(HDE_FIELD_DESC);
+        this.hde.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnle()) {
+        oprot.writeFieldBegin(DNLE_FIELD_DESC);
+        this.dnle.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("multiGetString_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnfe:");
+      if (this.dnfe == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnfe);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("hde:");
+      if (this.hde == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.hde);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnle:");
+      if (this.dnle == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnle);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws TException {
+      // check for required fields
+    }
+
+  }
+
+  public static class multiGetInt_args implements TBase<multiGetInt_args, multiGetInt_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("multiGetInt_args");
+
+    private static final TField DOMAIN_FIELD_DESC = new TField("domain", TType.STRING, (short)1);
+    private static final TField KEY_FIELD_DESC = new TField("key", TType.LIST, (short)2);
+
+    private String domain;
+    private List<Integer> key;
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements TFieldIdEnum {
+      DOMAIN((short)1, "domain"),
+      KEY((short)2, "key");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // DOMAIN
+            return DOMAIN;
+          case 2: // KEY
+            return KEY;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.DOMAIN, new FieldMetaData("domain", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRING)));
+      tmpMap.put(_Fields.KEY, new FieldMetaData("key", TFieldRequirementType.DEFAULT, 
+          new ListMetaData(TType.LIST, 
+              new FieldValueMetaData(TType.I32))));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      FieldMetaData.addStructMetaDataMap(multiGetInt_args.class, metaDataMap);
+    }
+
+    public multiGetInt_args() {
+    }
+
+    public multiGetInt_args(
+      String domain,
+      List<Integer> key)
+    {
+      this();
+      this.domain = domain;
+      this.key = key;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public multiGetInt_args(multiGetInt_args other) {
+      if (other.is_set_domain()) {
+        this.domain = other.domain;
+      }
+      if (other.is_set_key()) {
+        List<Integer> __this__key = new ArrayList<Integer>();
+        for (Integer other_element : other.key) {
+          __this__key.add(other_element);
+        }
+        this.key = __this__key;
+      }
+    }
+
+    public multiGetInt_args deepCopy() {
+      return new multiGetInt_args(this);
+    }
+
+    @Deprecated
+    public multiGetInt_args clone() {
+      return new multiGetInt_args(this);
+    }
+
+    public String get_domain() {
+      return this.domain;
+    }
+
+    public void set_domain(String domain) {
+      this.domain = domain;
+    }
+
+    public void unset_domain() {
+      this.domain = null;
+    }
+
+    /** Returns true if field domain is set (has been asigned a value) and false otherwise */
+    public boolean is_set_domain() {
+      return this.domain != null;
+    }
+
+    public void set_domain_isSet(boolean value) {
+      if (!value) {
+        this.domain = null;
+      }
+    }
+
+    public int get_key_size() {
+      return (this.key == null) ? 0 : this.key.size();
+    }
+
+    public java.util.Iterator<Integer> get_key_iterator() {
+      return (this.key == null) ? null : this.key.iterator();
+    }
+
+    public void add_to_key(int elem) {
+      if (this.key == null) {
+        this.key = new ArrayList<Integer>();
+      }
+      this.key.add(elem);
+    }
+
+    public List<Integer> get_key() {
+      return this.key;
+    }
+
+    public void set_key(List<Integer> key) {
+      this.key = key;
+    }
+
+    public void unset_key() {
+      this.key = null;
+    }
+
+    /** Returns true if field key is set (has been asigned a value) and false otherwise */
+    public boolean is_set_key() {
+      return this.key != null;
+    }
+
+    public void set_key_isSet(boolean value) {
+      if (!value) {
+        this.key = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case DOMAIN:
+        if (value == null) {
+          unset_domain();
+        } else {
+          set_domain((String)value);
+        }
+        break;
+
+      case KEY:
+        if (value == null) {
+          unset_key();
+        } else {
+          set_key((List<Integer>)value);
+        }
+        break;
+
+      }
+    }
+
+    public void setFieldValue(int fieldID, Object value) {
+      setFieldValue(_Fields.findByThriftIdOrThrow(fieldID), value);
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return get_domain();
+
+      case KEY:
+        return get_key();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    public Object getFieldValue(int fieldId) {
+      return getFieldValue(_Fields.findByThriftIdOrThrow(fieldId));
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been asigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return is_set_domain();
+      case KEY:
+        return is_set_key();
+      }
+      throw new IllegalStateException();
+    }
+
+    public boolean isSet(int fieldID) {
+      return isSet(_Fields.findByThriftIdOrThrow(fieldID));
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof multiGetInt_args)
+        return this.equals((multiGetInt_args)that);
+      return false;
+    }
+
+    public boolean equals(multiGetInt_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_domain = true && this.is_set_domain();
+      boolean that_present_domain = true && that.is_set_domain();
+      if (this_present_domain || that_present_domain) {
+        if (!(this_present_domain && that_present_domain))
+          return false;
+        if (!this.domain.equals(that.domain))
+          return false;
+      }
+
+      boolean this_present_key = true && this.is_set_key();
+      boolean that_present_key = true && that.is_set_key();
+      if (this_present_key || that_present_key) {
+        if (!(this_present_key && that_present_key))
+          return false;
+        if (!this.key.equals(that.key))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_domain = true && (is_set_domain());
+      builder.append(present_domain);
+      if (present_domain)
+        builder.append(domain);
+
+      boolean present_key = true && (is_set_key());
+      builder.append(present_key);
+      if (present_key)
+        builder.append(key);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(multiGetInt_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      multiGetInt_args typedOther = (multiGetInt_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_domain()) {        lastComparison = TBaseHelper.compareTo(this.domain, typedOther.domain);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_key()).compareTo(typedOther.is_set_key());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_key()) {        lastComparison = TBaseHelper.compareTo(this.key, typedOther.key);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public void read(TProtocol iprot) throws TException {
+      TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // DOMAIN
+            if (field.type == TType.STRING) {
+              this.domain = iprot.readString();
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // KEY
+            if (field.type == TType.LIST) {
+              {
+                TList _list29 = iprot.readListBegin();
+                this.key = new ArrayList<Integer>(_list29.size);
+                for (int _i30 = 0; _i30 < _list29.size; ++_i30)
+                {
+                  int _elem31;
+                  _elem31 = iprot.readI32();
+                  this.key.add(_elem31);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(TProtocol oprot) throws TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.domain != null) {
+        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
+        oprot.writeString(this.domain);
+        oprot.writeFieldEnd();
+      }
+      if (this.key != null) {
+        oprot.writeFieldBegin(KEY_FIELD_DESC);
+        {
+          oprot.writeListBegin(new TList(TType.I32, this.key.size()));
+          for (int _iter32 : this.key)
+          {
+            oprot.writeI32(_iter32);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("multiGetInt_args(");
+      boolean first = true;
+
+      sb.append("domain:");
+      if (this.domain == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.domain);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("key:");
+      if (this.key == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.key);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws TException {
+      // check for required fields
+    }
+
+  }
+
+  public static class multiGetInt_result implements TBase<multiGetInt_result, multiGetInt_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("multiGetInt_result");
+
+    private static final TField SUCCESS_FIELD_DESC = new TField("success", TType.LIST, (short)0);
+    private static final TField DNFE_FIELD_DESC = new TField("dnfe", TType.STRUCT, (short)1);
+    private static final TField HDE_FIELD_DESC = new TField("hde", TType.STRUCT, (short)2);
+    private static final TField DNLE_FIELD_DESC = new TField("dnle", TType.STRUCT, (short)3);
+
+    private List<Value> success;
+    private DomainNotFoundException dnfe;
+    private HostsDownException hde;
+    private DomainNotLoadedException dnle;
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      DNFE((short)1, "dnfe"),
+      HDE((short)2, "hde"),
+      DNLE((short)3, "dnle");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // DNFE
+            return DNFE;
+          case 2: // HDE
+            return HDE;
+          case 3: // DNLE
+            return DNLE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new FieldMetaData("success", TFieldRequirementType.DEFAULT, 
+          new ListMetaData(TType.LIST, 
+              new StructMetaData(TType.STRUCT, Value.class))));
+      tmpMap.put(_Fields.DNFE, new FieldMetaData("dnfe", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      tmpMap.put(_Fields.HDE, new FieldMetaData("hde", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      tmpMap.put(_Fields.DNLE, new FieldMetaData("dnle", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      FieldMetaData.addStructMetaDataMap(multiGetInt_result.class, metaDataMap);
+    }
+
+    public multiGetInt_result() {
+    }
+
+    public multiGetInt_result(
+      List<Value> success,
+      DomainNotFoundException dnfe,
+      HostsDownException hde,
+      DomainNotLoadedException dnle)
+    {
+      this();
+      this.success = success;
+      this.dnfe = dnfe;
+      this.hde = hde;
+      this.dnle = dnle;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public multiGetInt_result(multiGetInt_result other) {
+      if (other.is_set_success()) {
+        List<Value> __this__success = new ArrayList<Value>();
+        for (Value other_element : other.success) {
+          __this__success.add(new Value(other_element));
+        }
+        this.success = __this__success;
+      }
+      if (other.is_set_dnfe()) {
+        this.dnfe = new DomainNotFoundException(other.dnfe);
+      }
+      if (other.is_set_hde()) {
+        this.hde = new HostsDownException(other.hde);
+      }
+      if (other.is_set_dnle()) {
+        this.dnle = new DomainNotLoadedException(other.dnle);
+      }
+    }
+
+    public multiGetInt_result deepCopy() {
+      return new multiGetInt_result(this);
+    }
+
+    @Deprecated
+    public multiGetInt_result clone() {
+      return new multiGetInt_result(this);
+    }
+
+    public int get_success_size() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    public java.util.Iterator<Value> get_success_iterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void add_to_success(Value elem) {
+      if (this.success == null) {
+        this.success = new ArrayList<Value>();
+      }
+      this.success.add(elem);
+    }
+
+    public List<Value> get_success() {
+      return this.success;
+    }
+
+    public void set_success(List<Value> success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been asigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public DomainNotFoundException get_dnfe() {
+      return this.dnfe;
+    }
+
+    public void set_dnfe(DomainNotFoundException dnfe) {
+      this.dnfe = dnfe;
+    }
+
+    public void unset_dnfe() {
+      this.dnfe = null;
+    }
+
+    /** Returns true if field dnfe is set (has been asigned a value) and false otherwise */
+    public boolean is_set_dnfe() {
+      return this.dnfe != null;
+    }
+
+    public void set_dnfe_isSet(boolean value) {
+      if (!value) {
+        this.dnfe = null;
+      }
+    }
+
+    public HostsDownException get_hde() {
+      return this.hde;
+    }
+
+    public void set_hde(HostsDownException hde) {
+      this.hde = hde;
+    }
+
+    public void unset_hde() {
+      this.hde = null;
+    }
+
+    /** Returns true if field hde is set (has been asigned a value) and false otherwise */
+    public boolean is_set_hde() {
+      return this.hde != null;
+    }
+
+    public void set_hde_isSet(boolean value) {
+      if (!value) {
+        this.hde = null;
+      }
+    }
+
+    public DomainNotLoadedException get_dnle() {
+      return this.dnle;
+    }
+
+    public void set_dnle(DomainNotLoadedException dnle) {
+      this.dnle = dnle;
+    }
+
+    public void unset_dnle() {
+      this.dnle = null;
+    }
+
+    /** Returns true if field dnle is set (has been asigned a value) and false otherwise */
+    public boolean is_set_dnle() {
+      return this.dnle != null;
+    }
+
+    public void set_dnle_isSet(boolean value) {
+      if (!value) {
+        this.dnle = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((List<Value>)value);
+        }
+        break;
+
+      case DNFE:
+        if (value == null) {
+          unset_dnfe();
+        } else {
+          set_dnfe((DomainNotFoundException)value);
+        }
+        break;
+
+      case HDE:
+        if (value == null) {
+          unset_hde();
+        } else {
+          set_hde((HostsDownException)value);
+        }
+        break;
+
+      case DNLE:
+        if (value == null) {
+          unset_dnle();
+        } else {
+          set_dnle((DomainNotLoadedException)value);
+        }
+        break;
+
+      }
+    }
+
+    public void setFieldValue(int fieldID, Object value) {
+      setFieldValue(_Fields.findByThriftIdOrThrow(fieldID), value);
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case DNFE:
+        return get_dnfe();
+
+      case HDE:
+        return get_hde();
+
+      case DNLE:
+        return get_dnle();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    public Object getFieldValue(int fieldId) {
+      return getFieldValue(_Fields.findByThriftIdOrThrow(fieldId));
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been asigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case DNFE:
+        return is_set_dnfe();
+      case HDE:
+        return is_set_hde();
+      case DNLE:
+        return is_set_dnle();
+      }
+      throw new IllegalStateException();
+    }
+
+    public boolean isSet(int fieldID) {
+      return isSet(_Fields.findByThriftIdOrThrow(fieldID));
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof multiGetInt_result)
+        return this.equals((multiGetInt_result)that);
+      return false;
+    }
+
+    public boolean equals(multiGetInt_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_dnfe = true && this.is_set_dnfe();
+      boolean that_present_dnfe = true && that.is_set_dnfe();
+      if (this_present_dnfe || that_present_dnfe) {
+        if (!(this_present_dnfe && that_present_dnfe))
+          return false;
+        if (!this.dnfe.equals(that.dnfe))
+          return false;
+      }
+
+      boolean this_present_hde = true && this.is_set_hde();
+      boolean that_present_hde = true && that.is_set_hde();
+      if (this_present_hde || that_present_hde) {
+        if (!(this_present_hde && that_present_hde))
+          return false;
+        if (!this.hde.equals(that.hde))
+          return false;
+      }
+
+      boolean this_present_dnle = true && this.is_set_dnle();
+      boolean that_present_dnle = true && that.is_set_dnle();
+      if (this_present_dnle || that_present_dnle) {
+        if (!(this_present_dnle && that_present_dnle))
+          return false;
+        if (!this.dnle.equals(that.dnle))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      boolean present_dnfe = true && (is_set_dnfe());
+      builder.append(present_dnfe);
+      if (present_dnfe)
+        builder.append(dnfe);
+
+      boolean present_hde = true && (is_set_hde());
+      builder.append(present_hde);
+      if (present_hde)
+        builder.append(hde);
+
+      boolean present_dnle = true && (is_set_dnle());
+      builder.append(present_dnle);
+      if (present_dnle)
+        builder.append(dnle);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(multiGetInt_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      multiGetInt_result typedOther = (multiGetInt_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {        lastComparison = TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnfe()).compareTo(typedOther.is_set_dnfe());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnfe()) {        lastComparison = TBaseHelper.compareTo(this.dnfe, typedOther.dnfe);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_hde()).compareTo(typedOther.is_set_hde());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_hde()) {        lastComparison = TBaseHelper.compareTo(this.hde, typedOther.hde);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnle()).compareTo(typedOther.is_set_dnle());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnle()) {        lastComparison = TBaseHelper.compareTo(this.dnle, typedOther.dnle);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public void read(TProtocol iprot) throws TException {
+      TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 0: // SUCCESS
+            if (field.type == TType.LIST) {
+              {
+                TList _list33 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list33.size);
+                for (int _i34 = 0; _i34 < _list33.size; ++_i34)
+                {
+                  Value _elem35;
+                  _elem35 = new Value();
+                  _elem35.read(iprot);
+                  this.success.add(_elem35);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 1: // DNFE
+            if (field.type == TType.STRUCT) {
+              this.dnfe = new DomainNotFoundException();
+              this.dnfe.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // HDE
+            if (field.type == TType.STRUCT) {
+              this.hde = new HostsDownException();
+              this.hde.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 3: // DNLE
+            if (field.type == TType.STRUCT) {
+              this.dnle = new DomainNotLoadedException();
+              this.dnle.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(TProtocol oprot) throws TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_success()) {
+        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+        {
+          oprot.writeListBegin(new TList(TType.STRUCT, this.success.size()));
+          for (Value _iter36 : this.success)
+          {
+            _iter36.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnfe()) {
+        oprot.writeFieldBegin(DNFE_FIELD_DESC);
+        this.dnfe.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_hde()) {
+        oprot.writeFieldBegin(HDE_FIELD_DESC);
+        this.hde.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnle()) {
+        oprot.writeFieldBegin(DNLE_FIELD_DESC);
+        this.dnle.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("multiGetInt_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnfe:");
+      if (this.dnfe == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnfe);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("hde:");
+      if (this.hde == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.hde);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnle:");
+      if (this.dnle == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnle);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws TException {
+      // check for required fields
+    }
+
+  }
+
+  public static class multiGetLong_args implements TBase<multiGetLong_args, multiGetLong_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("multiGetLong_args");
+
+    private static final TField DOMAIN_FIELD_DESC = new TField("domain", TType.STRING, (short)1);
+    private static final TField KEY_FIELD_DESC = new TField("key", TType.LIST, (short)2);
+
+    private String domain;
+    private List<Long> key;
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements TFieldIdEnum {
+      DOMAIN((short)1, "domain"),
+      KEY((short)2, "key");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // DOMAIN
+            return DOMAIN;
+          case 2: // KEY
+            return KEY;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.DOMAIN, new FieldMetaData("domain", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRING)));
+      tmpMap.put(_Fields.KEY, new FieldMetaData("key", TFieldRequirementType.DEFAULT, 
+          new ListMetaData(TType.LIST, 
+              new FieldValueMetaData(TType.I64))));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      FieldMetaData.addStructMetaDataMap(multiGetLong_args.class, metaDataMap);
+    }
+
+    public multiGetLong_args() {
+    }
+
+    public multiGetLong_args(
+      String domain,
+      List<Long> key)
+    {
+      this();
+      this.domain = domain;
+      this.key = key;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public multiGetLong_args(multiGetLong_args other) {
+      if (other.is_set_domain()) {
+        this.domain = other.domain;
+      }
+      if (other.is_set_key()) {
+        List<Long> __this__key = new ArrayList<Long>();
+        for (Long other_element : other.key) {
+          __this__key.add(other_element);
+        }
+        this.key = __this__key;
+      }
+    }
+
+    public multiGetLong_args deepCopy() {
+      return new multiGetLong_args(this);
+    }
+
+    @Deprecated
+    public multiGetLong_args clone() {
+      return new multiGetLong_args(this);
+    }
+
+    public String get_domain() {
+      return this.domain;
+    }
+
+    public void set_domain(String domain) {
+      this.domain = domain;
+    }
+
+    public void unset_domain() {
+      this.domain = null;
+    }
+
+    /** Returns true if field domain is set (has been asigned a value) and false otherwise */
+    public boolean is_set_domain() {
+      return this.domain != null;
+    }
+
+    public void set_domain_isSet(boolean value) {
+      if (!value) {
+        this.domain = null;
+      }
+    }
+
+    public int get_key_size() {
+      return (this.key == null) ? 0 : this.key.size();
+    }
+
+    public java.util.Iterator<Long> get_key_iterator() {
+      return (this.key == null) ? null : this.key.iterator();
+    }
+
+    public void add_to_key(long elem) {
+      if (this.key == null) {
+        this.key = new ArrayList<Long>();
+      }
+      this.key.add(elem);
+    }
+
+    public List<Long> get_key() {
+      return this.key;
+    }
+
+    public void set_key(List<Long> key) {
+      this.key = key;
+    }
+
+    public void unset_key() {
+      this.key = null;
+    }
+
+    /** Returns true if field key is set (has been asigned a value) and false otherwise */
+    public boolean is_set_key() {
+      return this.key != null;
+    }
+
+    public void set_key_isSet(boolean value) {
+      if (!value) {
+        this.key = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case DOMAIN:
+        if (value == null) {
+          unset_domain();
+        } else {
+          set_domain((String)value);
+        }
+        break;
+
+      case KEY:
+        if (value == null) {
+          unset_key();
+        } else {
+          set_key((List<Long>)value);
+        }
+        break;
+
+      }
+    }
+
+    public void setFieldValue(int fieldID, Object value) {
+      setFieldValue(_Fields.findByThriftIdOrThrow(fieldID), value);
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return get_domain();
+
+      case KEY:
+        return get_key();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    public Object getFieldValue(int fieldId) {
+      return getFieldValue(_Fields.findByThriftIdOrThrow(fieldId));
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been asigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return is_set_domain();
+      case KEY:
+        return is_set_key();
+      }
+      throw new IllegalStateException();
+    }
+
+    public boolean isSet(int fieldID) {
+      return isSet(_Fields.findByThriftIdOrThrow(fieldID));
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof multiGetLong_args)
+        return this.equals((multiGetLong_args)that);
+      return false;
+    }
+
+    public boolean equals(multiGetLong_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_domain = true && this.is_set_domain();
+      boolean that_present_domain = true && that.is_set_domain();
+      if (this_present_domain || that_present_domain) {
+        if (!(this_present_domain && that_present_domain))
+          return false;
+        if (!this.domain.equals(that.domain))
+          return false;
+      }
+
+      boolean this_present_key = true && this.is_set_key();
+      boolean that_present_key = true && that.is_set_key();
+      if (this_present_key || that_present_key) {
+        if (!(this_present_key && that_present_key))
+          return false;
+        if (!this.key.equals(that.key))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_domain = true && (is_set_domain());
+      builder.append(present_domain);
+      if (present_domain)
+        builder.append(domain);
+
+      boolean present_key = true && (is_set_key());
+      builder.append(present_key);
+      if (present_key)
+        builder.append(key);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(multiGetLong_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      multiGetLong_args typedOther = (multiGetLong_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_domain()) {        lastComparison = TBaseHelper.compareTo(this.domain, typedOther.domain);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_key()).compareTo(typedOther.is_set_key());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_key()) {        lastComparison = TBaseHelper.compareTo(this.key, typedOther.key);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public void read(TProtocol iprot) throws TException {
+      TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // DOMAIN
+            if (field.type == TType.STRING) {
+              this.domain = iprot.readString();
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // KEY
+            if (field.type == TType.LIST) {
+              {
+                TList _list37 = iprot.readListBegin();
+                this.key = new ArrayList<Long>(_list37.size);
+                for (int _i38 = 0; _i38 < _list37.size; ++_i38)
+                {
+                  long _elem39;
+                  _elem39 = iprot.readI64();
+                  this.key.add(_elem39);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(TProtocol oprot) throws TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.domain != null) {
+        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
+        oprot.writeString(this.domain);
+        oprot.writeFieldEnd();
+      }
+      if (this.key != null) {
+        oprot.writeFieldBegin(KEY_FIELD_DESC);
+        {
+          oprot.writeListBegin(new TList(TType.I64, this.key.size()));
+          for (long _iter40 : this.key)
+          {
+            oprot.writeI64(_iter40);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("multiGetLong_args(");
+      boolean first = true;
+
+      sb.append("domain:");
+      if (this.domain == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.domain);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("key:");
+      if (this.key == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.key);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws TException {
+      // check for required fields
+    }
+
+  }
+
+  public static class multiGetLong_result implements TBase<multiGetLong_result, multiGetLong_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("multiGetLong_result");
+
+    private static final TField SUCCESS_FIELD_DESC = new TField("success", TType.LIST, (short)0);
+    private static final TField DNFE_FIELD_DESC = new TField("dnfe", TType.STRUCT, (short)1);
+    private static final TField HDE_FIELD_DESC = new TField("hde", TType.STRUCT, (short)2);
+    private static final TField DNLE_FIELD_DESC = new TField("dnle", TType.STRUCT, (short)3);
+
+    private List<Value> success;
+    private DomainNotFoundException dnfe;
+    private HostsDownException hde;
+    private DomainNotLoadedException dnle;
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      DNFE((short)1, "dnfe"),
+      HDE((short)2, "hde"),
+      DNLE((short)3, "dnle");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // DNFE
+            return DNFE;
+          case 2: // HDE
+            return HDE;
+          case 3: // DNLE
+            return DNLE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new FieldMetaData("success", TFieldRequirementType.DEFAULT, 
+          new ListMetaData(TType.LIST, 
+              new StructMetaData(TType.STRUCT, Value.class))));
+      tmpMap.put(_Fields.DNFE, new FieldMetaData("dnfe", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      tmpMap.put(_Fields.HDE, new FieldMetaData("hde", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      tmpMap.put(_Fields.DNLE, new FieldMetaData("dnle", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      FieldMetaData.addStructMetaDataMap(multiGetLong_result.class, metaDataMap);
+    }
+
+    public multiGetLong_result() {
+    }
+
+    public multiGetLong_result(
+      List<Value> success,
+      DomainNotFoundException dnfe,
+      HostsDownException hde,
+      DomainNotLoadedException dnle)
+    {
+      this();
+      this.success = success;
+      this.dnfe = dnfe;
+      this.hde = hde;
+      this.dnle = dnle;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public multiGetLong_result(multiGetLong_result other) {
+      if (other.is_set_success()) {
+        List<Value> __this__success = new ArrayList<Value>();
+        for (Value other_element : other.success) {
+          __this__success.add(new Value(other_element));
+        }
+        this.success = __this__success;
+      }
+      if (other.is_set_dnfe()) {
+        this.dnfe = new DomainNotFoundException(other.dnfe);
+      }
+      if (other.is_set_hde()) {
+        this.hde = new HostsDownException(other.hde);
+      }
+      if (other.is_set_dnle()) {
+        this.dnle = new DomainNotLoadedException(other.dnle);
+      }
+    }
+
+    public multiGetLong_result deepCopy() {
+      return new multiGetLong_result(this);
+    }
+
+    @Deprecated
+    public multiGetLong_result clone() {
+      return new multiGetLong_result(this);
+    }
+
+    public int get_success_size() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    public java.util.Iterator<Value> get_success_iterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void add_to_success(Value elem) {
+      if (this.success == null) {
+        this.success = new ArrayList<Value>();
+      }
+      this.success.add(elem);
+    }
+
+    public List<Value> get_success() {
+      return this.success;
+    }
+
+    public void set_success(List<Value> success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been asigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public DomainNotFoundException get_dnfe() {
+      return this.dnfe;
+    }
+
+    public void set_dnfe(DomainNotFoundException dnfe) {
+      this.dnfe = dnfe;
+    }
+
+    public void unset_dnfe() {
+      this.dnfe = null;
+    }
+
+    /** Returns true if field dnfe is set (has been asigned a value) and false otherwise */
+    public boolean is_set_dnfe() {
+      return this.dnfe != null;
+    }
+
+    public void set_dnfe_isSet(boolean value) {
+      if (!value) {
+        this.dnfe = null;
+      }
+    }
+
+    public HostsDownException get_hde() {
+      return this.hde;
+    }
+
+    public void set_hde(HostsDownException hde) {
+      this.hde = hde;
+    }
+
+    public void unset_hde() {
+      this.hde = null;
+    }
+
+    /** Returns true if field hde is set (has been asigned a value) and false otherwise */
+    public boolean is_set_hde() {
+      return this.hde != null;
+    }
+
+    public void set_hde_isSet(boolean value) {
+      if (!value) {
+        this.hde = null;
+      }
+    }
+
+    public DomainNotLoadedException get_dnle() {
+      return this.dnle;
+    }
+
+    public void set_dnle(DomainNotLoadedException dnle) {
+      this.dnle = dnle;
+    }
+
+    public void unset_dnle() {
+      this.dnle = null;
+    }
+
+    /** Returns true if field dnle is set (has been asigned a value) and false otherwise */
+    public boolean is_set_dnle() {
+      return this.dnle != null;
+    }
+
+    public void set_dnle_isSet(boolean value) {
+      if (!value) {
+        this.dnle = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((List<Value>)value);
+        }
+        break;
+
+      case DNFE:
+        if (value == null) {
+          unset_dnfe();
+        } else {
+          set_dnfe((DomainNotFoundException)value);
+        }
+        break;
+
+      case HDE:
+        if (value == null) {
+          unset_hde();
+        } else {
+          set_hde((HostsDownException)value);
+        }
+        break;
+
+      case DNLE:
+        if (value == null) {
+          unset_dnle();
+        } else {
+          set_dnle((DomainNotLoadedException)value);
+        }
+        break;
+
+      }
+    }
+
+    public void setFieldValue(int fieldID, Object value) {
+      setFieldValue(_Fields.findByThriftIdOrThrow(fieldID), value);
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case DNFE:
+        return get_dnfe();
+
+      case HDE:
+        return get_hde();
+
+      case DNLE:
+        return get_dnle();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    public Object getFieldValue(int fieldId) {
+      return getFieldValue(_Fields.findByThriftIdOrThrow(fieldId));
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been asigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case DNFE:
+        return is_set_dnfe();
+      case HDE:
+        return is_set_hde();
+      case DNLE:
+        return is_set_dnle();
+      }
+      throw new IllegalStateException();
+    }
+
+    public boolean isSet(int fieldID) {
+      return isSet(_Fields.findByThriftIdOrThrow(fieldID));
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof multiGetLong_result)
+        return this.equals((multiGetLong_result)that);
+      return false;
+    }
+
+    public boolean equals(multiGetLong_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_dnfe = true && this.is_set_dnfe();
+      boolean that_present_dnfe = true && that.is_set_dnfe();
+      if (this_present_dnfe || that_present_dnfe) {
+        if (!(this_present_dnfe && that_present_dnfe))
+          return false;
+        if (!this.dnfe.equals(that.dnfe))
+          return false;
+      }
+
+      boolean this_present_hde = true && this.is_set_hde();
+      boolean that_present_hde = true && that.is_set_hde();
+      if (this_present_hde || that_present_hde) {
+        if (!(this_present_hde && that_present_hde))
+          return false;
+        if (!this.hde.equals(that.hde))
+          return false;
+      }
+
+      boolean this_present_dnle = true && this.is_set_dnle();
+      boolean that_present_dnle = true && that.is_set_dnle();
+      if (this_present_dnle || that_present_dnle) {
+        if (!(this_present_dnle && that_present_dnle))
+          return false;
+        if (!this.dnle.equals(that.dnle))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      boolean present_dnfe = true && (is_set_dnfe());
+      builder.append(present_dnfe);
+      if (present_dnfe)
+        builder.append(dnfe);
+
+      boolean present_hde = true && (is_set_hde());
+      builder.append(present_hde);
+      if (present_hde)
+        builder.append(hde);
+
+      boolean present_dnle = true && (is_set_dnle());
+      builder.append(present_dnle);
+      if (present_dnle)
+        builder.append(dnle);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(multiGetLong_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      multiGetLong_result typedOther = (multiGetLong_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {        lastComparison = TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnfe()).compareTo(typedOther.is_set_dnfe());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnfe()) {        lastComparison = TBaseHelper.compareTo(this.dnfe, typedOther.dnfe);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_hde()).compareTo(typedOther.is_set_hde());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_hde()) {        lastComparison = TBaseHelper.compareTo(this.hde, typedOther.hde);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnle()).compareTo(typedOther.is_set_dnle());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnle()) {        lastComparison = TBaseHelper.compareTo(this.dnle, typedOther.dnle);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public void read(TProtocol iprot) throws TException {
+      TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 0: // SUCCESS
+            if (field.type == TType.LIST) {
+              {
+                TList _list41 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list41.size);
+                for (int _i42 = 0; _i42 < _list41.size; ++_i42)
+                {
+                  Value _elem43;
+                  _elem43 = new Value();
+                  _elem43.read(iprot);
+                  this.success.add(_elem43);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 1: // DNFE
+            if (field.type == TType.STRUCT) {
+              this.dnfe = new DomainNotFoundException();
+              this.dnfe.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // HDE
+            if (field.type == TType.STRUCT) {
+              this.hde = new HostsDownException();
+              this.hde.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 3: // DNLE
+            if (field.type == TType.STRUCT) {
+              this.dnle = new DomainNotLoadedException();
+              this.dnle.read(iprot);
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(TProtocol oprot) throws TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_success()) {
+        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+        {
+          oprot.writeListBegin(new TList(TType.STRUCT, this.success.size()));
+          for (Value _iter44 : this.success)
+          {
+            _iter44.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnfe()) {
+        oprot.writeFieldBegin(DNFE_FIELD_DESC);
+        this.dnfe.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_hde()) {
+        oprot.writeFieldBegin(HDE_FIELD_DESC);
+        this.hde.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnle()) {
+        oprot.writeFieldBegin(DNLE_FIELD_DESC);
+        this.dnle.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("multiGetLong_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnfe:");
+      if (this.dnfe == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnfe);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("hde:");
+      if (this.hde == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.hde);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnle:");
+      if (this.dnle == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnle);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws TException {
+      // check for required fields
+    }
+
+  }
+
+  public static class directMultiGet_args implements TBase<directMultiGet_args, directMultiGet_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("directMultiGet_args");
+
+    private static final TField DOMAIN_FIELD_DESC = new TField("domain", TType.STRING, (short)1);
+    private static final TField KEY_FIELD_DESC = new TField("key", TType.LIST, (short)2);
+
+    private String domain;
+    private List<byte[]> key;
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements TFieldIdEnum {
+      DOMAIN((short)1, "domain"),
+      KEY((short)2, "key");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // DOMAIN
+            return DOMAIN;
+          case 2: // KEY
+            return KEY;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.DOMAIN, new FieldMetaData("domain", TFieldRequirementType.DEFAULT, 
+          new FieldValueMetaData(TType.STRING)));
+      tmpMap.put(_Fields.KEY, new FieldMetaData("key", TFieldRequirementType.DEFAULT, 
+          new ListMetaData(TType.LIST, 
+              new FieldValueMetaData(TType.STRING))));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      FieldMetaData.addStructMetaDataMap(directMultiGet_args.class, metaDataMap);
+    }
+
+    public directMultiGet_args() {
+    }
+
+    public directMultiGet_args(
+      String domain,
+      List<byte[]> key)
+    {
+      this();
+      this.domain = domain;
+      this.key = key;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public directMultiGet_args(directMultiGet_args other) {
+      if (other.is_set_domain()) {
+        this.domain = other.domain;
+      }
+      if (other.is_set_key()) {
+        List<byte[]> __this__key = new ArrayList<byte[]>();
+        for (byte[] other_element : other.key) {
+          byte[] temp_binary_element = new byte[other_element.length];
+          System.arraycopy(other_element, 0, temp_binary_element, 0, other_element.length);
+          __this__key.add(temp_binary_element);
+        }
+        this.key = __this__key;
+      }
+    }
+
+    public directMultiGet_args deepCopy() {
+      return new directMultiGet_args(this);
+    }
+
+    @Deprecated
+    public directMultiGet_args clone() {
+      return new directMultiGet_args(this);
+    }
+
+    public String get_domain() {
+      return this.domain;
+    }
+
+    public void set_domain(String domain) {
+      this.domain = domain;
+    }
+
+    public void unset_domain() {
+      this.domain = null;
+    }
+
+    /** Returns true if field domain is set (has been asigned a value) and false otherwise */
+    public boolean is_set_domain() {
+      return this.domain != null;
+    }
+
+    public void set_domain_isSet(boolean value) {
+      if (!value) {
+        this.domain = null;
+      }
+    }
+
+    public int get_key_size() {
+      return (this.key == null) ? 0 : this.key.size();
+    }
+
+    public java.util.Iterator<byte[]> get_key_iterator() {
+      return (this.key == null) ? null : this.key.iterator();
+    }
+
+    public void add_to_key(byte[] elem) {
+      if (this.key == null) {
+        this.key = new ArrayList<byte[]>();
+      }
+      this.key.add(elem);
+    }
+
+    public List<byte[]> get_key() {
+      return this.key;
+    }
+
+    public void set_key(List<byte[]> key) {
+      this.key = key;
+    }
+
+    public void unset_key() {
+      this.key = null;
+    }
+
+    /** Returns true if field key is set (has been asigned a value) and false otherwise */
+    public boolean is_set_key() {
+      return this.key != null;
+    }
+
+    public void set_key_isSet(boolean value) {
+      if (!value) {
+        this.key = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case DOMAIN:
+        if (value == null) {
+          unset_domain();
+        } else {
+          set_domain((String)value);
+        }
+        break;
+
+      case KEY:
+        if (value == null) {
+          unset_key();
+        } else {
+          set_key((List<byte[]>)value);
+        }
+        break;
+
+      }
+    }
+
+    public void setFieldValue(int fieldID, Object value) {
+      setFieldValue(_Fields.findByThriftIdOrThrow(fieldID), value);
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return get_domain();
+
+      case KEY:
+        return get_key();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    public Object getFieldValue(int fieldId) {
+      return getFieldValue(_Fields.findByThriftIdOrThrow(fieldId));
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been asigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return is_set_domain();
+      case KEY:
+        return is_set_key();
+      }
+      throw new IllegalStateException();
+    }
+
+    public boolean isSet(int fieldID) {
+      return isSet(_Fields.findByThriftIdOrThrow(fieldID));
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof directMultiGet_args)
+        return this.equals((directMultiGet_args)that);
+      return false;
+    }
+
+    public boolean equals(directMultiGet_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_domain = true && this.is_set_domain();
+      boolean that_present_domain = true && that.is_set_domain();
+      if (this_present_domain || that_present_domain) {
+        if (!(this_present_domain && that_present_domain))
+          return false;
+        if (!this.domain.equals(that.domain))
+          return false;
+      }
+
+      boolean this_present_key = true && this.is_set_key();
+      boolean that_present_key = true && that.is_set_key();
+      if (this_present_key || that_present_key) {
+        if (!(this_present_key && that_present_key))
+          return false;
+        if (!this.key.equals(that.key))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_domain = true && (is_set_domain());
+      builder.append(present_domain);
+      if (present_domain)
+        builder.append(domain);
+
+      boolean present_key = true && (is_set_key());
+      builder.append(present_key);
+      if (present_key)
+        builder.append(key);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(directMultiGet_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      directMultiGet_args typedOther = (directMultiGet_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_domain()) {        lastComparison = TBaseHelper.compareTo(this.domain, typedOther.domain);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_key()).compareTo(typedOther.is_set_key());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_key()) {        lastComparison = TBaseHelper.compareTo(this.key, typedOther.key);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public void read(TProtocol iprot) throws TException {
+      TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // DOMAIN
+            if (field.type == TType.STRING) {
+              this.domain = iprot.readString();
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // KEY
+            if (field.type == TType.LIST) {
+              {
+                TList _list45 = iprot.readListBegin();
+                this.key = new ArrayList<byte[]>(_list45.size);
+                for (int _i46 = 0; _i46 < _list45.size; ++_i46)
+                {
+                  byte[] _elem47;
+                  _elem47 = iprot.readBinary();
+                  this.key.add(_elem47);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(TProtocol oprot) throws TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.domain != null) {
+        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
+        oprot.writeString(this.domain);
+        oprot.writeFieldEnd();
+      }
+      if (this.key != null) {
+        oprot.writeFieldBegin(KEY_FIELD_DESC);
+        {
+          oprot.writeListBegin(new TList(TType.STRING, this.key.size()));
+          for (byte[] _iter48 : this.key)
+          {
+            oprot.writeBinary(_iter48);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("directMultiGet_args(");
+      boolean first = true;
+
+      sb.append("domain:");
+      if (this.domain == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.domain);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("key:");
+      if (this.key == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.key);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws TException {
+      // check for required fields
+    }
+
+  }
+
+  public static class directMultiGet_result implements TBase<directMultiGet_result, directMultiGet_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final TStruct STRUCT_DESC = new TStruct("directMultiGet_result");
+
+    private static final TField SUCCESS_FIELD_DESC = new TField("success", TType.LIST, (short)0);
     private static final TField DNFE_FIELD_DESC = new TField("dnfe", TType.STRUCT, (short)1);
     private static final TField DNLE_FIELD_DESC = new TField("dnle", TType.STRUCT, (short)2);
     private static final TField WHE_FIELD_DESC = new TField("whe", TType.STRUCT, (short)3);
 
-    private Value success;
+    private List<Value> success;
     private DomainNotFoundException dnfe;
     private DomainNotLoadedException dnle;
     private WrongHostException whe;
@@ -5579,7 +10178,8 @@ public class ElephantDB {
     static {
       Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new FieldMetaData("success", TFieldRequirementType.DEFAULT, 
-          new StructMetaData(TType.STRUCT, Value.class)));
+          new ListMetaData(TType.LIST, 
+              new StructMetaData(TType.STRUCT, Value.class))));
       tmpMap.put(_Fields.DNFE, new FieldMetaData("dnfe", TFieldRequirementType.DEFAULT, 
           new FieldValueMetaData(TType.STRUCT)));
       tmpMap.put(_Fields.DNLE, new FieldMetaData("dnle", TFieldRequirementType.DEFAULT, 
@@ -5587,14 +10187,14 @@ public class ElephantDB {
       tmpMap.put(_Fields.WHE, new FieldMetaData("whe", TFieldRequirementType.DEFAULT, 
           new FieldValueMetaData(TType.STRUCT)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
-      FieldMetaData.addStructMetaDataMap(directGet_result.class, metaDataMap);
+      FieldMetaData.addStructMetaDataMap(directMultiGet_result.class, metaDataMap);
     }
 
-    public directGet_result() {
+    public directMultiGet_result() {
     }
 
-    public directGet_result(
-      Value success,
+    public directMultiGet_result(
+      List<Value> success,
       DomainNotFoundException dnfe,
       DomainNotLoadedException dnle,
       WrongHostException whe)
@@ -5609,9 +10209,13 @@ public class ElephantDB {
     /**
      * Performs a deep copy on <i>other</i>.
      */
-    public directGet_result(directGet_result other) {
+    public directMultiGet_result(directMultiGet_result other) {
       if (other.is_set_success()) {
-        this.success = new Value(other.success);
+        List<Value> __this__success = new ArrayList<Value>();
+        for (Value other_element : other.success) {
+          __this__success.add(new Value(other_element));
+        }
+        this.success = __this__success;
       }
       if (other.is_set_dnfe()) {
         this.dnfe = new DomainNotFoundException(other.dnfe);
@@ -5624,20 +10228,35 @@ public class ElephantDB {
       }
     }
 
-    public directGet_result deepCopy() {
-      return new directGet_result(this);
+    public directMultiGet_result deepCopy() {
+      return new directMultiGet_result(this);
     }
 
     @Deprecated
-    public directGet_result clone() {
-      return new directGet_result(this);
+    public directMultiGet_result clone() {
+      return new directMultiGet_result(this);
     }
 
-    public Value get_success() {
+    public int get_success_size() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    public java.util.Iterator<Value> get_success_iterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void add_to_success(Value elem) {
+      if (this.success == null) {
+        this.success = new ArrayList<Value>();
+      }
+      this.success.add(elem);
+    }
+
+    public List<Value> get_success() {
       return this.success;
     }
 
-    public void set_success(Value success) {
+    public void set_success(List<Value> success) {
       this.success = success;
     }
 
@@ -5731,7 +10350,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((Value)value);
+          set_success((List<Value>)value);
         }
         break;
 
@@ -5811,12 +10430,12 @@ public class ElephantDB {
     public boolean equals(Object that) {
       if (that == null)
         return false;
-      if (that instanceof directGet_result)
-        return this.equals((directGet_result)that);
+      if (that instanceof directMultiGet_result)
+        return this.equals((directMultiGet_result)that);
       return false;
     }
 
-    public boolean equals(directGet_result that) {
+    public boolean equals(directMultiGet_result that) {
       if (that == null)
         return false;
 
@@ -5886,13 +10505,13 @@ public class ElephantDB {
       return builder.toHashCode();
     }
 
-    public int compareTo(directGet_result other) {
+    public int compareTo(directMultiGet_result other) {
       if (!getClass().equals(other.getClass())) {
         return getClass().getName().compareTo(other.getClass().getName());
       }
 
       int lastComparison = 0;
-      directGet_result typedOther = (directGet_result)other;
+      directMultiGet_result typedOther = (directMultiGet_result)other;
 
       lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
       if (lastComparison != 0) {
@@ -5944,9 +10563,19 @@ public class ElephantDB {
         }
         switch (field.id) {
           case 0: // SUCCESS
-            if (field.type == TType.STRUCT) {
-              this.success = new Value();
-              this.success.read(iprot);
+            if (field.type == TType.LIST) {
+              {
+                TList _list49 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list49.size);
+                for (int _i50 = 0; _i50 < _list49.size; ++_i50)
+                {
+                  Value _elem51;
+                  _elem51 = new Value();
+                  _elem51.read(iprot);
+                  this.success.add(_elem51);
+                }
+                iprot.readListEnd();
+              }
             } else { 
               TProtocolUtil.skip(iprot, field.type);
             }
@@ -5989,7 +10618,14 @@ public class ElephantDB {
 
       if (this.is_set_success()) {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-        this.success.write(oprot);
+        {
+          oprot.writeListBegin(new TList(TType.STRUCT, this.success.size()));
+          for (Value _iter52 : this.success)
+          {
+            _iter52.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
         oprot.writeFieldEnd();
       } else if (this.is_set_dnfe()) {
         oprot.writeFieldBegin(DNFE_FIELD_DESC);
@@ -6010,7 +10646,7 @@ public class ElephantDB {
 
     @Override
     public String toString() {
-      StringBuilder sb = new StringBuilder("directGet_result(");
+      StringBuilder sb = new StringBuilder("directMultiGet_result(");
       boolean first = true;
 
       sb.append("success:");
@@ -7081,13 +11717,13 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == TType.LIST) {
               {
-                TList _list13 = iprot.readListBegin();
-                this.success = new ArrayList<String>(_list13.size);
-                for (int _i14 = 0; _i14 < _list13.size; ++_i14)
+                TList _list53 = iprot.readListBegin();
+                this.success = new ArrayList<String>(_list53.size);
+                for (int _i54 = 0; _i54 < _list53.size; ++_i54)
                 {
-                  String _elem15;
-                  _elem15 = iprot.readString();
-                  this.success.add(_elem15);
+                  String _elem55;
+                  _elem55 = iprot.readString();
+                  this.success.add(_elem55);
                 }
                 iprot.readListEnd();
               }
@@ -7111,9 +11747,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new TList(TType.STRING, this.success.size()));
-          for (String _iter16 : this.success)
+          for (String _iter56 : this.success)
           {
-            oprot.writeString(_iter16);
+            oprot.writeString(_iter56);
           }
           oprot.writeListEnd();
         }

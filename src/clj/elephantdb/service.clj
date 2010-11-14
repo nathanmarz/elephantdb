@@ -133,6 +133,20 @@
 ;;    need to be throttled?
 ;; 5. Create Hadoop FS on demand... need retry logic if loaders fail?
 
+
+  ;; list<Value> multiGet(1: string domain, 2: list<binary> key)
+  ;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+  ;; list<Value> multiGetString(1: string domain, 2: list<string> key)
+  ;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+  ;; list<Value> multiGetInt(1: string domain, 2: list<i32> key)
+  ;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+  ;; list<Value> multiGetLong(1: string domain, 2: list<i64> key)
+  ;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+
+  ;; list<Value> directMultiGet(1: string domain, 2: list<binary> key)
+  ;;   throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
+
+
 (defn service-handler [global-config local-config token]
   (let [domains-info (sync-data global-config local-config token)
         client (atom nil)
@@ -163,18 +177,35 @@
                [#^String domain key]
                (.getLong @client domain key))
 
-              (directGet
-               [#^String domain key]
+              (multiGet
+               [#^String domain keys]
+               (.multiGet @client domain keys))
+
+              (multiGetString
+               [#^String domain #^String keys]
+               (.multiGetString @client domain keys))
+
+              (multiGetInt
+               [#^String domain keys]
+               (.multiGetInt @client domain keys))
+
+              (multiGetLong
+               [#^String domain keys]
+               (.multiGetLong @client domain keys))              
+
+              (directMultiGet
+               [#^String domain keys]
                (read-locked
                 rw-lock
-                (let [info                   (get-readable-domain-info domains-info domain)
-                      shard                  (domain/key-shard domain info key)
-                      #^LocalPersistence lp  (domain/domain-data info shard)]
-                  (log-debug "Direct get key" (seq key) "at shard" shard)
-                  (when-not lp
-                    (throw (thrift/wrong-host-ex)))
-                  (thrift/mk-value (.get lp key))
-                  )))
+                (dofor [key keys]
+                       (let [info                   (get-readable-domain-info domains-info domain)
+                             shard                  (domain/key-shard domain info key)
+                             #^LocalPersistence lp  (domain/domain-data info shard)]
+                         (log-message "Direct get key " (seq key) "at shard " shard)
+                         (when-not lp
+                           (throw (thrift/wrong-host-ex)))
+                         (thrift/mk-value (.get lp key))
+                         ))))
               
               (getDomainStatus
                [#^String domain]

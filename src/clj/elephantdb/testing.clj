@@ -182,6 +182,7 @@
      (binding [key-shard (let [prev# key-shard
                                rev# (reverse-pre-sharded ~shardmap)]
                            (fn [d# k# a#]
+                             (println "called " d# (seq k#) a#)
                              (if (= d# ~dname)
                                (rev# (ByteArray. k#))
                                (prev# d# k# a#)
