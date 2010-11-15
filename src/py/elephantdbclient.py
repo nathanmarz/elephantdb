@@ -44,6 +44,9 @@ class ElephantDBClient:
 
     def multiGetLong(self, domain, keys):
         return self._exec(lambda client: client.multiGetLong(domain, keys))
+
+    def multiGetThrift(self, domain, keys):
+        return self._exec(lambda client: client.multiGet(domain, map(serialize, keys)))
     
     def getDomainStatus(self, domain):
         return self._exec(lambda client: client.getDomainStatus(domain))
