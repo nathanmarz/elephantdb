@@ -201,7 +201,7 @@
                        (let [info                   (get-readable-domain-info domains-info domain)
                              shard                  (domain/key-shard domain info key)
                              #^LocalPersistence lp  (domain/domain-data info shard)]
-                         (log-message "Direct get key " (seq key) "at shard " shard)
+                         (log-debug "Direct get key " (seq key) "at shard " shard)
                          (when-not lp
                            (throw (thrift/wrong-host-ex)))
                          (thrift/mk-value (.get lp key))
