@@ -33,6 +33,18 @@ class ElephantDBClient:
     def directGet(self, domain, key):
         return self._exec(lambda client: client.directGet(domain, key))
     
+    def multiGet(self, domain, keys):
+        return self._exec(lambda client: client.multiGet(domain, keys))
+
+    def multiGetString(self, domain, keys):
+        return self._exec(lambda client: client.multiGetString(domain, keys))
+
+    def multiGetInt(self, domain, keys):
+        return self._exec(lambda client: client.multiGetInt(domain, keys))
+
+    def multiGetLong(self, domain, keys):
+        return self._exec(lambda client: client.multiGetLong(domain, keys))
+    
     def getDomainStatus(self, domain):
         return self._exec(lambda client: client.getDomainStatus(domain))
     
