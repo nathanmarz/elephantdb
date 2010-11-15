@@ -11,6 +11,9 @@
 (defn direct-get-val [elephant d k]
   (.get_data (first (.directMultiGet elephant d [k]))))
 
+(defn multi-get-vals [elephant domain keys]
+  (map (memfn get_data) (.multiGet elephant domain keys)))
+
 (deftest test-basic
   (with-sharded-domain [dpath
                         {:num-shards 4
@@ -119,4 +122,64 @@
                      (get-val handler "test" (barr 4))))
           (is (= nil (get-val handler "test" (barr 2))))
           (.shutdown handler))
+        ))))
+
+
+
+
+;; TODO: need to do something to prioritize hosts in tests (override get-priority-hosts)
+(deftest test-multi-get
+  (let [shards-to-pairs {0 [[(barr 0) (barr 0 0)]
+                            [(barr 1) (barr 1 1)]
+                            [(barr 2) nil]]
+                         1 [[(barr 10) (barr 10 0)]]
+                         2 [[(barr 20) (barr 20 0)]
+                            [(barr 21) (barr 21 1)]
+                            [(barr 22) nil]]
+                         3 [[(barr 30) (barr 30 0)]]}
+        domain-to-host-to-shards {"test1" {(local-hostname) [0 3]
+                                           "host2" [1 0]
+                                           "host3" [2 1]
+                                           "host4" [3 2]}}]
+    (with-presharded-domain
+      ["test1"
+       dpath
+       (JavaBerkDB.)
+       shards-to-pairs]
+      (with-service-handler
+        [elephant
+         [(local-hostname) "host2"]
+         {"test1" dpath}
+         domain-to-host-to-shards
+         ]
+        (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host4"]]          
+          (is (barr=
+               (barr 0 0)
+               (get-val elephant "test1" (barr 0))))
+          (is (barr=
+               (barr 20 0)
+               (get-val elephant "test1" (barr 20))))
+          (is (=
+               nil
+               (get-val elephant "test1" (barr 2))))
+          (is (barrs=
+               [(barr 0 0) nil (barr 30 0)]
+               (multi-get-vals elephant "test1" [(barr 0) (barr 22) (barr 30)])
+               ))
+          (is (barrs=
+               [(barr 0 0) (barr 1 1) nil (barr 30 0) (barr 10 0)]
+               (multi-get-vals elephant "test1" [(barr 0) (barr 1) (barr 2) (barr 30) (barr 10)])
+               ))
+          (is (= [] (multi-get-vals elephant "test1" [])))
+          )
+        (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host3" "host4"]]
+          (is (barrs=
+               [(barr 0 0) (barr 10 0)]
+               (multi-get-vals elephant "test1" [(barr 0) (barr 10)])
+               ))
+          (is (thrown?
+               Exception
+               (multi-get-vals elephant "test1" [(barr 0) (barr 22)])
+               ))
+          )
         ))))

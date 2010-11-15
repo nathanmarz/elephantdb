@@ -4,13 +4,31 @@
   (:import [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager])
   (:import [elephantdb.store DomainStore])
+  (:import [elephantdb.generated Value])
   (:import [org.apache.hadoop.io IntWritable])
   (:import [org.apache.hadoop.mapred JobConf])
-  (:use [elephantdb util hadoop config shard service])
+  (:import [org.apache.thrift TException])
+  (:use [elephantdb util hadoop config shard service thrift])
+  (:require [elephantdb [client :as client]])
+  (:use [clojure.contrib.seq-utils :only [find-first]])
   (:use [clojure test]))
 
 (defn uuid []
   (str (UUID/randomUUID)))
+
+(defn barr [& vals]
+  (byte-array (map byte vals)))
+
+(defn barr= [& vals]
+  (apply = (map #(ByteArray. %) vals)))
+
+(defn barrs= [& arrs]
+  (and (apply = (map count arrs))
+   (every? identity
+           (apply map (fn [& vals]
+                        (or (every? nil? vals)
+                            (apply barr= vals)))
+                  arrs))))
 
 (defn delete-all [fs paths]
   (dorun
@@ -182,7 +200,6 @@
      (binding [key-shard (let [prev# key-shard
                                rev# (reverse-pre-sharded ~shardmap)]
                            (fn [d# k# a#]
-                             (println "called " d# (seq k#) a#)
                              (if (= d# ~dname)
                                (rev# (ByteArray. k#))
                                (prev# d# k# a#)
@@ -200,6 +217,27 @@
            (finally (.shutdown ~handler-sym)))         
          ))))
 
+(defn mk-mocked-remote-multiget-fn [domain-to-host-to-shards shards-to-pairs down-hosts]
+  (fn [host port domain keys]    
+    (when (= host (local-hostname))
+      (throw (RuntimeException. "Tried to make remote call to local server")))
+    (when ((set down-hosts) host)
+      (throw (TException. (str host " is down"))))
+    (let [shards ((domain-to-host-to-shards domain) host)
+          pairs (apply concat (vals (select-keys shards-to-pairs shards)))]
+      (for [key keys]
+        (let [myval (find-first #(barr= key (first %)) pairs)]
+          (if myval
+            (mk-value (second myval))
+            (throw (wrong-host-ex)))
+          )))))
+
+(defmacro with-mocked-remote [[domain-to-host-to-shards shards-to-pairs down-hosts] & body]
+  ;; mock client/try-multi-get only for non local-hostname hosts
+  `(binding [client/multi-get-remote (mk-mocked-remote-multiget-fn ~domain-to-host-to-shards ~shards-to-pairs ~down-hosts)]
+     ~@body
+     ))
+
 (defmacro with-single-service-handler
   [[handler-sym domains-conf] & body]
   `(with-service-handler [~handler-sym [(local-hostname)] ~domains-conf nil]
@@ -213,12 +251,6 @@
         (is (nil? newv))
         (is (pred v newv) (str (seq k) (seq v) (seq newv))))
       )))
-
-(defn barr [& vals]
-  (byte-array (map byte vals)))
-
-(defn barr= [& vals]
-  (apply = (map #(ByteArray. %) vals)))
 
 (defn- objify-kvpairs [pairs]
   (for [[k v] pairs]

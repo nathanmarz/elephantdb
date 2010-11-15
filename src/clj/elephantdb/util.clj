@@ -44,6 +44,17 @@
 (defn mk-rw-lock []
   (ReentrantReadWriteLock.))
 
+(defn third [aseq]
+  (nth aseq 2))
+
+(defn parallel-exec [funcs]
+  (if (empty? funcs)
+    []
+    (let [[thisfn & restfns] funcs
+          future-rest (dofor [f restfns] (future-call f))]
+      (cons (thisfn) (map deref future-rest))
+      )))
+
 (defmacro read-locked [rw-lock & body]
   `(let [rlock# (.readLock ~rw-lock)]
       (try

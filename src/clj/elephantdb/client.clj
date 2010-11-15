@@ -32,8 +32,8 @@
 (defn- my-local-hostname [this]
   (:local-hostname (. this state)))
 
-(defn- get-priority-hosts [this domain shard]
-  (let [hosts (shuffle (shard/shard-hosts (get-index this domain) shard))
+(defn- get-priority-hosts [this domain key]
+  (let [hosts (shuffle (shard/key-hosts domain (get-index this domain) key))
         localhost (my-local-hostname this)]
     (if (includes? hosts localhost)
       (cons localhost (remove-val localhost hosts))
@@ -79,48 +79,54 @@
 (defn -getLong [this domain l]
   (.get this domain (serialize-long l)))
 
-
 ;; returns map of shard to list of [global index], key pairs
-(defn- sharded-keys [this domain keys]
+(defn- host-indexed-keys [this domain keys]
   (let [indexed (seq-utils/indexed keys)]
-    (group-by
-     (fn [[global-index key]]
-       (shard/key-shard domain
-                        key
-                        (shard/num-shards (get-index this domain))
-                        ))
-     indexed
-     )))
+    (for [[gi key] indexed]
+      (let [priority-hosts (get-priority-hosts this domain key)]
+        [priority-hosts gi key priority-hosts]
+        ))))
 
 
-;;TODO: need to do this by host, not by shard...
-;;returns list of [global-index result-Value]
-(defn- shard-result-future [this domain shard indexed-keys]
-  (let [key-shard-curr shard/key-shard]
-    (future
-     ;; Need to do this because we rebind key-shard in tests
-     ;; and bindings don't cross thread bindings
-     (binding [shard/key-shard key-shard-curr]
-       (let [keys (map second indexed-keys)
-             hosts (get-priority-hosts this domain shard)]
-         (println "hosts " shard hosts)
-         (loop [[totry & resthosts] hosts]
-           (when-not totry
-             (throw (hosts-down-ex hosts)))
-           (if-let [ret (try-multi-get this domain keys totry)]
-             (map (fn [[global-index _] v] [global-index v])
-                  indexed-keys ret)
-             (recur resthosts))
-           )))
-     )))
+;; executes multi-get, returns seq of [global-index val]
+(defn- multi-get* [this domain host host-indexed-keys key-shard-fn multi-get-remote-fn]
+  (binding [shard/key-shard key-shard-fn
+            multi-get-remote multi-get-remote-fn]
+    (if-let [vals (try-multi-get this domain (map third host-indexed-keys) host)]
+      (map (fn [v [hosts gi key all-hosts]] [gi v])
+           vals host-indexed-keys
+           ))))
+
 
 (defn -multiGet [this domain keys]
-  (let [sharded-keys (sharded-keys this domain keys)
-        _ (println "sharded keys: " sharded-keys)
-        shard-result-futures (dofor [[shard indexed-keys] sharded-keys]
-                                    (shard-result-future this domain shard indexed-keys))
-        indexed-results (apply concat (future-values shard-result-futures))]
-    (map second (sort-by first indexed-results))
+  (let [;; this trickery is to get around issues with binding/tests
+        key-shard-fn shard/key-shard
+        multi-get-remote-fn multi-get-remote
+        host-indexed-keys (host-indexed-keys this domain keys)]
+    (loop [keys-to-get host-indexed-keys
+           results []]
+      (let [host-map (group-by #(first (first %)) keys-to-get)
+            rets (parallel-exec
+                  (for [[host host-indexed-keys] host-map]
+                    (fn []
+                      [host
+                       (multi-get* this domain host host-indexed-keys key-shard-fn multi-get-remote-fn)]
+                      )))
+            succeeded (filter second rets)
+            succeeded-hosts (map first succeeded)
+            results (apply concat results (map second succeeded))
+            failed-host-map (apply dissoc host-map succeeded-hosts)
+            ]
+        (if-not (empty? failed-host-map)
+          (recur
+           (for [[[_ & hosts] gi key all-hosts] (apply concat (vals failed-host-map))]
+             (do
+               (when (empty? hosts)
+                 (throw (hosts-down-ex all-hosts)))
+               [hosts gi key all-hosts]))
+           results )
+          (map second (sort-by first results))
+          )))
     ))
 
 (defn -multiGetInt [this domain integers]
