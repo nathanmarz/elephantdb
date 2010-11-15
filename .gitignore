@@ -5,3 +5,5 @@ classes
 /elephantdb.jar
 /logs/krati.log
 /logs/stats.log
+pom.xml
+/lib
