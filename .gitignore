@@ -1,7 +1,5 @@
 _deps
 classes
-/CHILD
-/CHILDMAKER
 /elephantdb.jar
 /logs/krati.log
 /logs/stats.log

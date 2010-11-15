@@ -79,14 +79,13 @@
 (defn -getLong [this domain l]
   (.get this domain (serialize-long l)))
 
-;; returns map of shard to list of [global index], key pairs
+;; returns [hosts-to-try global-index key all-hosts] seq
 (defn- host-indexed-keys [this domain keys]
   (let [indexed (seq-utils/indexed keys)]
     (for [[gi key] indexed]
       (let [priority-hosts (get-priority-hosts this domain key)]
         [priority-hosts gi key priority-hosts]
         ))))
-
 
 ;; executes multi-get, returns seq of [global-index val]
 (defn- multi-get* [this domain host host-indexed-keys key-shard-fn multi-get-remote-fn]
@@ -96,7 +95,6 @@
       (map (fn [v [hosts gi key all-hosts]] [gi v])
            vals host-indexed-keys
            ))))
-
 
 (defn -multiGet [this domain keys]
   (let [;; this trickery is to get around issues with binding/tests
