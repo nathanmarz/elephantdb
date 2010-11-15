@@ -7,3 +7,4 @@ classes
 /logs/stats.log
 pom.xml
 /lib
+*.jar
