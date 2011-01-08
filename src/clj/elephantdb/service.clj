@@ -160,7 +160,7 @@
                 (dofor [[_ info] domains-info]
                        (domain/set-domain-status! info (thrift/shutdown-status))))
                (close-lps domains-info))
-              
+
               (get
                [#^String domain #^bytes key]
                (.get @client domain key))
@@ -191,7 +191,7 @@
 
               (multiGetLong
                [#^String domain keys]
-               (.multiGetLong @client domain keys))              
+               (.multiGetLong @client domain keys))
 
               (directMultiGet
                [#^String domain keys]
@@ -206,14 +206,14 @@
                            (throw (thrift/wrong-host-ex)))
                          (thrift/mk-value (.get lp key))
                          ))))
-              
+
               (getDomainStatus
                [#^String domain]
                (let [info (domains-info domain)]
                  (when-not info
                    (throw (thrift/domain-not-found-ex domain)))
                  (domain/domain-status info)))
-              
+
               (getDomains
                []
                (keys domains-info))
@@ -222,7 +222,7 @@
                []
                (thrift/elephant-status
                 (into {} (for [[d i] domains-info] [d (domain/domain-status i)]))))
-              
+
               (isFullyLoaded
                []
                (let [stat (.get_domain_statuses (.getStatus this))]

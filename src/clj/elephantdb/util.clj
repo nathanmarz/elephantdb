@@ -15,14 +15,11 @@
 (defn reverse-multimap
   "{:a [1 2] :b [1] :c [3]} -> {1 [:a :b] 2 [:a] 3 [:c]}"
   [amap]
-  (reduce
-    (fn [m [k v]]
-      (reduce
-        (fn [m v]
-          (let [existing (get m v [])]
-          (assoc m v (conj existing k))))
-          m v))
-    {} amap))
+  (apply merge-with concat
+    (mapcat
+      (fn [[k vlist]]
+        (for [v vlist] {v [k]} ))
+      amap )))
 
 (defn local-hostname []
   (.getCanonicalHostName (InetAddress/getLocalHost)))
