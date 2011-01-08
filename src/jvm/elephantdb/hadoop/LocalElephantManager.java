@@ -10,10 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.Collection;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.ChecksumFileSystem;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.commons.io.FileUtils;
 
 
 public class LocalElephantManager {
@@ -62,11 +64,11 @@ public class LocalElephantManager {
                             _persistenceOptions)
                          .close();
             } else {
-                if(_fs instanceof ChecksumFileSystem) {
-                   ((ChecksumFileSystem)_fs).copyToLocalFile(new Path(remotePath), new Path(returnDir), false);
-                } else {
-                    _fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
-                }
+                _fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
+                Collection<File> crcs = FileUtils.listFiles(new File(returnDir), new String[] {"crc"}, true);
+                for(File crc: crcs) {
+                    FileUtils.forceDelete(crc);
+                }                
             }
             return returnDir;
         }
