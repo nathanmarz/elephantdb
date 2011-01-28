@@ -12,7 +12,7 @@
 
 
 (defn compute-host-to-shards [domain hosts numshards replication]
-  (log-message "host to shards" domain hosts numshards replication)
+  (log-message "host to shards " domain hosts numshards replication)
   (when (> replication (count hosts))
     (throw (IllegalArgumentException. "Replication greater than number of servers")))
   (let [shards (repeat-seq replication (range numshards))
