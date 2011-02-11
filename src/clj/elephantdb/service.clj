@@ -55,8 +55,9 @@
     ))
 
 (defn domain-needs-update? [local-vs remote-vs]
-  (< (.mostRecentVersion local-vs)
-     (.mostRecentVersion remote-vs)))
+  (or (nil? (.mostRecentVersion local-vs))
+      (< (.mostRecentVersion local-vs)
+         (.mostRecentVersion remote-vs))))
 
 (defn use-cache-or-update [domain domains-info global-config local-config]
   (let [fs (filesystem (:hdfs-conf local-config))
@@ -68,7 +69,7 @@
         local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
     (if (domain-needs-update? local-vs remote-vs)
       (do
-        (doto (local-filesystem) (clear-dir local-domain-root))  ;; clear domain dir first
+        (doto lfs (clear-dir local-domain-root))  ;; clear domain dir first
         (load-domain fs
                      local-config
                      local-domain-root
