@@ -38,9 +38,6 @@
 (defn remove-val [v aseq]
   (filter (partial not= v) aseq))
 
-(defn mk-rw-lock []
-  (ReentrantReadWriteLock.))
-
 (defn third [aseq]
   (nth aseq 2))
 
@@ -51,6 +48,9 @@
           future-rest (dofor [f restfns] (future-call f))]
       (cons (thisfn) (map deref future-rest))
       )))
+
+(defn mk-rw-lock []
+  (ReentrantReadWriteLock.))
 
 (defmacro read-locked [rw-lock & body]
   `(let [rlock# (.readLock ~rw-lock)]
