@@ -6,3 +6,5 @@ classes
 pom.xml
 /lib
 *.jar
+CHILD
+CHILDPY
