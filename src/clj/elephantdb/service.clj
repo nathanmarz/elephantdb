@@ -64,7 +64,7 @@
         lfs (local-filesystem)
         local-dir (:local-dir local-config)
         local-domain-root (str (path local-dir domain))
-        remote-path (-> global-config (:domains) (get domain))
+        remote-path (-> global-config :domains (get domain))
         remote-vs (DomainStore. fs remote-path)
         local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
     (if (domain-needs-update? local-vs remote-vs)
@@ -76,9 +76,6 @@
                      remote-path
                      (domain/host-shards (domains-info domain))))
       ;; use cached domain from local-dir (no update needed)
-      (open-domain local-config
-                   (str (path local-dir domain))
-                   (domain/host-shards (domains-info domain)))
       )))
 
 (defn sync-data-updated [domains-info global-config local-config]
