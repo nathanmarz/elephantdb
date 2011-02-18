@@ -77,9 +77,6 @@
                      remote-path
                      (domain/host-shards (domains-info domain))))
       ;; use cached domain from local-dir (no update needed)
-      (open-domain local-config
-                   (str (path local-dir domain))
-                   (domain/host-shards (domains-info domain)))
       )))
 
 (defn sync-data-updated [domains-info global-config local-config]
