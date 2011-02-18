@@ -23,7 +23,9 @@ ElephantDB is hosted at [Clojars](http://clojars.org/elephantdb). Clojars is a m
 
 # Deploying ElephantDB server
 
-To launch an ElephantDB server, you must run the class elephantdb.main with three command line arguments:
+To build ElephantDB, you will need to install [Leiningen](https://github.com/technomancy/leiningen). Run "lein deps && lein uberjar" to create a jar containing ElephantDB and all it's dependencies. 
+
+To launch an ElephantDB server, you must run the class elephantdb.main with three command line arguments, described below. ElephantDB also requires the Hadoop jars in its classpath.
 
 ring-configuration-path: A path on the distributed filesystem where the ring configuration is. The ring configuration indicates what domains of data to serve, where to find that data, what port to run on, what replication factor to use, and a list of all the servers participating in serving the data. An example is given in example/global-conf.clj
 
