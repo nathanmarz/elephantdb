@@ -1,5 +1,6 @@
 (ns elephantdb.testing
   (:import [java.util UUID ArrayList])
+  (:import [java.io IOException])
   (:import [elephantdb Utils ByteArray])
   (:import [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager])
@@ -11,6 +12,7 @@
   (:use [elephantdb util hadoop config shard service thrift])
   (:require [elephantdb [client :as client]])
   (:use [clojure.contrib.seq-utils :only [find-first]])
+  (:use [clojure.contrib.def :only [defnk]])
   (:use [clojure test]))
 
 (defn uuid []
@@ -132,10 +134,15 @@
                       nil
                       nil )))
 
-(defn mk-sharded-domain [fs path domain-spec keyvals]
+(defnk mk-sharded-domain [fs path domain-spec keyvals :version nil]
   (with-local-tmp [lfs localtmp]
     (let [vs (DomainStore. fs path (convert-clj-domain-spec domain-spec))
-          dpath (.createVersion vs)
+          dpath (if version
+                  (let [v (long version)]
+                    (do (if (.hasVersion vs v)
+                          (.deleteVersion vs v))
+                        (.createVersion vs v)))
+                  (.createVersion vs))
           shardedkeyvals (map
                           (fn [[k v]]
                             [(test-key-to-shard k (:num-shards domain-spec))

@@ -128,6 +128,14 @@ public class VersionedStore {
         return ret;
     }
 
+    public boolean hasVersion(long version) {
+        try {
+            return getAllVersions().contains(version);
+        } catch(IOException e) {
+            return false;
+        }
+    }
+
     private String tokenPath(long version) {
         return new Path(_root, "" + version + FINISHED_VERSION_SUFFIX).toString();
     }
