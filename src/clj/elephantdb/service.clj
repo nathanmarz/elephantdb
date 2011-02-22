@@ -55,18 +55,15 @@
         remote-vs (DomainStore. fs remote-path)
         local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
     (if (domain-needs-update? local-vs remote-vs)
-      (do
-        (doto lfs (clear-dir local-domain-root))  ;; clear domain dir first
-        (load-domain fs
-                     local-config
-                     local-domain-root
-                     remote-path
-                     (domain/host-shards (domains-info domain))))
+      (load-domain fs
+                   local-config
+                   local-domain-root
+                   remote-path
+                   (domain/host-shards (domains-info domain)))
       ;; use cached domain from local-dir (no update needed)
       (open-domain local-config
                    (str (path local-dir domain))
-                   (domain/host-shards (domains-info domain)))
-      )))
+                   (domain/host-shards (domains-info domain))))))
 
 (defn delete-deleted-domains [domains-info global-config local-config]
   "Deletes all domains from local filesystem that have been deleted from the global config."
@@ -84,6 +81,16 @@
                         (fn [domain]
                           (use-cache-or-update domain domains-info global-config local-config))))
 
+(defn cleanup-domains [fs domains-info global-config local-config]
+  (let [lfs (local-filesystem)
+        local-dir (:local-dir local-config)]
+    (doseq [domain (keys domains-info)]
+      (let [local-domain-root (str (path local-dir domain))
+            remote-path (-> global-config :domains (get domain))
+            remote-vs (DomainStore. fs remote-path)
+            local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
+        (log-message "Cleaning up local domain versions (only keeping latest version) for domain: " domain)
+        (.cleanup local-vs 1)))))
 
 (defn sync-updated [global-config local-config token]
   "Only fetch domains from remote if a newer version is available.
@@ -97,6 +104,7 @@ Keep the cached versions of any domains that haven't been updated"
       (try
         (delete-deleted-domains domains-info global-config local-config)
         (sync-data-updated domains-info global-config local-config)
+        (cleanup-domains fs domains-info global-config local-config)
         (log-message "Caching global config " cache-config)
         (cache-global-config! local-config cache-config)
         (log-message "Cached config " (read-cached-global-config local-config))
@@ -126,7 +134,6 @@ Keep the cached versions of any domains that haven't been updated"
     domains-info
     ))
 
-;; should delete any domains that don't exist in config as well
 ;; returns map of domain to domain info and launches futures that will fill in the domain info
 (defn- sync-data [global-config local-config token]
   (if (cache? global-config token)
