@@ -124,6 +124,73 @@
           (.shutdown handler))
         ))))
 
+(deftest test-update-synched
+  (with-local-tmp [lfs local-dir]
+    (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
+      (let [domain-spec {:num-shards 4 :persistence-factory (JavaBerkDB.)}
+            local-config (mk-local-config local-dir)]
+        (write-clj-config! {:replication 1
+                            :hosts [(local-hostname)]
+                            :domains {"no-update" dtmp1 "do-update" dtmp2}}
+                           fs
+                           gtmp)
+
+        ;; create version 1 for no-update
+        (mk-sharded-domain fs dtmp1 domain-spec
+                           [[(barr 0) (barr 0 0)]
+                            [(barr 1) (barr 1 1)]
+                            [(barr 2) (barr 2 2)]
+                            [(barr 3) (barr 3 3)]] :version 1)
+
+        ;; create version 1 for do-update
+        (mk-sharded-domain fs dtmp2 domain-spec
+                           [[(barr 0) (barr 10 10)]
+                            [(barr 1) (barr 20 20)]
+                            [(barr 2) (barr 30 30)]
+                            [(barr 3) (barr 40 40)]] :version 1)
+
+        ;; start edb and shutdown right away to get version 1 of both domains
+        (.shutdown
+         (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil))
+
+        ;; create new version only for do-update domain
+        ;; create version 1 for no-update (override to make sure it didn't reload this version)
+        (mk-sharded-domain fs dtmp1 domain-spec
+                           [[(barr 0) (barr 1)]
+                            [(barr 1) (barr 2)]
+                            [(barr 2) (barr 3)]
+                            [(barr 3) (barr 4)]] :version 1)
+
+        ;; create version 2 for do-update
+        (mk-sharded-domain fs dtmp2 domain-spec
+                           [[(barr 0) (barr 11 11)]
+                            [(barr 1) (barr 22 22)]
+                            [(barr 2) (barr 33 33)]
+                            [(barr 3) (barr 44 44)]] :version 2)
+
+        (let [handler (mk-service-handler (read-global-config gtmp local-config "222") local-dir "222" nil)]
+          ;; domain no-update should not have changed
+          (is (barr= (barr 0 0)
+                     (get-val handler "no-update" (barr 0))))
+          (is (barr= (barr 1 1)
+                     (get-val handler "no-update" (barr 1))))
+          (is (barr= (barr 2 2)
+                     (get-val handler "no-update" (barr 2))))
+          (is (barr= (barr 3 3)
+                     (get-val handler "no-update" (barr 3))))
+
+          ;; domain do-update should have changed
+          (is (barr= (barr 11 11)
+                     (get-val handler "do-update" (barr 0))))
+          (is (barr= (barr 22 22)
+                     (get-val handler "do-update" (barr 1))))
+          (is (barr= (barr 33 33)
+                     (get-val handler "do-update" (barr 2))))
+          (is (barr= (barr 44 44)
+                     (get-val handler "do-update" (barr 3))))
+
+          (.shutdown handler))
+        ))))
 
 
 
