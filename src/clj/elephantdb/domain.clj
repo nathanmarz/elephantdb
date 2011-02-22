@@ -13,7 +13,9 @@
                              (atom nil)))
 
 (defn domain-data [domain-info shard]
-  (@(::domain-data domain-info) shard))
+  (let [domain-data @(::domain-data domain-info)]
+    (when domain-data
+      (domain-data shard))))
 
 (defn set-domain-data! [domain-info domain-data]
   (reset! (::domain-data domain-info) domain-data))
