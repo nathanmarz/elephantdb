@@ -80,11 +80,9 @@
         (delete lfs (.getPath domain-path) true)))))
 
 (defn sync-data-updated [domains-info global-config local-config]
-  (do
-    (delete-deleted-domains domains-info global-config local-config)
-    (load-and-sync-status domains-info
-                          (fn [domain]
-                            (use-cache-or-update domain domains-info global-config local-config)))))
+  (load-and-sync-status domains-info
+                        (fn [domain]
+                          (use-cache-or-update domain domains-info global-config local-config))))
 
 
 (defn sync-updated [global-config local-config token]
@@ -97,14 +95,14 @@ Keep the cached versions of any domains that haven't been updated"
     (log-message "Domains info: " domains-info)
     (future
       (try
+        (delete-deleted-domains domains-info global-config local-config)
         (sync-data-updated domains-info global-config local-config)
         (log-message "Caching global config " cache-config)
         (cache-global-config! local-config cache-config)
         (log-message "Cached config " (read-cached-global-config local-config))
         (log-message "Finished loading all updated domains from remote")
-        (catch Throwable t (log-error t "Error when syncing data") (throw t))
-        ))
-    domains-info ))
+        (catch Throwable t (log-error t "Error when syncing data") (throw t))))
+    domains-info))
 
 (defn sync-local [global-config local-config]
   (log-message "Loading cached data")
