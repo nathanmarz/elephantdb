@@ -278,7 +278,7 @@ Keep the cached versions of any domains that haven't been updated"
               (isFullyLoaded
                []
                (let [stat (.get_domain_statuses (.getStatus this))]
-                 (every? thrift/status-ready? (vals stat))))
+                 (every? #(or (thrift/status-ready? %) (thrift/status-failed? %)) (vals stat))))
 
               (updateAll
                []

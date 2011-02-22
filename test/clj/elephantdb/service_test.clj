@@ -3,7 +3,8 @@
   (:import [elephantdb.persistence JavaBerkDB])
   (:import [elephantdb.generated WrongHostException
             DomainNotFoundException])
-  (:use [elephantdb service testing util config]))
+  (:use [elephantdb service testing util config hadoop])
+  (:require [elephantdb [thrift :as thrift]]))
 
 (defn get-val [elephant d k]
   (.get_data (.get elephant d k)))
@@ -190,7 +191,21 @@
                      (get-val handler "do-update" (barr 3))))
 
           (.shutdown handler))
-        ))))
+
+        ;; now test with new version but different domain-spec
+        (let [domain-spec-new {:num-shards 6 :persistence-factory (JavaBerkDB.)}]
+          (delete fs dtmp2 true)
+          (mk-sharded-domain fs dtmp2 domain-spec-new
+                             [[(barr 0) (barr 55 55)]
+                              [(barr 1) (barr 66 66)]
+                              [(barr 2) (barr 77 77)]
+                              [(barr 3) (barr 88 88)]] :version 3))
+
+        (let [handler (mk-service-handler (read-global-config gtmp local-config "333") local-dir "333" nil)]
+          (is (thrift/status-failed? (.getDomainStatus handler "do-update")))
+          (is (thrift/status-ready? (.getDomainStatus handler "no-update")))
+          (.shutdown handler)
+        )))))
 
 
 
