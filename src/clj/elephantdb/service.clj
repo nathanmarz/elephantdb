@@ -81,10 +81,23 @@
                    (domain/host-shards (domains-info domain)))
       )))
 
+(defn delete-deleted-domains [domains-info global-config local-config]
+  "Deletes all domains from local filesystem that have been deleted from the global config."
+  (let [lfs (local-filesystem)
+        local-dir (:local-dir local-config)
+        local-path (.pathToFile lfs (path local-dir))]
+    (doseq [domain-path (.listFiles local-path)]
+      (when (and (.isDirectory domain-path)
+               (not (domains-info (last (.split (.getPath domain-path) "/")))))
+        (log-message "Deleting local path of deleted domain: " domain-path)
+        (delete lfs (.getPath domain-path) true)))))
+
 (defn sync-data-updated [domains-info global-config local-config]
-  (load-and-sync-status domains-info
-                        (fn [domain]
-                          (use-cache-or-update domain domains-info global-config local-config))))
+  (do
+    (delete-deleted-domains domains-info global-config local-config)
+    (load-and-sync-status domains-info
+                          (fn [domain]
+                            (use-cache-or-update domain domains-info global-config local-config)))))
 
 
 (defn- sync-global [global-config local-config token]

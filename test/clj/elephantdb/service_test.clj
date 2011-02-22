@@ -204,8 +204,24 @@
         (let [handler (mk-service-handler (read-global-config gtmp local-config "333") local-dir "333" nil)]
           (is (thrift/status-failed? (.getDomainStatus handler "do-update")))
           (is (thrift/status-ready? (.getDomainStatus handler "no-update")))
-          (.shutdown handler)
-        )))))
+          (.shutdown handler))
+
+        ;; if we delete a domain from the global conf, it should
+        ;; remove the local version of it too (delete dir), when starting up edb
+        (delete fs gtmp) ;; delete config
+        (write-clj-config! {:replication 1
+                            :hosts [(local-hostname)]
+                            :domains {"no-update" dtmp1}}
+                           fs
+                           gtmp)
+        (let [handler (mk-service-handler (read-global-config gtmp local-config "444") local-dir "444" nil)
+              deleted-domain-path (.pathToFile lfs (path local-dir "do-update"))]
+          (is (= 1 (.size (.getDomains handler))))
+          (is (= "no-update" (first (.getDomains handler))))
+          ;; make sure local path of domain has been deleted:
+          (is (= false (.exists deleted-domain-path)))
+          (.shutdown handler))
+        ))))
 
 
 
