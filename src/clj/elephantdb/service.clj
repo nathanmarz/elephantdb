@@ -41,19 +41,6 @@
       (log-message "Successfully loaded all domains"))
     ))
 
-(defn sync-data-scratch [domains-info global-config local-config]
-  (let [fs (filesystem (:hdfs-conf local-config))
-        local-dir (:local-dir local-config)]
-    (load-and-sync-status domains-info
-                          (fn [domain]
-                            (load-domain
-                             fs
-                             local-config
-                             (str (path local-dir domain))
-                             (-> global-config (:domains) (get domain))
-                             (domain/host-shards (domains-info domain)))))
-    ))
-
 (defn domain-needs-update? [local-vs remote-vs]
   (or (nil? (.mostRecentVersion local-vs))
       (< (.mostRecentVersion local-vs)
@@ -99,25 +86,6 @@
                           (fn [domain]
                             (use-cache-or-update domain domains-info global-config local-config)))))
 
-
-(defn- sync-global [global-config local-config token]
-  (log-message "Loading remote data")
-  (let [fs (filesystem (:hdfs-conf local-config))
-        domains-info (init-domain-info-map fs global-config)
-        local-dir (:local-dir local-config)
-        lfs (doto (local-filesystem) (clear-dir local-dir))
-        cache-config (assoc global-config :token token)]
-    (log-message "Domains info:" domains-info)
-    (future
-     (try
-       (sync-data-scratch domains-info global-config local-config)
-       (log-message "Caching global config " cache-config)
-       (cache-global-config! local-config cache-config)
-       (log-message "Cached config " (read-cached-global-config local-config))
-       (log-message "Finished loading all domains from remote")
-       (catch Throwable t (log-error t "Error when syncing data") (throw t))
-     ))
-    domains-info ))
 
 (defn sync-updated [global-config local-config token]
   "Only fetch domains from remote if a newer version is available.
