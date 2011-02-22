@@ -88,7 +88,7 @@
         local-path (.pathToFile lfs (path local-dir))]
     (doseq [domain-path (.listFiles local-path)]
       (when (and (.isDirectory domain-path)
-               (not (domains-info (last (.split (.getPath domain-path) "/")))))
+                 (not (domains-info (last (.split (.getPath domain-path) "/")))))
         (log-message "Deleting local path of deleted domain: " domain-path)
         (delete lfs (.getPath domain-path) true)))))
 
