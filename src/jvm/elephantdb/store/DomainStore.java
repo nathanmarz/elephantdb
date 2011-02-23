@@ -133,4 +133,8 @@ public class DomainStore {
    public List<Long> getAllVersions() throws IOException {
        return _vs.getAllVersions();
    }
+
+   public boolean hasVersion(long version) throws IOException {
+       return _vs.hasVersion(version);
+   }
 }

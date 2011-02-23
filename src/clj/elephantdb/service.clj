@@ -3,6 +3,7 @@
   (:import [elephantdb.generated ElephantDB ElephantDB$Iface])
   (:import [elephantdb Shutdownable client])
   (:import [elephantdb.persistence LocalPersistence])
+  (:import [elephantdb.store DomainStore])
   (:require [elephantdb [domain :as domain] [thrift :as thrift] [shard :as shard]])
   (:use [elephantdb config log util hadoop loader]))
 
@@ -40,39 +41,78 @@
       (log-message "Successfully loaded all domains"))
     ))
 
-(defn sync-data-scratch [domains-info global-config local-config]
-  (let [fs (filesystem (:hdfs-conf local-config))
-        local-dir (:local-dir local-config)]
-    (load-and-sync-status domains-info
-                          (fn [domain]
-                            (load-domain
-                             fs
-                             local-config
-                             (str (path local-dir domain))
-                             (-> global-config (:domains) (get domain))
-                             (domain/host-shards (domains-info domain)))))
-    ))
+(defn domain-needs-update? [local-vs remote-vs]
+  (or (nil? (.mostRecentVersion local-vs))
+      (< (.mostRecentVersion local-vs)
+         (.mostRecentVersion remote-vs))))
 
-(defn- sync-global [global-config local-config token]
-  (log-message "Loading remote data")
+(defn use-cache-or-update [domain domains-info global-config local-config]
+  (let [fs (filesystem (:hdfs-conf local-config))
+        lfs (local-filesystem)
+        local-dir (:local-dir local-config)
+        local-domain-root (str (path local-dir domain))
+        remote-path (-> global-config :domains (get domain))
+        remote-vs (DomainStore. fs remote-path)
+        local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
+    (if (domain-needs-update? local-vs remote-vs)
+      (load-domain fs
+                   local-config
+                   local-domain-root
+                   remote-path
+                   (domain/host-shards (domains-info domain)))
+      ;; use cached domain from local-dir (no update needed)
+      (open-domain local-config
+                   (str (path local-dir domain))
+                   (domain/host-shards (domains-info domain))))))
+
+(defn delete-deleted-domains
+  "Deletes all domains from local filesystem that have been deleted from the global config."
+  [domains-info global-config local-config]
+  (let [lfs (local-filesystem)
+        local-dir (:local-dir local-config)
+        local-path (.pathToFile lfs (path local-dir))]
+    (doseq [domain-path (.listFiles local-path)]
+      (when (and (.isDirectory domain-path)
+                 (not (domains-info (last (.split (.getPath domain-path) "/")))))
+        (log-message "Deleting local path of deleted domain: " domain-path)
+        (delete lfs (.getPath domain-path) true)))))
+
+(defn sync-data-updated [domains-info global-config local-config]
+  (load-and-sync-status domains-info
+                        (fn [domain]
+                          (use-cache-or-update domain domains-info global-config local-config))))
+
+(defn cleanup-domains [fs domains-info global-config local-config]
+  (let [lfs (local-filesystem)
+        local-dir (:local-dir local-config)]
+    (doseq [domain (keys domains-info)]
+      (let [local-domain-root (str (path local-dir domain))
+            remote-path (-> global-config :domains (get domain))
+            remote-vs (DomainStore. fs remote-path)
+            local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
+        (log-message "Cleaning up local domain versions (only keeping latest version) for domain: " domain)
+        (.cleanup local-vs 1)))))
+
+(defn sync-updated
+  "Only fetch domains from remote if a newer version is available.
+Keep the cached versions of any domains that haven't been updated"
+  [global-config local-config token]
+  (log-message "Loading remote data if necessary, otherwise loading cached data")
   (let [fs (filesystem (:hdfs-conf local-config))
         domains-info (init-domain-info-map fs global-config)
-        local-dir (:local-dir local-config)
-        lfs (doto (local-filesystem) (clear-dir local-dir))
         cache-config (assoc global-config :token token)]
-    (log-message "Domains info:" domains-info)
+    (log-message "Domains info: " domains-info)
     (future
-     (try
-       (sync-data-scratch domains-info global-config local-config)
-       (log-message "Caching global config " cache-config)
-       (cache-global-config! local-config cache-config)
-       (log-message "Cached config " (read-cached-global-config local-config))
-       (log-message "Finished loading all domains from remote")
-       (catch Throwable t (log-error t "Error when syncing data") (throw t))
-     ))
-    domains-info ))
-
-
+      (try
+        (delete-deleted-domains domains-info global-config local-config)
+        (sync-data-updated domains-info global-config local-config)
+        (cleanup-domains fs domains-info global-config local-config)
+        (log-message "Caching global config " cache-config)
+        (cache-global-config! local-config cache-config)
+        (log-message "Cached config " (read-cached-global-config local-config))
+        (log-message "Finished loading all updated domains from remote")
+        (catch Throwable t (log-error t "Error when syncing data") (throw t))))
+    domains-info))
 
 (defn sync-local [global-config local-config]
   (log-message "Loading cached data")
@@ -96,12 +136,11 @@
     domains-info
     ))
 
-;; should delete any domains that don't exist in config as well 
 ;; returns map of domain to domain info and launches futures that will fill in the domain info
 (defn- sync-data [global-config local-config token]
   (if (cache? global-config token)
     (sync-local global-config local-config)
-    (sync-global global-config local-config token)
+    (sync-updated global-config local-config token)
     ))
 
 (defn- close-lps [domains-info]
@@ -227,7 +266,7 @@
               (isFullyLoaded
                []
                (let [stat (.get_domain_statuses (.getStatus this))]
-                 (every? thrift/status-ready? (vals stat))))
+                 (every? #(or (thrift/status-ready? %) (thrift/status-failed? %)) (vals stat))))
 
               (updateAll
                []
