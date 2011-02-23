@@ -65,8 +65,9 @@
                    (str (path local-dir domain))
                    (domain/host-shards (domains-info domain))))))
 
-(defn delete-deleted-domains [domains-info global-config local-config]
+(defn delete-deleted-domains
   "Deletes all domains from local filesystem that have been deleted from the global config."
+  [domains-info global-config local-config]
   (let [lfs (local-filesystem)
         local-dir (:local-dir local-config)
         local-path (.pathToFile lfs (path local-dir))]
@@ -92,9 +93,10 @@
         (log-message "Cleaning up local domain versions (only keeping latest version) for domain: " domain)
         (.cleanup local-vs 1)))))
 
-(defn sync-updated [global-config local-config token]
+(defn sync-updated
   "Only fetch domains from remote if a newer version is available.
 Keep the cached versions of any domains that haven't been updated"
+  [global-config local-config token]
   (log-message "Loading remote data if necessary, otherwise loading cached data")
   (let [fs (filesystem (:hdfs-conf local-config))
         domains-info (init-domain-info-map fs global-config)
