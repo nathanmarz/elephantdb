@@ -87,9 +87,7 @@
         local-dir (:local-dir local-config)]
     (doseq [domain (keys domains-info)]
       (let [local-domain-root (str (path local-dir domain))
-            remote-path (-> global-config :domains (get domain))
-            remote-vs (DomainStore. fs remote-path)
-            local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
+            local-vs (DomainStore. lfs local-domain-root)]
         (log-message "Cleaning up local domain versions (only keeping latest version) for domain: " domain)
         (.cleanup local-vs 1)))))
 
