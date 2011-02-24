@@ -18,6 +18,9 @@ BackType uses ElephantDB to export views from TBs of data and serve them in the 
 
 Google group: [elephantdb-user](http://groups.google.com/group/elephantdb-user)
 
+# Tutorials
+
+[Introducing ElephantDB](http://tech.backtype.com/introducing-elephantdb-a-distributed-database)
 
 # Using ElephantDB in MapReduce Jobs
 
