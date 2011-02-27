@@ -274,3 +274,105 @@
                ))
           )
         ))))
+
+(deftest test-live-updating
+  (with-local-tmp [lfs local-dir]
+    (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
+      (let [domain-spec {:num-shards 4 :persistence-factory (JavaBerkDB.)}
+            local-config (mk-local-config local-dir)]
+        (write-clj-config! {:replication 1
+                            :hosts [(local-hostname)]
+                            :domains {"domain1" dtmp1 "domain2" dtmp2}}
+                           fs
+                           gtmp)
+
+        ;; create version 1 for domain1
+        (mk-sharded-domain fs dtmp1 domain-spec
+                           (domain-data 0 [0 0]
+                                        1 [1 1]
+                                        2 [2 2]
+                                        3 [3 3]) :version 1)
+
+        ;; create version 1 for domain2
+        (mk-sharded-domain fs dtmp2 domain-spec
+                           (domain-data 0 [10 10]
+                                        1 [20 20]
+                                        2 [30 30]
+                                        3 [40 40]) :version 1)
+
+        ;; start up edb service
+        (let [handler (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil)]
+
+          ;; create version 2 for domain2
+          (mk-sharded-domain fs dtmp2 domain-spec
+                             (domain-data 0 [11 11]
+                                          1 [22 22]
+                                          2 [33 33]
+                                          3 [44 44]) :version 2)
+
+          ;; domain1 should not have changed
+          (expected-domain-data handler "domain1"
+                                0 [0 0]
+                                1 [1 1]
+                                2 [2 2]
+                                3 [3 3])
+
+          ;; domain2 should not have changed either
+          (expected-domain-data handler "domain2"
+                                0 [10 10]
+                                1 [20 20]
+                                2 [30 30]
+                                3 [40 40])
+
+          ;; nothing should happen for domain1
+          (.update handler "domain1")
+
+          ;; domain1 should not have changed
+          (expected-domain-data handler "domain1"
+                                0 [0 0]
+                                1 [1 1]
+                                2 [2 2]
+                                3 [3 3])
+
+          ;; updating domain2 should cause update and new values being returned
+          (.update handler "domain2")
+
+          ;; domain2 should have changed
+          (expected-domain-data handler "domain2"
+                                0 [11 11]
+                                1 [21 21]
+                                2 [31 31]
+                                3 [41 41])
+
+          ;; create version 2 for domain1
+          (mk-sharded-domain fs dtmp1 domain-spec
+                             (domain-data 0 [1 1]
+                                          1 [2 2]
+                                          2 [3 3]
+                                          3 [4 4]) :version 2)
+
+          ;; create version 3 for domain2
+          (mk-sharded-domain fs dtmp2 domain-spec
+                             (domain-data 0 [12 12]
+                                          1 [23 23]
+                                          2 [34 34]
+                                          3 [45 45]) :version 3)
+
+          ;; force update of all domains
+          (.updateAll handler)
+
+          ;; domain1 and domain 2 should have changed
+          (expected-domain-data handler "domain1"
+                                0 [1 1]
+                                1 [2 2]
+                                2 [3 3]
+                                3 [4 4])
+
+          (expected-domain-data handler "domain2"
+                                0 [12 12]
+                                1 [23 23]
+                                2 [34 34]
+                                3 [45 45])
+
+          (.shutdown handler))
+        ))))
