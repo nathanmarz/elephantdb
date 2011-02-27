@@ -15,14 +15,17 @@
 (defn multi-get-vals [elephant domain keys]
   (map (memfn get_data) (.multiGet elephant domain keys)))
 
-(defn expected-domain-data [handler domain & key-value-pairs]
-  (doseq [pair (partition 2 key-value-pairs)]
-    (let [key (first pair)
-          values (second pair)]
-      (if-not (nil? values)
-        (is (barr= (apply barr values)
-                   (get-val handler domain (barr key))))
-        (is (= values (get-val handler domain (barr key))))))))
+(defmacro expected-domain-data [handler domain & key-value-pairs]
+  (let [pair-sym (gensym "pair")
+        key-sym (gensym "key")
+        values-sym (gensym "values")]
+    `(doseq [~pair-sym '~(partition 2 key-value-pairs)]
+       (let [~key-sym (first ~pair-sym)
+             ~values-sym (second ~pair-sym)]
+         (if-not (nil? ~values-sym)
+           (is (barr= (apply barr ~values-sym)
+                      (get-val ~handler ~domain (barr ~key-sym))))
+           (is (= ~values-sym (get-val ~handler ~domain (barr ~key-sym)))))))))
 
 (deftest test-basic
   (with-sharded-domain [dpath
