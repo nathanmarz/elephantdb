@@ -32,6 +32,13 @@
                             (apply barr= vals)))
                   arrs))))
 
+(defn domain-data [& key-val-pairs]
+  (map (fn [x]
+         [(barr (first x))
+          (if-not (nil? (second x))
+            (apply barr (second x)))])
+       (partition 2 key-val-pairs)))
+
 (defn delete-all [fs paths]
   (dorun
     (for [t paths]

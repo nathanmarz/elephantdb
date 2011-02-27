@@ -15,6 +15,15 @@
 (defn multi-get-vals [elephant domain keys]
   (map (memfn get_data) (.multiGet elephant domain keys)))
 
+(defn expected-domain-data [handler domain & key-value-pairs]
+  (doseq [pair (partition 2 key-value-pairs)]
+    (let [key (first pair)
+          values (second pair)]
+      (if-not (nil? values)
+        (is (barr= (apply barr values)
+                   (get-val handler domain (barr key))))
+        (is (= values (get-val handler domain (barr key))))))))
+
 (deftest test-basic
   (with-sharded-domain [dpath
                         {:num-shards 4
@@ -28,21 +37,22 @@
        [(local-hostname)]
        {"test1" dpath}
        nil]
-      (is (barr= (barr 0 0) (get-val elephant "test1" (barr 0))))
-      (is (barr= (barr 1 1) (get-val elephant "test1" (barr 1))))
-      (is (barr= (barr 2 2) (get-val elephant "test1" (barr 2))))
-      (is (= nil (get-val elephant "test1" (barr 3))))
+      (expected-domain-data elephant "test1"
+                            0 [0 0]
+                            1 [1 1]
+                            2 [2 2]
+                            3 nil)
       )))
 
 (deftest test-multi-domain
-  (let [data1 [[(barr 0) (barr 0 0)]
-               [(barr 10) (barr 10 1)]
-               [(barr 20) (barr 20 2)]
-               [(barr 30) (barr 30 3)]]
-        data2 [[(barr 5) (barr 5 0)]
-               [(barr 15) (barr 15 15)]
-               [(barr 105) (barr 110)]
-               ]]
+  (let [data1 (domain-data 0 [0 0]
+                           10 [10 1]
+                           20 [20 2]
+                           30 [30 3])
+        data2 (domain-data 5 [5 0]
+                           15 [15 15]
+                           105 [110])]
+
     (with-sharded-domain [dpath1
                           {:num-shards 2 :persistence-factory (JavaBerkDB.)}
                           data1]
@@ -64,24 +74,20 @@
      {0 [[(barr 0) (barr 0 0)]
          [(barr 1) (barr 1 1)]
          [(barr 2) nil]]
-      1 [[(barr 10) (barr 10 0)]]
-      2 [[(barr 20) (barr 20 0)]
-         [(barr 21) (barr 21 1)]]
-      3 [[(barr 30) (barr 30 0)]]}]
+      1 (domain-data 10 [10 0])
+      2 (domain-data 20 [20 0]
+                     21 [21 1])
+      3 (domain-data 30 [30 0])}]
     (with-service-handler
       [elephant
        [(local-hostname) "host2"]
        {"test1" dpath}
        {"test1" {(local-hostname) [0 2] "host2" [1 3]}}]
-      (is (barr=
-           (barr 0 0)
-           (get-val elephant "test1" (barr 0))))
-      (is (barr=
-           (barr 20 0)
-           (get-val elephant "test1" (barr 20))))
-      (is (=
-           nil
-           (get-val elephant "test1" (barr 2))))
+
+      (expected-domain-data elephant "test1"
+                            0 [0 0]
+                            20 [20 0]
+                            2 nil)
       (is (thrown?
            Exception
            (direct-get-val elephant "test1" (barr 10))))
@@ -98,30 +104,28 @@
                            fs
                            gtmp)
         (mk-sharded-domain fs dtmp domain-spec
-                           [[(barr 0) (barr 0 0)]
-                            [(barr 1) (barr 1 1)]
-                            [(barr 2) (barr 2 2)]
-                            [(barr 3) (barr 3 3)]])
+                           (domain-data 0 [0 0]
+                                        1 [1 1]
+                                        2 [2 2]
+                                        3 [3 3]))
         ;; NOTE: should really just to the read global config in mk-service-handler
         (.shutdown
          (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil))
         (mk-sharded-domain fs dtmp domain-spec
-                           [[(barr 0) (barr 0 1)]
-                            [(barr 3) (barr 3 4)]
-                            [(barr 4) (barr 4 5)]])
+                           (domain-data 0 [0 1]
+                                        3 [3 4]
+                                        4 [4 5]))
         (let [handler (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil)]
-          (is (barr= (barr 0 0)
-                     (get-val handler "test" (barr 0))))
-          (is (barr= (barr 2 2)
-                     (get-val handler "test" (barr 2))))
-          (is (= nil (get-val handler "test" (barr 4))))
+          (expected-domain-data handler "test"
+                                0 [0 0]
+                                2 [2 2]
+                                4 nil)
           (.shutdown handler))
         (let [handler (mk-service-handler (read-global-config gtmp local-config "112") local-dir "112" nil)]
-          (is (barr= (barr 0 1)
-                     (get-val handler "test" (barr 0))))
-          (is (barr= (barr 4 5)
-                     (get-val handler "test" (barr 4))))
-          (is (= nil (get-val handler "test" (barr 2))))
+          (expected-domain-data handler "test"
+                                0 [0 1]
+                                4 [4 5]
+                                2 nil)
           (.shutdown handler))
         ))))
 
@@ -138,17 +142,17 @@
 
         ;; create version 1 for no-update
         (mk-sharded-domain fs dtmp1 domain-spec
-                           [[(barr 0) (barr 0 0)]
-                            [(barr 1) (barr 1 1)]
-                            [(barr 2) (barr 2 2)]
-                            [(barr 3) (barr 3 3)]] :version 1)
+                           (domain-data 0 [0 0]
+                                        1 [1 1]
+                                        2 [2 2]
+                                        3 [3 3]) :version 1)
 
         ;; create version 1 for do-update
         (mk-sharded-domain fs dtmp2 domain-spec
-                           [[(barr 0) (barr 10 10)]
-                            [(barr 1) (barr 20 20)]
-                            [(barr 2) (barr 30 30)]
-                            [(barr 3) (barr 40 40)]] :version 1)
+                           (domain-data 0 [10 10]
+                                        1 [20 20]
+                                        2 [30 30]
+                                        3 [40 40]) :version 1)
 
         ;; start edb and shutdown right away to get version 1 of both domains
         (.shutdown
@@ -157,38 +161,32 @@
         ;; create new version only for do-update domain
         ;; create version 1 for no-update (override to make sure it didn't reload this version)
         (mk-sharded-domain fs dtmp1 domain-spec
-                           [[(barr 0) (barr 1)]
-                            [(barr 1) (barr 2)]
-                            [(barr 2) (barr 3)]
-                            [(barr 3) (barr 4)]] :version 1)
+                           (domain-data 0 [1]
+                                        1 [2]
+                                        2 [3]
+                                        3 [4]) :version 1)
 
         ;; create version 2 for do-update
         (mk-sharded-domain fs dtmp2 domain-spec
-                           [[(barr 0) (barr 11 11)]
-                            [(barr 1) (barr 22 22)]
-                            [(barr 2) (barr 33 33)]
-                            [(barr 3) (barr 44 44)]] :version 2)
+                           (domain-data 0 [11 11]
+                                        1 [22 22]
+                                        2 [33 33]
+                                        3 [44 44]) :version 2)
 
         (let [handler (mk-service-handler (read-global-config gtmp local-config "222") local-dir "222" nil)]
           ;; domain no-update should not have changed
-          (is (barr= (barr 0 0)
-                     (get-val handler "no-update" (barr 0))))
-          (is (barr= (barr 1 1)
-                     (get-val handler "no-update" (barr 1))))
-          (is (barr= (barr 2 2)
-                     (get-val handler "no-update" (barr 2))))
-          (is (barr= (barr 3 3)
-                     (get-val handler "no-update" (barr 3))))
+          (expected-domain-data handler "no-update"
+                                0 [0 0]
+                                1 [1 1]
+                                2 [2 2]
+                                3 [3 3])
 
           ;; domain do-update should have changed
-          (is (barr= (barr 11 11)
-                     (get-val handler "do-update" (barr 0))))
-          (is (barr= (barr 22 22)
-                     (get-val handler "do-update" (barr 1))))
-          (is (barr= (barr 33 33)
-                     (get-val handler "do-update" (barr 2))))
-          (is (barr= (barr 44 44)
-                     (get-val handler "do-update" (barr 3))))
+          (expected-domain-data handler "do-update"
+                                0 [11 11]
+                                1 [22 22]
+                                2 [33 33]
+                                3 [44 44])
 
           (.shutdown handler))
 
@@ -196,10 +194,10 @@
         (let [domain-spec-new {:num-shards 6 :persistence-factory (JavaBerkDB.)}]
           (delete fs dtmp2 true)
           (mk-sharded-domain fs dtmp2 domain-spec-new
-                             [[(barr 0) (barr 55 55)]
-                              [(barr 1) (barr 66 66)]
-                              [(barr 2) (barr 77 77)]
-                              [(barr 3) (barr 88 88)]] :version 3))
+                             (domain-data 0 [55 55]
+                                          1 [66 66]
+                                          2 [77 77]
+                                          3 [88 88]) :version 3))
 
         (let [handler (mk-service-handler (read-global-config gtmp local-config "333") local-dir "333" nil)]
           (is (thrift/status-failed? (.getDomainStatus handler "do-update")))
@@ -227,14 +225,14 @@
 
 ;; TODO: need to do something to prioritize hosts in tests (override get-priority-hosts)
 (deftest test-multi-get
-  (let [shards-to-pairs {0 [[(barr 0) (barr 0 0)]
-                            [(barr 1) (barr 1 1)]
-                            [(barr 2) nil]]
-                         1 [[(barr 10) (barr 10 0)]]
-                         2 [[(barr 20) (barr 20 0)]
-                            [(barr 21) (barr 21 1)]
-                            [(barr 22) nil]]
-                         3 [[(barr 30) (barr 30 0)]]}
+  (let [shards-to-pairs {0 (domain-data 0 [0 0]
+                                        1 [1 1]
+                                        2 nil)
+                         1 (domain-data 10 [10 0])
+                         2 (domain-data 20 [20 0]
+                                        21 [21 1]
+                                        22 nil)
+                         3 (domain-data 30 [30 0])}
         domain-to-host-to-shards {"test1" {(local-hostname) [0 3]
                                            "host2" [1 0]
                                            "host3" [2 1]
@@ -250,16 +248,11 @@
          {"test1" dpath}
          domain-to-host-to-shards
          ]
-        (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host4"]]          
-          (is (barr=
-               (barr 0 0)
-               (get-val elephant "test1" (barr 0))))
-          (is (barr=
-               (barr 20 0)
-               (get-val elephant "test1" (barr 20))))
-          (is (=
-               nil
-               (get-val elephant "test1" (barr 2))))
+        (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host4"]]
+          (expected-domain-data elephant "test1"
+                                0 [0 0]
+                                20 [20 0]
+                                2 nil)
           (is (barrs=
                [(barr 0 0) nil (barr 30 0)]
                (multi-get-vals elephant "test1" [(barr 0) (barr 22) (barr 30)])
