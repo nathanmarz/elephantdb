@@ -5,5 +5,6 @@
 #
 
 from thrift.Thrift import *
+import sys
 from ttypes import *
 

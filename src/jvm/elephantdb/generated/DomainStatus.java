@@ -363,6 +363,12 @@ public class DomainStatus extends TUnion<DomainStatus, DomainStatus._Fields> {
       Object myValue = getFieldValue();
       if (myValue instanceof byte[]) {
         return TBaseHelper.compareTo((byte[])myValue, (byte[])other.getFieldValue());
+      } else if (myValue instanceof List) {
+        return TBaseHelper.compareTo((List)myValue, (List)other.getFieldValue());
+      } else if (myValue instanceof Set) {
+        return TBaseHelper.compareTo((Set)myValue, (Set)other.getFieldValue());
+      } else if (myValue instanceof Map){
+        return TBaseHelper.compareTo((Map)myValue, (Map)other.getFieldValue());
       } else {
         return TBaseHelper.compareTo((Comparable)myValue, (Comparable)other.getFieldValue());
       }

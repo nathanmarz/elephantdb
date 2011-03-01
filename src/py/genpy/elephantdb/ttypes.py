@@ -5,6 +5,8 @@
 #
 
 from thrift.Thrift import *
+import sys
+sys.path = ["/".join(__file__.split("/")[:-1]) + "/.."] + sys.path
 
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
