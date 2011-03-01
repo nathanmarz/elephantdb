@@ -78,13 +78,19 @@
 (defn supervise-downloads [amount-domains max-kbs]
   (loop []
     (when (< @finished-loaders amount-domains)
-      (do
-        (when (>= @downloaded-kb max-kbs)
+      (log-message "Supervising downloads - "
+                   "Finished: " @finished-loaders
+                   ", waiting for: " (- amount-domains @finished-loaders))
+      (Thread/sleep 1000)
+      (if (>= @downloaded-kb max-kbs)
+        (do
           (reset! do-download false)
           (reset! downloaded-kb 0)
-          (Thread/sleep 1000)
-          (reset! do-download true))
-        (recur)))))
+          (recur))
+        (do
+          (reset! do-download true)
+          (reset! downloaded-kb 0)
+          (recur))))))
 
 (defn download-supervisor [amount-domains max-kbs]
   (reset! finished-loaders 0)
