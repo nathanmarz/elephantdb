@@ -52,6 +52,16 @@
 
 (defn local-filesystem [] (FileSystem/getLocal (Configuration.)))
 
+;; holds the total amount of bytes of data downloaded since the last
+;; reset to 0
+;; is used to determine the current download rate (kb/s)
+(def downloaded-kb (atom 0))
+;; indicator for downloaders if they can download or not.
+;; gets set by supervising thread, defaults to true (e.g. on startup)
+(def do-download (atom true))
+
+;; gets incremented when a domain has finished loading
+(def finished-loaders (atom 0))
 
 (declare copy-local*)
 
@@ -60,11 +70,14 @@
               os (BufferedOutputStream.
                   (FileOutputStream. target-local-path))]
     (loop []
-      (let [amt (.read is buffer)]
-        (when (> amt 0)
-          (.write os buffer 0 amt)
-          (recur)))
-      )))
+      (if @do-download
+        (let [amt (.read is buffer)]
+          (when (> amt 0)
+            (.write os buffer 0 amt)
+            (swap! downloaded-kb + (int (/ amt 1024))) ;; increment downloaded-kb
+            (recur)))
+        (recur))) ;; keep looping
+    ))
 
 (defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer]
   (.mkdir (File. target-local-path))

@@ -73,3 +73,20 @@
     (log-message "Successfully loaded domain at " remote-path " to " local-domain-root " with version " remote-version)
     (open-domain local-config local-domain-root shards)
     ))
+
+(defn supervise-downloads [amount-domains max-kbs]
+  (loop []
+    (when (< @finished-loaders amount-domains)
+      (do
+        (when (>= @downloaded-kb max-kbs)
+          (reset! do-download false)
+          (reset! downloaded-kb 0)
+          (Thread/sleep 1000)
+          (reset! do-download true))
+        (recur)))))
+
+(defn download-supervisor [amount-domains max-kbs]
+  (reset! finished-loaders 0)
+  (if (> max-kbs 0) ;; only monitor if there's an actual download throttle
+    (supervise-downloads amount-domains max-kbs)
+    (reset! do-download true)))
