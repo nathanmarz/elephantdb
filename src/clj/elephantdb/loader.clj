@@ -71,6 +71,7 @@
     (future-values shard-loaders)
     (.succeedVersion local-vs local-version-path)
     (log-message "Successfully loaded domain at " remote-path " to " local-domain-root " with version " remote-version)
+    (swap! finished-loaders + 1)
     (open-domain local-config local-domain-root shards)
     ))
 
