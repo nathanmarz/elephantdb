@@ -92,8 +92,11 @@
           (reset! downloaded-kb 0)
           (recur))))))
 
-(defn download-supervisor [amount-domains max-kbs]
-  (reset! finished-loaders 0)
-  (if (> max-kbs 0) ;; only monitor if there's an actual download throttle
-    (supervise-downloads amount-domains max-kbs)
-    (reset! do-download true)))
+(defn start-download-supervisor [amount-domains max-kbs]
+  (future
+    (log-message "Starting download supervisor")
+    (reset! finished-loaders 0)
+    (if (> max-kbs 0) ;; only monitor if there's an actual download throttle
+      (supervise-downloads amount-domains max-kbs)
+      (reset! do-download true))
+    (log-message "Download supervisor finished")))
