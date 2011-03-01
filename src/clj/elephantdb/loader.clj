@@ -75,28 +75,32 @@
     (open-domain local-config local-domain-root shards)
     ))
 
-(defn supervise-downloads [amount-domains max-kbs]
+(defn supervise-downloads [amount-domains max-kbs interval]
   (loop []
     (when (< @finished-loaders amount-domains)
       (log-message "Supervising downloads - "
                    "Finished: " @finished-loaders
                    ", waiting for: " (- amount-domains @finished-loaders))
-      (Thread/sleep 1000)
-      (if (>= @downloaded-kb max-kbs)
-        (do
-          (reset! do-download false)
-          (reset! downloaded-kb 0)
-          (recur))
-        (do
-          (reset! do-download true)
-          (reset! downloaded-kb 0)
-          (recur))))))
+      (Thread/sleep interval)
+      (let [dl-kb @downloaded-kb]
+        (if (>= dl-kb max-kbs)
+          (do
+            (log-message "Download throttle exceeded: " dl-kb " - Waiting for 1s")
+            (reset! do-download false)
+            (reset! downloaded-kb 0)
+            (recur))
+          (do
+            (reset! do-download true)
+            (reset! downloaded-kb 0)
+            (recur)))))))
 
 (defn start-download-supervisor [amount-domains max-kbs]
-  (future
-    (log-message "Starting download supervisor")
-    (reset! finished-loaders 0)
-    (if (> max-kbs 0) ;; only monitor if there's an actual download throttle
-      (supervise-downloads amount-domains max-kbs)
-      (reset! do-download true))
-    (log-message "Download supervisor finished")))
+  (let [interval-factor 0.01 ;; check every 0.01s
+        max-kbs-val (int (* max-kbs interval-factor))]
+    (future
+      (log-message "Starting download supervisor")
+      (reset! finished-loaders 0)
+      (if (> max-kbs 0) ;; only monitor if there's an actual download throttle
+        (supervise-downloads amount-domains max-kbs-val (int (* interval-factor 1000)))
+        (reset! do-download true))
+      (log-message "Download supervisor finished"))))
