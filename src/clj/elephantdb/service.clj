@@ -20,25 +20,27 @@
     (into {}
       (dofor [domain (keys (:domains global-config))]
           [domain (domain/init-domain-info (domain-shards domain))]
-            ))))
+          ))))
+
+(defn load-and-sync-status-of-domain [domains-info domain loader-fn]
+  (future
+    (try
+      (let [domain-data (loader-fn domain)]
+        (if domain-data
+          (domain/set-domain-data! (domains-info domain)
+                                   domain-data))
+        (domain/set-domain-status!
+         (domains-info domain)
+         (thrift/ready-status false)))
+      (catch Throwable t
+        (log-error t "Error when loading domain " domain)
+        (domain/set-domain-status!
+         (domains-info domain)
+         (thrift/failed-status t))))))
 
 (defn load-and-sync-status [domains-info loader-fn]
   (let [loaders (dofor [domain (keys domains-info)]
-                       (future
-                         (try
-                           (let [domain-data (loader-fn domain)]
-                             (if domain-data
-                               (domain/set-domain-data! (domains-info domain)
-                                                        domain-data))
-                             (domain/set-domain-status!
-                              (domains-info domain)
-                              (thrift/ready-status false)))
-                           (catch Throwable t
-                             (log-error t "Error when loading domain " domain)
-                             (domain/set-domain-status!
-                              (domains-info domain)
-                              (thrift/failed-status t))
-                             ))))]
+                       (load-and-sync-status-of-domain domains-info domain loader-fn))]
     (with-ret (future-values loaders)
       (log-message "Successfully loaded all domains"))
     ))
