@@ -330,6 +330,9 @@
           ;; nothing should happen for domain1
           (.update handler "domain1")
 
+          ;; wait a second
+          (Thread/sleep 1000)
+
           ;; domain1 should not have changed
           (expected-domain-data handler "domain1"
                                 0 [0 0]
@@ -340,12 +343,15 @@
           ;; updating domain2 should cause update and new values being returned
           (.update handler "domain2")
 
+          ;; wait a second
+          (Thread/sleep 1000)
+
           ;; domain2 should have changed
           (expected-domain-data handler "domain2"
                                 0 [11 11]
-                                1 [21 21]
-                                2 [31 31]
-                                3 [41 41])
+                                1 [22 22]
+                                2 [33 33]
+                                3 [44 44])
 
           ;; create version 2 for domain1
           (mk-sharded-domain fs dtmp1 domain-spec
@@ -364,6 +370,15 @@
           ;; force update of all domains
           (.updateAll handler)
 
+          (is (= (thrift/status-loading?
+                  (.getDomainStatus handler "domain1"))))
+          (is (= (thrift/status-loading?
+                  (.getDomainStatus handler "domain2"))))
+
+          ;; wait a second
+          (Thread/sleep 1000)
+
+
           ;; domain1 and domain 2 should have changed
           (expected-domain-data handler "domain1"
                                 0 [1 1]
@@ -376,6 +391,11 @@
                                 1 [23 23]
                                 2 [34 34]
                                 3 [45 45])
+
+          (is (= (thrift/status-ready?
+                       (.getDomainStatus handler "domain1"))))
+          (is (= (thrift/status-ready?
+                       (.getDomainStatus handler "domain2"))))
 
           (.shutdown handler))
         ))))
