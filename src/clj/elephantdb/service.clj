@@ -183,12 +183,18 @@ Keep the cached versions of any domains that haven't been updated"
         (log-message "Finished updating all domains from remote")
         (catch Throwable t (log-error t "Error when syncing data") (throw t))))))
 
-(defn- update-domains [domains]
-  (log-message "Updating domains: " domains)
-  true) ;; just return true for now
-
-(defn- update-domain [domain]
-  (update-domains [domain]))
+(defn- update-domain [domain domains-info global-config local-config]
+  (let [max-kbs 1024]
+    (log-message "Updating SINGLE domain: " domain)
+    (start-download-supervisor 1 max-kbs)
+    (future
+      (let [loader (load-and-sync-status-of-domain
+                    domains-info domain
+                    (fn [domain]
+                      (use-cache-or-update domain domains-info global-config local-config false)))]
+        (with-ret (.get loader)
+          (log-message "Successfully loaded domain: " domain))))
+    true)) ;; return true to indicate we're loading
 
 ;; 1. after *first* load finishes, right the global config with the token within
 ;; 2. when receive an update, open up the version and mkdir immediately,
@@ -303,8 +309,7 @@ Keep the cached versions of any domains that haven't been updated"
 
               (update
                [#^String domain]
-                ;; TODO
-                (update-domain domain)
+                (update-domain domain domains-info global-config local-config)
                ))]
       (reset! client (client. ret (:hdfs-conf local-config) global-config))
       ret ))
