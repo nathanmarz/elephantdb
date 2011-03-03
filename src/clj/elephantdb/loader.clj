@@ -1,6 +1,7 @@
 (ns elephantdb.loader
   (:import [elephantdb.store DomainStore])
-  (:use [elephantdb util hadoop config log]))
+  (:use [elephantdb util hadoop config log])
+  (:require [elephantdb [domain :as domain]]))
 
 
 
@@ -33,6 +34,15 @@
     (with-ret (into {} (dofor [[s f] future-lps] [s (.get f)]))
       (log-message "Finished opening domain at " local-domain-root))
     ))
+
+(defn close-domain [domain domains-info]
+  (let [domain-info (domains-info domain)]
+    (log-message "Closing domain: " domain " domain-info: " domain-info)
+    (doseq [[shard lp] (domain/domain-data domain-info)]
+      (try
+        (.close lp)
+        (catch Throwable t (log-error t "Error when closing local persistence for domain: " domain " and shard: " shard) (throw t))))
+    (log-message "Finished closing domain: " domain)))
 
 (defn load-domain-shard [fs persistence-factory local-config local-shard-path remote-shard-path]
   ;; TODO: respect the max copy rate

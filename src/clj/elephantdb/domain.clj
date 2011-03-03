@@ -12,10 +12,13 @@
                              (atom (loading-status))
                              (atom nil)))
 
-(defn domain-data [domain-info shard]
-  (let [domain-data @(::domain-data domain-info)]
-    (when domain-data
-      (domain-data shard))))
+(defn domain-data
+  ([domain-info shard]
+     (let [domain-data @(::domain-data domain-info)]
+       (when domain-data
+         (domain-data shard))))
+  ([domain-info]
+     @(::domain-data domain-info)))
 
 (defn set-domain-data! [domain-info domain-data]
   (reset! (::domain-data domain-info) domain-data))

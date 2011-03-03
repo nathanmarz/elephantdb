@@ -170,6 +170,13 @@ Keep the cached versions of any domains that haven't been updated"
       (throw (thrift/domain-not-loaded-ex domain)))
     info ))
 
+(defn- close-if-updated [domain domains-info new-data]
+  (if new-data
+    (do
+      (close-domain domain domains-info)
+      new-data)
+    new-data))
+
 (defn- update-all-domains [domains-info global-config local-config]
   (let [domains (keys domains-info)
         max-kbs 1024]
@@ -179,7 +186,9 @@ Keep the cached versions of any domains that haven't been updated"
       (try
         (load-and-sync-status domains-info
                               (fn [domain]
-                                (use-cache-or-update domain domains-info global-config local-config false)))
+                                (close-if-updated domain
+                                                  domains-info
+                                                  (use-cache-or-update domain domains-info global-config local-config false))))
         (log-message "Finished updating all domains from remote")
         (catch Throwable t (log-error t "Error when syncing data") (throw t))))))
 
@@ -191,7 +200,9 @@ Keep the cached versions of any domains that haven't been updated"
       (let [loader (load-and-sync-status-of-domain
                     domains-info domain
                     (fn [domain]
-                      (use-cache-or-update domain domains-info global-config local-config false)))]
+                      (close-if-updated domain
+                                        domains-info
+                                        (use-cache-or-update domain domains-info global-config local-config false))))]
         (with-ret (.get loader)
           (log-message "Successfully loaded domain: " domain))))
     true)) ;; return true to indicate we're loading
