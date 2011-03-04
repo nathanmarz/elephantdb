@@ -5,7 +5,8 @@
   (:import [elephantdb.persistence LocalPersistence])
   (:import [elephantdb.store DomainStore])
   (:require [elephantdb [domain :as domain] [thrift :as thrift] [shard :as shard]])
-  (:use [elephantdb config log util hadoop loader]))
+  (:use [elephantdb config log util hadoop loader])
+  (:require [clojure.contrib [str-utils :as str-utils]]))
 
 ; { :replication 2
 ;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
@@ -22,7 +23,7 @@
           [domain (domain/init-domain-info (domain-shards domain))]
           ))))
 
-(defn load-and-sync-status-of-domain [domains-info domain loader-fn]
+(defn load-and-sync-status-of-domain [domain domains-info loader-fn]
   (future
     (try
       (let [domain-data (loader-fn domain)]
@@ -38,17 +39,14 @@
          (domains-info domain)
          (thrift/failed-status t))))))
 
-(defn load-and-sync-status [domains-info loader-fn]
-  (let [loaders (dofor [domain (keys domains-info)]
-                       (load-and-sync-status-of-domain domains-info domain loader-fn))]
-    (with-ret (future-values loaders)
-      (log-message "Successfully loaded all domains"))))
-
-(defn load-and-sync-status-of-domains [domains-info domains loader-fn]
-  (let [loaders (dofor [domain domains]
-                       (load-and-sync-status-of-domain domains-info domain loader-fn))]
-    (with-ret (future-values loaders)
-      (log-message "Successfully loaded domains: " domains))))
+(defn load-and-sync-status
+  ([domains-info loader-fn]
+     (load-and-sync-status (keys domains-info) domains-info loader-fn))
+  ([domains domains-info loader-fn]
+     (let [loaders (dofor [domain domains]
+                          (load-and-sync-status-of-domain domain domains-info loader-fn))]
+       (with-ret (future-values loaders)
+         (log-message "Successfully loaded domains: " (str-utils/str-join ", " domains))))))
 
 (defn domain-needs-update? [local-vs remote-vs]
   (or (nil? (.mostRecentVersion local-vs))
@@ -187,21 +185,20 @@ Keep the cached versions of any domains that haven't been updated"
       new-data)
     new-data))
 
-(defn- update-all-domains [domains-info global-config local-config]
+(defn- update-domains [all-domains domains-info global-config local-config]
   (let [max-kbs 1024
-        all-domains (keys domains-info)
         amount-domains (count all-domains)
         domains-partitioned (partition-all (/ amount-domains 4) all-domains)]
-    (log-message "Updating ALL domains: " (str all-domains))
+    (log-message "Updating ALL domains: " (str-utils/str-join ", " all-domains))
     (doseq [id (range (count domains-partitioned))]
       (let [^LoaderState state (mk-loader-state)
             domains (nth domains-partitioned id)]
-        (log-message "Updating domains: " (str domains))
+        (log-message "Updating domains: " (str-utils/str-join ", "  domains))
         (start-download-supervisor (+ id 1) (count domains) max-kbs state)
         (future
           (try
-            (load-and-sync-status-of-domains
-             domains-info domains
+            (load-and-sync-status
+             domains domains-info
              (fn [domain]
                (close-if-updated domain
                                  domains-info
@@ -209,24 +206,6 @@ Keep the cached versions of any domains that haven't been updated"
                                  (use-cache-or-update domain domains-info global-config local-config false state))))
             (log-message "Finished updating all domains from remote")
             (catch Throwable t (log-error t "Error when syncing data") (throw t))))))))
-
-(defn- update-domain [domain domains-info global-config local-config]
-  (let [max-kbs 1024
-        finished-loaders (atom 0)
-        ^LoaderState state (mk-loader-state)]
-    (log-message "Updating SINGLE domain: " domain)
-    (start-download-supervisor 1 1 max-kbs state)
-    (future
-      (let [loader (load-and-sync-status-of-domain
-                    domains-info domain
-                    (fn [domain]
-                      (close-if-updated domain
-                                        domains-info
-                                        local-config
-                                        (use-cache-or-update domain domains-info global-config local-config false state))))]
-        (with-ret (.get loader)
-          (log-message "Successfully loaded domain: " domain))))
-    true)) ;; return true to indicate we're loading
 
 ;; 1. after *first* load finishes, right the global config with the token within
 ;; 2. when receive an update, open up the version and mkdir immediately,
@@ -336,12 +315,13 @@ Keep the cached versions of any domains that haven't been updated"
 
               (updateAll
                []
-                (update-all-domains domains-info global-config local-config)
+                (update-domains (keys domains-info) domains-info global-config local-config)
                )
 
               (update
                [#^String domain]
-                (update-domain domain domains-info global-config local-config)
+                (update-domains [domain] domains-info global-config local-config)
+                true
                ))]
       (reset! client (client. ret (:hdfs-conf local-config) global-config))
       ret ))
