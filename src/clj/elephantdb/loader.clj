@@ -86,7 +86,7 @@
     (open-domain local-config local-domain-root shards)
     ))
 
-(defn supervise-downloads [supervisor-id amount-domains max-kbs interval ^LoaderState state]
+(defn supervise-downloads [supervisor-id amount-domains max-kbs interval-ms ^LoaderState state]
   (let [downloaded-kb (:downloaded-kb state)
         do-download (:do-download state)
         finished-loaders (:finished-loaders state)]
@@ -95,11 +95,11 @@
         (log-message "Download supervisor #" supervisor-id " - "
                      "Finished: " @finished-loaders
                      ", waiting for: " (- amount-domains @finished-loaders))
-        (Thread/sleep interval)
+        (Thread/sleep interval-ms)
         (let [dl-kb @downloaded-kb]
           (if (>= dl-kb max-kbs)
             (do
-              (log-message "Download throttle exceeded: " dl-kb " (" max-kbs " allowed) - Waiting for: " interval "ms")
+              (log-message "Download throttle exceeded: " dl-kb " (" max-kbs " allowed) - Waiting for: " interval-ms "ms")
               (reset! do-download false)
               (reset! downloaded-kb 0)
               (recur))
@@ -109,13 +109,13 @@
               (recur))))))))
 
 (defn start-download-supervisor [supervisor-id amount-domains max-kbs ^LoaderState state]
-  (let [interval-factor 0.01 ;; check every 0.01s
-        interval (int (* interval-factor 1000))
-        max-kbs-val (int (* max-kbs interval-factor))]
+  (let [interval-factor-secs 0.01 ;; check every 0.01s
+        interval-ms (int (* interval-factor-secs 1000))
+        max-kbs-val (int (* max-kbs interval-factor-secs))]
     (future
       (log-message "Starting download supervisor #" supervisor-id)
       (reset! (:finished-loaders state) 0)
-      (reset! sleep-interval interval)
+      (reset! sleep-interval interval-ms)
       (if (> max-kbs 0) ;; only monitor if there's an actual download throttle
-        (supervise-downloads supervisor-id amount-domains max-kbs-val interval state))
+        (supervise-downloads supervisor-id amount-domains max-kbs-val interval-ms state))
       (log-message "Download supervisor #" supervisor-id " finished"))))
