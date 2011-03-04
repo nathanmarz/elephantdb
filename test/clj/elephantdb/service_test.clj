@@ -393,9 +393,17 @@
                                 3 [45 45])
 
           (is (= (thrift/status-ready?
-                       (.getDomainStatus handler "domain1"))))
+                  (.getDomainStatus handler "domain1"))))
           (is (= (thrift/status-ready?
-                       (.getDomainStatus handler "domain2"))))
+                  (.getDomainStatus handler "domain2"))))
+
+          ;; make sure the old versions have been deleted locally
+          (let [domain1-old-path1 (.pathToFile lfs (path (str-path local-dir "domain1" "1")))
+                domain2-old-path1 (.pathToFile lfs (path (str-path local-dir "domain2" "1")))
+                domain2-old-path2 (.pathToFile lfs (path (str-path local-dir "domain2" "2")))]
+            (is (= false (.exists domain1-old-path1)))
+            (is (= false (.exists domain2-old-path1)))
+            (is (= false (.exists domain2-old-path2))))
 
           (.shutdown handler))
         ))))
