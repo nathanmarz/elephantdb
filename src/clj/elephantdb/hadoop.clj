@@ -52,48 +52,59 @@
 
 (defn local-filesystem [] (FileSystem/getLocal (Configuration.)))
 
-;; holds the total amount of bytes of data downloaded since the last
-;; reset to 0
-;; is used to determine the current download rate (kb/s)
-(def downloaded-kb (atom 0))
-;; indicator for downloaders if they can download or not.
-;; gets set by supervising thread, defaults to true (e.g. on startup)
-(def do-download (atom true))
+;; time each copy process should sleep if now allowed to download
+(def sleep-interval (atom 0))
 
-;; gets incremented when a domain has finished loading
-(def finished-loaders (atom 0))
+;; LoaderState:
+;; downloaded-kb:    holds the total amount of bytes of data downloaded since the last
+;;                   reset to 0
+;;                   is used to determine the current download rate (kb/s)
+;; do-downlaod:      indicator for downloaders if they can download or not.
+;;                   gets set by supervising thread, defaults to true (e.g. on startup)
+;; finished-loaders: gets incremented when a domain has finished loading
+(defrecord LoaderState [downloaded-kb do-download finished-loaders])
+
+;; Create new LoaderState
+(defn mk-loader-state []
+  (LoaderState. (atom 0)
+                (atom true)
+                (atom 0)))
 
 (declare copy-local*)
 
-(defn- copy-file-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer]
-  (with-open [is (.open fs path)
-              os (BufferedOutputStream.
-                  (FileOutputStream. target-local-path))]
-    (loop []
-      (if @do-download
-        (let [amt (.read is buffer)]
-          (when (> amt 0)
-            (.write os buffer 0 amt)
-            (swap! downloaded-kb + (int (/ amt 1024))) ;; increment downloaded-kb
-            (recur)))
-        (recur))) ;; keep looping
-    ))
+(defn- copy-file-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^LoaderState state]
+  (let [downloaded-kb (:downloaded-kb state)
+        do-download (:do-download state)]
+    (with-open [is (.open fs path)
+                os (BufferedOutputStream.
+                    (FileOutputStream. target-local-path))]
+      (loop []
+        (if @do-download
+          (let [amt (.read is buffer)]
+            (when (> amt 0)
+              (.write os buffer 0 amt)
+              (swap! downloaded-kb + (int (/ amt 1024))) ;; increment downloaded-kb
+              (recur)))
+          (do
+            (Thread/sleep @sleep-interval)
+            (recur)))) ;; keep looping
+      )))
 
-(defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer]
+(defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^LoaderState state]
   (.mkdir (File. target-local-path))
   (let [contents (seq (.listStatus fs path))]
     (doseq [c contents]
       (let [subpath (.getPath c)]
-        (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer)
+        (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer state)
         ))))
 
-(defn- copy-local* [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer]
+(defn- copy-local* [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^LoaderState state]
   (let [status (.getFileStatus fs path)]
-    (cond (.isDir status) (copy-dir-local fs path target-local-path buffer)
-          true (copy-file-local fs path target-local-path buffer)
+    (cond (.isDir status) (copy-dir-local fs path target-local-path buffer state)
+          true (copy-file-local fs path target-local-path buffer state)
           )))
 
-(defn copy-local [#^FileSystem fs #^String spath #^String local-path]
+(defn copy-local [#^FileSystem fs #^String spath #^String local-path ^LoaderState state]
   (let [target-file (File. local-path)
         source-name (.getName (Path. spath))
         buffer (byte-array (* 1024 15))
@@ -110,5 +121,5 @@
       (throw
        (FileNotFoundException.
         (str "Could not find on remote " spath))))
-    (copy-local* fs (path spath) dest-path buffer)
+    (copy-local* fs (path spath) dest-path buffer state)
     ))

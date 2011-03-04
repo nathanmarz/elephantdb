@@ -42,8 +42,13 @@
   (let [loaders (dofor [domain (keys domains-info)]
                        (load-and-sync-status-of-domain domains-info domain loader-fn))]
     (with-ret (future-values loaders)
-      (log-message "Successfully loaded all domains"))
-    ))
+      (log-message "Successfully loaded all domains"))))
+
+(defn load-and-sync-status-of-domains [domains-info domains loader-fn]
+  (let [loaders (dofor [domain domains]
+                       (load-and-sync-status-of-domain domains-info domain loader-fn))]
+    (with-ret (future-values loaders)
+      (log-message "Successfully loaded domains: " domains))))
 
 (defn domain-needs-update? [local-vs remote-vs]
   (or (nil? (.mostRecentVersion local-vs))
@@ -51,7 +56,7 @@
          (.mostRecentVersion remote-vs))))
 
 (defn use-cache-or-update
-  ([domain domains-info global-config local-config open-if-no-update]
+  ([domain domains-info global-config local-config open-if-no-update ^LoaderState state]
      (let [fs (filesystem (:hdfs-conf local-config))
            lfs (local-filesystem)
            local-dir (:local-dir local-config)
@@ -64,16 +69,17 @@
                       local-config
                       local-domain-root
                       remote-path
-                      (domain/host-shards (domains-info domain)))
+                      (domain/host-shards (domains-info domain))
+                      state)
          ;; use cached domain from local-dir (no update needed)
          (do
-           (swap! finished-loaders + 1)
+           (swap! (:finished-loaders state) + 1)
            (if open-if-no-update
              (open-domain local-config
                           (str (path local-dir domain))
                           (domain/host-shards (domains-info domain))))))))
   ([domain domains-info global-config local-config]
-     (use-cache-or-update domain domains-info global-config local-config true)))
+     (use-cache-or-update domain domains-info global-config local-config true (mk-loader-state))))
 
 (defn delete-deleted-domains
   "Deletes all domains from local filesystem that have been deleted from the global config."
@@ -92,14 +98,17 @@
                         (fn [domain]
                           (use-cache-or-update domain domains-info global-config local-config))))
 
-(defn cleanup-domains [fs domains-info global-config local-config]
+(defn cleanup-domain [domain domains-info local-config]
   (let [lfs (local-filesystem)
         local-dir (:local-dir local-config)]
-    (doseq [domain (keys domains-info)]
-      (let [local-domain-root (str (path local-dir domain))
-            local-vs (DomainStore. lfs local-domain-root)]
-        (log-message "Cleaning up local domain versions (only keeping latest version) for domain: " domain)
-        (.cleanup local-vs 1)))))
+    (let [local-domain-root (str (path local-dir domain))
+          local-vs (DomainStore. lfs local-domain-root)]
+      (log-message "Cleaning up local domain versions (only keeping latest version) for domain: " domain)
+      (.cleanup local-vs 1))))
+
+(defn cleanup-domains [domains-info local-config]
+  (doseq [domain (keys domains-info)]
+    (cleanup-domain domain domains-info local-config)))
 
 (defn sync-updated
   "Only fetch domains from remote if a newer version is available.
@@ -114,7 +123,7 @@ Keep the cached versions of any domains that haven't been updated"
       (try
         (delete-deleted-domains domains-info global-config local-config)
         (sync-data-updated domains-info global-config local-config)
-        (cleanup-domains fs domains-info global-config local-config)
+        (cleanup-domains domains-info local-config)
         (log-message "Caching global config " cache-config)
         (cache-global-config! local-config cache-config)
         (log-message "Cached config " (read-cached-global-config local-config))
@@ -170,39 +179,51 @@ Keep the cached versions of any domains that haven't been updated"
       (throw (thrift/domain-not-loaded-ex domain)))
     info ))
 
-(defn- close-if-updated [domain domains-info new-data]
+(defn- close-if-updated [domain domains-info local-config new-data]
   (if new-data
     (do
       (close-domain domain domains-info)
+      (cleanup-domain domain domains-info local-config)
       new-data)
     new-data))
 
 (defn- update-all-domains [domains-info global-config local-config]
-  (let [domains (keys domains-info)
-        max-kbs 1024]
-    (log-message "Updating ALL domains: " domains)
-    (start-download-supervisor (count domains) max-kbs)
-    (future
-      (try
-        (load-and-sync-status domains-info
-                              (fn [domain]
-                                (close-if-updated domain
-                                                  domains-info
-                                                  (use-cache-or-update domain domains-info global-config local-config false))))
-        (log-message "Finished updating all domains from remote")
-        (catch Throwable t (log-error t "Error when syncing data") (throw t))))))
+  (let [max-kbs 1024
+        all-domains (keys domains-info)
+        amount-domains (count all-domains)
+        domains-partitioned (partition-all (/ amount-domains 4) all-domains)]
+    (log-message "Updating ALL domains: " (str all-domains))
+    (doseq [id (range (count domains-partitioned))]
+      (let [^LoaderState state (mk-loader-state)
+            domains (nth domains-partitioned id)]
+        (log-message "Updating domains: " (str domains))
+        (start-download-supervisor (+ id 1) (count domains) max-kbs state)
+        (future
+          (try
+            (load-and-sync-status-of-domains
+             domains-info domains
+             (fn [domain]
+               (close-if-updated domain
+                                 domains-info
+                                 local-config
+                                 (use-cache-or-update domain domains-info global-config local-config false state))))
+            (log-message "Finished updating all domains from remote")
+            (catch Throwable t (log-error t "Error when syncing data") (throw t))))))))
 
 (defn- update-domain [domain domains-info global-config local-config]
-  (let [max-kbs 1024]
+  (let [max-kbs 1024
+        finished-loaders (atom 0)
+        ^LoaderState state (mk-loader-state)]
     (log-message "Updating SINGLE domain: " domain)
-    (start-download-supervisor 1 max-kbs)
+    (start-download-supervisor 1 1 max-kbs state)
     (future
       (let [loader (load-and-sync-status-of-domain
                     domains-info domain
                     (fn [domain]
                       (close-if-updated domain
                                         domains-info
-                                        (use-cache-or-update domain domains-info global-config local-config false))))]
+                                        local-config
+                                        (use-cache-or-update domain domains-info global-config local-config false state))))]
         (with-ret (.get loader)
           (log-message "Successfully loaded domain: " domain))))
     true)) ;; return true to indicate we're loading

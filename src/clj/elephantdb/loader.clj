@@ -44,13 +44,13 @@
         (catch Throwable t (log-error t "Error when closing local persistence for domain: " domain " and shard: " shard) (throw t))))
     (log-message "Finished closing domain: " domain)))
 
-(defn load-domain-shard [fs persistence-factory local-config local-shard-path remote-shard-path]
+(defn load-domain-shard [fs persistence-factory local-config local-shard-path remote-shard-path ^LoaderState state]
   ;; TODO: respect the max copy rate
   ;; TODO: do a streaming recursive copy that can be rate limited (rate limited with the other shards...)
   (if (.exists fs (path remote-shard-path))
     (do
       (log-message "Copying " remote-shard-path " to " local-shard-path)
-      (copy-local fs remote-shard-path local-shard-path)
+      (copy-local fs remote-shard-path local-shard-path state)
       (log-message "Copied " remote-shard-path " to " local-shard-path)
       )
     (do
@@ -59,7 +59,7 @@
     )
 
 ;; returns a map from shard to LP
-(defn load-domain [fs local-config local-domain-root remote-path shards]
+(defn load-domain [fs local-config local-domain-root remote-path shards ^LoaderState state]
   (log-message "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs                (local-filesystem)
         remote-vs          (DomainStore. fs remote-path)
@@ -76,41 +76,46 @@
                                     local-config
                                     (shard-path local-version-path s)
                                     (shard-path
-                                     (.versionPath remote-vs remote-version) s)))
+                                     (.versionPath remote-vs remote-version) s)
+                                    state))
                                   )]
     (future-values shard-loaders)
     (.succeedVersion local-vs local-version-path)
     (log-message "Successfully loaded domain at " remote-path " to " local-domain-root " with version " remote-version)
-    (swap! finished-loaders + 1)
+    (swap! (:finished-loaders state) + 1)
     (open-domain local-config local-domain-root shards)
     ))
 
-(defn supervise-downloads [amount-domains max-kbs interval]
-  (loop []
-    (when (< @finished-loaders amount-domains)
-      (log-message "Supervising downloads - "
-                   "Finished: " @finished-loaders
-                   ", waiting for: " (- amount-domains @finished-loaders))
-      (Thread/sleep interval)
-      (let [dl-kb @downloaded-kb]
-        (if (>= dl-kb max-kbs)
-          (do
-            (log-message "Download throttle exceeded: " dl-kb " - Waiting for 1s")
-            (reset! do-download false)
-            (reset! downloaded-kb 0)
-            (recur))
-          (do
-            (reset! do-download true)
-            (reset! downloaded-kb 0)
-            (recur)))))))
+(defn supervise-downloads [supervisor-id amount-domains max-kbs interval ^LoaderState state]
+  (let [downloaded-kb (:downloaded-kb state)
+        do-download (:do-download state)
+        finished-loaders (:finished-loaders state)]
+    (loop []
+      (when (< @finished-loaders amount-domains)
+        (log-message "Download supervisor #" supervisor-id " - "
+                     "Finished: " @finished-loaders
+                     ", waiting for: " (- amount-domains @finished-loaders))
+        (Thread/sleep interval)
+        (let [dl-kb @downloaded-kb]
+          (if (>= dl-kb max-kbs)
+            (do
+              (log-message "Download throttle exceeded: " dl-kb " (" max-kbs " allowed) - Waiting for: " interval "ms")
+              (reset! do-download false)
+              (reset! downloaded-kb 0)
+              (recur))
+            (do
+              (reset! do-download true)
+              (reset! downloaded-kb 0)
+              (recur))))))))
 
-(defn start-download-supervisor [amount-domains max-kbs]
+(defn start-download-supervisor [supervisor-id amount-domains max-kbs ^LoaderState state]
   (let [interval-factor 0.01 ;; check every 0.01s
+        interval (int (* interval-factor 1000))
         max-kbs-val (int (* max-kbs interval-factor))]
     (future
-      (log-message "Starting download supervisor")
-      (reset! finished-loaders 0)
+      (log-message "Starting download supervisor #" supervisor-id)
+      (reset! (:finished-loaders state) 0)
+      (reset! sleep-interval interval)
       (if (> max-kbs 0) ;; only monitor if there's an actual download throttle
-        (supervise-downloads amount-domains max-kbs-val (int (* interval-factor 1000)))
-        (reset! do-download true))
-      (log-message "Download supervisor finished"))))
+        (supervise-downloads supervisor-id amount-domains max-kbs-val interval state))
+      (log-message "Download supervisor #" supervisor-id " finished"))))
