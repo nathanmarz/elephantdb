@@ -54,7 +54,7 @@
          (.mostRecentVersion remote-vs))))
 
 (defn use-cache-or-update
-  ([domain domains-info global-config local-config open-if-no-update ^LoaderState state]
+  ([domain domains-info global-config local-config open-if-no-update ^DownloadState state]
      (let [fs (filesystem (:hdfs-conf local-config))
            lfs (local-filesystem)
            local-dir (:local-dir local-config)
@@ -63,7 +63,8 @@
            remote-vs (DomainStore. fs remote-path)
            local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
        (if (domain-needs-update? local-vs remote-vs)
-         (load-domain fs
+         (load-domain domain
+                      fs
                       local-config
                       local-domain-root
                       remote-path
@@ -77,7 +78,13 @@
                           (str (path local-dir domain))
                           (domain/host-shards (domains-info domain))))))))
   ([domain domains-info global-config local-config]
-     (use-cache-or-update domain domains-info global-config local-config true (mk-loader-state))))
+     (use-cache-or-update domain
+                          domains-info
+                          global-config
+                          local-config
+                          true
+                          (mk-loader-state { domain
+                                            (domain/host-shards (domains-info domain)) }))))
 
 (defn delete-deleted-domains
   "Deletes all domains from local filesystem that have been deleted from the global config."
@@ -187,25 +194,24 @@ Keep the cached versions of any domains that haven't been updated"
 
 (defn- update-domains [all-domains domains-info global-config local-config]
   (let [max-kbs 1024
-        amount-domains (count all-domains)
-        domains-partitioned (partition-all (/ amount-domains 4) all-domains)]
-    (log-message "Updating ALL domains: " (str-utils/str-join ", " all-domains))
-    (doseq [id (range (count domains-partitioned))]
-      (let [^LoaderState state (mk-loader-state)
-            domains (nth domains-partitioned id)]
-        (log-message "Updating domains: " (str-utils/str-join ", "  domains))
-        (start-download-supervisor (+ id 1) (count domains) max-kbs state)
-        (future
-          (try
-            (load-and-sync-status
-             domains domains-info
-             (fn [domain]
-               (close-if-updated domain
-                                 domains-info
-                                 local-config
-                                 (use-cache-or-update domain domains-info global-config local-config false state))))
-            (log-message "Finished updating all domains from remote")
-            (catch Throwable t (log-error t "Error when syncing data") (throw t))))))))
+        all-shards (domain/all-shards domains-info)
+        shard-amount (reduce + 0 (map #(count %) (vals all-shards)))]
+
+    (log-message "Updating domains: " (str-utils/str-join ", " all-domains))
+
+    (let [^DownloadState state (mk-loader-state all-shards)]
+      (start-download-supervisor shard-amount max-kbs state)
+      (future
+        (try
+          (load-and-sync-status
+           all-domains domains-info
+           (fn [domain]
+             (close-if-updated domain
+                               domains-info
+                               local-config
+                               (use-cache-or-update domain domains-info global-config local-config false state))))
+          (log-message "Finished updating all domains from remote")
+          (catch Throwable t (log-error t "Error when syncing data") (throw t)))))))
 
 ;; 1. after *first* load finishes, right the global config with the token within
 ;; 2. when receive an update, open up the version and mkdir immediately,

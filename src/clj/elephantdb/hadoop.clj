@@ -55,24 +55,37 @@
 ;; time each copy process should sleep if now allowed to download
 (def sleep-interval (atom 0))
 
-;; LoaderState:
+;; ShardState:
 ;; downloaded-kb:    holds the total amount of bytes of data downloaded since the last
 ;;                   reset to 0
 ;;                   is used to determine the current download rate (kb/s)
-;; do-downlaod:      indicator for downloaders if they can download or not.
-;;                   gets set by supervising thread, defaults to true (e.g. on startup)
-;; finished-loaders: gets incremented when a domain has finished loading
-(defrecord LoaderState [downloaded-kb do-download finished-loaders])
+;; do-downlaod:      indicator for shard loader if it can download or not.
+;;                   gets set by download supervisor thread, defaults to true (e.g. on startup)
+(defrecord ShardState [downloaded-kb do-download])
+
+;; DownloadState:
+;; shard-states:     Map of domain name to list of ShardStates per shard of a domain
+;; finished-loaders: gets incremented when a shard has finished loading
+(defrecord DownloadState [shard-states finished-loaders])
+
+;; Create new shard states
+(defn mk-shard-states [shards]
+  (into {}
+        (map (fn [s]
+               {s (ShardState. (atom 0) (atom true))})
+               shards)))
 
 ;; Create new LoaderState
-(defn mk-loader-state []
-  (LoaderState. (atom 0)
-                (atom true)
-                (atom 0)))
+(defn mk-loader-state [domains-to-shards]
+  (let [shard-states (into {}
+                      (map (fn [[domain shards]]
+                             {domain (mk-shard-states shards)})
+                           domains-to-shards))]
+    (DownloadState. shard-states (atom 0))))
 
 (declare copy-local*)
 
-(defn- copy-file-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^LoaderState state]
+(defn- copy-file-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (let [downloaded-kb (:downloaded-kb state)
         do-download (:do-download state)]
     (with-open [is (.open fs path)
@@ -90,7 +103,7 @@
             (recur)))) ;; keep looping
       )))
 
-(defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^LoaderState state]
+(defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (.mkdir (File. target-local-path))
   (let [contents (seq (.listStatus fs path))]
     (doseq [c contents]
@@ -98,13 +111,13 @@
         (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer state)
         ))))
 
-(defn- copy-local* [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^LoaderState state]
+(defn- copy-local* [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (let [status (.getFileStatus fs path)]
     (cond (.isDir status) (copy-dir-local fs path target-local-path buffer state)
           true (copy-file-local fs path target-local-path buffer state)
           )))
 
-(defn copy-local [#^FileSystem fs #^String spath #^String local-path ^LoaderState state]
+(defn copy-local [#^FileSystem fs #^String spath #^String local-path ^ShardState state]
   (let [target-file (File. local-path)
         source-name (.getName (Path. spath))
         buffer (byte-array (* 1024 15))
