@@ -36,7 +36,15 @@
   ([domain-info]
     (host-shards domain-info (local-hostname)))
   ([domain-info host]
-    (s/host-shards (::shard-index domain-info) host)))
+     (s/host-shards (::shard-index domain-info) host)))
+
+(defn all-shards
+  "Returns Map of domain-name to Set of shards for that domain"
+  [domains-info]
+  (into {}
+        (map (fn [domain]
+               {domain (host-shards (domains-info domain))})
+               (keys domains-info))))
 
 (defn key-hosts [domain domain-info #^bytes key]
   (s/key-hosts domain (::shard-index domain-info) key))
