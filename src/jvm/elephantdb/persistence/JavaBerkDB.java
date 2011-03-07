@@ -49,6 +49,8 @@ public class JavaBerkDB extends LocalPersistenceFactory {
             envConf.setReadOnly(readOnly);
             envConf.setLocking(false);
             envConf.setTransactional(false);
+            envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "80");
+            envConf.setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
 
             _env = new Environment(new File(root), envConf);
 
@@ -81,14 +83,18 @@ public class JavaBerkDB extends LocalPersistenceFactory {
                 LOG.info("Done syncing environment at " + _env.getHome().getPath());
 
                 LOG.info("Cleaning environment log at " + _env.getHome().getPath());
-                _env.cleanLog();
+                boolean anyCleaned = false;
+                while (_env.cleanLog() > 0) {
+                    anyCleaned = true;
+                }
                 LOG.info("Done cleaning environment log at " + _env.getHome().getPath());
-
-                CheckpointConfig checkpoint = new CheckpointConfig();
-                checkpoint.setForce(true);
-                LOG.info("Checkpointing environment at " + _env.getHome().getPath());
-                _env.checkpoint(checkpoint);
-                LOG.info("Done checkpointing environment at " + _env.getHome().getPath());
+                if (anyCleaned) {
+                    LOG.info("Checkpointing environment at " + _env.getHome().getPath());
+                    CheckpointConfig checkpoint = new CheckpointConfig();
+                    checkpoint.setForce(true);
+                    _env.checkpoint(checkpoint);
+                    LOG.info("Done checkpointing environment at " + _env.getHome().getPath());
+                }
             }
 
             _db.close();
