@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb "0.0.4"
+(defproject elephantdb/elephantdb "0.0.5-SNAPSHOT"
   :source-path "src/clj"
   :test-path "test/clj"
   :java-source-path "src/jvm"
