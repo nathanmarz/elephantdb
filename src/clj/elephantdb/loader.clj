@@ -119,6 +119,7 @@
     (future
       (log-message "Starting download supervisor")
       (reset! (:finished-loaders state) 0)
-      (if (> max-kbs 0) ;; only monitor if there's an actual download throttle
+      (if (and (> amount-shards 0) ;; only monitor if there's an actual download throttle
+               (> max-kbs 0))      ;; and shards to be downloaded
         (supervise-downloads amount-shards max-kbs-val interval-ms state))
       (log-message "Download supervisor finished"))))
