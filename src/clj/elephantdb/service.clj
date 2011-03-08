@@ -23,11 +23,13 @@
           [domain (domain/init-domain-info (domain-shards domain))]
           ))))
 
-(defn load-and-sync-status-of-domain [domain domains-info loader-fn]
+(defn load-and-sync-status-of-domain [domain domains-info update? loader-fn]
   (future
     (try
       (domain/set-domain-status! (domains-info domain)
-                                 (thrift/loading-status))
+                                 (if update?
+                                   (thrift/ready-status true)
+                                   (thrift/loading-status)))
       (let [domain-data (loader-fn domain)]
         (if domain-data
           (domain/set-domain-data! (domains-info domain)
@@ -42,11 +44,11 @@
          (thrift/failed-status t))))))
 
 (defn load-and-sync-status
-  ([domains-info loader-fn]
-     (load-and-sync-status (keys domains-info) domains-info loader-fn))
-  ([domains domains-info loader-fn]
+  ([domains-info update? loader-fn]
+     (load-and-sync-status (keys domains-info) domains-info update? loader-fn))
+  ([domains domains-info update? loader-fn]
      (let [loaders (dofor [domain domains]
-                          (load-and-sync-status-of-domain domain domains-info loader-fn))]
+                          (load-and-sync-status-of-domain domain domains-info update? loader-fn))]
        (with-ret (future-values loaders)
          (log-message "Successfully loaded domains: " (str-utils/str-join ", " domains))))))
 
@@ -103,6 +105,7 @@
 
 (defn sync-data-updated [domains-info global-config local-config]
   (load-and-sync-status domains-info
+                        false
                         (fn [domain]
                           (use-cache-or-update domain domains-info global-config local-config))))
 
@@ -152,6 +155,7 @@ Keep the cached versions of any domains that haven't been updated"
                       (assoc global-config :domains domains-map))]
     (future
       (load-and-sync-status domains-info
+                            false
                             (fn [domain]
                               (open-domain
                                local-config
@@ -196,7 +200,7 @@ Keep the cached versions of any domains that haven't been updated"
     new-data))
 
 (defn- update-domains [all-domains domains-info global-config local-config]
-  (let [max-kbs 1024
+  (let [max-kbs 8192
         all-shards (domain/all-shards domains-info)
         domain-shards (into {} (map (fn [domain]
                                       [domain (all-shards domain)])
@@ -212,6 +216,7 @@ Keep the cached versions of any domains that haven't been updated"
         (try
           (load-and-sync-status
            all-domains domains-info
+           true
            (fn [domain]
              (close-if-updated domain
                                domains-info
