@@ -27,7 +27,10 @@
   (= (.getSetField domain-status) DomainStatus$_Fields/FAILED))
 
 (defn status-loading? [#^DomainStatus domain-status]
-  (= (.getSetField domain-status) DomainStatus$_Fields/LOADING))
+  (let [field (.getSetField domain-status)]
+    (or (= field DomainStatus$_Fields/LOADING)
+        (and (= field DomainStatus$_Fields/READY)
+             (.get_update_status (.get_ready domain-status))))))
 
 (defn domain-not-found-ex [domain]
   (DomainNotFoundException. domain))
