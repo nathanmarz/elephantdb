@@ -9,6 +9,20 @@
   (:use [elephantdb config log hadoop])
   (:gen-class))
 
+(defn launch-updater! [interval-mins service-handler]
+  (let [interval-ms (* 1000 (* 60 interval-mins))]
+    (future
+      (log-message "Starting updater process with an interval of: " interval-mins " minutes...")
+      (loop []
+        (Thread/sleep interval-ms)
+        (log-message "Updater process: Checking if update is possible...")
+        (if (service/service-updating? service-handler)
+          (log-message "Updater process: Not updating as update process still in progress.")
+          (do
+            (log-message "Updater process: Updating all domains via updateAll().")
+            (.updateAll service-handler)))
+        (recur)))))
+
 (defn launch-server! [global-config local-config token]
   (let
       [options (THsHaServer$Options.)
@@ -19,6 +33,8 @@
                (TNonblockingServerSocket. (:port global-config))
                (TBinaryProtocol$Factory.) options)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.shutdown service-handler) (.stop server))))
+    (log-message "Starting updater process...")
+    (launch-updater! 1 service-handler) ;; update every 15 minutes
     (log-message "Starting ElephantDB server...")
     (.serve server)))
 
