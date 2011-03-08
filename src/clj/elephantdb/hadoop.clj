@@ -76,9 +76,9 @@
 ;; Create new LoaderState
 (defn mk-loader-state [domains-to-shards]
   (let [shard-states (into {}
-                      (map (fn [[domain shards]]
-                             {domain (mk-shard-states shards)})
-                           domains-to-shards))]
+                           (map (fn [[domain shards]]
+                                  {domain (mk-shard-states shards)})
+                                domains-to-shards))]
     (DownloadState. shard-states (atom 0))))
 
 (declare copy-local*)

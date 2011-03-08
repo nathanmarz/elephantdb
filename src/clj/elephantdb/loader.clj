@@ -87,39 +87,44 @@
     (open-domain local-config local-domain-root shards)
     ))
 
+
+(defn supervise-shard [domain shard-id max-kbs-per-shard ^ShardState shard-state]
+  (let [downloaded-kb (:downloaded-kb shard-state)
+        do-download (:do-download shard-state)
+        sleep-interval (:sleep-interval shard-state)]
+    (let [dl-kb @downloaded-kb
+          sleep-ms (rand 1000)] ;; sleep random amount of time up to 1s
+      (if (>= dl-kb max-kbs-per-shard)
+        (do
+          (log-message "Download throttle exceeded (" domain " / " shard-id "): " dl-kb " (" max-kbs-per-shard " allowed) - Sleeping: " sleep-ms "ms")
+          (reset! do-download false)
+          (reset! sleep-interval sleep-ms)
+          (reset! downloaded-kb 0))
+        (do
+          (reset! do-download true)
+          (reset! downloaded-kb 0))))))
+
 (defn supervise-downloads [amount-shards max-kbs interval-ms ^DownloadState state]
-  (let [shard-states (:shard-states state)
+  (let [domain-to-shard-states (:shard-states state)
         finished-loaders (:finished-loaders state)
         max-kbs-per-shard (/ max-kbs amount-shards)]
     (loop []
+      (Thread/sleep interval-ms)
       (when (< @finished-loaders amount-shards)
         (log-message "Download supervisor - "
                      "Finished: " @finished-loaders
                      ", waiting for: " (- amount-shards @finished-loaders))
-        (doseq [s shard-states]
-          (let [downloaded-kb (:downloaded-kb s)
-                do-download (:do-download s)
-                sleep-interval (:sleep-interval s)]
-            (Thread/sleep interval-ms)
-            (let [dl-kb @downloaded-kb
-                  sleep-ms (rand 1000)] ;; sleep random amount of time up to 1s
-              (if (>= dl-kb max-kbs-per-shard)
-                (do
-                  (log-message "Download throttle exceeded: " dl-kb " (" max-kbs-per-shard " allowed) - Waiting for: " sleep-ms "ms")
-                  (reset! do-download false)
-                  (reset! sleep-interval sleep-ms)
-                  (reset! downloaded-kb 0))
-                (do
-                  (reset! do-download true)
-                  (reset! downloaded-kb 0))))))
+        (doseq [[domain shard-states] domain-to-shard-states]
+          (doseq [[s-id ^ShardState s-state] shard-states]
+            (supervise-shard domain s-id max-kbs-per-shard s-state)))
         (recur)))))
 
 (defn start-download-supervisor [amount-shards max-kbs ^DownloadState state]
-  (let [interval-factor-secs 0.01 ;; check every 0.01s
+  (let [interval-factor-secs 0.1 ;; check every 0.01s
         interval-ms (int (* interval-factor-secs 1000))
         max-kbs-val (int (* max-kbs interval-factor-secs))]
     (future
-      (log-message "Starting download supervisor")
+      (log-message "Starting download supervisor for " amount-shards " shard loaders")
       (reset! (:finished-loaders state) 0)
       (if (and (> amount-shards 0) ;; only monitor if there's an actual download throttle
                (> max-kbs 0))      ;; and shards to be downloaded

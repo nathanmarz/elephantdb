@@ -26,6 +26,8 @@
 (defn load-and-sync-status-of-domain [domain domains-info loader-fn]
   (future
     (try
+      (domain/set-domain-status! (domains-info domain)
+                                 (thrift/loading-status))
       (let [domain-data (loader-fn domain)]
         (if domain-data
           (domain/set-domain-data! (domains-info domain)
@@ -72,7 +74,8 @@
                       state)
          ;; use cached domain from local-dir (no update needed)
          (do
-           (swap! (:finished-loaders state) + 1)
+           ;; signal all shards of domain are done loading
+           (swap! (:finished-loaders state) + (count ((:shard-states state) domain)))
            (if open-if-no-update
              (open-domain local-config
                           (str (path local-dir domain))
@@ -148,13 +151,13 @@ Keep the cached versions of any domains that haven't been updated"
                       lfs
                       (assoc global-config :domains domains-map))]
     (future
-     (load-and-sync-status domains-info
-                           (fn [domain]
-                             (open-domain
-                              local-config
-                              (str (path local-dir domain))
-                              (domain/host-shards (domains-info domain))
-                              ))))
+      (load-and-sync-status domains-info
+                            (fn [domain]
+                              (open-domain
+                               local-config
+                               (str (path local-dir domain))
+                               (domain/host-shards (domains-info domain))
+                               ))))
     domains-info
     ))
 
@@ -195,11 +198,15 @@ Keep the cached versions of any domains that haven't been updated"
 (defn- update-domains [all-domains domains-info global-config local-config]
   (let [max-kbs 1024
         all-shards (domain/all-shards domains-info)
+        domain-shards (into {} (map (fn [domain]
+                                      [domain (all-shards domain)])
+                                    all-domains))
         shard-amount (reduce + 0 (map #(count %) (vals all-shards)))]
 
     (log-message "Updating domains: " (str-utils/str-join ", " all-domains))
 
-    (let [^DownloadState state (mk-loader-state all-shards)]
+    (let [^DownloadState state (mk-loader-state domain-shards)
+          shard-amount (reduce + 0 (map #(count %) (vals (:shard-states state))))]
       (start-download-supervisor shard-amount max-kbs state)
       (future
         (try
@@ -331,3 +338,8 @@ Keep the cached versions of any domains that haven't been updated"
                ))]
       (reset! client (client. ret (:hdfs-conf local-config) global-config))
       ret ))
+
+(defn service-updating? [service-handler]
+  (some (fn [[domain status]]
+          (thrift/status-loading? status))
+        (.get_domain_statuses (.getStatus service-handler))))
