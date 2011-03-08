@@ -111,9 +111,6 @@
     (loop []
       (Thread/sleep interval-ms)
       (when (< @finished-loaders amount-shards)
-        (log-message "Download supervisor - "
-                     "Finished: " @finished-loaders
-                     ", waiting for: " (- amount-shards @finished-loaders))
         (doseq [[domain shard-states] domain-to-shard-states]
           (doseq [[s-id ^ShardState s-state] shard-states]
             (supervise-shard domain s-id max-kbs-per-shard s-state)))
