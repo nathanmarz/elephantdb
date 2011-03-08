@@ -52,16 +52,14 @@
 
 (defn local-filesystem [] (FileSystem/getLocal (Configuration.)))
 
-;; time each copy process should sleep if now allowed to download
-(def sleep-interval (atom 0))
-
 ;; ShardState:
 ;; downloaded-kb:    holds the total amount of bytes of data downloaded since the last
 ;;                   reset to 0
 ;;                   is used to determine the current download rate (kb/s)
 ;; do-downlaod:      indicator for shard loader if it can download or not.
 ;;                   gets set by download supervisor thread, defaults to true (e.g. on startup)
-(defrecord ShardState [downloaded-kb do-download])
+;; sleep-interval:   time each shard loader process should sleep if now allowed to download
+(defrecord ShardState [downloaded-kb do-download sleep-interval])
 
 ;; DownloadState:
 ;; shard-states:     Map of domain name to list of ShardStates per shard of a domain
@@ -72,7 +70,7 @@
 (defn mk-shard-states [shards]
   (into {}
         (map (fn [s]
-               {s (ShardState. (atom 0) (atom true))})
+               {s (ShardState. (atom 0) (atom true) (atom 0))})
                shards)))
 
 ;; Create new LoaderState
@@ -87,7 +85,8 @@
 
 (defn- copy-file-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (let [downloaded-kb (:downloaded-kb state)
-        do-download (:do-download state)]
+        do-download (:do-download state)
+        sleep-interval (:sleep-interval state)]
     (with-open [is (.open fs path)
                 os (BufferedOutputStream.
                     (FileOutputStream. target-local-path))]
