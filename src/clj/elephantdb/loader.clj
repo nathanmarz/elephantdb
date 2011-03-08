@@ -89,7 +89,8 @@
 
 (defn supervise-downloads [amount-shards max-kbs interval-ms ^DownloadState state]
   (let [shard-states (:shard-states state)
-        finished-loaders (:finished-loaders state)]
+        finished-loaders (:finished-loaders state)
+        max-kbs-per-shard (/ max-kbs amount-shards)]
     (loop []
       (when (< @finished-loaders amount-shards)
         (log-message "Download supervisor - "
@@ -100,12 +101,13 @@
                 do-download (:do-download s)
                 sleep-interval (:sleep-interval s)]
             (Thread/sleep interval-ms)
-            (let [dl-kb @downloaded-kb]
-              (if (>= dl-kb max-kbs)
+            (let [dl-kb @downloaded-kb
+                  sleep-ms (rand 1000)] ;; sleep random amount of time up to 1s
+              (if (>= dl-kb max-kbs-per-shard)
                 (do
-                  (log-message "Download throttle exceeded: " dl-kb " (" max-kbs " allowed) - Waiting for: " interval-ms "ms")
+                  (log-message "Download throttle exceeded: " dl-kb " (" max-kbs-per-shard " allowed) - Waiting for: " sleep-ms "ms")
                   (reset! do-download false)
-                  (reset! sleep-interval (rand 1000)) ;; sleep random amount of time up to 1s
+                  (reset! sleep-interval sleep-ms)
                   (reset! downloaded-kb 0))
                 (do
                   (reset! do-download true)
