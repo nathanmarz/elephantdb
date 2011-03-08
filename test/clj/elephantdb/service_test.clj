@@ -375,6 +375,11 @@
           (is (= (thrift/status-loading?
                   (.getDomainStatus handler "domain2"))))
 
+          (is (= (thrift/status-ready?
+                  (.getDomainStatus handler "domain1"))))
+          (is (= (thrift/status-ready?
+                  (.getDomainStatus handler "domain2"))))
+
           ;; wait a second
           (Thread/sleep 1000)
 
