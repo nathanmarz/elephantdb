@@ -193,11 +193,9 @@ Keep the cached versions of any domains that haven't been updated"
 
 (defn- close-if-updated [domain domains-info local-config new-data]
   (if new-data
-    (do
-      (close-domain domain domains-info)
-      (cleanup-domain domain domains-info local-config)
-      new-data)
-    new-data))
+    (close-domain domain domains-info))
+  (cleanup-domain domain domains-info local-config)
+  new-data)
 
 (defn- update-domains [all-domains domains-info global-config local-config]
   (let [max-kbs 8192
