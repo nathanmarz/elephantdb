@@ -58,7 +58,7 @@
          (.mostRecentVersion remote-vs))))
 
 (defn use-cache-or-update
-  ([domain domains-info global-config local-config open-if-no-update ^DownloadState state]
+  ([domain domains-info global-config local-config update? ^DownloadState state]
      (let [fs (filesystem (:hdfs-conf local-config))
            lfs (local-filesystem)
            local-dir (:local-dir local-config)
@@ -78,7 +78,8 @@
          (do
            ;; signal all shards of domain are done loading
            (swap! (:finished-loaders state) + (count ((:shard-states state) domain)))
-           (if open-if-no-update
+           (if update?
+             :no-update
              (open-domain local-config
                           (str (path local-dir domain))
                           (domain/host-shards (domains-info domain))))))))
@@ -87,7 +88,7 @@
                           domains-info
                           global-config
                           local-config
-                          true
+                          false
                           (mk-loader-state { domain
                                             (domain/host-shards (domains-info domain)) }))))
 
@@ -192,10 +193,12 @@ Keep the cached versions of any domains that haven't been updated"
     info ))
 
 (defn- close-if-updated [domain domains-info local-config new-data]
-  (if new-data
-    (close-domain domain domains-info))
-  (cleanup-domain domain domains-info local-config)
-  new-data)
+  (if (= new-data :no-update)
+    nil
+    (do (if new-data
+          (close-domain domain domains-info))
+        (cleanup-domain domain domains-info local-config)
+        new-data)))
 
 (defn- update-domains [all-domains domains-info global-config local-config]
   (let [max-kbs 8192
@@ -219,7 +222,7 @@ Keep the cached versions of any domains that haven't been updated"
              (close-if-updated domain
                                domains-info
                                local-config
-                               (use-cache-or-update domain domains-info global-config local-config false state))))
+                               (use-cache-or-update domain domains-info global-config local-config true state))))
           (log-message "Finished updating all domains from remote")
           (catch Throwable t (log-error t "Error when syncing data") (throw t)))))))
 
