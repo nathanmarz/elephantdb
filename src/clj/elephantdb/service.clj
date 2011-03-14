@@ -120,7 +120,9 @@
 
 (defn cleanup-domains [domains-info local-config]
   (doseq [domain (keys domains-info)]
-    (cleanup-domain domain domains-info local-config)))
+    (try
+      (cleanup-domain domain domains-info local-config)
+      (catch Throwable t (log-error t "Error when cleaning old versions of domain: " domain) (throw t)))))
 
 (defn sync-updated
   "Only fetch domains from remote if a newer version is available.
