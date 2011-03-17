@@ -18,7 +18,7 @@
 (defn ready-status [loading?]
   (DomainStatus/ready
     (doto (ReadyStatus.)
-          (.set_update_status (when loading? (loading-status))))))
+          (.set_update_status (when loading? (LoadingStatus.))))))
 
 (defn status-ready? [#^DomainStatus domain-status]
   (= (.getSetField domain-status) DomainStatus$_Fields/READY))

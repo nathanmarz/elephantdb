@@ -39,7 +39,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         public Args(DomainSpec spec, String outputDirHdfs) {
             this.spec = spec;
             this.outputDirHdfs = outputDirHdfs;
-        }        
+        }
     }
 
     public class ElephantRecordWriter implements RecordWriter<IntWritable, ElephantRecordWritable> {
@@ -127,10 +127,10 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         if(conf.getBoolean("mapred.reduce.tasks.speculative.execution", true)) {
             throw new InvalidJobConfException("Speculative execution should be false");
         }
-        if(fs.exists(new Path(conf.get(args.outputDirHdfs)))) {
+        if(fs.exists(new Path(args.outputDirHdfs))) {
             throw new InvalidJobConfException("Output dir already exists " + args.outputDirHdfs);
         }
-        if(args.updateDirHdfs!=null && !fs.exists(new Path(conf.get(args.updateDirHdfs)))) {
+        if(args.updateDirHdfs!=null && !fs.exists(new Path(args.updateDirHdfs))) {
             throw new InvalidJobConfException("Shards to update does not exist " + args.updateDirHdfs);
         }
     }
