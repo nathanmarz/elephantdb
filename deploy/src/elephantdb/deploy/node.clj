@@ -12,16 +12,16 @@
     [automated-admin-user :only [automated-admin-user]]]
    [pallet.blobstore :only [blobstore-from-config]]
    [pallet.resource :only [phase]]
-   [pallet.configure :only [pallet-config]]))
+   [pallet.configure :only [pallet-config compute-service-properties]]))
 
 (defn my-node-spec [ring]
-  (let [{:keys [port]} (config/read-global-config! ring)]
+  (let [{:keys [port]} (config/read-global-conf! ring)]
     (node-spec
      :image {:image-id "us-east-1/ami-08f40561"
              :hardware-id "m1.large"
              :inbound-ports [22 port]})))
 
-(defn mytest [ring]
+(defn gen-edb-spec [ring]
   (group-spec
    (str "edb-" ring)
    :node-spec (my-node-spec ring)
@@ -32,64 +32,24 @@
     :configure (phase
                 (elephantdb/setup)
                 (elephantdb/deploy)
-                (config/update-global-conf!))}))
+                (config/upload-global-conf!))}))
 
-(def mytest-ring (mytest "dev4"))
+(def edb-spec (mytest "dev5"))
 
 
-#_ (require '[pallet.parameter :as parameter])
-#_ (lift mytest-ring
-         :compute aws
-         :phase (fn [r] (parameter/assoc-for r [:foo] 3)))
-#_ (lift mytest-ring
-         :compute aws
-         :phase (fn [r] (print (parameter/get-for r [:foo])) r))
 
 #_ (do  (defn mk-aws []
           (compute-service-from-config-file "backtype"))
         (def aws (mk-aws)))
 
-#_ (def mytest2
-     (group-spec "myword" :extends mytest))
-#_ (env/request-with-environment {:server {:b 3}} {:a 3})
+#_ (converge {edb-spec 1}
+          :compute (compute-service-from-config-file "backtype")
+          :environment
+          {:blobstore (blobstore-from-config (pallet-config) ["backtype"])
+           :ring "dev5"
+           :edb-s3-keys (compute-service-properties (pallet-config)
+                                                    ["backtype"])})
 
 
-#_ (def w (lift mytest-ring
-                :compute aws
-                :phase (fn [r] r)
-                :prefix "dev3"))
-#_ (:prefix  (keys w))
-#_ (:groups w)
-#_ (lift mytest
-         :compute aws
-         :phase elephantdb/setup)
-
-#_ (def bs (blobstore-from-config (pallet-config) ["backtype"]))
-#_ (require '[pallet.environment :as env])
-
-
-#_ (require '[pallet.parameter :as param])
-#_ (def w (lift mytest-ring :compute aws
-                :phase (fn [req]
-                         (let [req$ (param/assoc-for-target req [:a] 3)]
-                           (print (param/get-for-target req$ [:a]))))))
-
-#_ (param/get-for w [:a])
-#_ (:parameters w)
-#_ (keys w)
-
-#_ (converge {mytest-ring 1}
-          :compute aws
-          :environment {:blobstore bs
-                        :ring "dev4"})
-
-
-#_ (def aws (mk-aws))
-#_ (-> h
-       (assoc :blobstore bs)
-       (remote-config! "dev2"))
-
-#_ (def h (converge {mytest 1} :compute aws))
-#_ (def h (converge {mytest2 0} :compute aws))
 
 

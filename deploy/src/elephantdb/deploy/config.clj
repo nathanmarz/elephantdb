@@ -2,13 +2,18 @@
   (:use
    [pallet.compute]
    [org.jclouds.blobstore :only [upload-blob]]
-   [pallet.request-map :only [nodes-in-group]]))
+   [pallet.request-map :only [nodes-in-group]]
+   [pallet.configure :only [pallet-config]]
+   [pallet.resource.remote-file :only [remote-file]]
+   [clojure.contrib.map-utils :only [deep-merge-with]]))
 
 (defn read-global-conf! [ring]
   (let [path (format "conf/%s/global-conf.clj" ring)]
     (read-string (slurp path))))
 
-(defn read-local-conf! [ring])
+(defn read-local-conf! [ring]
+  (let [path (format "conf/%s/local-conf.clj" ring)]
+    (read-string (slurp path))))
 
 (defn- global-conf-with-hosts [req local-config]
   (let [hosts (map private-ip (nodes-in-group req))]
@@ -18,38 +23,20 @@
   (let [local-conf (read-global-conf! (:ring req))
         s3-conf (global-conf-with-hosts req local-conf)
         s3-key (format "configs/elephantdb/%s/global-conf.clj" (:ring req))]
-    (upload-blob "hdfs2" s3-key s3-conf (:blobstore req))))
+    (upload-blob "hdfs2" s3-key s3-conf (:blobstore req))
+    req))
 
+(defn local-conf-with-keys [req local-conf]
+  (let [{:keys [edb-s3-keys]} req]
+    (deep-merge-with #(identity %2)
+     {:hdfs-conf 
+      {"fs.s3n.awsAccessKeyId" (:identity edb-s3-keys)
+       "fs.s3n.awsSecretAccessKey" (:credential edb-s3-keys)}}
+     local-conf)))
 
-#_   (use '[pallet.blobstore :only [blobstore-from-config]])
-#_    (use '[ pallet.configure :only [pallet-config]])
-
-#_ (def bs (blobstore-from-config (pallet-config) ["backtype"]))
-
-#_    (def w1 (upload-blob "hdfs2" "tmp/foo.txt"
-                          (apply str (take (* 1024 1024 1) (repeat \b)))
-                          bs))
-#_    (def w2 (upload-blob "hdfs2" "tmp/foo.txt"
-                          (apply str (take (* 1024 1024 4) (repeat \a)))
-                          bs))
-3
-
-#_ (map private-ip (rm/nodes-in-group w "mygroup"))
-
-
-
-#_ (blobstore-from-config (pallet-config) ["backtype"])
-
-#_ (require '[pallet.configure :as configure])
-#_ (def bs
-        (configure/compute-service-properties (pallet-config) ["backtype"]))
-
-
-
-#_ (upload-s3-config! "dev2" ["foo"] bs)
-
-#_ (def )
-
-
-#_ (b/blobstore-from-cnfig "~/.pallet/config.clj" "backtype")
+(defn remote-file-local-conf! [req dst-path]
+  (let [conf (read-local-conf! (:ring req))
+        conf-with-keys (local-conf-with-keys req conf)]
+    (-> req
+        (remote-file dst-path :content (prn-str conf-with-keys)))))
 

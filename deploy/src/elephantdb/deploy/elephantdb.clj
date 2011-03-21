@@ -1,6 +1,8 @@
 (ns elephantdb.deploy.elephantdb
   (:import org.antlr.stringtemplate.StringTemplate)
   (:use 
+   [elephantdb.deploy.config :only [remote-file-local-conf!]]
+   [elephantdb.deploy.leiningen :only [leiningen]]
    [pallet thread-expr]
    [pallet.resource
     [package :only [package]]
@@ -18,7 +20,6 @@
 (def service-subdirs (map (partial str service-dir)
                           ["releases" "shared" "log"]))
 
-;;/configs/elephantdb/dev/global-conf.clj 1300415760
 (defn- template-context [req]
   {"GLOBALCONF" (format "%s/%s/global-conf.clj" s3-configs-dir (:ring req))
    "TOKEN" (int (/ (System/currentTimeMillis) 1000))})
@@ -46,11 +47,12 @@
 (defn setup [req]
   (-> req
       (java :sun :jdk)
+      (leiningen)
       (directories service-subdirs :action :create)
       (render-remote-file! "run")
       (render-remote-file! "log/run")))
 
-(defn deploy [req {:keys [new-token] :or {:new-token true}}]
+(defn deploy [req & {:keys [new-token] :or {new-token true}}]
   (let [time (System/currentTimeMillis)
         releases-dir (str service-dir "/releases/")
 
@@ -58,6 +60,7 @@
         current-sym-link (str releases-dir "current")
         new-release-file (str new-release-dir "/release.tar.gz")
         local-conf-file (str new-release-dir "/local-conf.clj")]
+    (make-release!)
     (-> req
         (directory new-release-dir :action :create)
         (remote-file new-release-file :local-file "release.tar.gz")
@@ -66,11 +69,12 @@
         (exec-script
          (cd ~new-release-dir)
          (tar xvzfop ~new-release-file)
+         (lein deps)
          (rm -f "run-elephant.sh")
          (ln -sf "../../shared/run-elephant.sh" "."))
-        (remote-file ~local-conf-file :content )
+        (remote-file-local-conf! local-conf-file)
         (exec-script
          (rm -f ~current-sym-link)
-         (ln -sf ~new-release-dir ~current-release-dir)))))
+         (ln -sf ~new-release-dir ~current-sym-link)))))
 
 
