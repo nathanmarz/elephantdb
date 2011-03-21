@@ -1,9 +1,9 @@
 (ns elephantdb.deploy.node
   (:require
-   [elephantdb.deploy
+   [elephantdb.deploy.crate
     [daemontools :as daemontools]
-    [elephantdb :as elephantdb]
-    [config :as config]]
+    [edb :as edb]
+    [edb-configs :as edb-configs]]
    [pallet
     [request-map :as request-map]])
   (:use
@@ -14,35 +14,38 @@
    [pallet.resource :only [phase]]
    [pallet.configure :only [pallet-config compute-service-properties]]))
 
-(defn my-node-spec [ring]
-  (let [{:keys [port]} (config/read-global-conf! ring)]
+(defn- edb-node-spec [ring]
+  (let [{:keys [port]} (edb-configs/read-global-conf! ring)]
     (node-spec
      :image {:image-id "us-east-1/ami-08f40561"
              :hardware-id "m1.large"
              :inbound-ports [22 port]})))
 
-(defn gen-edb-spec [ring]
-  (group-spec
-   (str "edb-" ring)
-   :node-spec (my-node-spec ring)
+(def edb-server-spec 
+  (server-spec
    :phases
    {:bootstrap (phase
                 (automated-admin-user)
                 (daemontools/daemontools))
     :configure (phase
-                (elephantdb/setup)
-                (elephantdb/deploy)
-                (config/upload-global-conf!))}))
+                (edb/setup)
+                (edb/deploy))}))
 
-(def edb-spec (mytest "dev5"))
+(defn edb-group-spec [ring]
+  (group-spec
+   (str "edb-" ring)
+   :node-spec (edb-node-spec ring)
+   :extends [edb-server-spec]))
+
+(def the-spec (edb-group-spec "dev5"))
 
 
 
-#_ (do  (defn mk-aws []
+#_ (do (defn mk-aws []
           (compute-service-from-config-file "backtype"))
         (def aws (mk-aws)))
 
-#_ (converge {edb-spec 1}
+#_ (converge {the-spec 1}
           :compute (compute-service-from-config-file "backtype")
           :environment
           {:blobstore (blobstore-from-config (pallet-config) ["backtype"])

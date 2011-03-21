@@ -1,9 +1,10 @@
-(ns elephantdb.deploy.leiningen
+(ns elephantdb.deploy.crate.leiningen
   (:require
    [pallet.resource.remote-file :as remote-file]
    [pallet.resource.exec-script :as exec-script]))
 
-(def download-url "https://github.com/technomancy/leiningen/raw/stable/bin/lein")
+(def download-url
+     "https://github.com/technomancy/leiningen/raw/stable/bin/lein")
 
 (defn leiningen [request]
   (-> request

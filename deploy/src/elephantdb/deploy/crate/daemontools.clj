@@ -1,4 +1,4 @@
-(ns elephantdb.deploy.daemontools
+(ns elephantdb.deploy.crate.daemontools
   (:use [pallet.core]
         [pallet.resource
          [package :only [package]]
