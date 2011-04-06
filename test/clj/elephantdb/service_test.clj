@@ -330,8 +330,9 @@
           ;; nothing should happen for domain1
           (.update handler "domain1")
 
-          ;; wait a second
-          (Thread/sleep 1000)
+          ;; wait a bit
+          (while (.isUpdating handler)
+            (Thread/sleep 100))
 
           ;; domain1 should not have changed
           (expected-domain-data handler "domain1"
@@ -343,9 +344,9 @@
           ;; updating domain2 should cause update and new values being returned
           (.update handler "domain2")
 
-          ;; wait a second
+          ;; wait a bit
           (while (.isUpdating handler)
-            (Thread/sleep 1000))
+            (Thread/sleep 100))
 
           ;; domain2 should have changed
           (expected-domain-data handler "domain2"
@@ -381,9 +382,9 @@
           (is (= (thrift/status-ready?
                   (.getDomainStatus handler "domain2"))))
 
-          ;; wait a second
+          ;; wait a bit
           (while (.isUpdating handler)
-            (Thread/sleep 1000))
+            (Thread/sleep 100))
 
 
           ;; domain1 and domain 2 should have changed

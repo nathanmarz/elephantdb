@@ -202,13 +202,15 @@ Keep the cached versions of any domains that haven't been updated"
         (cleanup-domain domain domains-info local-config)
         new-data)))
 
-(defn service-updating? [download-supervisor]
-  (if @download-supervisor
-    (not (.isDone @download-supervisor))
-    false))
+(defn service-updating? [service-handler download-supervisor]
+  (or (some (fn [[domain status]]
+              (thrift/status-loading? status))
+            (.get_domain_statuses (.getStatus service-handler)))
+      (and @download-supervisor
+           (not (.isDone @download-supervisor)))))
 
-(defn- update-domains [download-supervisor all-domains domains-info global-config local-config]
-  (if (service-updating? download-supervisor)
+(defn- update-domains [service-handler download-supervisor all-domains domains-info global-config local-config]
+  (if (service-updating? service-handler download-supervisor)
     (log-message "Updater process: Not updating as update process still in progress.")
     (do
       (log-message "Updater process: Updating all domains via updateAll().")
@@ -346,16 +348,18 @@ Keep the cached versions of any domains that haven't been updated"
 
               (isUpdating
                 []
-                (service-updating? download-supervisor))
+                (if (service-updating? this download-supervisor)
+                  true
+                  false))
 
               (updateAll
                []
-                (update-domains download-supervisor (keys domains-info) domains-info global-config local-config)
+                (update-domains this download-supervisor (keys domains-info) domains-info global-config local-config)
                )
 
               (update
                [#^String domain]
-                (update-domains download-supervisor [domain] domains-info global-config local-config)
+                (update-domains this download-supervisor [domain] domains-info global-config local-config)
                 true
                ))]
       (reset! client (client. ret (:hdfs-conf local-config) global-config))
