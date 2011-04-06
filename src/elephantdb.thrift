@@ -7,7 +7,7 @@ struct Value {
 }
 
 struct LoadingStatus {
-  
+
 }
 
 struct ReadyStatus {
@@ -19,7 +19,7 @@ struct FailedStatus {
 }
 
 struct ShutdownStatus {
-  
+
 }
 
 union DomainStatus {
@@ -52,7 +52,7 @@ exception InvalidConfigurationException {
 }
 
 exception WrongHostException {
-  
+
 }
 
 service ElephantDB {
@@ -81,7 +81,8 @@ service ElephantDB {
   list<string> getDomains();
   Status getStatus();
   bool isFullyLoaded();
-  
+  bool isUpdating();
+
   /*
     This method will re-download the global configuration file and add any new domains
   */

@@ -72,6 +72,25 @@ class Value:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class LoadingStatus:
 
   thrift_spec = (
@@ -109,6 +128,25 @@ class LoadingStatus:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class ReadyStatus:
   """
@@ -167,6 +205,25 @@ class ReadyStatus:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class FailedStatus:
   """
   Attributes:
@@ -223,6 +280,25 @@ class FailedStatus:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class ShutdownStatus:
 
   thrift_spec = (
@@ -260,6 +336,25 @@ class ShutdownStatus:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class DomainStatus:
   """
@@ -357,6 +452,25 @@ class DomainStatus:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class Status:
   """
   Attributes:
@@ -424,6 +538,25 @@ class Status:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class DomainNotFoundException(Exception):
   """
   Attributes:
@@ -483,6 +616,25 @@ class DomainNotFoundException(Exception):
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class DomainNotLoadedException(Exception):
   """
   Attributes:
@@ -541,6 +693,25 @@ class DomainNotLoadedException(Exception):
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class HostsDownException(Exception):
   """
@@ -608,6 +779,25 @@ class HostsDownException(Exception):
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class InvalidConfigurationException(Exception):
   """
@@ -700,6 +890,25 @@ class InvalidConfigurationException(Exception):
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class WrongHostException(Exception):
 
   thrift_spec = (
@@ -740,4 +949,23 @@ class WrongHostException(Exception):
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
