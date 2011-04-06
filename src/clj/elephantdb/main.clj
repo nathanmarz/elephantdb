@@ -16,11 +16,7 @@
       (loop []
         (Thread/sleep interval-ms)
         (log-message "Updater process: Checking if update is possible...")
-        (if (service/service-updating? service-handler)
-          (log-message "Updater process: Not updating as update process still in progress.")
-          (do
-            (log-message "Updater process: Updating all domains via updateAll().")
-            (.updateAll service-handler)))
+        (.updateAll service-handler)
         (recur)))))
 
 (defn launch-server! [global-config local-config token]
