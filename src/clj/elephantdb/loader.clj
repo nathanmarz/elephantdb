@@ -92,18 +92,16 @@
 
 (defn supervise-shard [domain shard-id max-kbs total-kb ^ShardState shard-state]
   (let [downloaded-kb (:downloaded-kb shard-state)
-        do-download (:do-download shard-state)
         sleep-interval (:sleep-interval shard-state)]
     (let [dl-kb @downloaded-kb
           sleep-ms (rand 1000)] ;; sleep random amount of time up to 1s
       (swap! total-kb + dl-kb)
       (if (>= @total-kb max-kbs)
         (do
-          (reset! do-download false)
           (reset! sleep-interval sleep-ms)
           (reset! downloaded-kb 0))
         (do
-          (reset! do-download true)
+          (reset! sleep-interval 0)
           (reset! downloaded-kb 0))))))
 
 (defn supervise-downloads [amount-shards max-kbs interval-ms ^DownloadState state]
