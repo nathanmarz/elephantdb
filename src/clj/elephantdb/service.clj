@@ -223,7 +223,7 @@ Keep the cached versions of any domains that haven't been updated"
 
         (let [^DownloadState state (mk-loader-state domain-shards)
               shard-amount (reduce + 0 (map #(count %) (vals (:shard-states state))))]
-          (start-download-supervisor shard-amount max-kbs state)
+          (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
           (future
             (try
               (load-and-sync-status

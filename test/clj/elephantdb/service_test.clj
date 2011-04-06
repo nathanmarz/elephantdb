@@ -344,7 +344,8 @@
           (.update handler "domain2")
 
           ;; wait a second
-          (Thread/sleep 1000)
+          (while (.isUpdating handler)
+            (Thread/sleep 1000))
 
           ;; domain2 should have changed
           (expected-domain-data handler "domain2"
@@ -381,7 +382,8 @@
                   (.getDomainStatus handler "domain2"))))
 
           ;; wait a second
-          (Thread/sleep 1000)
+          (while (.isUpdating handler)
+            (Thread/sleep 1000))
 
 
           ;; domain1 and domain 2 should have changed
