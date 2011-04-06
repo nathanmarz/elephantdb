@@ -90,7 +90,7 @@
     ))
 
 
-(defn supervise-shard [domain shard-id max-kbs total-kb ^ShardState shard-state]
+(defn supervise-shard [max-kbs total-kb ^ShardState shard-state]
   (let [downloaded-kb (:downloaded-kb shard-state)
         sleep-interval (:sleep-interval shard-state)]
     (let [dl-kb @downloaded-kb
@@ -117,7 +117,7 @@
                  amount-shards)
           (doseq [[domain shard-states] domain-to-shard-states]
             (doseq [[s-id ^ShardState s-state] shard-states]
-              (supervise-shard domain s-id max-kbs total-kb s-state)))
+              (supervise-shard max-kbs total-kb s-state)))
           (recur))))))
 
 (defn start-download-supervisor [amount-shards max-kbs ^DownloadState state]
