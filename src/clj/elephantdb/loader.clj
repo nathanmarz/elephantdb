@@ -70,16 +70,18 @@
         _                  (mkdirs lfs local-version-path)
         domain-state       ((:shard-states state) domain)
         shard-loaders      (dofor [s shards]
-                                  (future
-                                   (load-domain-shard
-                                    fs
-                                    (:persistence-factory domain-spec)
-                                    local-config
-                                    (shard-path local-version-path s)
-                                    (shard-path
-                                     (.versionPath remote-vs remote-version) s)
-                                    (domain-state s))
-                                   (swap! (:finished-loaders state) + 1))
+                                  (let [f
+                                        (future
+                                          (load-domain-shard
+                                           fs
+                                           (:persistence-factory domain-spec)
+                                           local-config
+                                           (shard-path local-version-path s)
+                                           (shard-path
+                                            (.versionPath remote-vs remote-version) s)
+                                           (domain-state s)))]
+                                    (swap! (:shard-loaders state) conj f)
+                                    f)
                                   )]
     (future-values shard-loaders)
     (.succeedVersion local-vs local-version-path)
@@ -107,15 +109,18 @@
 (defn supervise-downloads [amount-shards max-kbs interval-ms ^DownloadState state]
   (let [domain-to-shard-states (:shard-states state)
         finished-loaders (:finished-loaders state)
+        shard-loaders (:shard-loaders state)
         total-kb (atom 0)]
     (loop []
       (reset! total-kb 0)
       (Thread/sleep interval-ms)
-      (when (< @finished-loaders amount-shards)
-        (doseq [[domain shard-states] domain-to-shard-states]
-          (doseq [[s-id ^ShardState s-state] shard-states]
-            (supervise-shard domain s-id max-kbs total-kb s-state)))
-        (recur)))))
+      (let [finished-shard-loaders (count (filter #(.isDone %) @shard-loaders))]
+        (when (< (+ @finished-loaders finished-shard-loaders)
+                 amount-shards)
+          (doseq [[domain shard-states] domain-to-shard-states]
+            (doseq [[s-id ^ShardState s-state] shard-states]
+              (supervise-shard domain s-id max-kbs total-kb s-state)))
+          (recur))))))
 
 (defn start-download-supervisor [amount-shards max-kbs ^DownloadState state]
   (let [interval-factor-secs 0.1 ;; check every 0.01s

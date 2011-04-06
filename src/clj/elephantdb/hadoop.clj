@@ -64,7 +64,8 @@
 ;; DownloadState:
 ;; shard-states:     Map of domain name to list of ShardStates per shard of a domain
 ;; finished-loaders: gets incremented when a shard has finished loading
-(defrecord DownloadState [shard-states finished-loaders])
+;; shard-loaders:    Vector of all shard-loader futures used by the download supervisor
+(defrecord DownloadState [shard-states finished-loaders shard-loaders])
 
 ;; Create new shard states
 (defn mk-shard-states [shards]
@@ -79,7 +80,7 @@
                            (map (fn [[domain shards]]
                                   {domain (mk-shard-states shards)})
                                 domains-to-shards))]
-    (DownloadState. shard-states (atom 0))))
+    (DownloadState. shard-states (atom 0) (atom []))))
 
 (declare copy-local*)
 
