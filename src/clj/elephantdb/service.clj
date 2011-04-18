@@ -119,10 +119,15 @@
       (.cleanup local-vs 1))))
 
 (defn cleanup-domains [domains-info local-config]
-  (doseq [domain (keys domains-info)]
-    (try
-      (cleanup-domain domain domains-info local-config)
-      (catch Throwable t (log-error t "Error when cleaning old versions of domain: " domain) (throw t)))))
+  (let [error (atom nil)]
+    (doseq [domain (keys domains-info)]
+      (try
+        (cleanup-domain domain domains-info local-config)
+        (catch Throwable t
+          (log-error t "Error when cleaning old versions of domain: " domain)
+          (reset! error t))))
+    (if @error
+      (throw @error))))
 
 (defn sync-updated
   "Only fetch domains from remote if a newer version is available.
@@ -199,7 +204,6 @@ Keep the cached versions of any domains that haven't been updated"
     nil
     (do (if new-data
           (close-domain domain domains-info))
-        (cleanup-domain domain domains-info local-config)
         new-data)))
 
 (defn service-updating? [service-handler download-supervisor]
@@ -237,6 +241,10 @@ Keep the cached versions of any domains that haven't been updated"
                                    local-config
                                    (use-cache-or-update domain domains-info global-config local-config true state))))
               (log-message "Finished updating all domains from remote")
+              (try
+                (log-message "Removing all old versions of domains (CLEANUP")
+                (cleanup-domains domains-info local-config)
+                (catch Throwable t (log-error t "Error when cleaning old versions")))
               (catch Throwable t (log-error t "Error when syncing data") (throw t)))))))))
 
 ;; 1. after *first* load finishes, right the global config with the token within
