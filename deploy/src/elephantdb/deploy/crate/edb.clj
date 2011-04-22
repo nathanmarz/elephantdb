@@ -69,6 +69,7 @@
         (exec-script
          (cd ~new-release-dir)
          (tar xvzfop ~new-release-file)
+         (export "LEIN_ROOT=1")
          (lein deps)
          (rm -f "run-elephant.sh")
          (ln -sf "../../shared/run-elephant.sh" "."))
