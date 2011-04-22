@@ -1,4 +1,5 @@
 (defproject elephantdb-deploy "1.0.0-SNAPSHOT"
+  :main elephantdb.deploy.provision
   :description "FIXME: write"
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]

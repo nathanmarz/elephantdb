@@ -37,9 +37,7 @@
    :node-spec (edb-node-spec ring)
    :extends [edb-server-spec]))
 
-(def the-spec (edb-group-spec "dev5"))
-
-
+#_ (def the-spec (edb-group-spec "dev5"))
 
 #_ (do (defn mk-aws []
           (compute-service-from-config-file "backtype"))
