@@ -1,8 +1,10 @@
 (ns elephantdb.deploy.crate.edb-configs
+  (:require [pallet.request-map :as rm])
+  (:require [pallet.session :as ss])
   (:use
    [pallet.compute]
    [org.jclouds.blobstore :only [upload-blob]]
-   [pallet.request-map :only [target-node]]
+   [pallet.session :only [nodes-in-group]]
    [pallet.configure :only [pallet-config]]
    [pallet.resource.remote-file :only [remote-file]]
    [clojure.contrib.map-utils :only [deep-merge-with]]))
@@ -15,12 +17,15 @@
   (let [path (format "conf/%s/local-conf.clj" ring)]
     (read-string (slurp path))))
 
+;; HACK: Construct ec2 internal hostname from internal ip.
+;;       Needed until Nathan allows internal ip in global-conf.clj
 (defn internal-hostname [node]
   (let [ip (private-ip node)]
     (str "ip-" (apply str (interpose "-" (re-seq #"\d+" ip)))
          ".internal.ec2")))
+
 (defn- global-conf-with-hosts [req local-config]
-  (let [hosts (map internal-hostname (target-node req))]
+  (let [hosts (map internal-hostname (ss/nodes-in-group req))]
     (prn-str (assoc local-config :hosts hosts))))
 
 (defn upload-global-conf! [req]

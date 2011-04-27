@@ -61,6 +61,7 @@
         current-sym-link (str releases-dir "current")
         new-release-file (str new-release-dir "/release.tar.gz")
         local-conf-file (str new-release-dir "/local-conf.clj")]
+    (make-release!)
     (-> req
         (directory new-release-dir :action :create)
         (remote-file new-release-file :local-file "release.tar.gz")

@@ -11,13 +11,14 @@
   (:use
    [pallet compute core thread-expr]
    [pallet.blobstore :only [blobstore-from-config]]
-   [pallet.resource :only [phase]]
+   [pallet.phase :only [phase-fn]]
    [pallet.configure :only [pallet-config compute-service-properties]]))
 
 
-(admin-user "elephantdb"
-            :private-key-path "~/.ssh/elephantdb"
-            :public-key-path "~/.ssh/elephantdb.pub")
+(let [key-path (str (System/getenv "HOME") "/.ssh/elephantdb")]
+  (admin-user "elephantdb"
+              :private-key-path key-path
+              :public-key-path (str key-path ".pub")))
 
 (defn- edb-node-spec [ring]
   (let [{:keys [port]} (edb-configs/read-global-conf! ring)]
@@ -29,10 +30,10 @@
 (def edb-server-spec 
   (server-spec
    :phases
-   {:bootstrap (phase
+   {:bootstrap (phase-fn
                 (automated-admin-user/automated-admin-user)
                 (daemontools/daemontools))
-    :configure (phase
+    :configure (phase-fn
                 (edb/setup)
                 (edb/deploy))}))
 
@@ -41,17 +42,6 @@
    (str "edb-" ring)
    :node-spec (edb-node-spec ring)
    :extends [edb-server-spec]))
-
-
-;; TESTING PURPOSES
-#_ (converge {(edb-group-spec "dev5") 1}
-          :compute (compute-service-from-config-file "backtype")
-          :environment
-          {:blobstore (blobstore-from-config (pallet-config) ["backtype"])
-           :ring "dev5"
-           :edb-s3-keys (compute-service-properties (pallet-config)
-                                                    ["backtype"])})
-
 
 
 

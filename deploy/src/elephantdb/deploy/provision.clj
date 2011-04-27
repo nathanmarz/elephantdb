@@ -57,31 +57,3 @@
        ips? (ips! ring)
        :else (println "Must pass --start or --stop")))))
 
-
-#_ (do (defn mk-aws []
-          (compute-service-from-config-file "backtype"))
-        (def aws (mk-aws)))
-
-#_ (converge {the-spec 1}
-          :compute (compute-service-from-config-file "backtype")
-          :environment
-          {:blobstore (blobstore-from-config (pallet-config) ["backtype"])
-           :ring "dev2"
-           :edb-s3-keys (compute-service-properties (pallet-config)
-                                                    ["backtype"])})
-
-#_ (def n (nodes aws))
-#_ (defn hostname1 [private-ip]
-     (re-seq #"\d+" private-ip))
-#_ (hostname1 (private-ip (first n)))
-
-#_ (re-seq #"\d+" "23.34")
-
-
-#_ (ips! "dev2")
-
-#_ (use 'pallet.crate.etc-hosts)
-#_  (lift (node/edb-group-spec "dev2")
-          :compute aws
-          :phase (fn [r] (def rm r) r))
-
