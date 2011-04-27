@@ -1,5 +1,8 @@
 (defproject elephantdb-deploy "1.0.0-SNAPSHOT"
   :main elephantdb.deploy.provision
+  :repositories {
+                 "sonatype" "https://oss.sonatype.org/content/repositories/releases"
+                 "jclouds-snapshot" "https://oss.sonatype.org/content/repositories/snapshots"}
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
 

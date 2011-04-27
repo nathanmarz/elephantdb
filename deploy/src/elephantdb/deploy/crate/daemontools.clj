@@ -1,9 +1,10 @@
 (ns elephantdb.deploy.crate.daemontools
   (:use [pallet.core]
+        [pallet.action
+         [exec-script :only [exec-script]]]
         [pallet.resource
          [package :only [package]]
-         [directory :only [directory]]
-         [exec-script :only [exec-script]]]))
+         [directory :only [directory]]]))
 
 (defn daemontools [req]
   (-> req
