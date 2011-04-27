@@ -7,12 +7,17 @@
    [pallet
     [request-map :as request-map]]
    [pallet.crate
-    [automated-admin-user :as aau]])
+    [automated-admin-user :as automated-admin-user]])
   (:use
    [pallet compute core thread-expr]
    [pallet.blobstore :only [blobstore-from-config]]
    [pallet.resource :only [phase]]
    [pallet.configure :only [pallet-config compute-service-properties]]))
+
+
+(admin-user "elephantdb"
+            :private-key-path "~/.ssh/elephantdb"
+            :public-key-path "~/.ssh/elephantdb.pub")
 
 (defn- edb-node-spec [ring]
   (let [{:keys [port]} (edb-configs/read-global-conf! ring)]
@@ -25,7 +30,7 @@
   (server-spec
    :phases
    {:bootstrap (phase
-                ;(automated-admin-user)
+                (automated-admin-user/automated-admin-user)
                 (daemontools/daemontools))
     :configure (phase
                 (edb/setup)
@@ -37,13 +42,9 @@
    :node-spec (edb-node-spec ring)
    :extends [edb-server-spec]))
 
-#_ (def the-spec (edb-group-spec "dev5"))
 
-#_ (do (defn mk-aws []
-          (compute-service-from-config-file "backtype"))
-        (def aws (mk-aws)))
-
-#_ (converge {the-spec 1}
+;; TESTING PURPOSES
+#_ (converge {(edb-group-spec "dev5") 1}
           :compute (compute-service-from-config-file "backtype")
           :environment
           {:blobstore (blobstore-from-config (pallet-config) ["backtype"])
