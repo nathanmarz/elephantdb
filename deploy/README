@@ -21,16 +21,16 @@
                   {:lift-fn pallet.core/parallel-lift
                    :converge-fn pallet.core/parallel-adjust-node-counts}})
 
-3) Add configuration files for your ring to ../deploy/conf
-   There's an example in ../deploy/conf/dev2
+3) Add configuration files for your ring to ../deploy/conf/<ring name>
+   There's an example in ../deploy/conf/example
 
 ## Usage
 
 To provision a cluster:
-$ lein run --start --ring dev2
+$ lein run --start --ring <ring name>
 
-To deploy new ../deploy/conf/dev2/ changes to an existing cluster.
-$ lein run --start --ring dev2
+To deploy edb cluster:
+$ lein run --start --ring <ring name>
 
 
 
