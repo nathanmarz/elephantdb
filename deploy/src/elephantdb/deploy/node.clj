@@ -5,11 +5,11 @@
     [edb :as edb]
     [edb-configs :as edb-configs]]
    [pallet
-    [request-map :as request-map]])
+    [request-map :as request-map]]
+   [pallet.crate
+    [automated-admin-user :as aau]])
   (:use
    [pallet compute core thread-expr]
-   [pallet.crate
-    [automated-admin-user :only [automated-admin-user]]]
    [pallet.blobstore :only [blobstore-from-config]]
    [pallet.resource :only [phase]]
    [pallet.configure :only [pallet-config compute-service-properties]]))
@@ -25,7 +25,7 @@
   (server-spec
    :phases
    {:bootstrap (phase
-                (automated-admin-user)
+                ;(automated-admin-user)
                 (daemontools/daemontools))
     :configure (phase
                 (edb/setup)
