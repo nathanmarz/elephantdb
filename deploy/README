@@ -29,7 +29,7 @@
 To provision a cluster:
 $ lein run --start --ring <ring name>
 
-To deploy edb cluster:
+To deploy to existing edb cluster:
 $ lein run --start --ring <ring name>
 
 
