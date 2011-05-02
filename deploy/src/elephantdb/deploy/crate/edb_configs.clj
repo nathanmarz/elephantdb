@@ -22,7 +22,8 @@
 (defn internal-hostname [node]
   (let [ip (private-ip node)]
     (str "ip-" (apply str (interpose "-" (re-seq #"\d+" ip)))
-         ".internal.ec2")))
+         ".ec2.internal"
+         )))
 
 (defn- global-conf-with-hosts [req local-config]
   (let [hosts (map internal-hostname (ss/nodes-in-group req))]
