@@ -186,7 +186,9 @@
     ))
 
 (defn mk-local-config [local-dir]
-  {:local-dir local-dir})
+  {:local-dir local-dir
+   :max-online-download-rate-kb-s 1024
+   :update-interval-s 60})
 
 (defn mk-service-handler [global-config localdir token domain-to-host-to-shards]
   (binding [compute-host-to-shards (if domain-to-host-to-shards

@@ -217,7 +217,7 @@ Keep the cached versions of any domains that haven't been updated"
   (if (service-updating? service-handler download-supervisor)
     (log-message "UPDATER - Not updating as update process still in progress.")
     (do
-      (let [max-kbs 8192
+      (let [max-kbs (:max-online-download-rate-kb-s local-config)
             all-shards (domain/all-shards domains-info)
             domain-shards (into {} (map (fn [domain]
                                           [domain (all-shards domain)])
