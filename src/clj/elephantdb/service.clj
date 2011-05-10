@@ -215,9 +215,8 @@ Keep the cached versions of any domains that haven't been updated"
 
 (defn- update-domains [service-handler download-supervisor all-domains domains-info global-config local-config]
   (if (service-updating? service-handler download-supervisor)
-    (log-message "Updater process: Not updating as update process still in progress.")
+    (log-message "UPDATER - Not updating as update process still in progress.")
     (do
-      (log-message "Updater process: Updating all domains via updateAll().")
       (let [max-kbs 8192
             all-shards (domain/all-shards domains-info)
             domain-shards (into {} (map (fn [domain]
@@ -225,7 +224,7 @@ Keep the cached versions of any domains that haven't been updated"
                                         all-domains))
             shard-amount (reduce + 0 (map #(count %) (vals all-shards)))]
 
-        (log-message "Updating domains: " (str-utils/str-join ", " all-domains))
+        (log-message "UPDATER - Updating domains: " (str-utils/str-join ", " all-domains))
 
         (let [^DownloadState state (mk-loader-state domain-shards)
               shard-amount (reduce + 0 (map #(count %) (vals (:shard-states state))))]
