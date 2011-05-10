@@ -2,6 +2,7 @@
 
 { :local-dir "/data1/elephantdb"
   :max-online-download-rate-kb-s 1024
+  :update-interval-s 60  ;; check for domain updates every minute
   :local-db-conf {"elephantdb.JavaBerkDB" {}
                   "elephantdb.TokyoCabinet" {}
                   }
