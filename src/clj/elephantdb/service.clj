@@ -241,7 +241,7 @@ Keep the cached versions of any domains that haven't been updated"
                                    (use-cache-or-update domain domains-info global-config local-config true state))))
               (log-message "Finished updating all domains from remote")
               (try
-                (log-message "Removing all old versions of domains (CLEANUP")
+                (log-message "Removing all old versions of domains (CLEANUP)")
                 (cleanup-domains domains-info local-config)
                 (catch Throwable t (log-error t "Error when cleaning old versions")))
               (catch Throwable t (log-error t "Error when syncing data") (throw t)))))))))
