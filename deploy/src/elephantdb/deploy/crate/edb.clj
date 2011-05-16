@@ -45,6 +45,14 @@
     (-> req
         (remote-file dst-path :content render :mode 744))))
 
+(defn filelimits [req]
+  (-> req
+    (remote-file
+      "/etc/security/limits.conf"
+      :content "root\tsoft\tnofile\t500000\nroot\thard\tnofile\t500000\nelephantdb\tsoft\tnofile\t500000\nelephantdb\thard\tnofile\t500000\n"
+      :no-versioning true
+      :overwrite-changes true)))
+
 (defn setup [req]
   (-> req
       (java :sun :jdk)

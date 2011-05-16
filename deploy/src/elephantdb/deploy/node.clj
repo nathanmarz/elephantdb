@@ -32,7 +32,8 @@
    :phases
    {:bootstrap (phase-fn
                 (automated-admin-user/automated-admin-user)
-                (daemontools/daemontools))
+                (daemontools/daemontools)
+                (edb/filelimits))
     :configure (phase-fn
                 (edb/setup)
                 (edb/deploy))}))
