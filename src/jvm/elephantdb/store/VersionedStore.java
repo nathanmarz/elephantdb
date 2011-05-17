@@ -76,8 +76,11 @@ public class VersionedStore {
         String ret = versionPath(version);
         if(getAllVersions().contains(version))
             throw new RuntimeException("Version already exists or data already exists");
-        else
+        else {
+            //in case there's an incomplete version there, delete it
+            _fs.delete(new Path(versionPath(version)), true);
             return ret;
+        }
     }
 
     public void failVersion(String path) throws IOException {
