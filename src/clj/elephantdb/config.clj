@@ -22,6 +22,7 @@
 (def DEFAULT-LOCAL-CONFIG
      {
       :max-online-download-rate-kb-s 128
+      :update-interval-s 60
       :local-db-conf {}
       :hdfs-conf {}
       })

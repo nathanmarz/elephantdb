@@ -52,35 +52,70 @@
 
 (defn local-filesystem [] (FileSystem/getLocal (Configuration.)))
 
+;; ShardState:
+;; downloaded-kb:    holds the total amount of bytes of data downloaded since the last
+;;                   reset to 0
+;;                   is used to determine the current download rate (kb/s)
+;; sleep-interval:   time each shard loader process should sleep if not allowed to download.
+;;                   if it's set to 0, that means it can download.
+(defrecord ShardState [downloaded-kb sleep-interval])
+
+;; DownloadState:
+;; shard-states:     Map of domain name to list of ShardStates per shard of a domain
+;; finished-loaders: gets incremented when a shard has finished loading
+;; shard-loaders:    Vector of all shard-loader futures used by the download supervisor
+(defrecord DownloadState [shard-states finished-loaders shard-loaders])
+
+;; Create new shard states
+(defn mk-shard-states [shards]
+  (into {}
+        (map (fn [s]
+               {s (ShardState. (atom 0) (atom 0))})
+               shards)))
+
+;; Create new LoaderState
+(defn mk-loader-state [domains-to-shards]
+  (let [shard-states (into {}
+                           (map (fn [[domain shards]]
+                                  {domain (mk-shard-states shards)})
+                                domains-to-shards))]
+    (DownloadState. shard-states (atom 0) (atom []))))
 
 (declare copy-local*)
 
-(defn- copy-file-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer]
-  (with-open [is (.open fs path)
-              os (BufferedOutputStream.
-                  (FileOutputStream. target-local-path))]
-    (loop []
-      (let [amt (.read is buffer)]
-        (when (> amt 0)
-          (.write os buffer 0 amt)
-          (recur)))
+(defn- copy-file-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
+  (let [downloaded-kb (:downloaded-kb state)
+        sleep-interval (:sleep-interval state)]
+    (with-open [is (.open fs path)
+                os (BufferedOutputStream.
+                    (FileOutputStream. target-local-path))]
+      (loop []
+        (if (= @sleep-interval 0)
+          (let [amt (.read is buffer)]
+            (when (> amt 0)
+              (.write os buffer 0 amt)
+              (swap! downloaded-kb + (int (/ amt 1024))) ;; increment downloaded-kb
+              (recur)))
+          (do
+            (Thread/sleep @sleep-interval)
+            (recur)))) ;; keep looping
       )))
 
-(defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer]
+(defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (.mkdir (File. target-local-path))
   (let [contents (seq (.listStatus fs path))]
     (doseq [c contents]
       (let [subpath (.getPath c)]
-        (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer)
+        (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer state)
         ))))
 
-(defn- copy-local* [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer]
+(defn- copy-local* [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (let [status (.getFileStatus fs path)]
-    (cond (.isDir status) (copy-dir-local fs path target-local-path buffer)
-          true (copy-file-local fs path target-local-path buffer)
+    (cond (.isDir status) (copy-dir-local fs path target-local-path buffer state)
+          true (copy-file-local fs path target-local-path buffer state)
           )))
 
-(defn copy-local [#^FileSystem fs #^String spath #^String local-path]
+(defn copy-local [#^FileSystem fs #^String spath #^String local-path ^ShardState state]
   (let [target-file (File. local-path)
         source-name (.getName (Path. spath))
         buffer (byte-array (* 1024 15))
@@ -97,5 +132,5 @@
       (throw
        (FileNotFoundException.
         (str "Could not find on remote " spath))))
-    (copy-local* fs (path spath) dest-path buffer)
+    (copy-local* fs (path spath) dest-path buffer state)
     ))
