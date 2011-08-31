@@ -17,6 +17,7 @@
 ; }
 
 (defn- init-domain-info-map [fs global-config]
+  (log-message "Global config: " global-config)
   (let [domain-shards (shard/shard-domains fs global-config)]
     (into {}
       (dofor [domain (keys (:domains global-config))]
