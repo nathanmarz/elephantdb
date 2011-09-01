@@ -1,10 +1,14 @@
+.DS_Store
 _deps
 classes
 /elephantdb.jar
 /logs/krati.log
+logs
+*.tar.gz
 /logs/stats.log
 pom.xml
 /lib
 *.jar
 CHILD
 CHILDPY
+.lein-failures

@@ -8,9 +8,10 @@
 (defstruct domain-info-struct ::shard-index ::domain-status ::domain-data)
 
 (defn init-domain-info [domain-shard-index]
-  (struct domain-info-struct domain-shard-index
-                             (atom (loading-status))
-                             (atom nil)))
+  (struct domain-info-struct
+          domain-shard-index
+          (atom (loading-status))
+          (atom nil)))
 
 (defn domain-data [domain-info shard]
   (let [domain-data @(::domain-data domain-info)]
@@ -31,14 +32,13 @@
 
 (defn host-shards
   ([domain-info]
-    (host-shards domain-info (local-hostname)))
+     (host-shards domain-info (local-hostname)))
   ([domain-info host]
-    (s/host-shards (::shard-index domain-info) host)))
+     (s/host-shards (::shard-index domain-info) host)))
 
 (defn key-hosts [domain domain-info #^bytes key]
   (s/key-hosts domain (::shard-index domain-info) key))
 
 (defn key-shard [domain domain-info key]
   (let [index (shard-index domain-info)]
-    (s/key-shard domain key (s/num-shards index))
-    ))
+    (s/key-shard domain key (s/num-shards index))))

@@ -7,8 +7,7 @@
 (defn- host-shard-assigner [[hosts hosts-to-shards] shard]
   (let [[host hosts] (find-first-next #(not ((get hosts-to-shards % #{}) shard)) hosts)
         existing (get hosts-to-shards host #{})]
-    [hosts (assoc hosts-to-shards host (conj existing shard))]
-    ))
+    [hosts (assoc hosts-to-shards host (conj existing shard))]))
 
 
 (defn compute-host-to-shards [domain hosts numshards replication]
@@ -17,14 +16,12 @@
     (throw (IllegalArgumentException. "Replication greater than number of servers")))
   (let [shards (repeat-seq replication (range numshards))
         hosts-to-shards (second (reduce host-shard-assigner [(repeat-seq hosts) {}] shards))]
-    hosts-to-shards
-    ))
+    hosts-to-shards))
 
 (defn shard-domain [domain hosts numshards replication]
   (log-message "sharding domain " domain hosts numshards replication)
   (let [hosts-to-shards (compute-host-to-shards domain hosts numshards replication)]
-      (struct shard-index hosts-to-shards (map-mapvals set (reverse-multimap hosts-to-shards)))
-    ))
+    (struct shard-index hosts-to-shards (map-mapvals set (reverse-multimap hosts-to-shards)))))
 
 (defn shard-domains [fs global-config]
   (log-message "shard-domains" global-config)
@@ -35,8 +32,7 @@
                           domain
                           (:hosts global-config)
                           (:num-shards domain-spec)
-                          (:replication global-config))]
-                 ))))
+                          (:replication global-config))]))))
 
 (defn host-shards [index host]
   ((::hosts-to-shards index) host))
@@ -50,5 +46,8 @@
 (defn key-shard [domain key amt]
   (Utils/keyShard key amt))
 
-(defn key-hosts [domain index #^bytes key]
-  (shard-hosts index (key-shard domain key (num-shards index))))
+(defn key-hosts
+  [domain index #^bytes key]
+  (->> (num-shards index)
+       (key-shard domain key)
+       (shard-hosts index)))

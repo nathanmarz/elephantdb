@@ -17,26 +17,26 @@
 
 (defn path
   ([str-or-path]
-    (if (instance? Path str-or-path) str-or-path (Path. str-or-path)))
+     (if (instance? Path str-or-path) str-or-path (Path. str-or-path)))
   ([parent child] (Path. parent child)))
 
 (defn str-path
   ([part1]
-    part1)
+     part1)
   ([part1 part2 & components]
-    (apply str-path (str (path part1 (str part2))) components)))
+     (apply str-path (str (path part1 (str part2))) components)))
 
 (defn configuration [conf-map]
   (let [ret (Configuration.)]
     (doall
-      (for [config conf-map]
-        (conf-set {:key (first config) :value (last config) :conf ret})))
+     (for [config conf-map]
+       (conf-set {:key (first config) :value (last config) :conf ret})))
     ret))
 
 (defn filesystem
   ([] (FileSystem/get (Configuration.)))
   ([conf-map]
-    (FileSystem/get (configuration conf-map))))
+     (FileSystem/get (configuration conf-map))))
 
 (defn mkdirs [fs path]
   (.mkdirs fs (Path. path)))
@@ -44,7 +44,7 @@
 (defn delete
   ([fs path] (delete fs path false))
   ([fs path rec]
-  (.delete fs (Path. path) rec)))
+     (.delete fs (Path. path) rec)))
 
 (defn clear-dir [fs path]
   (delete fs path true)

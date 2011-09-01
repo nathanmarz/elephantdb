@@ -1,16 +1,16 @@
 (ns elephantdb.deploy.provision
-  (:use [clojure.contrib.command-line]
-        [org.jclouds.compute :only [nodes-with-tag]]
-        [pallet
-         compute core
-         resource
-         [configure :only [pallet-config compute-service-properties]]
-         [blobstore :only [blobstore-from-config]]])
-  (:require [elephantdb.deploy
-             [node :as node]]
+  (:use [clojure.contrib.def :only (defnk)]
+        clojure.contrib.command-line
+        pallet.compute
+        pallet.core
+        pallet.resource
+        [pallet.configure :only (pallet-config compute-service-properties)]
+        [pallet.blobstore :only (blobstore-from-config)]
+        ;; TODO: Replace this with equivalent pallet command
+        [org.jclouds.compute :only (nodes-with-tag)])
+  (:require [elephantdb.deploy.node :as node]
             [pallet.request-map :as rm]
-            [elephantdb.deploy.crate
-             [edb-configs :as edb-configs]])
+            [elephantdb.deploy.crate.edb-configs :as edb-configs])
   (:gen-class))
 
 (defn- print-ips-for-tag! [aws tag-str]
@@ -24,36 +24,40 @@
         aws (compute-service-from-config-file "elephantdb-deploy")]
     (print-ips-for-tag! aws (name group-name))))
 
-(defn- converge-edb! [ring count]
-  (converge {(node/edb-group-spec ring) count}
-          :compute (compute-service-from-config-file "elephantdb-deploy")
-          :environment
-          {:blobstore (blobstore-from-config (pallet-config) ["elephantdb-data"])
-           :ring ring
-           :edb-s3-keys (compute-service-properties (pallet-config) ["elephantdb-data"])}))
+(defn- converge-edb!
+  [ring count local?]
+  (let [conf (pallet-config)
+        compute (-> (if local?
+                      "virtualbox"
+                      "elephantdb-deploy")
+                    (compute-service-from-config-file))]
+    (converge {(node/edb-group-spec ring :local? local?) count}
+              :compute compute
+              :environment {:ring ring
+                            :blobstore   (blobstore-from-config conf ["elephantdb-data"])
+                            :edb-s3-keys (compute-service-properties conf ["elephantdb-data"])})))
 
-(defn start! [ring]
-  (let [count (:node-count (edb-configs/read-global-conf! ring))]
-    (converge-edb! ring count))
-  (print "Cluster Started")
+(defnk start! [ring :local? false]
+  (let [{count :node-count} (edb-configs/read-global-conf! ring)]
+    (converge-edb! ring count local?))
+  (println "Cluster Started.")
   (ips! ring))
 
-(defn stop! [ring]
-  (converge-edb! ring 0)
-  (print "Cluster Stopped"))
+(defnk stop! [ring :local? false]
+  (converge-edb! ring 0 local?)
+  (print "Cluster Stopped."))
 
 (defn -main [& args]
-  (let [aws (compute-service-from-config-file "elephantdb-deploy")]
-    (with-command-line args
-      "Provisioning tool for ElehpantDB Clusters"
-      [[start? "Start Cluster?"]
-       [stop? "Shutdown Cluster?"]
-       [ring "ElephantDB Ring Name"]
-       [ips? "Cluster IPs"]]
-      (assert (not (nil? ring)))
-      (cond 
-       start? (start! ring)
-       stop? (stop! ring)
-       ips? (ips! ring)
-       :else (println "Must pass --start or --stop")))))
-
+  (with-command-line args
+    "Provisioning tool for ElephantDB Clusters."
+    [[start? "Start Cluster?"]
+     [stop? "Shutdown Cluster?"]
+     [local? "Local mode?"]
+     [ring "ElephantDB Ring Name"]
+     [ips? "Cluster IPs"]]
+    (if-not ring
+      (println "Please pass in a ring name with --ring.")
+      (cond  start? (start! ring local?)
+             stop? (stop! ring local?)
+             ips? (ips! ring)
+             :else (println "Must pass --start or --stop")))))

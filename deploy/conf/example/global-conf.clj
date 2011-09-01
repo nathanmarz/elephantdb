@@ -5,4 +5,4 @@
  :domains {
            "domain-name" "s3n://hdfs2/path/.../"
            }
-}
+ }
