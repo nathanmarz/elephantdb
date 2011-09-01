@@ -13,7 +13,7 @@
               :elephantdb-data {
                          :blobstore-provider "aws-s3"
                          :provider "aws-ec2"
-                         :identity "XXXX"
+                                                  :identity "XXXX"
                          :credential "XXXX"
                          }
              }
@@ -31,7 +31,3 @@ $ lein run --start --ring <ring name>
 
 To deploy to existing edb cluster:
 $ lein run --start --ring <ring name>
-
-
-
-
