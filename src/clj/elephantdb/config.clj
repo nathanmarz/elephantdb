@@ -20,11 +20,12 @@
    })
 
 (def DEFAULT-LOCAL-CONFIG
-  {
-   :max-online-download-rate-kb-s 128
-   :local-db-conf {}
-   :hdfs-conf {}
-   })
+     {
+      :max-online-download-rate-kb-s 128
+      :update-interval-s 60
+      :local-db-conf {}
+      :hdfs-conf {}
+      })
 
 (defstruct domain-spec-struct :persistence-factory :num-shards)
 

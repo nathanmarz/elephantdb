@@ -28,6 +28,7 @@
   (into {}
         (dofor [[domain remote-location] (:domains global-config)]
                (let [domain-spec (read-domain-spec fs remote-location)]
+                 (log-message "Domain spec for " domain ": " domain-spec)
                  [domain (shard-domain
                           domain
                           (:hosts global-config)

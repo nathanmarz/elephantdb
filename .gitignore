@@ -9,6 +9,7 @@ logs
 pom.xml
 /lib
 *.jar
+*.pyc
 CHILD
 CHILDPY
 .lein-failures
