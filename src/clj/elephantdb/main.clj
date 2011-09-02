@@ -28,14 +28,18 @@
                (ElephantDB$Processor. service-handler)
                (TNonblockingServerSocket. (:port global-config))
                (TBinaryProtocol$Factory.) options)]
-    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.shutdown service-handler) (.stop server))))
+    (.addShutdownHook (Runtime/getRuntime)
+                      (Thread. (fn []
+                                 (.shutdown service-handler)
+                                 (.stop server))))
     (log-message "Starting updater process...")
     (launch-updater! (:update-interval-s local-config) service-handler)
     (log-message "Starting ElephantDB server...")
     (.serve server)))
 
-;; the token is stored locally. If the token changes and there's newer data on the server, elephantdb will load it. Otherwise,
-;; elephantdb just uses whatever is local
+;; the token is stored locally. If the token changes and there's newer
+;; data on the server, elephantdb will load it. Otherwise, elephantdb
+;; just uses whatever is local
 (defn -main [#^String global-config-hdfs-path #^String local-config-path #^String token]
   (PropertyConfigurator/configure "log4j/log4j.properties")
   (let [lfs (local-filesystem)

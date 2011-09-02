@@ -13,7 +13,7 @@
             [elephantdb.deploy.crate.edb-configs :as edb-configs]))
 
 (defn- edb-node-spec [ring local?]
-  (let [{:keys [port]} (edb-configs/read-global-conf! ring)]
+  (let [{port :port} (edb-configs/read-global-conf! ring)]
     (node-spec
      :image (if local?
               {:os-family :ubuntu

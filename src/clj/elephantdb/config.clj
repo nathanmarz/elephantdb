@@ -88,7 +88,8 @@
   [global-config-path local-config token]
   (let [lfs (local-filesystem)
         cached-global (read-cached-global-config local-config)]
-    (if (and cached-global (cache? cached-global token))
+    (if (and cached-global
+             (cache? cached-global token))
       cached-global
       (merge DEFAULT-GLOBAL-CONFIG
              (read-clj-config

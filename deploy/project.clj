@@ -7,7 +7,6 @@
                  [org.antlr/stringtemplate "3.2"]]
   :dev-dependencies [[swank-clojure "1.4.0-SNAPSHOT"]
                      [clojure-source "1.2.0"]
-                     [swank-clojure "1.2.1"]
                      [vmfest "0.2.3"]
                      [org.cloudhoist/pallet "0.6.2"]
                      [org.cloudhoist/java "0.5.0"]

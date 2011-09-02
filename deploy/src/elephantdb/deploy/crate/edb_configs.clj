@@ -4,20 +4,28 @@
         [clojure.contrib.map-utils :only (deep-merge-with)]
         [org.jclouds.blobstore :only (upload-blob)]
         [pallet.session :only (nodes-in-group)]
-        [pallet.configure :only (pallet-config)]
+        [pallet.configure :only (pallet-config compute-service-properties)]
         [pallet.resource.remote-file :only (remote-file)])
   (:require [pallet.request-map :as rm]
             [pallet.session :as session]))
 
-(defn read-global-conf!
-  [ring]
-  (let [path (format "conf/%s/global-conf.clj" ring)]
-    (read-string (slurp path))))
+(defn edb-config []
+  (compute-service-properties (pallet-config) ["elephantdb"]))
 
-(defn read-local-conf!
-  [ring]
-  (let [path (format "conf/%s/local-conf.clj" ring)]
-    (read-string (slurp path))))
+(defn edb-ring-config [ring]
+  (let [ring (keywordize ring)]
+    (-> (edb-config) :configs ring)))
+
+(defn keywordize [x]
+  (if (keyword? x)
+    x
+    (keyword x)))
+
+(defn read-global-conf! [ring]
+  (:global (edb-ring-config ring)))
+
+(defn read-local-conf! [ring]
+  (:local (edb-ring-config ring)))
 
 ;; HACK: Construct ec2 internal hostname from internal ip.  Needed
 ;; until Nathan allows internal ip in global-conf.clj
@@ -32,6 +40,7 @@
   (let [hosts (map internal-hostname (session/nodes-in-group session))]
     (prn-str (assoc local-config :hosts hosts))))
 
+;; TODO: Move path out to config staging path in pallet config.
 (defn upload-global-conf!
   [session]
   (let [ring (-> session :environment :ring)
@@ -41,6 +50,7 @@
     (upload-blob "hdfs2" s3-key s3-conf (:blobstore session))
     session))
 
+;; TODO: Pull this stuff out of local-conf.
 (defn local-conf-with-keys
   [session local-conf]
   (let [{:keys [edb-s3-keys]} session]

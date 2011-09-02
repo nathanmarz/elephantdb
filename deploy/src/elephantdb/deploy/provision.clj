@@ -5,10 +5,11 @@
         pallet.core
         pallet.resource
         [pallet.configure :only (pallet-config compute-service-properties)]
-        [pallet.blobstore :only (blobstore-from-config)]
+        [pallet.blobstore :only (blobstore-from-map)]
         ;; TODO: Replace this with equivalent pallet command
         [org.jclouds.compute :only (nodes-with-tag)])
-  (:require [elephantdb.deploy.node :as node]
+  (:require [elephantdb.deploy.util :as util]
+            [elephantdb.deploy.node :as node]
             [pallet.request-map :as rm]
             [elephantdb.deploy.crate.edb-configs :as edb-configs])
   (:gen-class))
@@ -21,21 +22,24 @@
 
 (defn ips! [ring]
   (let [{:keys [group-name]} (node/edb-group-spec ring)
-        aws (compute-service-from-config-file "elephantdb-deploy")]
+        aws (compute-service-from-map (:deploy-creds (edb-config)))]
     (print-ips-for-tag! aws (name group-name))))
 
 (defn- converge-edb!
   [ring count local?]
-  (let [conf (pallet-config)
-        compute (-> (if local?
-                      "virtualbox"
-                      "elephantdb-deploy")
-                    (compute-service-from-config-file))]
+  (let [{:keys [data-creds deploy-creds]} (edb-configs/edb-config)
+        deploy-creds (update-in deploy-creds
+                                [:environment :user]
+                                util/resolve-keypaths)
+        compute (if local?
+                  (service "virtualbox")
+                  (compute-service-from-map deploy-creds))]
     (converge {(node/edb-group-spec ring :local? local?) count}
               :compute compute
-              :environment {:ring ring
-                            :blobstore   (blobstore-from-config conf ["elephantdb-data"])
-                            :edb-s3-keys (compute-service-properties conf ["elephantdb-data"])})))
+              :environment (merge (:environment deploy-creds)
+                                  {:ring ring
+                                   :blobstore (blobstore-from-map data-creds)
+                                   :edb-s3-keys data-creds}))))
 
 (defnk start! [ring :local? false]
   (let [{count :node-count} (edb-configs/read-global-conf! ring)]

@@ -13,7 +13,9 @@
   (:import org.antlr.stringtemplate.StringTemplate))
 
 ;; TODO: Fix the way we create these dirs. Normalize on trailing
-;; slashes, etc
+;; slashes, etc.
+;;
+;; TODO: Pull s3-configs-dir out of the pallet map.
 (def local-template-dir "templates/")
 (def service-dir "/service/elephantdb/")
 (def s3-configs-dir "/configs/elephantdb/")

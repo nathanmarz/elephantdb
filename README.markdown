@@ -28,7 +28,57 @@ ElephantDB is hosted at [Clojars](http://clojars.org/elephantdb). Clojars is a m
 
 # Deploying ElephantDB server
 
-To build ElephantDB, you will need to install [Leiningen](https://github.com/technomancy/leiningen). Run "lein deps && lein uberjar" to create a jar containing ElephantDB and all it's dependencies. 
+## Setting Up
+
+ElephantDB uses [Pallet](https://github.com/pallet/pallet) for deploys; the main Pallet config is stored in `config.clj`, located in the `.pallet` directory. Go ahead and create this directory and file, and open up `config.clj` in your favorite text editor.
+
+Add the following form to `config.clj`, replacing appropriate fields with your information:
+
+    (defpallet
+      :services
+      {:elephantdb
+       {:configs {:example
+                  {:global {:replication 1
+                            :node-count 1
+                            :port 3578
+                            :domains {"example-domain" "s3n://yourbucket/example-shards"}}
+                   :local {:local-dir "/mnt/elephantdb"
+                           :max-online-download-rate-kb-s 1024
+                           :local-db-conf {"elephantdb.JavaBerkDB" {}
+                                           "elephantdb.TokyoCabinet" {}}
+                           :hdfs-conf {"fs.default.name" "s3n://yourbucket"
+                                       "fs.s3n.awsAccessKeyId" "youraccesskey"
+                                       "fs.s3n.awsSecretAccessKey" "yoursecret"}}}}
+        :data-creds {:blobstore-provider "aws-s3"
+                     :provider "aws-ec2"
+                     :identity "youraccesskey"
+                     :credential "yoursecret"}
+        :deploy-creds {:blobstore-provider "aws-s3"
+                       :provider "aws-ec2"
+                       :identity "youraccesskey"
+                       :credential "yoursecret"}}})
+
+(If you have an existing `.pallet/config.clj`, add the `:elephantdb` kv pair under `:services`.)
+
+Add new domains to the EDB ring by adding kv pairs under the `:domains` key of global config.
+
+## Deploying
+
+To deploy ElephantDB, you'll need to install [Leiningen](https://github.com/technomancy/leiningen). Once that's complete, run the following commands to prep your system for deploy:
+
+    $ git clone git://github.com/nathanmarz/elephantdb.git
+    $ cd elephantdb/deploy
+    $ lein deps
+
+These commands will pull in all dependencies required to deploy ElephantDB. Finally, run:
+
+    $ lein run --start --ring <your-ring-name>
+
+When the task completes, you'll be presented with the public and private IPs of your running EDB server. That's it!
+
+TODO: Tutorial on connecting to EDB with a thrift service.
+
+# Running the EDB Jar
 
 To launch an ElephantDB server, you must run the class elephantdb.main with three command line arguments, described below. ElephantDB also requires the Hadoop jars in its classpath.
 

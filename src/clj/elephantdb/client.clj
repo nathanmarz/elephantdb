@@ -15,7 +15,8 @@
 
 (defn -init
   ([fs-conf global-conf-path]
-     (-init nil fs-conf (read-clj-config (filesystem fs-conf) global-conf-path)))
+     (-init nil fs-conf (read-clj-config (filesystem fs-conf)
+                                         global-conf-path)))
   ([local-elephant fs-conf global-conf]
      [[] {:local-hostname (local-hostname)
           :local-elephant local-elephant
@@ -49,13 +50,13 @@
 
 (defn- try-multi-get [this domain keys totry]
   (try
-    (if (and (my-local-elephant this) (= totry (my-local-hostname this)))
+    (if (and (my-local-elephant this)
+             (= totry (my-local-hostname this)))
       (.directMultiGet (my-local-elephant this) domain keys)
       (multi-get-remote totry (ring-port this) domain keys))
     (catch TException e
       ;; try next host
-      (log-error e "Thrift exception on " totry ":" domain "/" keys)
-      nil)
+      (log-error e "Thrift exception on " totry ":" domain "/" keys))
     (catch WrongHostException e
       (log-error e "Fatal exception on " totry ":" domain "/" keys)
       (throw (TException. "Fatal exception when performing get" e)))

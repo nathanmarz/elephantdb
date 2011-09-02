@@ -12,6 +12,5 @@
                  [com.sleepycat/je "4.1.6"]]
   :dev-dependencies [[swank-clojure "1.4.0-SNAPSHOT"]
                      [clojure-source "1.2.0"]
-                     [org.apache.hadoop/hadoop-core "0.20.2-dev"]
-                     [swank-clojure "1.2.1"]]
+                     [org.apache.hadoop/hadoop-core "0.20.2-dev"]]
   :aot :all)
