@@ -8,7 +8,7 @@
   :dev-dependencies [[swank-clojure "1.4.0-SNAPSHOT"]
                      [clojure-source "1.2.0"]
                      [vmfest "0.2.3"]
-                     [org.cloudhoist/pallet "0.6.2"]
+                     [org.cloudhoist/pallet "0.6.4"]
                      [org.cloudhoist/java "0.5.0"]
                      [org.cloudhoist/git "0.5.0"]
                      [org.cloudhoist/ssh-key "0.5.0"]
@@ -16,5 +16,4 @@
                      [org.jclouds.provider/aws-ec2 "1.0.0"]
                      [org.jclouds.provider/aws-s3 "1.0.0"]
                      [org.jclouds.driver/jclouds-jsch "1.0.0"]
-                     [com.jcraft/jsch "0.1.44-1"]
-                     [org.cloudhoist/pallet-lein "0.2.0"]])
+                     [com.jcraft/jsch "0.1.44-1"]])

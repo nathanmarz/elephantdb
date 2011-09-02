@@ -9,7 +9,7 @@
                  [jvyaml "1.0.0"]
                  [backtype/thriftjava "1.0.0"]
                  [log4j/log4j "1.2.16"]
-                 [com.sleepycat/je "4.1.6"]]
+                 [com.sleepycat/je "4.1.10"]]
   :dev-dependencies [[swank-clojure "1.4.0-SNAPSHOT"]
                      [clojure-source "1.2.0"]
                      [org.apache.hadoop/hadoop-core "0.20.2-dev"]]

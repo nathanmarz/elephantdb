@@ -23,7 +23,8 @@
           (dofor [domain (keys (:domains global-config))]
                  [domain (domain/init-domain-info (domain-shards domain))]))))
 
-(defn load-and-sync-status-of-domain [domain domains-info update? loader-fn]
+(defn load-and-sync-status-of-domain
+  [domain domains-info update? loader-fn]
   (future
     (try
       (domain/set-domain-status! (domains-info domain)
@@ -31,7 +32,7 @@
                                    (thrift/ready-status true)
                                    (thrift/loading-status)))
       (let [domain-data (loader-fn domain)]
-        (if domain-data
+        (when domain-data
           (domain/set-domain-data! (domains-info domain)
                                    domain-data))
         (domain/set-domain-status!
@@ -126,8 +127,8 @@
         (catch Throwable t
           (log-error t "Error when cleaning old versions of domain: " domain)
           (reset! error t))))
-    (if @error
-      (throw @error))))
+    (when-let [e @error]
+      (throw e))))
 
 (defn sync-updated
   "Only fetch domains from remote if a newer version is available.
@@ -208,39 +209,36 @@ Keep the cached versions of any domains that haven't been updated"
        (and @download-supervisor
             (not (.isDone @download-supervisor))))))
 
-(defn- update-domains [service-handler download-supervisor all-domains domains-info global-config local-config]
+(defn- update-domains
+  [service-handler download-supervisor all-domains domains-info global-config local-config]
   (if (service-updating? service-handler download-supervisor)
     (log-message "UPDATER - Not updating as update process still in progress.")
-    (do
-      (let [max-kbs (:max-online-download-rate-kb-s local-config)
-            all-shards (domain/all-shards domains-info)
-            domain-shards (into {} (map (fn [domain]
-                                          [domain (all-shards domain)])
-                                        all-domains))
-            shard-amount (reduce + 0 (map #(count %) (vals all-shards)))]
-
-        (log-message "UPDATER - Updating domains: " (str-utils/str-join ", " all-domains))
-
-        (let [^DownloadState state (mk-loader-state domain-shards)
-              shard-amount (reduce + 0 (map #(count %) (vals (:shard-states state))))]
-          (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
-          (future
-            (try
-              (load-and-sync-status
-               all-domains domains-info
-               true
-               (fn [domain]
-                 (close-if-updated domain
-                                   domains-info
-                                   local-config
-                                   (use-cache-or-update domain domains-info global-config local-config true state))))
-              (log-message "Finished updating all domains from remote")
-              (try (log-message "Removing all old versions of domains (CLEANUP)")
-                   (cleanup-domains domains-info local-config)
-                   (catch Throwable t (log-error t "Error when cleaning old versions")))
-              (catch Throwable t
-                (log-error t "Error when syncing data")
-                (throw t)))))))))
+    (let [max-kbs (:max-online-download-rate-kb-s local-config)
+          all-shards (domain/all-shards domains-info)
+          domain-shards (into {} (map (fn [domain]
+                                        [domain (all-shards domain)])
+                                      all-domains))
+          shard-amount (reduce + 0 (map #(count %) (vals all-shards)))]
+      (log-message "UPDATER - Updating domains: " (str-utils/str-join ", " all-domains))
+      (let [^DownloadState state (mk-loader-state domain-shards)
+            shard-amount (reduce + 0 (map #(count %) (vals (:shard-states state))))]
+        (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
+        (future
+          (try (load-and-sync-status
+                all-domains domains-info
+                true
+                (fn [domain]
+                  (close-if-updated domain
+                                    domains-info
+                                    local-config
+                                    (use-cache-or-update domain domains-info global-config local-config true state))))
+               (log-message "Finished updating all domains from remote")
+               (try (log-message "Removing all old versions of domains (CLEANUP)")
+                    (cleanup-domains domains-info local-config)
+                    (catch Throwable t (log-error t "Error when cleaning old versions")))
+               (catch Throwable t
+                 (log-error t "Error when syncing data")
+                 (throw t))))))))
 
 ;; 1. after *first* load finishes, right the global config with the token within
 ;; 2. when receive an update, open up the version and mkdir immediately,
