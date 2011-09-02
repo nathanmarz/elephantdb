@@ -10,8 +10,8 @@
 (defn- write-seqfile-records [fs dir pairs]
   (mkdirs fs dir)
   (let [writer (SequenceFile/createWriter fs (.getConf fs)
-                (path dir "part0000") BytesWritable BytesWritable
-                SequenceFile$CompressionType/NONE)]
+                                          (path dir "part0000") BytesWritable BytesWritable
+                                          SequenceFile$CompressionType/NONE)]
     (doseq [[k v] pairs]
       (.append writer (BytesWritable. k) (BytesWritable. v)))
     (.close writer)

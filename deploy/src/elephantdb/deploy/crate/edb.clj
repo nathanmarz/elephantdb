@@ -44,15 +44,15 @@
     (-> req
         (remote-file dst-path :content render :mode 744))))
 
-(defn filelimits [session fd-limit & users]
+(defn filelimits [session fd-limit user-seq]
   (-> session
       (remote-file
        "/etc/security/limits.conf"
        :content
-       (->> users
+       (->> user-seq
             (mapcat (fn [user]
-                      [(format "\t" "%s\tsoft\tnofile\t%s" user fd-limit)
-                       (format "\t" "%s\thard\tnofile\t%s" user fd-limit)]))
+                      [(format "%s\tsoft\tnofile\t%s" user fd-limit)
+                       (format "%s\thard\tnofile\t%s" user fd-limit)]))
             (join "\n"))
        :no-versioning true
        :overwrite-changes true)))

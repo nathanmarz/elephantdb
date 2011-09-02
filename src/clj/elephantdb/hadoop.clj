@@ -71,7 +71,7 @@
   (into {}
         (map (fn [s]
                {s (ShardState. (atom 0) (atom 0))})
-               shards)))
+             shards)))
 
 ;; Create new LoaderState
 (defn mk-loader-state [domains-to-shards]
@@ -98,22 +98,19 @@
               (recur)))
           (do
             (Thread/sleep @sleep-interval)
-            (recur)))) ;; keep looping
-      )))
+            (recur)))))))
 
 (defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (.mkdir (File. target-local-path))
   (let [contents (seq (.listStatus fs path))]
     (doseq [c contents]
       (let [subpath (.getPath c)]
-        (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer state)
-        ))))
+        (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer state)))))
 
 (defn- copy-local* [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (let [status (.getFileStatus fs path)]
     (cond (.isDir status) (copy-dir-local fs path target-local-path buffer state)
-          true (copy-file-local fs path target-local-path buffer state)
-          )))
+          :else (copy-file-local fs path target-local-path buffer state))))
 
 (defn copy-local [#^FileSystem fs #^String spath #^String local-path ^ShardState state]
   (let [target-file (File. local-path)
@@ -125,12 +122,11 @@
                                           (IllegalArgumentException.
                                            (str "File exists " local-path)))
                    (.isDirectory target-file) (str-path local-path source-name)
-                   true (throw
-                         (IllegalArgumentException.
-                          (str "Unknown error, local file is neither file nor dir " local-path))))]
-    (when-not (.exists fs (path spath))
+                   :else (throw
+                          (IllegalArgumentException.
+                           (str "Unknown error, local file is neither file nor dir " local-path))))]
+    (if (.exists fs (path spath))
+      (copy-local* fs (path spath) dest-path buffer state)
       (throw
        (FileNotFoundException.
-        (str "Could not find on remote " spath))))
-    (copy-local* fs (path spath) dest-path buffer state)
-    ))
+        (str "Could not find on remote " spath))))))

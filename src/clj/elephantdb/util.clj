@@ -4,10 +4,9 @@
 
 (defn repeat-seq
   ([aseq]
-    (apply concat (repeat aseq)))
+     (apply concat (repeat aseq)))
   ([amt aseq]
-    (apply concat (repeat amt aseq))
-    ))
+     (apply concat (repeat amt aseq))))
 
 (defn map-mapvals [f amap]
   (into {} (for [[k v] amap] [k (f v)])))
@@ -15,28 +14,32 @@
 (defn reverse-multimap
   "{:a [1 2] :b [1] :c [3]} -> {1 [:a :b] 2 [:a] 3 [:c]}"
   [amap]
-  (apply merge-with concat
-    (mapcat
-      (fn [[k vlist]]
-        (for [v vlist] {v [k]} ))
-      amap )))
+  (apply merge-with
+         concat
+         (mapcat
+          (fn [[k vlist]]
+            (for [v vlist] {v [k]} ))
+          amap)))
 
 (defn local-hostname []
   (.getCanonicalHostName (InetAddress/getLocalHost)))
 
 (defn find-first-next [pred aseq]
   (loop [[curr & restseq] aseq]
-    (if (pred curr) [curr restseq] (recur restseq))))
+    (if (pred curr)
+      [curr restseq]
+      (recur restseq))))
 
 (defmacro dofor [bindings & body]
   `(doall (for ~bindings (do ~@body))))
 
 (defn future-values [futures]
   (dofor [f futures]
-    (.get f)))
+         (.get f)))
 
 (defn remove-val [v aseq]
-  (filter (partial not= v) aseq))
+  (filter (partial not= v)
+          aseq))
 
 (defn third [aseq]
   (nth aseq 2))
@@ -46,33 +49,30 @@
     []
     (let [[thisfn & restfns] funcs
           future-rest (dofor [f restfns] (future-call f))]
-      (cons (thisfn) (map deref future-rest))
-      )))
+      (cons (thisfn) (map deref future-rest)))))
 
 (defn mk-rw-lock []
   (ReentrantReadWriteLock.))
 
 (defmacro read-locked [rw-lock & body]
   `(let [rlock# (.readLock ~rw-lock)]
-      (try
-        (.lock rlock#)
-        ~@body
-      (finally (.unlock rlock#)))))
+     (try
+       (.lock rlock#)
+       ~@body
+       (finally (.unlock rlock#)))))
 
 (defmacro write-locked [rw-lock & body]
   `(let [wlock# (.writeLock ~rw-lock)]
-      (try
-        (.lock wlock#)
-        ~@body
-      (finally (.unlock wlock#)))))
+     (try
+       (.lock wlock#)
+       ~@body
+       (finally (.unlock wlock#)))))
 
 (defmacro with-ret-binded [[sym val] & body]
   `(let [~sym ~val]
      ~@body
-     ~sym
-     ))
+     ~sym))
 
 (defmacro with-ret [val & body]
   `(with-ret-binded [ret# ~val]
-     ~@body
-     ))
+     ~@body))

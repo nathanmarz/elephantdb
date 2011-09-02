@@ -9,7 +9,6 @@
         existing (get hosts-to-shards host #{})]
     [hosts (assoc hosts-to-shards host (conj existing shard))]))
 
-
 (defn compute-host-to-shards [domain hosts numshards replication]
   (log-message "host to shards " domain hosts numshards replication)
   (when (> replication (count hosts))

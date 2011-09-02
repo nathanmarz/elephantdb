@@ -16,14 +16,14 @@
     (is (specs= spec (read-domain-spec fs tmp))))
   (let [jspec (DomainSpec/readFromFileSystem fs tmp)]
     (is (= 20 (.getNumShards jspec)))
-    (is (= "elephantdb.persistence.JavaBerkDB" (-> (.getLPFactory jspec) (.getClass) (.getName))))
-    ))
+    (is (= "elephantdb.persistence.JavaBerkDB" (-> (.getLPFactory jspec)
+                                                   (.getClass)
+                                                   (.getName))))))
 
 (deffstest test-rw-clj-configs [fs tmp1 tmp2]
   (let [config1 {:blah 2 :a "eee" :c [1 2 "a"]}
         config2 {:foo {:lalala {:a 1 "c" 3}}}]
-      (write-clj-config! config1 fs tmp1)
-      (write-clj-config! config2 fs tmp2)
-      (is (= config1 (read-clj-config fs tmp1)))
-      (is (= config2 (read-clj-config fs tmp2)))
-      ))
+    (write-clj-config! config1 fs tmp1)
+    (write-clj-config! config2 fs tmp2)
+    (is (= config1 (read-clj-config fs tmp1)))
+    (is (= config2 (read-clj-config fs tmp2)))))

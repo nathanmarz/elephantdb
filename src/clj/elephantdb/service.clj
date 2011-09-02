@@ -8,21 +8,20 @@
   (:use [elephantdb config log util hadoop loader])
   (:require [clojure.contrib [str-utils :as str-utils]]))
 
-; { :replication 2
-;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
-;   :port 3578
-;   :domains {"graph" "s3n://mybucket/elephantdb/graph"
-;             "docs"  "/data/docdb"
-;             }
-; }
+;; { :replication 2
+;;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
+;;   :port 3578
+;;   :domains {"graph" "s3n://mybucket/elephantdb/graph"
+;;             "docs"  "/data/docdb"
+;;             }
+;; }
 
 (defn- init-domain-info-map [fs global-config]
   (log-message "Global config: " global-config)
   (let [domain-shards (shard/shard-domains fs global-config)]
     (into {}
-      (dofor [domain (keys (:domains global-config))]
-          [domain (domain/init-domain-info (domain-shards domain))]
-          ))))
+          (dofor [domain (keys (:domains global-config))]
+                 [domain (domain/init-domain-info (domain-shards domain))]))))
 
 (defn load-and-sync-status-of-domain [domain domains-info update? loader-fn]
   (future
@@ -162,24 +161,20 @@ Keep the cached versions of any domains that haven't been updated"
         domains-info (init-domain-info-map
                       lfs
                       (assoc global-config :domains domains-map))]
-    (future
-      (load-and-sync-status domains-info
-                            false
-                            (fn [domain]
-                              (open-domain
-                               local-config
-                               (str (path local-dir domain))
-                               (domain/host-shards (domains-info domain))
-                               ))))
-    domains-info
-    ))
+    (future (load-and-sync-status domains-info
+                                  false
+                                  (fn [domain]
+                                    (open-domain
+                                     local-config
+                                     (str (path local-dir domain))
+                                     (domain/host-shards (domains-info domain))))))
+    domains-info))
 
 ;; returns map of domain to domain info and launches futures that will fill in the domain info
 (defn- sync-data [global-config local-config token]
   (if (cache? global-config token)
     (sync-local global-config local-config)
-    (sync-updated global-config local-config token)
-    ))
+    (sync-updated global-config local-config token)))
 
 (defn- close-lps [domains-info]
   (doseq [[domain info] domains-info]
@@ -189,8 +184,7 @@ Keep the cached versions of any domains that haven't been updated"
         (if lp
           (.close lp)
           (log-message "LP not loaded"))
-        (log-message "Closed LP for " domain "/" shard))
-      )))
+        (log-message "Closed LP for " domain "/" shard)))))
 
 (defn- get-readable-domain-info [domains-info domain]
   (let [info (domains-info domain)]
@@ -198,21 +192,21 @@ Keep the cached versions of any domains that haven't been updated"
       (throw (thrift/domain-not-found-ex domain)))
     (when-not (thrift/status-ready? (domain/domain-status info))
       (throw (thrift/domain-not-loaded-ex domain)))
-    info ))
+    info))
 
 (defn- close-if-updated [domain domains-info local-config new-data]
-  (if (= new-data :no-update)
-    nil
-    (do (if new-data
-          (close-domain domain domains-info))
-        new-data)))
+  (when (not= new-data :no-update)
+    (when new-data
+      (close-domain domain domains-info))
+    new-data))
 
 (defn service-updating? [service-handler download-supervisor]
-  (or (some (fn [[domain status]]
-              (thrift/status-loading? status))
-            (.get_domain_statuses (.getStatus service-handler)))
-      (and @download-supervisor
-           (not (.isDone @download-supervisor)))))
+  (boolean
+   (or (some (fn [[domain status]]
+               (thrift/status-loading? status))
+             (.get_domain_statuses (.getStatus service-handler)))
+       (and @download-supervisor
+            (not (.isDone @download-supervisor))))))
 
 (defn- update-domains [service-handler download-supervisor all-domains domains-info global-config local-config]
   (if (service-updating? service-handler download-supervisor)
@@ -241,11 +235,12 @@ Keep the cached versions of any domains that haven't been updated"
                                    local-config
                                    (use-cache-or-update domain domains-info global-config local-config true state))))
               (log-message "Finished updating all domains from remote")
-              (try
-                (log-message "Removing all old versions of domains (CLEANUP)")
-                (cleanup-domains domains-info local-config)
-                (catch Throwable t (log-error t "Error when cleaning old versions")))
-              (catch Throwable t (log-error t "Error when syncing data") (throw t)))))))))
+              (try (log-message "Removing all old versions of domains (CLEANUP)")
+                   (cleanup-domains domains-info local-config)
+                   (catch Throwable t (log-error t "Error when cleaning old versions")))
+              (catch Throwable t
+                (log-error t "Error when syncing data")
+                (throw t)))))))))
 
 ;; 1. after *first* load finishes, right the global config with the token within
 ;; 2. when receive an update, open up the version and mkdir immediately,
@@ -258,17 +253,17 @@ Keep the cached versions of any domains that haven't been updated"
 ;; 5. Create Hadoop FS on demand... need retry logic if loaders fail?
 
 
-  ;; list<Value> multiGet(1: string domain, 2: list<binary> key)
-  ;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  ;; list<Value> multiGetString(1: string domain, 2: list<string> key)
-  ;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  ;; list<Value> multiGetInt(1: string domain, 2: list<i32> key)
-  ;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  ;; list<Value> multiGetLong(1: string domain, 2: list<i64> key)
-  ;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+;; list<Value> multiGet(1: string domain, 2: list<binary> key)
+;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+;; list<Value> multiGetString(1: string domain, 2: list<string> key)
+;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+;; list<Value> multiGetInt(1: string domain, 2: list<i32> key)
+;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+;; list<Value> multiGetLong(1: string domain, 2: list<i64> key)
+;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
 
-  ;; list<Value> directMultiGet(1: string domain, 2: list<binary> key)
-  ;;   throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
+;; list<Value> directMultiGet(1: string domain, 2: list<binary> key)
+;;   throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
 
 ;;  Example of domains-info local:
 ;;  {test {:elephantdb.domain/shard-index {:elephantdb.shard/hosts-to-shards {192.168.1.3 #{0 1 2 3}}, :elephantdb.shard/shards-to-hosts {3 #{192.168.1.3}, 2 #{192.168.1.3}, 1 #{192.168.1.3}, 0 #{192.168.1.3}}}, :elephantdb.domain/domain-status #<Atom@3643b5bb: #<DomainStatus <DomainStatus loading:LoadingStatus()>>>, :elephantdb.domain/domain-data #<Atom@4feaefc5: nil>}}
@@ -279,96 +274,92 @@ Keep the cached versions of any domains that haven't been updated"
         download-supervisor (atom nil)
         ret (proxy [ElephantDB$Iface Shutdownable] []
               (shutdown
-               []
-               (log-message "ElephantDB received shutdown notice...")
-               (write-locked
-                rw-lock
-                (dofor [[_ info] domains-info]
-                       (domain/set-domain-status! info (thrift/shutdown-status))))
-               (close-lps domains-info))
+                []
+                (log-message "ElephantDB received shutdown notice...")
+                (write-locked
+                 rw-lock
+                 (dofor [[_ info] domains-info]
+                        (domain/set-domain-status! info (thrift/shutdown-status))))
+                (close-lps domains-info))
 
               (get
-               [#^String domain #^bytes key]
-               (.get @client domain key))
+                [#^String domain #^bytes key]
+                (.get @client domain key))
 
               (getString
-               [#^String domain #^String key]
-               (.getString @client domain key))
+                [#^String domain #^String key]
+                (.getString @client domain key))
 
               (getInt
-               [#^String domain key]
-               (.getInt @client domain key))
+                [#^String domain key]
+                (.getInt @client domain key))
 
               (getLong
-               [#^String domain key]
-               (.getLong @client domain key))
+                [#^String domain key]
+                (.getLong @client domain key))
 
               (multiGet
-               [#^String domain keys]
-               (.multiGet @client domain keys))
+                [#^String domain keys]
+                (.multiGet @client domain keys))
 
               (multiGetString
-               [#^String domain #^String keys]
-               (.multiGetString @client domain keys))
+                [#^String domain #^String keys]
+                (.multiGetString @client domain keys))
 
               (multiGetInt
-               [#^String domain keys]
-               (.multiGetInt @client domain keys))
+                [#^String domain keys]
+                (.multiGetInt @client domain keys))
 
               (multiGetLong
-               [#^String domain keys]
-               (.multiGetLong @client domain keys))
+                [#^String domain keys]
+                (.multiGetLong @client domain keys))
 
               (directMultiGet
-               [#^String domain keys]
-               (read-locked
-                rw-lock
-                (dofor [key keys]
-                       (let [info                   (get-readable-domain-info domains-info domain)
-                             shard                  (domain/key-shard domain info key)
-                             #^LocalPersistence lp  (domain/domain-data info shard)]
-                         (log-debug "Direct get key " (seq key) "at shard " shard)
-                         (when-not lp
-                           (throw (thrift/wrong-host-ex)))
-                         (thrift/mk-value (.get lp key))
-                         ))))
+                [#^String domain keys]
+                (read-locked
+                 rw-lock
+                 (dofor [key keys]
+                        (let [info                   (get-readable-domain-info domains-info domain)
+                              shard                  (domain/key-shard domain info key)
+                              #^LocalPersistence lp  (domain/domain-data info shard)]
+                          (log-debug "Direct get key " (seq key) "at shard " shard)
+                          (when-not lp
+                            (throw (thrift/wrong-host-ex)))
+                          (thrift/mk-value (.get lp key))
+                          ))))
 
               (getDomainStatus
-               [#^String domain]
-               (let [info (domains-info domain)]
-                 (when-not info
-                   (throw (thrift/domain-not-found-ex domain)))
-                 (domain/domain-status info)))
+                [#^String domain]
+                (let [info (domains-info domain)]
+                  (when-not info
+                    (throw (thrift/domain-not-found-ex domain)))
+                  (domain/domain-status info)))
 
               (getDomains
-               []
-               (keys domains-info))
+                []
+                (keys domains-info))
 
               (getStatus
-               []
-               (thrift/elephant-status
-                (into {} (for [[d i] domains-info] [d (domain/domain-status i)]))))
+                []
+                (thrift/elephant-status
+                 (into {} (for [[d i] domains-info] [d (domain/domain-status i)]))))
 
               (isFullyLoaded
-               []
-               (let [stat (.get_domain_statuses (.getStatus this))]
-                 (every? #(or (thrift/status-ready? %) (thrift/status-failed? %)) (vals stat))))
+                []
+                (let [stat (.get_domain_statuses (.getStatus this))]
+                  (every? #(or (thrift/status-ready? %) (thrift/status-failed? %)) (vals stat))))
 
               (isUpdating
                 []
-                (if (service-updating? this download-supervisor)
-                  true
-                  false))
+                (service-updating? this download-supervisor))
 
               (updateAll
-               []
-                (update-domains this download-supervisor (keys domains-info) domains-info global-config local-config)
-               )
-
+                []
+                (update-domains this download-supervisor (keys domains-info) domains-info global-config local-config))
+              
               (update
-               [#^String domain]
+                [#^String domain]
                 (update-domains this download-supervisor [domain] domains-info global-config local-config)
-                true
-               ))]
-      (reset! client (client. ret (:hdfs-conf local-config) global-config))
-      ret ))
+                true))]
+    (reset! client (client. ret (:hdfs-conf local-config) global-config))
+    ret))

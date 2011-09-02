@@ -6,15 +6,13 @@
 (defmacro defvstest [name [vs-sym] & body]
   `(deffstest ~name [fs# dir#]
     (let [~vs-sym (VersionedStore. fs# dir#)]
-      ~@body
-      )))
+      ~@body)))
 
 (defvstest test-empty-version [vs]
   (let [v (.createVersion vs)]
     (.succeedVersion vs v)
     (is (= 1 (count (.getAllVersions vs))))
-    (is (= v (.mostRecentVersionPath vs)))
-    ))
+    (is (= v (.mostRecentVersionPath vs)))))
 
 (defvstest test-multiple-versions [vs]
   (.succeedVersion vs (.createVersion vs))
@@ -25,8 +23,7 @@
     (is (= v (.mostRecentVersionPath vs)))
     (Thread/sleep 100)
     (.createVersion vs)
-    (is (= v (.mostRecentVersionPath vs)))
-    ))
+    (is (= v (.mostRecentVersionPath vs)))))
 
 (defvstest test-error [vs]
   )

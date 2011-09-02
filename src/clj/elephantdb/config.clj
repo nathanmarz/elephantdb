@@ -1,9 +1,8 @@
 (ns elephantdb.config
-  (:require [clojure.contrib [duck-streams :as d]])
+  (:require [clojure.contrib.duck-streams :as d])
   (:use [elephantdb hadoop])
-  (:import [elephantdb DomainSpec Utils])
-  (:import [elephantdb.persistence LocalPersistenceFactory]))
-
+  (:import [elephantdb DomainSpec Utils]
+           [elephantdb.persistence LocalPersistenceFactory]))
 
 ;; { :replication 2
 ;;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
@@ -20,12 +19,12 @@
    })
 
 (def DEFAULT-LOCAL-CONFIG
-     {
-      :max-online-download-rate-kb-s 128
-      :update-interval-s 60
-      :local-db-conf {}
-      :hdfs-conf {}
-      })
+  {
+   :max-online-download-rate-kb-s 128
+   :update-interval-s 60
+   :local-db-conf {}
+   :hdfs-conf {}
+   })
 
 (defstruct domain-spec-struct :persistence-factory :num-shards)
 

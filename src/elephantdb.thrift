@@ -7,7 +7,7 @@ struct Value {
 }
 
 struct LoadingStatus {
-
+  
 }
 
 struct ReadyStatus {

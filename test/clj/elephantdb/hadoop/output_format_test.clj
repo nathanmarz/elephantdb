@@ -13,26 +13,26 @@
 
 (defn write-data [writer data]
   (dofor [[s records] data]
-    (dofor [[k v] records]
-      (.write
-        writer
-        (IntWritable. s)
-        (ElephantRecordWritable.
-          (.getBytes k)
-          (.getBytes v))))))
+         (dofor [[k v] records]
+                (.write
+                 writer
+                 (IntWritable. s)
+                 (ElephantRecordWritable.
+                  (.getBytes k)
+                  (.getBytes v))))))
 
 (defn check-shards [fs lfs output-dir local-tmp factory expected]
   (.mkdirs lfs (path local-tmp))
   (dofor [[s records] expected]
-    (let [local-shard-path (str-path local-tmp s)
-          _                (.copyToLocalFile fs (path output-dir (str s)) (path local-shard-path))
-          persistence      (.openPersistenceForRead factory local-shard-path {})]
-      (dofor [[k v] records]
-        (is (= v (String. (.get persistence (.getBytes k))))))
-      (dofor [[_ non-records] (dissoc expected s)]
-        (dofor [[k _] non-records]
-          (is (= nil (.get persistence (.getBytes k))))))
-      )))
+         (let [local-shard-path (str-path local-tmp s)
+               _                (.copyToLocalFile fs (path output-dir (str s)) (path local-shard-path))
+               persistence      (.openPersistenceForRead factory local-shard-path {})]
+           (dofor [[k v] records]
+                  (is (= v (String. (.get persistence (.getBytes k))))))
+           (dofor [[_ non-records] (dissoc expected s)]
+                  (dofor [[k _] non-records]
+                         (is (= nil (.get persistence (.getBytes k))))))
+           )))
 
 (deffstest test-output-format [fs output-dir]
   (with-local-tmp [lfs etmp tmp2]

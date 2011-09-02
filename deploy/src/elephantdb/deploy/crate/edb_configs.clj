@@ -21,8 +21,7 @@
 
 ;; HACK: Construct ec2 internal hostname from internal ip.  Needed
 ;; until Nathan allows internal ip in global-conf.clj
-(defn internal-hostname
-  [node]
+(defn internal-hostname [node]
   (format "ip-%s.ec2.internal"
           (->> (private-ip node)
                (re-seq #"\d+")

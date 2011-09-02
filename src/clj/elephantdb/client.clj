@@ -1,9 +1,10 @@
 (ns elephantdb.client
-  (:use [clojure.contrib.seq-utils :only [includes?]]
+  (:use [clojure.contrib.seq-utils :only (includes?)]
         [elephantdb thrift hadoop config types util log])
   (:require [clojure.contrib.seq-utils :as seq-utils]
-            [elephantdb [shard :as shard]])
-  (:import [elephantdb.generated ElephantDB$Iface WrongHostException DomainNotFoundException DomainNotLoadedException]
+            [elephantdb.shard :as shard])
+  (:import [elephantdb.generated ElephantDB$Iface WrongHostException
+            DomainNotFoundException DomainNotLoadedException]
            [org.apache.thrift TException])
   (:gen-class
    :init init
@@ -54,7 +55,7 @@
     (catch TException e
       ;; try next host
       (log-error e "Thrift exception on " totry ":" domain "/" keys)
-      nil )
+      nil)
     (catch WrongHostException e
       (log-error e "Fatal exception on " totry ":" domain "/" keys)
       (throw (TException. "Fatal exception when performing get" e)))
@@ -63,8 +64,7 @@
       (throw e))
     (catch DomainNotLoadedException e
       (log-error e "Domain not loaded when executing read on " totry ":" domain "/" keys)
-      (throw e))
-    ))
+      (throw e))))
 
 (defn -get [this domain key]
   (first (.multiGet this domain [key])))
@@ -84,10 +84,8 @@
   (let [indexed (seq-utils/indexed keys)]
     (for [[gi key] indexed]
       (let [priority-hosts (get-priority-hosts this domain key)]
-        [priority-hosts gi key priority-hosts]
-        ))))
+        [priority-hosts gi key priority-hosts]))))
 
-;; 
 (defn- multi-get*
   "executes multi-get, returns seq of [global-index val]"
   [this domain host host-indexed-keys key-shard-fn multi-get-remote-fn]

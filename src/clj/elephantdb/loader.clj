@@ -1,9 +1,7 @@
 (ns elephantdb.loader
   (:import [elephantdb.store DomainStore])
   (:use [elephantdb util hadoop config log])
-  (:require [elephantdb [domain :as domain]]))
-
-
+  (:require [elephantdb.domain :as domain]))
 
 (defn- shard-path [domain-version shard]
   (str-path domain-version shard))
@@ -14,8 +12,7 @@
              persistence-factory
              local-shard-path
              (persistence-options local-config persistence-factory))
-    (log-message "Opened LP " local-shard-path)
-    ))
+    (log-message "Opened LP " local-shard-path)))
 
 (defn open-domain [local-config local-domain-root shards]
   (let [lfs (local-filesystem)
@@ -23,17 +20,12 @@
         domain-spec (read-domain-spec (local-filesystem) local-domain-root)
         local-version-path (.mostRecentVersionPath local-store)
         future-lps (dofor [s shards]
-                          [s
-                           (future
-                            (open-domain-shard
-                             (:persistence-factory domain-spec)
-                             local-config
-                             (shard-path local-version-path s)
-                             ))])
-        ]
+                          [s (future (open-domain-shard
+                                      (:persistence-factory domain-spec)
+                                      local-config
+                                      (shard-path local-version-path s)))])]
     (with-ret (into {} (dofor [[s f] future-lps] [s (.get f)]))
-      (log-message "Finished opening domain at " local-domain-root))
-    ))
+      (log-message "Finished opening domain at " local-domain-root))))
 
 (defn close-domain [domain domains-info]
   (let [domain-info (domains-info domain)]
@@ -44,22 +36,19 @@
         (catch Throwable t (log-error t "Error when closing local persistence for domain: " domain " and shard: " shard) (throw t))))
     (log-message "Finished closing domain: " domain)))
 
+;; TODO: respect the max copy rate
+;; TODO: do a streaming recursive copy that can be rate limited (rate limited with the other shards...)
 (defn load-domain-shard [fs persistence-factory local-config local-shard-path remote-shard-path ^ShardState state]
-  ;; TODO: respect the max copy rate
-  ;; TODO: do a streaming recursive copy that can be rate limited (rate limited with the other shards...)
   (if (.exists fs (path remote-shard-path))
-    (do
-      (log-message "Copying " remote-shard-path " to " local-shard-path)
-      (copy-local fs remote-shard-path local-shard-path state)
-      (log-message "Copied " remote-shard-path " to " local-shard-path)
-      )
-    (do
-      (log-message "Shard " remote-shard-path " did not exist. Creating empty LP")
-      (.close (.createPersistence persistence-factory local-shard-path (persistence-options local-config persistence-factory)))))
-    )
+    (do (log-message "Copying " remote-shard-path " to " local-shard-path)
+        (copy-local fs remote-shard-path local-shard-path state)
+        (log-message "Copied " remote-shard-path " to " local-shard-path))
+    (do (log-message "Shard " remote-shard-path " did not exist. Creating empty LP")
+        (.close (.createPersistence persistence-factory local-shard-path (persistence-options local-config persistence-factory))))))
 
-;; returns a map from shard to LP
-(defn load-domain [domain fs local-config local-domain-root remote-path shards ^DownloadState state]
+(defn load-domain
+  "returns a map from shard to LP."
+  [domain fs local-config local-domain-root remote-path shards ^DownloadState state]
   (log-message "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs                (local-filesystem)
         remote-vs          (DomainStore. fs remote-path)
@@ -70,25 +59,20 @@
         _                  (mkdirs lfs local-version-path)
         domain-state       ((:shard-states state) domain)
         shard-loaders      (dofor [s shards]
-                                  (let [f
-                                        (future
-                                          (load-domain-shard
-                                           fs
-                                           (:persistence-factory domain-spec)
-                                           local-config
-                                           (shard-path local-version-path s)
-                                           (shard-path
-                                            (.versionPath remote-vs remote-version) s)
-                                           (domain-state s)))]
+                                  (let [f (future (load-domain-shard
+                                                   fs
+                                                   (:persistence-factory domain-spec)
+                                                   local-config
+                                                   (shard-path local-version-path s)
+                                                   (shard-path
+                                                    (.versionPath remote-vs remote-version) s)
+                                                   (domain-state s)))]
                                     (swap! (:shard-loaders state) conj f)
-                                    f)
-                                  )]
+                                    f))]
     (future-values shard-loaders)
     (.succeedVersion local-vs local-version-path)
     (log-message "Successfully loaded domain at " remote-path " to " local-domain-root " with version " remote-version)
-    (open-domain local-config local-domain-root shards)
-    ))
-
+    (open-domain local-config local-domain-root shards)))
 
 (defn supervise-shard [max-kbs total-kb ^ShardState shard-state]
   (let [downloaded-kb (:downloaded-kb shard-state)
@@ -97,12 +81,10 @@
           sleep-ms (rand 1000)] ;; sleep random amount of time up to 1s
       (swap! total-kb + dl-kb)
       (if (>= @total-kb max-kbs)
-        (do
-          (reset! sleep-interval sleep-ms)
-          (reset! downloaded-kb 0))
-        (do
-          (reset! sleep-interval 0)
-          (reset! downloaded-kb 0))))))
+        (do (reset! sleep-interval sleep-ms)
+            (reset! downloaded-kb 0))
+        (do (reset! sleep-interval 0)
+            (reset! downloaded-kb 0))))))
 
 (defn supervise-downloads [amount-shards max-kbs interval-ms ^DownloadState state]
   (let [domain-to-shard-states (:shard-states state)

@@ -1,5 +1,5 @@
 (ns elephantdb.log
-  (:require [clojure.contrib [logging :as log]]))
+  (:require [clojure.contrib.logging :as log]))
 
 (defn log-message [& args]
   (log/info (apply str args)))

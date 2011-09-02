@@ -27,13 +27,12 @@
         users ["root" "elephantdb"]]
     (server-spec
      :phases {:bootstrap (phase-fn
-                          (automated-admin-user/automated-admin-user)
-                          (daemontools/daemontools)
+                          (automated-admin-user/automated-admin-user)            
                           (edb/filelimits fd-limit users))
               :configure (phase-fn
+                          (daemontools/daemontools)
                           (edb/setup)
-                          (edb/deploy))
-              })))
+                          (edb/deploy))})))
 
 (defnk edb-group-spec [ring :local? false]
   (group-spec (str "edb-" ring)

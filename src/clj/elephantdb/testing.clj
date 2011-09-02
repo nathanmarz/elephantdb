@@ -26,11 +26,11 @@
 
 (defn barrs= [& arrs]
   (and (apply = (map count arrs))
-   (every? identity
-           (apply map (fn [& vals]
-                        (or (every? nil? vals)
-                            (apply barr= vals)))
-                  arrs))))
+       (every? identity
+               (apply map (fn [& vals]
+                            (or (every? nil? vals)
+                                (apply barr= vals)))
+                      arrs))))
 
 (defn domain-data [& key-val-pairs]
   (map (fn [x]
@@ -41,8 +41,8 @@
 
 (defn delete-all [fs paths]
   (dorun
-    (for [t paths]
-      (.delete fs (path t) true))))
+   (for [t paths]
+     (.delete fs (path t) true))))
 
 (defmacro with-fs-tmp [[fs-sym & tmp-syms] & body]
   (let [tmp-paths (mapcat (fn [t]
@@ -51,16 +51,15 @@
     `(let [~fs-sym (filesystem)
            ~@tmp-paths]
        (.mkdirs ~fs-sym (path "/tmp/unittests"))
-        (try
-          ~@body
-          (finally
-           (delete-all ~fs-sym ~(vec tmp-syms)))
-        ))))
+       (try
+         ~@body
+         (finally
+          (delete-all ~fs-sym ~(vec tmp-syms)))))))
 
 (defmacro deffstest [name fs-args & body]
   `(deftest ~name
-      (with-fs-tmp ~fs-args
-        ~@body )))
+     (with-fs-tmp ~fs-args
+       ~@body)))
 
 (defn local-temp-path []
   (str (System/getProperty "java.io.tmpdir") "/" (uuid)))
@@ -69,36 +68,33 @@
   (let [tmp-paths (mapcat (fn [t] [t `(local-temp-path)]) tmp-syms)]
     `(let [~fs-sym (local-filesystem)
            ~@tmp-paths]
-      (try
-        ~@body
-      (finally
-       (delete-all ~fs-sym ~(vec tmp-syms)))
-      ))
-    ))
+       (try
+         ~@body
+         (finally
+          (delete-all ~fs-sym ~(vec tmp-syms)))))))
 
 (defmacro deflocalfstest [name local-args & body]
   `(deftest ~name
-      (with-local-tmp ~local-args
-        ~@body )))
+     (with-local-tmp ~local-args
+       ~@body)))
 
 (defn add-string [db key value]
-  (.add db (.getBytes key) (.getBytes value)))
+  (.add db
+        (.getBytes key)
+        (.getBytes value)))
 
 (defn get-string [db key]
-  (if-let [r (.get db (.getBytes key))]
-    (String. r)
-    nil ))
+  (when-let [r (.get db (.getBytes key))]
+    (String. r)))
 
 (defn get-kvpairs [db]
   (doall
    (for [kvp (seq db)]
-     [(. kvp key) (. kvp value)]
-     )))
+     [(. kvp key) (. kvp value)])))
 
 (defn get-string-kvpairs [db]
   (for [[k v] (get-kvpairs db)]
-    [(String. k) (String. v)]
-    ))
+    [(String. k) (String. v)]))
 
 (defn append-string-pairs [factory t pairs]
   (let [db (.openPersistenceForAppend factory t {})]
@@ -112,11 +108,9 @@
       (add-string db k v))
     (.close db)))
 
-
-;bind this to get different behavior when making sharded domains
+;;bind this to get different behavior when making sharded domains
 (defn test-key-to-shard [key numshards]
-  (Utils/keyShard key numshards)
-  )
+  (Utils/keyShard key numshards))
 
 (defn mk-elephant-writer [shards factory output-dir tmpdir & kargs]
   (let [kargs (apply hash-map kargs)
@@ -124,11 +118,10 @@
               (convert-clj-domain-spec
                {:num-shards shards
                 :persistence-factory factory})
-              output-dir)
-        ]
-    (if-let [upd (:updater kargs)]
+              output-dir)]
+    (when-let [upd (:updater kargs)]
       (set! (. args updater) upd))
-    (if-let [update-dir (:update-dir kargs)]
+    (when-let [update-dir (:update-dir kargs)]
       (set! (. args updateDirHdfs) update-dir))
     (.getRecordWriter (ElephantOutputFormat.)
                       nil
@@ -139,7 +132,7 @@
                          args )
                         (LocalElephantManager/setTmpDirs [tmpdir]))
                       nil
-                      nil )))
+                      nil)))
 
 (defnk mk-sharded-domain [fs path domain-spec keyvals :version nil]
   (with-local-tmp [lfs localtmp]
@@ -167,8 +160,7 @@
                   (IntWritable. s)
                   (ElephantRecordWritable. k v))))
       (.close writer nil)
-      (.succeedVersion vs dpath)
-      )))
+      (.succeedVersion vs dpath))))
 
 (defn reverse-pre-sharded [shardmap]
   (map-mapvals
@@ -182,8 +174,7 @@
         domain-spec {:num-shards (count shardmap) :persistence-factory factory}
         ]
     (binding [test-key-to-shard (fn [k _] (shards (ByteArray. k)))]
-      (mk-sharded-domain fs path domain-spec keyvals))
-    ))
+      (mk-sharded-domain fs path domain-spec keyvals))))
 
 (defn mk-local-config [local-dir]
   {:local-dir local-dir
@@ -198,13 +189,12 @@
       (while (not (.isFullyLoaded handler))
         (println "waiting...")
         (Thread/sleep 500))
-      handler )))
+      handler)))
 
 (defmacro with-sharded-domain [[pathsym domain-spec keyvals] & body]
   `(with-fs-tmp [fs# ~pathsym]
      (mk-sharded-domain fs# ~pathsym ~domain-spec ~keyvals)
-     ~@body
-     ))
+     ~@body))
 
 (defmacro with-presharded-domain [[dname pathsym factory shardmap] & body]
   `(with-fs-tmp [fs# ~pathsym]
@@ -218,20 +208,20 @@
                            (fn [d# k# a#]
                              (if (= d# ~dname)
                                (rev# (ByteArray. k#))
-                               (prev# d# k# a#)
-                               )))]
-       ~@body)
-     ))
+                               (prev# d# k# a#))))]
+       ~@body)))
 
 (defmacro with-service-handler
   [[handler-sym hosts domains-conf domain-to-host-to-shards] & body]
   (let [global-conf {:replication 1 :hosts hosts :domains domains-conf}]
     `(with-local-tmp [lfs# localtmp#]
-       (let [~handler-sym (mk-service-handler ~global-conf localtmp# (System/currentTimeMillis) ~domain-to-host-to-shards)]
+       (let [~handler-sym (mk-service-handler ~global-conf
+                                              localtmp#
+                                              (System/currentTimeMillis)
+                                              ~domain-to-host-to-shards)]
          (try
            ~@body
-           (finally (.shutdown ~handler-sym)))         
-         ))))
+           (finally (.shutdown ~handler-sym)))))))
 
 (defn mk-mocked-remote-multiget-fn [domain-to-host-to-shards shards-to-pairs down-hosts]
   (fn [host port domain keys]    
@@ -245,28 +235,24 @@
         (let [myval (find-first #(barr= key (first %)) pairs)]
           (if myval
             (mk-value (second myval))
-            (throw (wrong-host-ex)))
-          )))))
+            (throw (wrong-host-ex))))))))
 
 (defmacro with-mocked-remote [[domain-to-host-to-shards shards-to-pairs down-hosts] & body]
   ;; mock client/try-multi-get only for non local-hostname hosts
   `(binding [client/multi-get-remote (mk-mocked-remote-multiget-fn ~domain-to-host-to-shards ~shards-to-pairs ~down-hosts)]
-     ~@body
-     ))
+     ~@body))
 
 (defmacro with-single-service-handler
   [[handler-sym domains-conf] & body]
   `(with-service-handler [~handler-sym [(local-hostname)] ~domains-conf nil]
-     ~@body
-     ))
+     ~@body))
 
 (defn check-domain-pred [domain-name handler pairs pred]
   (doseq [[k v] pairs]
     (let [newv (-> handler (.get domain-name k) (.get_data))]
       (if (nil? v)
         (is (nil? newv))
-        (is (pred v newv) (str (seq k) (seq v) (seq newv))))
-      )))
+        (is (pred v newv) (str (seq k) (seq v) (seq newv)))))))
 
 (defn- objify-kvpairs [pairs]
   (for [[k v] pairs]
@@ -274,8 +260,7 @@
 
 (defn kv-pairs= [& pairs-seq]
   (let [pairs-seq (map objify-kvpairs pairs-seq)]
-    (apply = (map set pairs-seq))
-    ))
+    (apply = (map set pairs-seq))))
 
 (defn check-domain [domain-name handler pairs]
   (check-domain-pred domain-name handler pairs barr=))

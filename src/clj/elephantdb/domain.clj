@@ -1,6 +1,6 @@
 (ns elephantdb.domain
-  (:require [elephantdb [shard :as s]])
   (:use [elephantdb util thrift config])
+  (:require [elephantdb.shard :as s])
   (:import [elephantdb Utils]))
 
 ;; domain-status is an atom around a DomainStatus thrift object
@@ -15,9 +15,8 @@
 
 (defn domain-data
   ([domain-info shard]
-     (let [domain-data @(::domain-data domain-info)]
-       (when domain-data
-         (domain-data shard))))
+     (when-let [domain-data @(::domain-data domain-info)]
+       (domain-data shard)))
   ([domain-info]
      @(::domain-data domain-info)))
 
@@ -42,10 +41,10 @@
 (defn all-shards
   "Returns Map of domain-name to Set of shards for that domain"
   [domains-info]
-  (into {}
-        (map (fn [domain]
-               {domain (host-shards (domains-info domain))})
-               (keys domains-info))))
+  (->> (keys domains-info)
+       (map (fn [domain]
+              {domain (host-shards (domains-info domain))}))
+       (into {})))
 
 (defn key-hosts [domain domain-info #^bytes key]
   (s/key-hosts domain (::shard-index domain-info) key))

@@ -44,8 +44,7 @@
                             0 [0 0]
                             1 [1 1]
                             2 [2 2]
-                            3 nil)
-      )))
+                            3 nil))))
 
 (deftest test-multi-domain
   (let [data1 (domain-data 0 [0 0]
@@ -66,8 +65,7 @@
           (check-domain "d1" handler data1)
           (check-domain "d2" handler data2)
           (check-domain-not "d1" handler data2)
-          (check-domain-not "d2" handler data1)
-          )))))
+          (check-domain-not "d2" handler data1))))))
 
 (deftest test-multi-server
   (with-presharded-domain
@@ -91,10 +89,8 @@
                             0 [0 0]
                             20 [20 0]
                             2 nil)
-      (is (thrown?
-           Exception
-           (direct-get-val elephant "test1" (barr 10))))
-      )))
+      (is (thrown? Exception
+                   (direct-get-val elephant "test1" (barr 10)))))))
 
 (deftest test-caching
   (with-local-tmp [lfs local-dir]
@@ -129,8 +125,7 @@
                                 0 [0 1]
                                 4 [4 5]
                                 2 nil)
-          (.shutdown handler))
-        ))))
+          (.shutdown handler))))))
 
 (deftest test-update-synched
   (with-local-tmp [lfs local-dir]
@@ -190,7 +185,6 @@
                                 1 [22 22]
                                 2 [33 33]
                                 3 [44 44])
-
           (.shutdown handler))
 
         ;; now test with new version but different domain-spec
@@ -221,8 +215,7 @@
           (is (= "no-update" (first (.getDomains handler))))
           ;; make sure local path of domain has been deleted:
           (is (= false (.exists deleted-domain-path)))
-          (.shutdown handler))
-        ))))
+          (.shutdown handler))))))
 
 
 
@@ -249,8 +242,7 @@
         [elephant
          [(local-hostname) "host2"]
          {"test1" dpath}
-         domain-to-host-to-shards
-         ]
+         domain-to-host-to-shards]
         (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host4"]]
           (expected-domain-data elephant "test1"
                                 0 [0 0]
@@ -258,25 +250,18 @@
                                 2 nil)
           (is (barrs=
                [(barr 0 0) nil (barr 30 0)]
-               (multi-get-vals elephant "test1" [(barr 0) (barr 22) (barr 30)])
-               ))
+               (multi-get-vals elephant "test1" [(barr 0) (barr 22) (barr 30)])))
           (is (barrs=
                [(barr 0 0) (barr 1 1) nil (barr 30 0) (barr 10 0)]
-               (multi-get-vals elephant "test1" [(barr 0) (barr 1) (barr 2) (barr 30) (barr 10)])
-               ))
-          (is (= [] (multi-get-vals elephant "test1" [])))
-          )
+               (multi-get-vals elephant "test1" [(barr 0) (barr 1) (barr 2) (barr 30) (barr 10)])))
+          (is (= [] (multi-get-vals elephant "test1" []))))
         (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host3" "host4"]]
           (is (barrs=
                [(barr 0 0) (barr 10 0)]
-               (multi-get-vals elephant "test1" [(barr 0) (barr 10)])
-               ))
+               (multi-get-vals elephant "test1" [(barr 0) (barr 10)])))
           (is (thrown?
                Exception
-               (multi-get-vals elephant "test1" [(barr 0) (barr 22)])
-               ))
-          )
-        ))))
+               (multi-get-vals elephant "test1" [(barr 0) (barr 22)]))))))))
 
 (deftest test-live-updating
   (with-local-tmp [lfs local-dir]
@@ -385,8 +370,7 @@
           ;; wait a bit
           (while (.isUpdating handler)
             (Thread/sleep 100))
-
-
+          
           ;; domain1 and domain 2 should have changed
           (expected-domain-data handler "domain1"
                                 0 [1 1]
@@ -413,5 +397,4 @@
             (is (= false (.exists domain2-old-path1)))
             (is (= false (.exists domain2-old-path2))))
 
-          (.shutdown handler))
-        ))))
+          (.shutdown handler))))))
