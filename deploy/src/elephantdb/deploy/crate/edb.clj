@@ -21,7 +21,9 @@
                           ["releases" "shared" "log"]))
 
 (defn- template-context [req]
-  {"GLOBALCONF" (format "%s/global-conf.clj" s3-configs-dir (-> req :environment :ring))
+  {"GLOBALCONF" (str s3-configs-dir
+                     (-> req :environment :ring)
+                     "/global-conf.clj")
    "TOKEN" (int (/ (System/currentTimeMillis) 1000))})
 
 (defn make-release! []
@@ -37,11 +39,11 @@
       (.setAttribute template k v))
     (str template)))
 
-(defn render-remote-file! [req rel-path]
+(defn render-remote-file! [session rel-path]
   (let [dst-path (str service-dir rel-path)
         src-path (str local-template-dir rel-path)
-        render (render-template! src-path (template-context req))]
-    (-> req
+        render (render-template! src-path (template-context session))]
+    (-> session
         (remote-file dst-path :content render :mode 744))))
 
 (defn filelimits [session fd-limit user-seq]
