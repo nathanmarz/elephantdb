@@ -37,13 +37,25 @@
     (log-message "Starting ElephantDB server...")
     (.serve server)))
 
-;; the token is stored locally. If the token changes and there's newer
-;; data on the server, elephantdb will load it. Otherwise, elephantdb
-;; just uses whatever is local
-(defn -main [#^String global-config-hdfs-path #^String local-config-path #^String token]
+
+(defn -main
+  "Main booting function for all of EDB. Pass in:
+
+  `global-config-hdfs-path`: the path of `global-config.clj`, located
+    on ec2
+
+  `local-config-path`: the path to `local-config.clj` on this machine
+
+  `token`: some string, usually a timestamp.
+
+  the token is stored locally. If the token changes and there's newer
+data on the server, elephantdb will load it. Otherwise, elephantdb
+just uses whatever is local."
+  [global-config-hdfs-path local-config-path token]
   (PropertyConfigurator/configure "log4j/log4j.properties")
-  (let [lfs (local-filesystem)
-        local-config (merge DEFAULT-LOCAL-CONFIG
-                            (read-clj-config lfs local-config-path))
-        global-config (read-global-config global-config-hdfs-path local-config token)]
+  (let [local-config (-> (local-filesystem)
+                         (read-clj-config  local-config-path)
+                         (merge DEFAULT-LOCAL-CONFIG))
+        global-config (read-global-config global-config-hdfs-path
+                                          local-config token)]
     (launch-server! global-config local-config token)))

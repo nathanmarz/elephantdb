@@ -1,12 +1,12 @@
 (ns elephantdb.service
   (:use [elephantdb config log util hadoop loader])
-  (:import [java.util.concurrent.locks ReentrantReadWriteLock])
-  (:import [elephantdb.generated ElephantDB ElephantDB$Iface])
-  (:import [elephantdb Shutdownable client])
-  (:import [elephantdb.persistence LocalPersistence])
-  (:import [elephantdb.store DomainStore])
-  (:require [elephantdb [domain :as domain] [thrift :as thrift] [shard :as shard]])
-  (:require [clojure.contrib [str-utils :as str-utils]]))
+  (:import [java.util.concurrent.locks ReentrantReadWriteLock]
+           [elephantdb.generated ElephantDB ElephantDB$Iface]
+           [elephantdb Shutdownable client]
+           [elephantdb.persistence LocalPersistence]
+           [elephantdb.store DomainStore])
+  (:require [elephantdb [domain :as domain] [thrift :as thrift] [shard :as shard]]
+            [clojure.contrib [str-utils :as str-utils]]))
 
 ;; { :replication 2
 ;;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
@@ -171,8 +171,10 @@ Keep the cached versions of any domains that haven't been updated"
                                      (domain/host-shards (domains-info domain))))))
     domains-info))
 
-;; returns map of domain to domain info and launches futures that will fill in the domain info
-(defn- sync-data [global-config local-config token]
+(defn- sync-data
+  "returns map of domain to domain info and launches futures that will
+  fill in the domain info"
+  [global-config local-config token]
   (if (cache? global-config token)
     (sync-local global-config local-config)
     (sync-updated global-config local-config token)))
@@ -211,14 +213,18 @@ Keep the cached versions of any domains that haven't been updated"
 
 (defn- update-domains
   [service-handler download-supervisor all-domains domains-info global-config local-config]
-  (if (service-updating? service-handler download-supervisor)
+  (if (service-updating? service-handler
+                         download-supervisor)
     (log-message "UPDATER - Not updating as update process still in progress.")
     (let [max-kbs (:max-online-download-rate-kb-s local-config)
           all-shards (domain/all-shards domains-info)
-          domain-shards (into {} (map (fn [domain]
-                                        [domain (all-shards domain)])
-                                      all-domains))
-          shard-amount (reduce + 0 (map #(count %) (vals all-shards)))]
+          domain-shards (->> all-domains
+                             (map (fn [domain]
+                                    [domain (all-shards domain)]))
+                             (into {}))
+          shard-amount (->> (vals all-shards)
+                            (map #(count %))
+                            (reduce + 0))]
       (log-message "UPDATER - Updating domains: " (str-utils/str-join ", " all-domains))
       (let [^DownloadState state (mk-loader-state domain-shards)
             shard-amount (reduce + 0 (map #(count %) (vals (:shard-states state))))]
@@ -240,14 +246,20 @@ Keep the cached versions of any domains that haven't been updated"
                  (log-error t "Error when syncing data")
                  (throw t))))))))
 
-;; 1. after *first* load finishes, right the global config with the token within
-;; 2. when receive an update, open up the version and mkdir immediately,
-;;    start loading
+;; 1. after *first* load finishes, write the global config with the
+;; token within
+;;
+;; 2. when receive an update, open up the version and mkdir
+;;    immediately, start loading
+;;
 ;; 3. when starting up, if token is written start up immediately,
-;;    start up loaders for anything with incomplete version, clearing dir first
+;;    start up loaders for anything with incomplete version, clearing
+;;    dir first
+;;
 ;; 4. when loaders finish, complete the version and delete the old
 ;;    version (on startup should delete old versions) - does deletion
 ;;    need to be throttled?
+;;
 ;; 5. Create Hadoop FS on demand... need retry logic if loaders fail?
 
 
@@ -265,6 +277,7 @@ Keep the cached versions of any domains that haven't been updated"
 
 ;;  Example of domains-info local:
 ;;  {test {:elephantdb.domain/shard-index {:elephantdb.shard/hosts-to-shards {192.168.1.3 #{0 1 2 3}}, :elephantdb.shard/shards-to-hosts {3 #{192.168.1.3}, 2 #{192.168.1.3}, 1 #{192.168.1.3}, 0 #{192.168.1.3}}}, :elephantdb.domain/domain-status #<Atom@3643b5bb: #<DomainStatus <DomainStatus loading:LoadingStatus()>>>, :elephantdb.domain/domain-data #<Atom@4feaefc5: nil>}}
+
 (defn service-handler [global-config local-config token]
   (let [domains-info (sync-data global-config local-config token)
         client (atom nil)
@@ -307,7 +320,7 @@ Keep the cached versions of any domains that haven't been updated"
               (multiGetInt
                 [#^String domain keys]
                 (.multiGetInt @client domain keys))
-
+              
               (multiGetLong
                 [#^String domain keys]
                 (.multiGetLong @client domain keys))
@@ -321,10 +334,9 @@ Keep the cached versions of any domains that haven't been updated"
                               shard                  (domain/key-shard domain info key)
                               #^LocalPersistence lp  (domain/domain-data info shard)]
                           (log-debug "Direct get key " (seq key) "at shard " shard)
-                          (when-not lp
-                            (throw (thrift/wrong-host-ex)))
-                          (thrift/mk-value (.get lp key))
-                          ))))
+                          (if lp
+                            (thrift/mk-value (.get lp key))
+                            (throw (thrift/wrong-host-ex)))))))
 
               (getDomainStatus
                 [#^String domain]

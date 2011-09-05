@@ -66,24 +66,25 @@
 ;; shard-loaders:    Vector of all shard-loader futures used by the download supervisor
 (defrecord DownloadState [shard-states finished-loaders shard-loaders])
 
-;; Create new shard states
 (defn mk-shard-states [shards]
-  (into {}
-        (map (fn [s]
-               {s (ShardState. (atom 0) (atom 0))})
-             shards)))
+  (->> shards
+       (map (fn [s]
+              {s (ShardState. (atom 0) (atom 0))}))
+       (into {})))
 
-;; Create new LoaderState
-(defn mk-loader-state [domains-to-shards]
-  (let [shard-states (into {}
-                           (map (fn [[domain shards]]
-                                  {domain (mk-shard-states shards)})
-                                domains-to-shards))]
+(defn mk-loader-state
+  "Create new LoaderState"
+  [domains-to-shards]
+  (let [shard-states (->> domains-to-shards
+                          (map (fn [[domain shards]]
+                                 {domain (mk-shard-states shards)}))
+                          (into {}))]
     (DownloadState. shard-states (atom 0) (atom []))))
 
 (declare copy-local*)
 
-(defn- copy-file-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
+(defn- copy-file-local
+  [^FileSystem fs ^Path path ^String target-local-path ^bytes buffer ^ShardState state]
   (let [downloaded-kb (:downloaded-kb state)
         sleep-interval (:sleep-interval state)]
     (with-open [is (.open fs path)

@@ -107,23 +107,21 @@
       (let [host-map (group-by #(first (first %)) keys-to-get)
             rets (parallel-exec
                   (for [[host host-indexed-keys] host-map]
-                    (fn []
-                      [host
-                       (multi-get* this domain host host-indexed-keys key-shard-fn multi-get-remote-fn)]
-                      )))
-            succeeded (filter second rets)
+                    #(vector host (multi-get* this domain host host-indexed-keys key-shard-fn multi-get-remote-fn))))
+            succeeded       (filter second rets)
             succeeded-hosts (map first succeeded)
-            results (apply concat results (map second succeeded))
+            results         (->> (map second succeeded)
+                                 (apply concat results))
             failed-host-map (apply dissoc host-map succeeded-hosts)]
-        (if-not (empty? failed-host-map)
+        (if (empty? failed-host-map)
+          (map second (sort-by first results))
           (recur
            (for [[[_ & hosts] gi key all-hosts] (apply concat (vals failed-host-map))]
              (do
                (when (empty? hosts)
                  (throw (hosts-down-ex all-hosts)))
                [hosts gi key all-hosts]))
-           results)
-          (map second (sort-by first results)))))))
+           results))))))
 
 (defn -multiGetInt [this domain integers]
   (.multiGet this domain (map serialize-int integers)))

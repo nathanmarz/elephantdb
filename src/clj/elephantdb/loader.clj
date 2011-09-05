@@ -33,7 +33,8 @@
     (doseq [[shard lp] (domain/domain-data domain-info)]
       (try
         (.close lp)
-        (catch Throwable t (log-error t "Error when closing local persistence for domain: " domain " and shard: " shard) (throw t))))
+        (catch Throwable t
+          (log-error t "Error when closing local persistence for domain: " domain " and shard: " shard) (throw t))))
     (log-message "Finished closing domain: " domain)))
 
 ;; TODO: respect the max copy rate
