@@ -12,6 +12,7 @@
             [elephantdb.deploy.crate.edb :as edb]
             [elephantdb.deploy.crate.edb-configs :as edb-configs]))
 
+
 (defn- edb-node-spec [ring local?]
   (let [{port :port} (edb-configs/read-global-conf! ring)]
     (node-spec
@@ -22,22 +23,24 @@
                :hardware-id "m1.large"
                :inbound-ports [22 port]}))))
 
-(def edb-server-spec
+(defn edb-server-spec [admin-user]
   (let [fd-limit "500000"
-        users ["root" "elephantdb"]]
+        users ["root" (.username admin-user)]]
     (server-spec
      :phases {:bootstrap (phase-fn
-                          (automated-admin-user/automated-admin-user)            
+                          (automated-admin-user/automated-admin-user
+                           (.username admin-user)
+                           (.public-key-path admin-user))
                           (edb/filelimits fd-limit users))
               :configure (phase-fn
                           (daemontools/daemontools)
                           (edb/setup)
                           (edb/deploy))})))
 
-(defnk edb-group-spec [ring :local? false]
+(defnk edb-group-spec [ring user :local? false]
   (group-spec (str "edb-" ring)
               :node-spec (edb-node-spec ring local?)
-              :extends [edb-server-spec]))
+              :extends [(edb-server-spec user)]))
 
 
 

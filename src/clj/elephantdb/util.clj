@@ -22,7 +22,7 @@
           amap)))
 
 (defn local-hostname []
-  (.getCanonicalHostName (InetAddress/getLocalHost)))
+  (.getHostAddress (InetAddress/getLocalHost)))
 
 (defn find-first-next [pred aseq]
   (loop [[curr & restseq] aseq]

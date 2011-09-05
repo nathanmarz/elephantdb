@@ -9,6 +9,11 @@
   (:require [pallet.request-map :as rm]
             [pallet.session :as session]))
 
+(defn keywordize [x]
+  (if (keyword? x)
+    x
+    (keyword x)))
+
 (defn edb-config []
   (compute-service-properties (pallet-config) ["elephantdb"]))
 
@@ -16,28 +21,15 @@
   (let [ring (keywordize ring)]
     (-> (edb-config) :configs ring)))
 
-(defn keywordize [x]
-  (if (keyword? x)
-    x
-    (keyword x)))
-
 (defn read-global-conf! [ring]
   (:global (edb-ring-config ring)))
 
 (defn read-local-conf! [ring]
   (:local (edb-ring-config ring)))
 
-;; HACK: Construct ec2 internal hostname from internal ip.  Needed
-;; until Nathan allows internal ip in global-conf.clj
-(defn internal-hostname [node]
-  (format "ip-%s.ec2.internal"
-          (->> (private-ip node)
-               (re-seq #"\d+")
-               (join "-"))))
-
 (defn- global-conf-with-hosts
   [session local-config]
-  (let [hosts (map internal-hostname (session/nodes-in-group session))]
+  (let [hosts (map private-ip (session/nodes-in-group session))]
     (prn-str (assoc local-config :hosts hosts))))
 
 ;; TODO: Move path out to config staging path in pallet config.

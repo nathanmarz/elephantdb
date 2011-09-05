@@ -8,7 +8,7 @@
   :dev-dependencies [[swank-clojure "1.4.0-SNAPSHOT"]
                      [clojure-source "1.2.0"]
                      [vmfest "0.2.3"]
-                     [org.cloudhoist/pallet "0.6.4"]
+                     [org.cloudhoist/pallet "0.6.2"]
                      [org.cloudhoist/java "0.5.0"]
                      [org.cloudhoist/git "0.5.0"]
                      [org.cloudhoist/ssh-key "0.5.0"]
