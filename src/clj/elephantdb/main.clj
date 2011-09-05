@@ -1,21 +1,21 @@
 (ns elephantdb.main
-  (:import [org.apache.thrift.server THsHaServer THsHaServer$Options])
-  (:import [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory])
-  (:import [org.apache.thrift TException])
-  (:import [org.apache.log4j PropertyConfigurator])
-  (:import [elephantdb.generated ElephantDB ElephantDB$Processor])
-  (:import [org.apache.thrift.transport TNonblockingServerTransport TNonblockingServerSocket])
-  (:require [elephantdb [service :as service]])
-  (:use [elephantdb config log hadoop])
+  (:use [elephantdb config hadoop])
+  (:require [elephantdb.log :as log]
+            [elephantdb.service :as service])
+  (:import [org.apache.thrift.server THsHaServer THsHaServer$Options]
+           [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory]
+           [org.apache.thrift TException]
+           [elephantdb.generated ElephantDB ElephantDB$Processor]
+           [org.apache.thrift.transport TNonblockingServerTransport TNonblockingServerSocket])
   (:gen-class))
 
 (defn launch-updater! [interval-secs service-handler]
   (let [interval-ms (* 1000 interval-secs)]
     (future
-      (log-message "Starting updater process with an interval of: " interval-secs " seconds...")
+      (log/log-message "Starting updater process with an interval of: " interval-secs " seconds...")
       (loop []
         (Thread/sleep interval-ms)
-        (log-message "Updater process: Checking if update is possible...")
+        (log/log-message "Updater process: Checking if update is possible...")
         (.updateAll service-handler)
         (recur)))))
 
@@ -32,9 +32,9 @@
                       (Thread. (fn []
                                  (.shutdown service-handler)
                                  (.stop server))))
-    (log-message "Starting updater process...")
+    (log/log-message "Starting updater process...")
     (launch-updater! (:update-interval-s local-config) service-handler)
-    (log-message "Starting ElephantDB server...")
+    (log/log-message "Starting ElephantDB server...")
     (.serve server)))
 
 
@@ -52,7 +52,7 @@
 data on the server, elephantdb will load it. Otherwise, elephantdb
 just uses whatever is local."
   [global-config-hdfs-path local-config-path token]
-  (PropertyConfigurator/configure "log4j/log4j.properties")
+  (log/configure-logging "log4j/log4j.properties")
   (let [local-config (-> (local-filesystem)
                          (read-clj-config  local-config-path)
                          (merge DEFAULT-LOCAL-CONFIG))
