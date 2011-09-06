@@ -1,6 +1,6 @@
 (ns elephantdb.log
   (:require [clojure.contrib.logging :as log])
-  (:import [org.apache.log4j PropertyConfigurator]))
+  (:import [org.apache.log4j PropertyConfigurator Logger Level]))
 
 (defn configure-logging [path]
   (PropertyConfigurator/configure path))
@@ -13,3 +13,20 @@
 
 (defn log-debug [& args]
   (log/debug (apply str args)))
+
+(def log-levels
+  {:fatal Level/FATAL
+   :warn  Level/WARN
+   :info  Level/INFO
+   :debug Level/DEBUG
+   :off   Level/OFF})
+
+(defmacro with-log-level [level & body]
+  `(let [with-lev#  (log-levels ~level)
+         logger#    (Logger/getRootLogger)
+         prev-lev#  (.getLevel logger#)]
+     (try
+       (.setLevel logger# with-lev#)
+       ~@body
+       (finally
+        (.setLevel logger# prev-lev#)))))
