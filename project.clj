@@ -4,6 +4,7 @@
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
   :repositories {"oracle" "http://download.oracle.com/maven"}
+  :main elephantdb.main
   :dependencies [[org.clojure/clojure "1.2.1"]
                  [org.clojure/clojure-contrib "1.2.0"]
                  [jvyaml "1.0.0"]

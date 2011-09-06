@@ -302,7 +302,8 @@ Keep the cached versions of any domains that haven't been updated"
 ;;  Example of domains-info local:
 ;;  {test {:elephantdb.domain/shard-index {:elephantdb.shard/hosts-to-shards {192.168.1.3 #{0 1 2 3}}, :elephantdb.shard/shards-to-hosts {3 #{192.168.1.3}, 2 #{192.168.1.3}, 1 #{192.168.1.3}, 0 #{192.168.1.3}}}, :elephantdb.domain/domain-status #<Atom@3643b5bb: #<DomainStatus <DomainStatus loading:LoadingStatus()>>>, :elephantdb.domain/domain-data #<Atom@4feaefc5: nil>}}
 
-(defn service-handler [global-config local-config token]
+(defn service-handler
+  [global-config local-config token]
   (let [domains-info (sync-data global-config local-config token)
         client (atom nil)
         #^ReentrantReadWriteLock rw-lock (mk-rw-lock)
