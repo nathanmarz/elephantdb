@@ -92,41 +92,6 @@
       (is (thrown? Exception
                    (direct-get-val elephant "test1" (barr 10)))))))
 
-(deftest test-caching
-  (with-local-tmp [lfs local-dir]
-    (with-fs-tmp [fs dtmp gtmp]
-      (let [domain-spec {:num-shards 4 :persistence-factory (JavaBerkDB.)}
-            local-config (mk-local-config local-dir)]
-        (write-clj-config! {:replication 1
-                            :hosts [(local-hostname)]
-                            :domains {"test" dtmp}}
-                           fs
-                           gtmp)
-        (mk-sharded-domain fs dtmp domain-spec
-                           (domain-data 0 [0 0]
-                                        1 [1 1]
-                                        2 [2 2]
-                                        3 [3 3]))
-        ;; NOTE: should really just to the read global config in mk-service-handler
-        (.shutdown
-         (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil))
-        (mk-sharded-domain fs dtmp domain-spec
-                           (domain-data 0 [0 1]
-                                        3 [3 4]
-                                        4 [4 5]))
-        (let [handler (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil)]
-          (expected-domain-data handler "test"
-                                0 [0 0]
-                                2 [2 2]
-                                4 nil)
-          (.shutdown handler))
-        (let [handler (mk-service-handler (read-global-config gtmp local-config "112") local-dir "112" nil)]
-          (expected-domain-data handler "test"
-                                0 [0 1]
-                                4 [4 5]
-                                2 nil)
-          (.shutdown handler))))))
-
 (deftest test-update-synched
   (with-local-tmp [lfs local-dir]
     (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
@@ -154,7 +119,8 @@
 
         ;; start edb and shutdown right away to get version 1 of both domains
         (.shutdown
-         (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil))
+         (-> (read-global-config gtmp local-config)
+             (mk-service-handler local-dir "111" nil)))
 
         ;; create new version only for do-update domain
         ;; create version 1 for no-update (override to make sure it didn't reload this version)
@@ -171,7 +137,8 @@
                                         2 [33 33]
                                         3 [44 44]) :version 2)
 
-        (let [handler (mk-service-handler (read-global-config gtmp local-config "222") local-dir "222" nil)]
+        (let [handler (-> (read-global-config gtmp local-config)
+                          (mk-service-handler local-dir "222" nil))]
           ;; domain no-update should not have changed
           (expected-domain-data handler "no-update"
                                 0 [0 0]
@@ -196,7 +163,8 @@
                                           2 [77 77]
                                           3 [88 88]) :version 3))
 
-        (let [handler (mk-service-handler (read-global-config gtmp local-config "333") local-dir "333" nil)]
+        (let [handler (-> (read-global-config gtmp local-config)
+                          (mk-service-handler local-dir "333" nil))]
           (is (thrift/status-failed? (.getDomainStatus handler "do-update")))
           (is (thrift/status-ready? (.getDomainStatus handler "no-update")))
           (.shutdown handler))
@@ -209,15 +177,15 @@
                             :domains {"no-update" dtmp1}}
                            fs
                            gtmp)
-        (let [handler (mk-service-handler (read-global-config gtmp local-config "444") local-dir "444" nil)
+        (let [handler (-> (read-global-config gtmp local-config)
+                          (mk-service-handler local-dir "444" nil))
               deleted-domain-path (.pathToFile lfs (path local-dir "do-update"))]
           (is (= 1 (.size (.getDomains handler))))
           (is (= "no-update" (first (.getDomains handler))))
-          ;; make sure local path of domain has been deleted:
+
+          "make sure local path of domain has been deleted:"
           (is (= false (.exists deleted-domain-path)))
           (.shutdown handler))))))
-
-
 
 ;; TODO: need to do something to prioritize hosts in tests (override get-priority-hosts)
 (deftest test-multi-get
@@ -289,7 +257,8 @@
                                         3 [40 40]) :version 1)
 
         ;; start up edb service
-        (let [handler (mk-service-handler (read-global-config gtmp local-config "111") local-dir "111" nil)]
+        (let [handler (-> (read-global-config gtmp local-config)
+                          (mk-service-handler local-dir "111" nil))]
 
           ;; create version 2 for domain2
           (mk-sharded-domain fs dtmp2 domain-spec

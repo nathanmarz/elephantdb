@@ -35,22 +35,17 @@
     (log/log-message "Starting ElephantDB server...")
     (.serve server)))
 
+;; TODO: Remove token from the deploy script.
 (defn -main
   "Main booting function for all of EDB. Pass in:
 
   `global-config-hdfs-path`: the path of `global-config.clj`, located
     on ec2
 
-  `local-config-path`: the path to `local-config.clj` on this machine
-
-  `token`: some string, usually a timestamp.
-
-  the token is stored locally. If the token changes and there's newer
-data on the server, elephantdb will load it. Otherwise, elephantdb
-just uses whatever is local."
-  [global-config-hdfs-path local-config-path token]
+  `local-config-path`: the path to `local-config.clj` on this machine."
+  [global-config-hdfs-path local-config-path]
   (log/configure-logging "log4j/log4j.properties")
   (let [local-config  (read-local-config local-config-path)
         global-config (read-global-config global-config-hdfs-path
-                                          local-config token)]
+                                          local-config)]
     (launch-server! global-config local-config token)))
