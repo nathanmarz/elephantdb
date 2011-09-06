@@ -42,11 +42,12 @@
          ;; Actually, we should be checking the same condition as
          ;; close-if-updated, and swapping first.
          
-         (if-let [domain-data (loader-fn domain)]
-          
+         (let [domain-data (loader-fn domain)]
+           
            ;; Here, we finally do the swap.
-           (domain/set-domain-data! (domains-info domain)
-                                    domain-data)
+           (when domain-data
+             (domain/set-domain-data! (domains-info domain)
+                                      domain-data))
            (domain/set-domain-status!
             (domains-info domain)
             (thrift/ready-status false)))
@@ -55,27 +56,6 @@
            (domain/set-domain-status!
             (domains-info domain)
             (thrift/failed-status t))))))
-
-#_(defn load-and-sync-status-of-domain
-  [domain domains-info update? loader-fn]
-  (future
-    (try
-      (domain/set-domain-status! (domains-info domain)
-                                 (if update?
-                                   (thrift/ready-status true)
-                                   (thrift/loading-status)))
-      (let [domain-data (loader-fn domain)]
-        (when domain-data
-          (domain/set-domain-data! (domains-info domain)
-                                   domain-data))
-        (domain/set-domain-status!
-         (domains-info domain)
-         (thrift/ready-status false)))
-      (catch Throwable t
-        (log-error t "Error when loading domain " domain)
-        (domain/set-domain-status!
-         (domains-info domain)
-         (thrift/failed-status t))))))
 
 (defn load-and-sync-status
   ([domains-info update? loader-fn]
