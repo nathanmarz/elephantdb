@@ -22,11 +22,10 @@
 (def service-subdirs (map (partial str service-dir)
                           ["releases" "shared" "log"]))
 
-(defn- template-context [req]
+(defn- template-context [session]
   {"GLOBALCONF" (str s3-configs-dir
-                     (-> req :environment :ring)
-                     "/global-conf.clj")
-   "TOKEN" (int (/ (System/currentTimeMillis) 1000))})
+                     (-> session :environment :ring)
+                     "/global-conf.clj")})
 
 (defn make-release! []
   (let [filename "../release.tar.gz"]
@@ -69,7 +68,7 @@
    (render-remote-file! "run")
    (render-remote-file! "log/run")))
 
-(defn deploy [session & {:keys [new-token] :or {new-token true}}]
+(defn deploy [session]
   (let [time (System/currentTimeMillis)
         releases-dir (str service-dir "releases/")
         new-release-dir (str releases-dir time)
@@ -80,8 +79,7 @@
     (-> session
         (directory new-release-dir :action :create)
         (remote-file new-release-file :local-file "release.tar.gz")
-        (when-> new-token
-                (render-remote-file! "shared/run-elephant.sh"))
+        (render-remote-file! "shared/run-elephant.sh")
         (exec-script (cd ~new-release-dir)
                      (tar xvzfop ~new-release-file)
                      (export "LEIN_ROOT=1")

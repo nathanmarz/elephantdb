@@ -1,12 +1,16 @@
+;; Namespace includes all functions necessary to destructure, read,
+;; write and create elephantdb config maps.
+
 (ns elephantdb.config
-  "Point of this namespace is to contain all io, settings, etc around
-configs."
   (:use elephantdb.hadoop)
   (:require [clojure.contrib.duck-streams :as d])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.persistence LocalPersistenceFactory]))
 
-;; We need to get everything in here, and start to remove token
+;; ## Local and Global Configs
+;;
+;; TODO: Discuss what's included in the local and global
+;; configurations.
 
 ;; { :replication 2
 ;;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
@@ -71,7 +75,9 @@ configs."
   (d/spit (global-config-cache-path local-config)
           global-config))
 
-(defn cache? [global-config token]
+(defn cache?
+  "TODO: Remove this, when we remove caching."
+  [global-config token]
   (= (:token global-config) token))
 
 (defn convert-java-domain-spec [spec]
@@ -96,12 +102,14 @@ configs."
 (defmethod persistence-str Class [persistence] (.getName persistence))
 (defmethod persistence-str LocalPersistenceFactory [persistence] (.getName (class persistence)))
 
-(defn persistence-options [local-config persistence]
+(defn persistence-options
+  [local-config persistence]
   (get (:local-db-conf local-config)
        (persistence-str persistence)
        {}))
 
-(defn read-local-config [local-config-path]
+(defn read-local-config
+  [local-config-path]
   (merge DEFAULT-LOCAL-CONFIG
          (read-clj-config (local-filesystem)
                           local-config-path)))

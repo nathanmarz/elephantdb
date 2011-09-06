@@ -180,17 +180,21 @@
    :max-online-download-rate-kb-s 1024
    :update-interval-s 60})
 
-(defn mk-service-handler [global-config localdir token domain-to-host-to-shards]
+(defn mk-service-handler
+  [global-config localdir token domain-to-host-to-shards]
   (binding [compute-host-to-shards (if domain-to-host-to-shards
                                      (fn [d _ _ _] (domain-to-host-to-shards d))
                                      compute-host-to-shards)]
-    (let [handler (service-handler global-config (mk-local-config localdir) token)]
+    (let [handler (service-handler global-config
+                                   (mk-local-config localdir)
+                                   token)]
       (while (not (.isFullyLoaded handler))
         (println "waiting...")
         (Thread/sleep 500))
       handler)))
 
-(defmacro with-sharded-domain [[pathsym domain-spec keyvals] & body]
+(defmacro with-sharded-domain
+  [[pathsym domain-spec keyvals] & body]
   `(with-fs-tmp [fs# ~pathsym]
      (mk-sharded-domain fs# ~pathsym ~domain-spec ~keyvals)
      ~@body))
@@ -256,7 +260,8 @@
 
 (defn- objify-kvpairs [pairs]
   (for [[k v] pairs]
-    [(ByteArray. k) (ByteArray. v)]))
+    [(ByteArray. k)
+     (ByteArray. v)]))
 
 (defn kv-pairs= [& pairs-seq]
   (let [pairs-seq (map objify-kvpairs pairs-seq)]

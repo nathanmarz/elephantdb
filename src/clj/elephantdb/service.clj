@@ -42,8 +42,7 @@
          ;; Actually, we should be checking the same condition as
          ;; close-if-updated, and swapping first.
          
-         (let [domain-data (loader-fn domain)]
-           
+         (let [domain-data (loader-fn domain)]  
            ;; Here, we finally do the swap.
            (when domain-data
              (domain/set-domain-data! (domains-info domain)

@@ -35,7 +35,6 @@
     (log/log-message "Starting ElephantDB server...")
     (.serve server)))
 
-;; TODO: Remove token from the deploy script.
 (defn -main
   "Main booting function for all of EDB. Pass in:
 
