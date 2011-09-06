@@ -51,10 +51,9 @@
     `(let [~fs-sym (filesystem)
            ~@tmp-paths]
        (.mkdirs ~fs-sym (path "/tmp/unittests"))
-       (try
-         ~@body
-         (finally
-          (delete-all ~fs-sym ~(vec tmp-syms)))))))
+       (try ~@body
+            (finally
+             (delete-all ~fs-sym ~(vec tmp-syms)))))))
 
 (defmacro deffstest [name fs-args & body]
   `(deftest ~name
@@ -112,7 +111,8 @@
 (defn test-key-to-shard [key numshards]
   (Utils/keyShard key numshards))
 
-(defn mk-elephant-writer [shards factory output-dir tmpdir & kargs]
+(defn mk-elephant-writer
+  [shards factory output-dir tmpdir & kargs]
   (let [kargs (apply hash-map kargs)
         args (ElephantOutputFormat$Args.
               (convert-clj-domain-spec
@@ -171,8 +171,7 @@
 (defn mk-presharded-domain [fs path factory shardmap]
   (let [keyvals (apply concat (vals shardmap))
         shards (reverse-pre-sharded shardmap)
-        domain-spec {:num-shards (count shardmap) :persistence-factory factory}
-        ]
+        domain-spec {:num-shards (count shardmap) :persistence-factory factory}]
     (binding [test-key-to-shard (fn [k _] (shards (ByteArray. k)))]
       (mk-sharded-domain fs path domain-spec keyvals))))
 
@@ -219,9 +218,8 @@
                                               localtmp#
                                               (System/currentTimeMillis)
                                               ~domain-to-host-to-shards)]
-         (try
-           ~@body
-           (finally (.shutdown ~handler-sym)))))))
+         (try ~@body
+              (finally (.shutdown ~handler-sym)))))))
 
 (defn mk-mocked-remote-multiget-fn [domain-to-host-to-shards shards-to-pairs down-hosts]
   (fn [host port domain keys]    
@@ -232,14 +230,16 @@
     (let [shards ((domain-to-host-to-shards domain) host)
           pairs (apply concat (vals (select-keys shards-to-pairs shards)))]
       (for [key keys]
-        (let [myval (find-first #(barr= key (first %)) pairs)]
-          (if myval
-            (mk-value (second myval))
-            (throw (wrong-host-ex))))))))
+        (if-let [myval (find-first #(barr= key (first %)) pairs)]
+          (mk-value (second myval))
+          (throw (wrong-host-ex)))))))
 
-(defmacro with-mocked-remote [[domain-to-host-to-shards shards-to-pairs down-hosts] & body]
+(defmacro with-mocked-remote
+  [[domain-to-host-to-shards shards-to-pairs down-hosts] & body]
   ;; mock client/try-multi-get only for non local-hostname hosts
-  `(binding [client/multi-get-remote (mk-mocked-remote-multiget-fn ~domain-to-host-to-shards ~shards-to-pairs ~down-hosts)]
+  `(binding [client/multi-get-remote (mk-mocked-remote-multiget-fn ~domain-to-host-to-shards
+                                                                   ~shards-to-pairs
+                                                                   ~down-hosts)]
      ~@body))
 
 (defmacro with-single-service-handler

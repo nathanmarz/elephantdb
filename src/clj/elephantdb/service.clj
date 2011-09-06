@@ -21,9 +21,9 @@
 (defn- init-domain-info-map [fs global-config]
   (log-message "Global config: " global-config)
   (let [domain-shards (shard/shard-domains fs global-config)]
-    (into {}
-          (dofor [domain (keys (:domains global-config))]
-                 [domain (domain/init-domain-info (domain-shards domain))]))))
+    (->> (dofor [domain (keys (:domains global-config))]
+                [domain (domain/init-domain-info (domain-shards domain))])
+         (into {}))))
 
 (defn load-and-sync-status-of-domain
   [domain domains-info update? loader-fn]
@@ -59,12 +59,19 @@
 
 (defn load-and-sync-status
   ([domains-info update? loader-fn]
-     (load-and-sync-status (keys domains-info) domains-info update? loader-fn))
+     (load-and-sync-status (keys domains-info)
+                           domains-info
+                           update?
+                           loader-fn))
   ([domains domains-info update? loader-fn]
      (let [loaders (dofor [domain domains]
-                          (load-and-sync-status-of-domain domain domains-info update? loader-fn))]
+                          (load-and-sync-status-of-domain domain
+                                                          domains-info
+                                                          update?
+                                                          loader-fn))]
        (with-ret (future-values loaders)
-         (log-message "Successfully loaded domains: " (str-utils/str-join ", " domains))))))
+         (log-message "Successfully loaded domains: "
+                      (str-utils/str-join ", " domains))))))
 
 (defn domain-needs-update? [local-vs remote-vs]
   (or (nil? (.mostRecentVersion local-vs))
@@ -107,7 +114,8 @@
                                             (domain/host-shards (domains-info domain)) }))))
 
 (defn delete-deleted-domains
-  "Deletes all domains from local filesystem that have been deleted from the global config."
+  "Deletes all domains from local filesystem that have been deleted
+  from the global config."
   [domains-info global-config local-config]
   (let [lfs (local-filesystem)
         local-dir (:local-dir local-config)
@@ -118,28 +126,31 @@
         (log-message "Deleting local path of deleted domain: " domain-path)
         (delete lfs (.getPath domain-path) true)))))
 
-(defn sync-data-updated [domains-info global-config local-config]
+(defn sync-data-updated
+  [domains-info global-config local-config]
   (load-and-sync-status domains-info
                         false
                         (fn [domain]
                           (use-cache-or-update domain domains-info global-config local-config))))
 
-(defn cleanup-domain [domain domains-info local-config]
+(defn cleanup-domain
+  [domain domains-info local-config]
   (let [lfs (local-filesystem)
         local-dir (:local-dir local-config)]
     (let [local-domain-root (str (path local-dir domain))
           local-vs (DomainStore. lfs local-domain-root)]
-      (log-message "Cleaning up local domain versions (only keeping latest version) for domain: " domain)
+      (log-message "Cleaning up local domain versions (only keeping latest version) for domain: "
+                   domain)
       (.cleanup local-vs 1))))
 
-(defn cleanup-domains [domains-info local-config]
+(defn cleanup-domains
+  [domains-info local-config]
   (let [error (atom nil)]
     (doseq [domain (keys domains-info)]
-      (try
-        (cleanup-domain domain domains-info local-config)
-        (catch Throwable t
-          (log-error t "Error when cleaning old versions of domain: " domain)
-          (reset! error t))))
+      (try (cleanup-domain domain domains-info local-config)
+           (catch Throwable t
+             (log-error t "Error when cleaning old versions of domain: " domain)
+             (reset! error t))))
     (when-let [e @error]
       (throw e))))
 
@@ -153,18 +164,18 @@ Keep the cached versions of any domains that haven't been updated"
         cache-config (assoc global-config :token token)]
     (log-message "Domains info: " domains-info)
     (future
-      (try
-        (delete-deleted-domains domains-info global-config local-config)
-        (sync-data-updated domains-info global-config local-config)
-        (cleanup-domains domains-info local-config)
-        (log-message "Caching global config " cache-config)
-        (cache-global-config! local-config cache-config)
-        (log-message "Cached config " (read-cached-global-config local-config))
-        (log-message "Finished loading all updated domains from remote")
-        (catch Throwable t (log-error t "Error when syncing data") (throw t))))
+      (try (delete-deleted-domains domains-info global-config local-config)
+           (sync-data-updated domains-info global-config local-config)
+           (cleanup-domains domains-info local-config)
+           (log-message "Caching global config " cache-config)
+           (cache-global-config! local-config cache-config)
+           (log-message "Cached config " (read-cached-global-config local-config))
+           (log-message "Finished loading all updated domains from remote")
+           (catch Throwable t (log-error t "Error when syncing data") (throw t))))
     domains-info))
 
-(defn sync-local [global-config local-config]
+(defn sync-local
+  [global-config local-config]
   (log-message "Loading cached data")
   (let [lfs (local-filesystem)
         local-dir (:local-dir local-config)
@@ -192,7 +203,8 @@ Keep the cached versions of any domains that haven't been updated"
     (sync-local global-config local-config)
     (sync-updated global-config local-config token)))
 
-(defn- close-lps [domains-info]
+(defn- close-lps
+  [domains-info]
   (doseq [[domain info] domains-info]
     (doseq [shard (domain/host-shards info)]
       (let [lp (domain/domain-data info shard)]

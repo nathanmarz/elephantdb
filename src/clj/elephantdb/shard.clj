@@ -24,15 +24,15 @@
 
 (defn shard-domains [fs global-config]
   (log-message "shard-domains" global-config)
-  (into {}
-        (dofor [[domain remote-location] (:domains global-config)]
-               (let [domain-spec (read-domain-spec fs remote-location)]
-                 (log-message "Domain spec for " domain ": " domain-spec)
-                 [domain (shard-domain
-                          domain
-                          (:hosts global-config)
-                          (:num-shards domain-spec)
-                          (:replication global-config))]))))
+  (->> (dofor [[domain remote-location] (:domains global-config)]
+              (let [domain-spec (read-domain-spec fs remote-location)]
+                (log-message "Domain spec for " domain ": " domain-spec)
+                [domain (shard-domain
+                         domain
+                         (:hosts global-config)
+                         (:num-shards domain-spec)
+                         (:replication global-config))]))
+       (into {})))
 
 (defn host-shards [index host]
   ((::hosts-to-shards index) host))

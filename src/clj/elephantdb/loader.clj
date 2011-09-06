@@ -38,14 +38,20 @@
     (log-message "Finished closing domain: " domain)))
 
 ;; TODO: respect the max copy rate
-;; TODO: do a streaming recursive copy that can be rate limited (rate limited with the other shards...)
-(defn load-domain-shard [fs persistence-factory local-config local-shard-path remote-shard-path ^ShardState state]
+;;
+;; TODO: do a streaming recursive copy that can be rate limited (rate
+;; limited with the other shards...)
+
+(defn load-domain-shard
+  [fs persistence-factory local-config local-shard-path remote-shard-path ^ShardState state]
   (if (.exists fs (path remote-shard-path))
     (do (log-message "Copying " remote-shard-path " to " local-shard-path)
         (copy-local fs remote-shard-path local-shard-path state)
         (log-message "Copied " remote-shard-path " to " local-shard-path))
     (do (log-message "Shard " remote-shard-path " did not exist. Creating empty LP")
-        (.close (.createPersistence persistence-factory local-shard-path (persistence-options local-config persistence-factory))))))
+        (.close (.createPersistence persistence-factory
+                                    local-shard-path
+                                    (persistence-options local-config persistence-factory))))))
 
 (defn load-domain
   "returns a map from shard to LP."
@@ -72,20 +78,24 @@
                                     f))]
     (future-values shard-loaders)
     (.succeedVersion local-vs local-version-path)
-    (log-message "Successfully loaded domain at " remote-path " to " local-domain-root " with version " remote-version)
+    (log-message (format "Successfully loaded domain at %s to %s with version %s."
+                         remote-path
+                         local-domain-root
+                         remote-version))
     (open-domain local-config local-domain-root shards)))
 
-(defn supervise-shard [max-kbs total-kb ^ShardState shard-state]
+(defn supervise-shard
+  [max-kbs total-kb ^ShardState shard-state]
   (let [downloaded-kb (:downloaded-kb shard-state)
         sleep-interval (:sleep-interval shard-state)]
     (let [dl-kb @downloaded-kb
           sleep-ms (rand 1000)] ;; sleep random amount of time up to 1s
       (swap! total-kb + dl-kb)
-      (if (>= @total-kb max-kbs)
-        (do (reset! sleep-interval sleep-ms)
-            (reset! downloaded-kb 0))
-        (do (reset! sleep-interval 0)
-            (reset! downloaded-kb 0))))))
+      (reset! sleep-interval
+              (if (>= @total-kb max-kbs)
+                sleep-ms
+                0))
+      (reset! downloaded-kb 0))))
 
 (defn supervise-downloads [amount-shards max-kbs interval-ms ^DownloadState state]
   (let [domain-to-shard-states (:shard-states state)

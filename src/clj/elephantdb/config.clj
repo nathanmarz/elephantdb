@@ -59,16 +59,17 @@
   (= (:token global-config) token))
 
 (defn convert-java-domain-spec [spec]
-  (struct domain-spec-struct (.getLPFactory spec) (.getNumShards spec)))
+  (struct domain-spec-struct
+          (.getLPFactory spec)
+          (.getNumShards spec)))
 
 (defn convert-clj-domain-spec [spec-map]
-  (DomainSpec. (:persistence-factory spec-map) (:num-shards spec-map)))
+  (DomainSpec. (:persistence-factory spec-map)
+               (:num-shards spec-map)))
 
 (defn read-domain-spec [fs path]
-  (let [spec (DomainSpec/readFromFileSystem fs path)]
-    (if-not spec
-      nil
-      (convert-java-domain-spec spec))))
+  (when-let [spec (DomainSpec/readFromFileSystem fs path)]
+    (convert-java-domain-spec spec)))
 
 (defn write-domain-spec! [spec-map fs path]
   (let [spec (convert-clj-domain-spec spec-map)]

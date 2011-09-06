@@ -24,7 +24,7 @@
           :domain-shard-indexes (shard/shard-domains (filesystem fs-conf) global-conf)}]))
 
 (defn- get-index [this domain]
-  (if-let [index ((:domain-shard-indexes (. this state)) domain)]
+  (if-let [index ((:domain-shard-indexes (.state this)) domain)]
     index
     (throw (domain-not-found-ex domain))))
 
@@ -42,30 +42,29 @@
       hosts)))
 
 (defn- ring-port [this]
-  (:port (:global-conf (.state this))))
+  (-> this .state :global-conf :port))
 
 (defn multi-get-remote [host port domain keys]
   (with-elephant-connection host port client
     (.directMultiGet client domain keys)))
 
 (defn- try-multi-get [this domain keys totry]
-  (try
-    (if (and (my-local-elephant this)
-             (= totry (my-local-hostname this)))
-      (.directMultiGet (my-local-elephant this) domain keys)
-      (multi-get-remote totry (ring-port this) domain keys))
-    (catch TException e
-      ;; try next host
-      (log-error e "Thrift exception on " totry ":" domain "/" keys))
-    (catch WrongHostException e
-      (log-error e "Fatal exception on " totry ":" domain "/" keys)
-      (throw (TException. "Fatal exception when performing get" e)))
-    (catch DomainNotFoundException e
-      (log-error e "Could not find domain when executing read on " totry ":" domain "/" keys)
-      (throw e))
-    (catch DomainNotLoadedException e
-      (log-error e "Domain not loaded when executing read on " totry ":" domain "/" keys)
-      (throw e))))
+  (try (if (and (my-local-elephant this)
+                (= totry (my-local-hostname this)))
+         (.directMultiGet (my-local-elephant this) domain keys)
+         (multi-get-remote totry (ring-port this) domain keys))
+       (catch TException e
+         ;; try next host
+         (log-error e "Thrift exception on " totry ":" domain "/" keys))
+       (catch WrongHostException e
+         (log-error e "Fatal exception on " totry ":" domain "/" keys)
+         (throw (TException. "Fatal exception when performing get" e)))
+       (catch DomainNotFoundException e
+         (log-error e "Could not find domain when executing read on " totry ":" domain "/" keys)
+         (throw e))
+       (catch DomainNotLoadedException e
+         (log-error e "Domain not loaded when executing read on " totry ":" domain "/" keys)
+         (throw e))))
 
 (defn -get [this domain key]
   (first (.multiGet this domain [key])))
@@ -82,10 +81,9 @@
 (defn- host-indexed-keys
   "returns [hosts-to-try global-index key all-hosts] seq"
   [this domain keys]
-  (let [indexed (seq-utils/indexed keys)]
-    (for [[gi key] indexed]
-      (let [priority-hosts (get-priority-hosts this domain key)]
-        [priority-hosts gi key priority-hosts]))))
+  (for [[gi key] (seq-utils/indexed keys)
+        :let [priority-hosts (get-priority-hosts this domain key)]]
+    [priority-hosts gi key priority-hosts]))
 
 (defn- multi-get*
   "executes multi-get, returns seq of [global-index val]"
@@ -117,10 +115,9 @@
           (map second (sort-by first results))
           (recur
            (for [[[_ & hosts] gi key all-hosts] (apply concat (vals failed-host-map))]
-             (do
-               (when (empty? hosts)
-                 (throw (hosts-down-ex all-hosts)))
-               [hosts gi key all-hosts]))
+             (do (when (empty? hosts)
+                   (throw (hosts-down-ex all-hosts)))
+                 [hosts gi key all-hosts]))
            results))))))
 
 (defn -multiGetInt [this domain integers]

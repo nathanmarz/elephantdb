@@ -25,8 +25,7 @@
   `(let [with-lev#  (log-levels ~level)
          logger#    (Logger/getRootLogger)
          prev-lev#  (.getLevel logger#)]
-     (try
-       (.setLevel logger# with-lev#)
-       ~@body
-       (finally
-        (.setLevel logger# prev-lev#)))))
+     (try (.setLevel logger# with-lev#)
+          ~@body
+          (finally
+           (.setLevel logger# prev-lev#)))))

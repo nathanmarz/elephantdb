@@ -21,8 +21,7 @@
   ([parent child] (Path. parent child)))
 
 (defn str-path
-  ([part1]
-     part1)
+  ([part1] part1)
   ([part1 part2 & components]
      (apply str-path (str (path part1 (str part2))) components)))
 
@@ -101,19 +100,23 @@
             (Thread/sleep @sleep-interval)
             (recur)))))))
 
-(defn copy-dir-local [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
+(defn copy-dir-local
+  [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
   (.mkdir (File. target-local-path))
   (let [contents (seq (.listStatus fs path))]
     (doseq [c contents]
       (let [subpath (.getPath c)]
         (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer state)))))
 
-(defn- copy-local* [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
+(defn- copy-local*
+  [^FileSystem fs ^Path path target-local-path buffer state]
   (let [status (.getFileStatus fs path)]
-    (cond (.isDir status) (copy-dir-local fs path target-local-path buffer state)
-          :else (copy-file-local fs path target-local-path buffer state))))
+    (if (.isDir status)
+      (copy-dir-local fs path target-local-path buffer state)
+      (copy-file-local fs path target-local-path buffer state))))
 
-(defn copy-local [#^FileSystem fs #^String spath #^String local-path ^ShardState state]
+(defn copy-local
+  [#^FileSystem fs #^String spath #^String local-path ^ShardState state]
   (let [target-file (File. local-path)
         source-name (.getName (Path. spath))
         buffer (byte-array (* 1024 15))
