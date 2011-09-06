@@ -1,6 +1,6 @@
 (ns elephantdb.config
+  (:use elephantdb.hadoop)
   (:require [clojure.contrib.duck-streams :as d])
-  (:use [elephantdb hadoop])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.persistence LocalPersistenceFactory]))
 

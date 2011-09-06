@@ -1,12 +1,14 @@
 (ns elephantdb.service
   (:use [elephantdb config log util hadoop loader])
+  (:require [elephantdb.domain :as domain]
+            [elephantdb.thrift :as thrift]
+            [elephantdb.shard :as shard]
+            [clojure.contrib.str-utils :as str-utils])
   (:import [java.util.concurrent.locks ReentrantReadWriteLock]
            [elephantdb.generated ElephantDB ElephantDB$Iface]
            [elephantdb Shutdownable client]
            [elephantdb.persistence LocalPersistence]
-           [elephantdb.store DomainStore])
-  (:require [elephantdb [domain :as domain] [thrift :as thrift] [shard :as shard]]
-            [clojure.contrib [str-utils :as str-utils]]))
+           [elephantdb.store DomainStore]))
 
 ;; { :replication 2
 ;;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]

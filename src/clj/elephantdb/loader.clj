@@ -1,7 +1,7 @@
 (ns elephantdb.loader
-  (:import [elephantdb.store DomainStore])
   (:use [elephantdb util hadoop config log])
-  (:require [elephantdb.domain :as domain]))
+  (:require [elephantdb.domain :as domain])
+  (:import [elephantdb.store DomainStore]))
 
 (defn- shard-path [domain-version shard]
   (str-path domain-version shard))

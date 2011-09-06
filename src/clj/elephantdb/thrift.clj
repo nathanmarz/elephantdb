@@ -1,10 +1,9 @@
 (ns elephantdb.thrift
-  (:import [elephantdb.generated LoadingStatus DomainStatus DomainStatus$_Fields ReadyStatus
+  (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol]
+           [org.apache.thrift.transport TTransport TFramedTransport TSocket]
+           [elephantdb.generated LoadingStatus DomainStatus DomainStatus$_Fields ReadyStatus
             FailedStatus ShutdownStatus ElephantDB$Client Value Status
-            DomainNotFoundException DomainNotLoadedException HostsDownException WrongHostException])
-  (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol])
-  (:import [org.apache.thrift.transport TTransport TFramedTransport TSocket])
-  )
+            DomainNotFoundException DomainNotLoadedException HostsDownException WrongHostException]))
 
 (defn loading-status []
   (DomainStatus/loading (LoadingStatus.)))

@@ -1,6 +1,6 @@
 (ns elephantdb.util
-  (:import [java.net InetAddress])
-  (:import [java.util.concurrent.locks ReentrantReadWriteLock]))
+  (:import [java.net InetAddress]
+           [java.util.concurrent.locks ReentrantReadWriteLock]))
 
 (defn repeat-seq
   ([aseq]

@@ -1,19 +1,19 @@
 (ns elephantdb.testing
-  (:import [java.util UUID ArrayList])
-  (:import [java.io IOException])
-  (:import [elephantdb Utils ByteArray])
-  (:import [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
-            ElephantOutputFormat$Args LocalElephantManager])
-  (:import [elephantdb.store DomainStore])
-  (:import [elephantdb.generated Value])
-  (:import [org.apache.hadoop.io IntWritable])
-  (:import [org.apache.hadoop.mapred JobConf])
-  (:import [org.apache.thrift TException])
-  (:use [elephantdb util hadoop config shard service thrift])
-  (:require [elephantdb [client :as client]])
-  (:use [clojure.contrib.seq-utils :only [find-first]])
-  (:use [clojure.contrib.def :only [defnk]])
-  (:use [clojure test]))
+  (:use clojure.test
+        [elephantdb util hadoop config shard service thrift]
+        [clojure.contrib.seq-utils :only (find-first)]
+        [clojure.contrib.def :only (defnk)])
+  (:require [elephantdb.client :as client])
+  (:import [java.util UUID ArrayList]
+           [java.io IOException]
+           [elephantdb Utils ByteArray]
+           [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
+            ElephantOutputFormat$Args LocalElephantManager]
+           [elephantdb.store DomainStore]
+           [elephantdb.generated Value]
+           [org.apache.hadoop.io IntWritable]
+           [org.apache.hadoop.mapred JobConf]
+           [org.apache.thrift TException]))
 
 (defn uuid []
   (str (UUID/randomUUID)))

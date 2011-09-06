@@ -1,8 +1,8 @@
 (ns elephantdb.hadoop
-  (:import [org.apache.hadoop.fs FileSystem Path]
-           [org.apache.hadoop.conf Configuration])
+  (:use elephantdb.log)
   (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream])
-  (:use [elephantdb log]))
+  (:import [org.apache.hadoop.fs FileSystem Path]
+           [org.apache.hadoop.conf Configuration]))
 
 (defmulti conf-set (fn [obj] (class (:value obj))))
 
