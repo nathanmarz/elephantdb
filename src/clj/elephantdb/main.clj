@@ -1,7 +1,8 @@
 (ns elephantdb.main
   (:use [elephantdb config hadoop])
   (:require [elephantdb.log :as log]
-            [elephantdb.service :as service])
+            [elephantdb.service :as service]
+            [elephantdb.util :as util])
   (:import [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory]
            [org.apache.thrift TException]
@@ -20,23 +21,19 @@
         (recur)))))
 
 (defn launch-server! [global-config local-config token]
-  (let
-      [options (THsHaServer$Options.)
-       _ (set! (. options maxWorkerThreads) 64)
-       service-handler (service/service-handler global-config local-config token)
-       server (THsHaServer.
-               (ElephantDB$Processor. service-handler)
-               (TNonblockingServerSocket. (:port global-config))
-               (TBinaryProtocol$Factory.) options)]
-    (.addShutdownHook (Runtime/getRuntime)
-                      (Thread. (fn []
-                                 (.shutdown service-handler)
-                                 (.stop server))))
+  (let [options (THsHaServer$Options.)
+        _ (set! (. options maxWorkerThreads) 64)
+        service-handler (service/service-handler global-config local-config token)
+        server (THsHaServer.
+                (ElephantDB$Processor. service-handler)
+                (TNonblockingServerSocket. (:port global-config))
+                (TBinaryProtocol$Factory.) options)]
+    (util/register-shutdown-hook #(do (.shutdown service-handler)
+                                      (.stop server)))
     (log/log-message "Starting updater process...")
     (launch-updater! (:update-interval-s local-config) service-handler)
     (log/log-message "Starting ElephantDB server...")
     (.serve server)))
-
 
 (defn -main
   "Main booting function for all of EDB. Pass in:
@@ -53,9 +50,7 @@ data on the server, elephantdb will load it. Otherwise, elephantdb
 just uses whatever is local."
   [global-config-hdfs-path local-config-path token]
   (log/configure-logging "log4j/log4j.properties")
-  (let [local-config (-> (local-filesystem)
-                         (read-clj-config  local-config-path)
-                         (merge DEFAULT-LOCAL-CONFIG))
+  (let [local-config  (read-local-config local-config-path)
         global-config (read-global-config global-config-hdfs-path
                                           local-config token)]
     (launch-server! global-config local-config token)))

@@ -84,6 +84,10 @@
     (get local-db-conf (persistence-str persistence) {})
     {}))
 
+(defn read-local-config [local-config-path]
+  (merge DEFAULT-LOCAL-CONFIG
+         (read-clj-config (local-filesystem) local-config-path)))
+
 (defn read-global-config
   [global-config-path local-config token]
   (let [lfs (local-filesystem)
