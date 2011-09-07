@@ -4,19 +4,25 @@
             [elephantdb.thrift :as thrift]
             [elephantdb.shard :as shard]
             [clojure.contrib.str-utils :as str-utils])
-  (:import [java.util.concurrent.locks ReentrantReadWriteLock]
-           [elephantdb.generated ElephantDB ElephantDB$Iface]
+  (:import [org.apache.thrift.server THsHaServer THsHaServer$Options]
+           [org.apache.thrift.protocol TBinaryProtocol$Factory]
+           [org.apache.thrift.transport TNonblockingServerSocket]
+           [java.util.concurrent.locks ReentrantReadWriteLock]
+           [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor]
            [elephantdb Shutdownable client]
            [elephantdb.persistence LocalPersistence]
-           [elephantdb.store DomainStore]))
+           [elephantdb.store DomainStore])
 
-;; { :replication 2
-;;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
-;;   :port 3578
-;;   :domains {"graph" "s3n://mybucket/elephantdb/graph"
-;;             "docs"  "/data/docdb"
-;;             }
-;; }
+
+  (:import ))
+
+(def ^{:doc "Example, meant to be ignored."}
+  example-global-conf
+  {:replication 2
+   :port 3578
+   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
+   :domains {"graph" "s3n://mybucket/elephantdb/graph"
+             "docs"  "/data/docdb"}})
 
 (defn- init-domain-info-map [fs global-config]
   (log-message "Global config: " global-config)
@@ -353,12 +359,21 @@ Keep the cached versions of any domains that haven't been updated"
                           global-config
                           local-config))))))
 
-;; `service-handler` is the entry point to elephantdb, initialized in
-;; `main` and passed into the thrift server.
 (defn service-handler
+  "Entry point to edb. `service-handler` returns a proxied
+  implementation of EDB's interface."
   [global-config local-config]
   (let [client (atom nil)]
     (with-ret-bound [ret (edb-proxy client global-config local-config)]
       (reset! client (client. ret
                               (:hdfs-conf local-config)
                               global-config)))))
+
+(defn thrift-server
+  [service-handler port]
+  (let [options (THsHaServer$Options.)
+        _ (set! (.maxWorkerThreads options) 64)]
+    (THsHaServer. (ElephantDB$Processor. service-handler)
+                  (TNonblockingServerSocket. port)
+                  (TBinaryProtocol$Factory.)
+                  options)))

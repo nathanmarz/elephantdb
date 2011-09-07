@@ -3,11 +3,6 @@
   (:require [elephantdb.log :as log]
             [elephantdb.service :as service]
             [elephantdb.util :as util])
-  (:import [org.apache.thrift.server THsHaServer THsHaServer$Options]
-           [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory]
-           [org.apache.thrift TException]
-           [elephantdb.generated ElephantDB ElephantDB$Processor]
-           [org.apache.thrift.transport TNonblockingServerTransport TNonblockingServerSocket])
   (:gen-class))
 
 ;; # Main Access
@@ -30,17 +25,14 @@
 
 (defn launch-server!
   [global-config local-config]
-  (let [options (THsHaServer$Options.)
-        _ (set! (. options maxWorkerThreads) 64)
-        service-handler (service/service-handler global-config local-config)
-        server (THsHaServer.
-                (ElephantDB$Processor. service-handler)
-                (TNonblockingServerSocket. (:port global-config))
-                (TBinaryProtocol$Factory.) options)]
-    (util/register-shutdown-hook #(do (.shutdown service-handler)
+  (let [{interval :update-interval-s} local-config
+        {port :port} global-config
+        handler (service/service-handler global-config local-config)
+        server (service/thrift-server handler port)]
+    (util/register-shutdown-hook #(do (.shutdown handler)
                                       (.stop server)))
     (log/log-message "Starting updater process...")
-    (launch-updater! (:update-interval-s local-config) service-handler)
+    (launch-updater! interval handler)
     (log/log-message "Starting ElephantDB server...")
     (.serve server)))
 
