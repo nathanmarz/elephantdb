@@ -77,7 +77,13 @@
       (< (.mostRecentVersion local-vs)
          (.mostRecentVersion remote-vs))))
 
+;; TODO: examine this... can we remove this use-cache deal?
+
 (defn use-cache-or-update
+  ([domain domains-info global-config local-config]
+     (->> {domain (domain/host-shards (domains-info domain))}
+          (mk-loader-state)
+          (use-cache-or-update domain domains-info global-config local-config false)))
   ([domain domains-info global-config local-config update? ^DownloadState state]
      (let [fs (filesystem (:hdfs-conf local-config))
            lfs (local-filesystem)
@@ -102,15 +108,7 @@
              :no-update
              (open-domain local-config
                           (str (path local-dir domain))
-                          (domain/host-shards (domains-info domain))))))))
-  ([domain domains-info global-config local-config]
-     (use-cache-or-update domain
-                          domains-info
-                          global-config
-                          local-config
-                          false
-                          (mk-loader-state { domain
-                                            (domain/host-shards (domains-info domain)) }))))
+                          (domain/host-shards (domains-info domain)))))))))
 
 (defn delete-deleted-domains
   "Deletes all domains from local filesystem that have been deleted
@@ -156,51 +154,21 @@
 (defn sync-updated
   "Only fetch domains from remote if a newer version is available.
 Keep the cached versions of any domains that haven't been updated"
-  [global-config local-config token]
+  [global-config local-config]
   (log-message "Loading remote data if necessary, otherwise loading cached data")
   (let [fs (filesystem (:hdfs-conf local-config))
-        domains-info (init-domain-info-map fs global-config)
-        cache-config (assoc global-config :token token)]
+        domains-info (init-domain-info-map fs global-config)]
     (log-message "Domains info: " domains-info)
     (future
       (try (delete-deleted-domains domains-info global-config local-config)
            (sync-data-updated domains-info global-config local-config)
            (cleanup-domains domains-info local-config)
-           (log-message "Caching global config " cache-config)
-           (cache-global-config! local-config cache-config)
+           (log-message "Caching global config " global-config)
+           (cache-global-config! local-config global-config)
            (log-message "Cached config " (read-cached-global-config local-config))
            (log-message "Finished loading all updated domains from remote")
            (catch Throwable t (log-error t "Error when syncing data") (throw t))))
     domains-info))
-
-(defn sync-local
-  [global-config local-config]
-  (log-message "Loading cached data")
-  (let [lfs (local-filesystem)
-        local-dir (:local-dir local-config)
-        domains-map (into {}
-                          (map (fn [[k v]]
-                                 [k (str-path local-dir k)])
-                               (:domains global-config)))
-        domains-info (init-domain-info-map
-                      lfs
-                      (assoc global-config :domains domains-map))]
-    (future (load-and-sync-status domains-info
-                                  false
-                                  (fn [domain]
-                                    (open-domain
-                                     local-config
-                                     (str (path local-dir domain))
-                                     (domain/host-shards (domains-info domain))))))
-    domains-info))
-
-(defn- sync-data
-  "returns map of domain to domain info and launches futures that will
-  fill in the domain info"
-  [global-config local-config token]
-  (if (cache? global-config token)
-    (sync-local global-config local-config)
-    (sync-updated global-config local-config token)))
 
 (defn- close-lps
   [domains-info]
@@ -257,11 +225,18 @@ Keep the cached versions of any domains that haven't been updated"
           (try (load-and-sync-status
                 all-domains domains-info
                 true
+                
+                ;; Update this to prevent that whole close-if-updated business.
                 (fn [domain]
-                  (close-if-updated domain
-                                    domains-info
-                                    local-config
-                                    (use-cache-or-update domain domains-info global-config local-config true state))))
+                  (->> (use-cache-or-update domain
+                                            domains-info
+                                            global-config
+                                            local-config
+                                            true
+                                            state)
+                       (close-if-updated domain
+                                         domains-info
+                                         local-config))))
                (log-message "Finished updating all domains from remote")
                (try (log-message "Removing all old versions of domains (CLEANUP)")
                     (cleanup-domains domains-info local-config)
@@ -270,41 +245,28 @@ Keep the cached versions of any domains that haven't been updated"
                  (log-error t "Error when syncing data")
                  (throw t))))))))
 
-;; 1. after *first* load finishes, write the global config with the
-;; token within
+;; TODO: Update this to remove  token references.
 ;;
-;; 2. when receive an update, open up the version and mkdir
-;;    immediately, start loading
+;; TODO: Take a purge flag, that'll trigger a data wipe.
 ;;
-;; 3. when starting up, if token is written start up immediately,
-;;    start up loaders for anything with incomplete version, clearing
-;;    dir first
-;;
-;; 4. when loaders finish, complete the version and delete the old
-;;    version (on startup should delete old versions) - does deletion
-;;    need to be throttled?
-;;
-;; 5. Create Hadoop FS on demand... need retry logic if loaders fail?
-
-
-;; list<Value> multiGet(1: string domain, 2: list<binary> key)
-;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-;; list<Value> multiGetString(1: string domain, 2: list<string> key)
-;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-;; list<Value> multiGetInt(1: string domain, 2: list<i32> key)
-;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-;; list<Value> multiGetLong(1: string domain, 2: list<i64> key)
-;;   throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-
-;; list<Value> directMultiGet(1: string domain, 2: list<binary> key)
-;;   throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
+;; 5. (What does this mean?) Create Hadoop FS on demand... need retry
+;; logic if loaders fail?
 
 ;;  Example of domains-info local:
-;;  {test {:elephantdb.domain/shard-index {:elephantdb.shard/hosts-to-shards {192.168.1.3 #{0 1 2 3}}, :elephantdb.shard/shards-to-hosts {3 #{192.168.1.3}, 2 #{192.168.1.3}, 1 #{192.168.1.3}, 0 #{192.168.1.3}}}, :elephantdb.domain/domain-status #<Atom@3643b5bb: #<DomainStatus <DomainStatus loading:LoadingStatus()>>>, :elephantdb.domain/domain-data #<Atom@4feaefc5: nil>}}
+;;
+;; {test {:elephantdb.domain/shard-index {:elephantdb.shard/hosts-to-shards {192.168.1.3 #{0 1 2 3}}
+;;                                        :elephantdb.shard/shards-to-hosts {3 #{192.168.1.3}
+;;                                                                           2 #{192.168.1.3}
+;;                                                                           1 #{192.168.1.3}
+;;                                                                           0 #{192.168.1.3}}}
+;;        :elephantdb.domain/domain-status #<Atom@3643b5bb: #<DomainStatus <DomainStatus loading:LoadingStatus()>>>
+;;        :elephantdb.domain/domain-data #<Atom@4feaefc5: nil>}}
 
 (defn service-handler
-  [global-config local-config token]
-  (let [domains-info (sync-data global-config local-config token)
+  "See `src/elephantdb.thrift` for more information on the methods we
+  need to implement."
+  [global-config local-config]
+  (let [domains-info (sync-updated global-config local-config)
         client (atom nil)
         #^ReentrantReadWriteLock rw-lock (mk-rw-lock)
         download-supervisor (atom nil)
@@ -319,52 +281,52 @@ Keep the cached versions of any domains that haven't been updated"
                 (close-lps domains-info))
 
               (get
-                [#^String domain #^bytes key]
+                [^String domain ^bytes key]
                 (.get @client domain key))
 
               (getString
-                [#^String domain #^String key]
+                [^String domain ^String key]
                 (.getString @client domain key))
 
               (getInt
-                [#^String domain key]
+                [^String domain key]
                 (.getInt @client domain key))
 
               (getLong
-                [#^String domain key]
+                [^String domain key]
                 (.getLong @client domain key))
 
               (multiGet
-                [#^String domain keys]
+                [^String domain keys]
                 (.multiGet @client domain keys))
 
               (multiGetString
-                [#^String domain #^String keys]
+                [^String domain ^String keys]
                 (.multiGetString @client domain keys))
 
               (multiGetInt
-                [#^String domain keys]
+                [^String domain keys]
                 (.multiGetInt @client domain keys))
               
               (multiGetLong
-                [#^String domain keys]
+                [^String domain keys]
                 (.multiGetLong @client domain keys))
 
               (directMultiGet
-                [#^String domain keys]
+                [^String domain keys]
                 (read-locked
                  rw-lock
                  (dofor [key keys]
                         (let [info                   (get-readable-domain-info domains-info domain)
                               shard                  (domain/key-shard domain info key)
-                              #^LocalPersistence lp  (domain/domain-data info shard)]
+                              ^LocalPersistence lp  (domain/domain-data info shard)]
                           (log-debug "Direct get key " (seq key) "at shard " shard)
                           (if lp
                             (thrift/mk-value (.get lp key))
                             (throw (thrift/wrong-host-ex)))))))
 
               (getDomainStatus
-                [#^String domain]
+                [^String domain]
                 (let [info (domains-info domain)]
                   (when-not info
                     (throw (thrift/domain-not-found-ex domain)))
@@ -377,12 +339,15 @@ Keep the cached versions of any domains that haven't been updated"
               (getStatus
                 []
                 (thrift/elephant-status
-                 (into {} (for [[d i] domains-info] [d (domain/domain-status i)]))))
+                 (into {} (for [[d i] domains-info]
+                            [d (domain/domain-status i)]))))
 
               (isFullyLoaded
                 []
                 (let [stat (.get_domain_statuses (.getStatus this))]
-                  (every? #(or (thrift/status-ready? %) (thrift/status-failed? %)) (vals stat))))
+                  (every? #(or (thrift/status-ready? %)
+                               (thrift/status-failed? %))
+                          (vals stat))))
 
               (isUpdating
                 []
@@ -390,11 +355,24 @@ Keep the cached versions of any domains that haven't been updated"
 
               (updateAll
                 []
-                (update-domains this download-supervisor (keys domains-info) domains-info global-config local-config))
-              
+                (with-ret true
+                  (update-domains this
+                                  download-supervisor
+                                  (keys domains-info)
+                                  domains-info
+                                  global-config
+                                  local-config)))
               (update
-                [#^String domain]
-                (update-domains this download-supervisor [domain] domains-info global-config local-config)
-                true))]
-    (reset! client (client. ret (:hdfs-conf local-config) global-config))
+                [^String domain]
+                (with-ret true
+                  (update-domains this
+                                  download-supervisor
+                                  [domain]
+                                  domains-info
+                                  global-config
+                                  local-config))))]
+    (->> (client. ret
+                  (:hdfs-conf local-config)
+                  global-config)
+         (reset! client))
     ret))

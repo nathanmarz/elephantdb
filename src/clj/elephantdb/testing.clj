@@ -181,13 +181,11 @@
    :update-interval-s 60})
 
 (defn mk-service-handler
-  [global-config localdir token domain-to-host-to-shards]
+  [global-config localdir domain-to-host-to-shards]
   (binding [compute-host-to-shards (if domain-to-host-to-shards
                                      (fn [d _ _ _] (domain-to-host-to-shards d))
                                      compute-host-to-shards)]
-    (let [handler (service-handler global-config
-                                   (mk-local-config localdir)
-                                   token)]
+    (let [handler (service-handler global-config (mk-local-config localdir))]
       (while (not (.isFullyLoaded handler))
         (println "waiting...")
         (Thread/sleep 500))
@@ -220,7 +218,6 @@
     `(with-local-tmp [lfs# localtmp#]
        (let [~handler-sym (mk-service-handler ~global-conf
                                               localtmp#
-                                              (System/currentTimeMillis)
                                               ~domain-to-host-to-shards)]
          (try ~@body
               (finally (.shutdown ~handler-sym)))))))

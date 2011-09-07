@@ -31,9 +31,7 @@
   [global-config local-config]
   (let [options (THsHaServer$Options.)
         _ (set! (. options maxWorkerThreads) 64)
-        service-handler (service/service-handler global-config
-                                                 local-config
-                                                 (System/currentTimeMillis))
+        service-handler (service/service-handler global-config local-config)
         server (THsHaServer.
                 (ElephantDB$Processor. service-handler)
                 (TNonblockingServerSocket. (:port global-config))

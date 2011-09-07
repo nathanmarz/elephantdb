@@ -75,11 +75,6 @@
   (d/spit (global-config-cache-path local-config)
           global-config))
 
-(defn cache?
-  "TODO: Remove this, when we remove caching."
-  [global-config token]
-  (= (:token global-config) token))
-
 (defn convert-java-domain-spec [spec]
   (struct domain-spec-struct
           (.getLPFactory spec)

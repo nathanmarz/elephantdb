@@ -117,13 +117,16 @@
                                         2 [30 30]
                                         3 [40 40]) :version 1)
 
-        ;; start edb and shutdown right away to get version 1 of both domains
+        ;; start edb and shutdown right away to get version 1 of both
+        ;; domains
         (.shutdown
          (-> (read-global-config gtmp local-config)
-             (mk-service-handler local-dir "111" nil)))
+             (mk-service-handler local-dir nil)))
 
         ;; create new version only for do-update domain
-        ;; create version 1 for no-update (override to make sure it didn't reload this version)
+        ;;
+        ;; create version 1 for no-update (override to make sure it
+        ;; didn't reload this version)
         (mk-sharded-domain fs dtmp1 domain-spec
                            (domain-data 0 [1]
                                         1 [2]
@@ -138,7 +141,7 @@
                                         3 [44 44]) :version 2)
 
         (let [handler (-> (read-global-config gtmp local-config)
-                          (mk-service-handler local-dir "222" nil))]
+                          (mk-service-handler local-dir nil))]
           ;; domain no-update should not have changed
           (expected-domain-data handler "no-update"
                                 0 [0 0]
@@ -164,7 +167,7 @@
                                           3 [88 88]) :version 3))
 
         (let [handler (-> (read-global-config gtmp local-config)
-                          (mk-service-handler local-dir "333" nil))]
+                          (mk-service-handler local-dir nil))]
           (is (thrift/status-failed? (.getDomainStatus handler "do-update")))
           (is (thrift/status-ready? (.getDomainStatus handler "no-update")))
           (.shutdown handler))
@@ -178,7 +181,7 @@
                            fs
                            gtmp)
         (let [handler (-> (read-global-config gtmp local-config)
-                          (mk-service-handler local-dir "444" nil))
+                          (mk-service-handler local-dir nil))
               deleted-domain-path (.pathToFile lfs (path local-dir "do-update"))]
           (is (= 1 (.size (.getDomains handler))))
           (is (= "no-update" (first (.getDomains handler))))
@@ -258,7 +261,7 @@
 
         ;; start up edb service
         (let [handler (-> (read-global-config gtmp local-config)
-                          (mk-service-handler local-dir "111" nil))]
+                          (mk-service-handler local-dir nil))]
 
           ;; create version 2 for domain2
           (mk-sharded-domain fs dtmp2 domain-spec
