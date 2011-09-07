@@ -17,7 +17,8 @@
 ;; watches all domains and trigger an atomic update in the background
 ;; when some new version appears in domains.
 
-(defn launch-updater! [interval-secs service-handler]
+(defn launch-updater!
+  [interval-secs service-handler]
   (let [interval-ms (* 1000 interval-secs)]
     (future
       (log/log-message (format "Starting updater process with an interval of: %s seconds..."
@@ -27,7 +28,7 @@
         (log/log-message "Updater process: Checking if update is possible...")
         (.updateAll service-handler)))))
 
-(defn launch-server
+(defn launch-server!
   [global-config local-config]
   (let [options (THsHaServer$Options.)
         _ (set! (. options maxWorkerThreads) 64)

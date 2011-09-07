@@ -78,7 +78,6 @@
          (.mostRecentVersion remote-vs))))
 
 ;; TODO: examine this... can we remove this use-cache deal?
-
 (defn use-cache-or-update
   ([domain domains-info global-config local-config]
      (->> {domain (domain/host-shards (domains-info domain))}
@@ -91,7 +90,7 @@
            local-domain-root (str (path local-dir domain))
            remote-path (-> global-config :domains (get domain))
            remote-vs (DomainStore. fs remote-path)
-           local-vs (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
+           local-vs  (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
        (if (domain-needs-update? local-vs remote-vs)
          (load-domain domain
                       fs
