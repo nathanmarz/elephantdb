@@ -11,10 +11,7 @@
            [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor]
            [elephantdb Shutdownable client]
            [elephantdb.persistence LocalPersistence]
-           [elephantdb.store DomainStore])
-
-
-  (:import ))
+           [elephantdb.store DomainStore]))
 
 (def ^{:doc "Example, meant to be ignored."}
   example-global-conf
