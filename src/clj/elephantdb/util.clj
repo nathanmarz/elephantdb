@@ -72,11 +72,11 @@
        ~@body
        (finally (.unlock wlock#)))))
 
-(defmacro with-ret-binded [[sym val] & body]
+(defmacro with-ret-bound [[sym val] & body]
   `(let [~sym ~val]
      ~@body
      ~sym))
 
 (defmacro with-ret [val & body]
-  `(with-ret-binded [ret# ~val]
+  `(with-ret-bound [ret# ~val]
      ~@body))

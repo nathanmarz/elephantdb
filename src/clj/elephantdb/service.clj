@@ -261,117 +261,104 @@ Keep the cached versions of any domains that haven't been updated"
 ;;        :elephantdb.domain/domain-status #<Atom@3643b5bb: #<DomainStatus <DomainStatus loading:LoadingStatus()>>>
 ;;        :elephantdb.domain/domain-data #<Atom@4feaefc5: nil>}}
 
-(defn service-handler
+(defn edb-proxy
   "See `src/elephantdb.thrift` for more information on the methods we
-  need to implement."
-  [global-config local-config]
-  (let [domains-info (sync-updated global-config local-config)
-        client (atom nil)
-        #^ReentrantReadWriteLock rw-lock (mk-rw-lock)
-        download-supervisor (atom nil)
-        ret (proxy [ElephantDB$Iface Shutdownable] []
-              (shutdown
-                []
-                (log-message "ElephantDB received shutdown notice...")
-                (write-locked
-                 rw-lock
-                 (dofor [[_ info] domains-info]
-                        (domain/set-domain-status! info (thrift/shutdown-status))))
-                (close-lps domains-info))
+  implement."
+  [client global-config local-config]
+  (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
+        domains-info (sync-updated global-config local-config)
+        download-supervisor (atom nil)]
+    (proxy [ElephantDB$Iface Shutdownable] []
+      (shutdown []
+        (log-message "ElephantDB received shutdown notice...")
+        (write-locked
+         rw-lock
+         (dofor [[_ info] domains-info]
+                (domain/set-domain-status! info (thrift/shutdown-status))))
+        (close-lps domains-info))
 
-              (get
-                [^String domain ^bytes key]
-                (.get @client domain key))
+      (get [^String domain ^bytes key]
+        (.get @client domain key))
 
-              (getString
-                [^String domain ^String key]
-                (.getString @client domain key))
+      (getString [^String domain ^String key]
+        (.getString @client domain key))
 
-              (getInt
-                [^String domain key]
-                (.getInt @client domain key))
+      (getInt [^String domain key]
+        (.getInt @client domain key))
 
-              (getLong
-                [^String domain key]
-                (.getLong @client domain key))
+      (getLong [^String domain key]
+        (.getLong @client domain key))
 
-              (multiGet
-                [^String domain keys]
-                (.multiGet @client domain keys))
+      (multiGet [^String domain keys]
+        (.multiGet @client domain keys))
 
-              (multiGetString
-                [^String domain ^String keys]
-                (.multiGetString @client domain keys))
+      (multiGetString [^String domain ^String keys]
+        (.multiGetString @client domain keys))
 
-              (multiGetInt
-                [^String domain keys]
-                (.multiGetInt @client domain keys))
+      (multiGetInt [^String domain keys]
+        (.multiGetInt @client domain keys))
               
-              (multiGetLong
-                [^String domain keys]
-                (.multiGetLong @client domain keys))
+      (multiGetLong [^String domain keys]
+        (.multiGetLong @client domain keys))
 
-              (directMultiGet
-                [^String domain keys]
-                (read-locked
-                 rw-lock
-                 (dofor [key keys]
-                        (let [info                   (get-readable-domain-info domains-info domain)
-                              shard                  (domain/key-shard domain info key)
-                              ^LocalPersistence lp  (domain/domain-data info shard)]
-                          (log-debug "Direct get key " (seq key) "at shard " shard)
-                          (if lp
-                            (thrift/mk-value (.get lp key))
-                            (throw (thrift/wrong-host-ex)))))))
+      (directMultiGet [^String domain keys]
+        (read-locked rw-lock
+                     (dofor [key keys]
+                            (let [info                   (get-readable-domain-info domains-info domain)
+                                  shard                  (domain/key-shard domain info key)
+                                  ^LocalPersistence lp  (domain/domain-data info shard)]
+                              (log-debug "Direct get key " (seq key) "at shard " shard)
+                              (if lp
+                                (thrift/mk-value (.get lp key))
+                                (throw (thrift/wrong-host-ex)))))))
 
-              (getDomainStatus
-                [^String domain]
-                (let [info (domains-info domain)]
-                  (when-not info
-                    (throw (thrift/domain-not-found-ex domain)))
-                  (domain/domain-status info)))
+      (getDomainStatus [^String domain]
+        (let [info (domains-info domain)]
+          (when-not info
+            (throw (thrift/domain-not-found-ex domain)))
+          (domain/domain-status info)))
 
-              (getDomains
-                []
-                (keys domains-info))
+      (getDomains []
+        (keys domains-info))
 
-              (getStatus
-                []
-                (thrift/elephant-status
-                 (into {} (for [[d i] domains-info]
-                            [d (domain/domain-status i)]))))
+      (getStatus []
+        (thrift/elephant-status
+         (into {} (for [[d i] domains-info]
+                    [d (domain/domain-status i)]))))
 
-              (isFullyLoaded
-                []
-                (let [stat (.get_domain_statuses (.getStatus this))]
-                  (every? #(or (thrift/status-ready? %)
-                               (thrift/status-failed? %))
-                          (vals stat))))
+      (isFullyLoaded []
+        (let [stat (.get_domain_statuses (.getStatus this))]
+          (every? #(or (thrift/status-ready? %)
+                       (thrift/status-failed? %))
+                  (vals stat))))
 
-              (isUpdating
-                []
-                (service-updating? this download-supervisor))
+      (isUpdating []
+        (service-updating? this download-supervisor))
 
-              (updateAll
-                []
-                (with-ret true
-                  (update-domains this
-                                  download-supervisor
-                                  (keys domains-info)
-                                  domains-info
-                                  global-config
-                                  local-config)))
-              (update
-                [^String domain]
-                (with-ret true
-                  (update-domains this
-                                  download-supervisor
-                                  [domain]
-                                  domains-info
-                                  global-config
-                                  local-config))))]
-    (->> (client. ret
-                  (:hdfs-conf local-config)
-                  global-config)
-         (reset! client))
-    ret))
+      (updateAll []
+        (with-ret true
+          (update-domains this
+                          download-supervisor
+                          (keys domains-info)
+                          domains-info
+                          global-config
+                          local-config)))
+
+      (update [^String domain]
+        (with-ret true
+          (update-domains this
+                          download-supervisor
+                          [domain]
+                          domains-info
+                          global-config
+                          local-config))))))
+
+;; `service-handler` is the entry point to elephantdb, initialized in
+;; `main` and passed into the thrift server.
+(defn service-handler
+  [global-config local-config]
+  (let [client (atom nil)]
+    (with-ret-bound [ret (edb-proxy client global-config local-config)]
+      (reset! client (client. ret
+                              (:hdfs-conf local-config)
+                              global-config)))))
