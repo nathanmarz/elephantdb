@@ -42,14 +42,18 @@
 
 (defn delete
   ([fs path] (delete fs path false))
-  ([fs path rec]
-     (.delete fs (Path. path) rec)))
+  ([fs path recursive?]
+     (.delete fs (Path. path) recursive?)))
 
 (defn clear-dir [fs path]
   (delete fs path true)
   (mkdirs fs path))
 
 (defn local-filesystem [] (FileSystem/getLocal (Configuration.)))
+
+(defn mk-local-path [local-dir]
+  (.pathToFile (local-filesystem)
+               (path local-dir)))
 
 ;; ShardState:
 ;; downloaded-kb:    holds the total amount of bytes of data downloaded since the last

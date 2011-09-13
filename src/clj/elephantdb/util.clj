@@ -12,6 +12,9 @@
   ([amt aseq]
      (apply concat (repeat amt aseq))))
 
+(defn flattened-count [xs]
+  (reduce + (map count xs)))
+
 (defn map-mapvals [f amap]
   (into {} (for [[k v] amap] [k (f v)])))
 

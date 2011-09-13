@@ -16,3 +16,7 @@
 * thrift  - 
 * types   - 
 * utils   - 
+
+
+Notes on conf files. hdfs-conf is fed into hadoop's filesystem maker:
+(FileSystem/get (configuration conf-map))
