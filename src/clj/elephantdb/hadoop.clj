@@ -1,5 +1,6 @@
 (ns elephantdb.hadoop
-  (:use elephantdb.log)
+  (:use elephantdb.log
+        [elephantdb.util :only (map-mapvals)])
   (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream])
   (:import [org.apache.hadoop.fs FileSystem Path]
            [org.apache.hadoop.conf Configuration]))
@@ -17,8 +18,11 @@
 
 (defn path
   ([str-or-path]
-     (if (instance? Path str-or-path) str-or-path (Path. str-or-path)))
-  ([parent child] (Path. parent child)))
+     (if (instance? Path str-or-path)
+       str-or-path
+       (Path. str-or-path)))
+  ([parent child]
+     (Path. parent child)))
 
 (defn str-path
   ([part1] part1)
@@ -72,16 +76,15 @@
 (defn mk-shard-states [shards]
   (->> shards
        (map (fn [s]
-              {s (ShardState. (atom 0) (atom 0))}))
+              [s (ShardState. (atom 0)
+                              (atom 0))]))
        (into {})))
 
 (defn mk-loader-state
   "Create new LoaderState"
   [domains-to-shards]
-  (let [shard-states (->> domains-to-shards
-                          (map (fn [[domain shards]]
-                                 {domain (mk-shard-states shards)}))
-                          (into {}))]
+  (let [shard-states (map-mapvals domains-to-shards
+                                  mk-shard-states)]
     (DownloadState. shard-states (atom 0) (atom []))))
 
 (declare copy-local*)

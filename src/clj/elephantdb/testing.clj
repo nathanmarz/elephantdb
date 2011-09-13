@@ -163,10 +163,10 @@
       (.succeedVersion vs dpath))))
 
 (defn reverse-pre-sharded [shardmap]
-  (map-mapvals
-   first
-   (reverse-multimap
-    (map-mapvals #(map (fn [x] (ByteArray. (first x))) %) shardmap))))
+  (-> shardmap
+      (map-mapvals #(map (fn [x] (ByteArray. (first x))) %))
+      (reverse-multimap)
+      (map-mapvals first)))
 
 (defn mk-presharded-domain [fs path factory shardmap]
   (let [keyvals (apply concat (vals shardmap))

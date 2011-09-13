@@ -14,29 +14,35 @@
              (persistence-options local-config persistence-factory))
     (log-message "Opened LP " local-shard-path)))
 
-(defn open-domain [local-config local-domain-root shards]
+(defn open-domain
+  [local-config local-domain-root shards]
   (let [lfs (local-filesystem)
         local-store (DomainStore. lfs local-domain-root)
-        domain-spec (read-domain-spec (local-filesystem) local-domain-root)
+        domain-spec (read-domain-spec lfs local-domain-root)
         local-version-path (.mostRecentVersionPath local-store)
         future-lps (dofor [s shards]
                           [s (future (open-domain-shard
                                       (:persistence-factory domain-spec)
                                       local-config
                                       (shard-path local-version-path s)))])]
-    (with-ret (into {} (dofor [[s f] future-lps] [s (.get f)]))
+    (with-ret (map-mapvals future-lps (memfn get))
       (log-message "Finished opening domain at " local-domain-root))))
 
-(defn close-domain [domain domain-info]
-  (log-message "Closing domain: " domain " domain-info: " domain-info)
-  (doseq [[shard lp] (domain/domain-data domain-info)]
-    (try (.close lp)
-         (catch Throwable t
-           (log-error t "Error when closing local persistence for domain: "
-                      domain
-                      " and shard: "
-                      shard)
-           (throw t))))
+(defn close-shard
+  [[shard lp] domain]
+  (try (.close lp)
+       (catch Throwable t
+         (log-error t "Error when closing local persistence for domain: "
+                    domain
+                    " and shard: "
+                    shard)
+         (throw t))))
+
+(defn close-domain
+  [domain domain-info]
+  (log-message "Closing domain: %s with info: %s" domain domain-info)
+  (doseq [shard-data (domain/domain-data domain-info)]
+    (close-shard shard-data domain))
   (log-message "Finished closing domain: " domain))
 
 ;; TODO: respect the max copy rate
@@ -44,7 +50,7 @@
 ;; TODO: do a streaming recursive copy that can be rate limited (rate
 ;; limited with the other shards...)
 
-(defn load-domain-shard
+(defn load-domain-shard!
   [fs persistence-factory local-config local-shard-path remote-shard-path ^ShardState state]
   (if (.exists fs (path remote-shard-path))
     (do (log-message "Copying " remote-shard-path " to " local-shard-path)
@@ -68,7 +74,7 @@
         _                  (mkdirs lfs local-version-path)
         domain-state       ((:shard-states state) domain)
         shard-loaders      (dofor [s shards]
-                                  (let [f (future (load-domain-shard
+                                  (let [f (future (load-domain-shard!
                                                    fs
                                                    (:persistence-factory domain-spec)
                                                    local-config

@@ -41,10 +41,7 @@
 (defn all-shards
   "Returns Map of domain-name to Set of shards for that domain"
   [domains-info]
-  (->> (keys domains-info)
-       (map (fn [domain]
-              {domain (host-shards (domains-info domain))}))
-       (into {})))
+  (map-mapvals domains-info host-shards))
 
 (defn key-hosts [domain domain-info #^bytes key]
   (s/key-hosts domain (::shard-index domain-info) key))

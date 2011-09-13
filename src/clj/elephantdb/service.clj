@@ -37,7 +37,7 @@
                                     (if update?
                                       (thrift/ready-status true)
                                       (thrift/loading-status)))
-         ;; BUG: loader-fn is
+         ;; BUG: loader-fn, in update-domains, is...
          ;; (fn [domain]
          ;; (close-if-updated domain
          ;;                   domains-info
@@ -48,7 +48,8 @@
          ;; close-if-updated, and swapping first.
          
          (let [domain-data (loader-fn domain)]  
-           ;; Here, we finally do the swap.
+           ;; FIX: Here, we finally do the swap. But how do we signal
+           ;; that we should close the old domain?
            (when domain-data
              (domain/set-domain-data! domain-info
                                       domain-data))
@@ -326,8 +327,7 @@ Keep the cached versions of any domains that haven't been updated."
 
       (getStatus []
         (thrift/elephant-status
-         (into {} (for [[d i] domains-info]
-                    [d (domain/domain-status i)]))))
+         (map-mapvals domains-info domain/domain-status)))
 
       (isFullyLoaded []
         (let [stat (.get_domain_statuses (.getStatus this))]
