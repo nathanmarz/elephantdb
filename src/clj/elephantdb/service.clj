@@ -1,9 +1,10 @@
 (ns elephantdb.service
-  (:use [elephantdb config log util hadoop loader])
-  (:require [elephantdb.domain :as domain]
+  (:use [elephantdb config log util hadoop loader]
+        [clojure.contrib.def :only (defnk)])
+  (:require [clojure.string :as s]
+            [elephantdb.domain :as domain]
             [elephantdb.thrift :as thrift]
-            [elephantdb.shard :as shard]
-            [clojure.contrib.str-utils :as str-utils])
+            [elephantdb.shard :as shard])
   (:import [java.io File]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
@@ -29,10 +30,10 @@
                 [domain (domain/init-domain-info (domain-shards domain))])
          (into {}))))
 
-(defn load-and-sync-status-of-domain
-  [domain domains-info update? loader-fn]
+(defn load-and-sync-domain-status
+  [domain domain-info loader-fn update?]
   (future
-    (try (domain/set-domain-status! (domains-info domain)
+    (try (domain/set-domain-status! domain-info
                                     (if update?
                                       (thrift/ready-status true)
                                       (thrift/loading-status)))
@@ -49,32 +50,25 @@
          (let [domain-data (loader-fn domain)]  
            ;; Here, we finally do the swap.
            (when domain-data
-             (domain/set-domain-data! (domains-info domain)
+             (domain/set-domain-data! domain-info
                                       domain-data))
-           (domain/set-domain-status!
-            (domains-info domain)
-            (thrift/ready-status false)))
+           (domain/set-domain-status! domain-info
+                                      (thrift/ready-status false)))
          (catch Throwable t
            (log-error t "Error when loading domain " domain)
-           (domain/set-domain-status!
-            (domains-info domain)
-            (thrift/failed-status t))))))
+           (domain/set-domain-status! domain-info
+                                      (thrift/failed-status t))))))
 
-(defn load-and-sync-status
-  ([domains-info update? loader-fn]
-     (load-and-sync-status (keys domains-info)
-                           domains-info
-                           update?
-                           loader-fn))
-  ([domains domains-info update? loader-fn]
-     (let [loaders (dofor [domain domains]
-                          (load-and-sync-status-of-domain domain
-                                                          domains-info
-                                                          update?
-                                                          loader-fn))]
-       (with-ret (future-values loaders)
-         (log-message "Successfully loaded domains: "
-                      (str-utils/str-join ", " domains))))))
+(defnk load-and-sync-status
+  [domains-info loader-fn :update? false :domains (keys domains-info)]
+  (let [loaders (dofor [domain domains :let [info (domains-info domain)]]
+                       (load-and-sync-domain-status domain
+                                                    info
+                                                    loader-fn
+                                                    update?))]
+    (with-ret (future-values loaders)
+      (log-message "Successfully loaded domains: "
+                   (s/join ", " domains)))))
 
 (defn domain-needs-update? [local-vs remote-vs]
   (or (nil? (.mostRecentVersion local-vs))
@@ -106,7 +100,7 @@
          ;; use cached domain from local-dir (no update needed)
          (do
            ;; signal all shards of domain are done loading
-           (swap! (:finished-loaders state) + (count ((:shard-states state) domain)))
+           (swap! (:finished-loaders state) + (count (get (:shard-states state) domain)))
            (if update?
              :no-update
              (open-domain local-config
@@ -127,9 +121,11 @@
 (defn sync-data-updated
   [domains-info global-config local-config]
   (load-and-sync-status domains-info
-                        false
                         (fn [domain]
-                          (use-cache-or-update domain domains-info global-config local-config))))
+                          (use-cache-or-update domain
+                                               domains-info
+                                               global-config
+                                               local-config))))
 
 (defn cleanup-domain
   [domain domains-info local-config]
@@ -154,9 +150,7 @@
 
 (defn sync-updated!
   "Only fetch domains from remote if a newer version is available.
-Keep the cached versions of any domains that haven't been updated.
-
-  1. generated a"
+Keep the cached versions of any domains that haven't been updated."
   [global-config local-config]
   (log-message "Loading remote data if necessary, otherwise loading cached data")
   (let [{:keys [hdfs-conf local-dir]} local-config
@@ -195,13 +189,16 @@ Keep the cached versions of any domains that haven't been updated.
       (throw (thrift/domain-not-loaded-ex domain)))
     info))
 
-(defn- close-if-updated [domain domains-info local-config new-data]
+;; If no update occurred, don't do anything.
+(defn- close-if-updated
+  [domain domain-info local-config new-data]
   (when (not= new-data :no-update)
     (when new-data
-      (close-domain domain domains-info))
+      (close-domain domain domain-info))
     new-data))
 
-(defn service-updating? [service-handler download-supervisor]
+(defn service-updating?
+  [service-handler download-supervisor]
   (boolean
    (or (some (fn [[domain status]]
                (thrift/status-loading? status))
@@ -212,42 +209,43 @@ Keep the cached versions of any domains that haven't been updated.
 ;; TODO: Fix this fucking thing. Why do we have two shard amounts?
 (defn- update-domains
   [service-handler download-supervisor all-domains domains-info global-config local-config]
-  (if (service-updating? service-handler
-                         download-supervisor)
+  (if (service-updating? service-handler download-supervisor)
     (log-message "UPDATER - Not updating as update process still in progress.")
     (let [max-kbs (:max-online-download-rate-kb-s local-config)
           all-shards (domain/all-shards domains-info)
-          domain-shards (->> all-domains
-                             (map (fn [domain]
-                                    [domain (all-shards domain)]))
-                             (into {}))
-          shard-amount (flattened-count (vals all-shards))]
-      (log-message "UPDATER - Updating domains: " (str-utils/str-join ", " all-domains))
-      (let [^DownloadState state (mk-loader-state domain-shards)
-            shard-amount (flattened-count (vals (:shard-states state)))]
-        (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
-        (future (try (load-and-sync-status
-                      all-domains domains-info
-                      true
-                      
-                      ;; Update this to prevent that whole close-if-updated business.
-                      (fn [domain]
-                        (->> (use-cache-or-update domain
-                                                  domains-info
-                                                  global-config
-                                                  local-config
-                                                  true
-                                                  state)
-                             (close-if-updated domain
-                                               domains-info
-                                               local-config))))
-                     (log-message "Finished updating all domains from remote")
-                     (try (log-message "Removing all old versions of domains (CLEANUP)")
-                          (cleanup-domains domains-info local-config)
-                          (catch Throwable t (log-error t "Error when cleaning old versions")))
-                     (catch Throwable t
-                       (log-error t "Error when syncing data")
-                       (throw t))))))))
+          ^DownloadState state (->> all-domains
+                                    (map (juxt identity all-shards))
+                                    (into {})
+                                    (mk-loader-state))
+          shard-amount (flattened-count (vals (:shard-states state)))]
+      (log-message "UPDATER - Updating domains: " (s/join ", " all-domains))
+      (reset! download-supervisor
+              (start-download-supervisor shard-amount max-kbs state))
+      (future
+        (try (load-and-sync-status domains-info
+                                   (fn [domain]
+                                     ;; Update this to prevent
+                                     ;; that whole
+                                     ;; close-if-updated
+                                     ;; business.
+                                     (->> (use-cache-or-update domain
+                                                               domains-info
+                                                               global-config
+                                                               local-config
+                                                               true
+                                                               state)
+                                          (close-if-updated domain
+                                                            (domains-info domain)
+                                                            local-config)))
+                                   :update? true
+                                   :domains all-domains)
+             (log-message "Finished updating all domains from remote")
+             (try (log-message "Removing all old versions of domains (CLEANUP)")
+                  (cleanup-domains domains-info local-config)
+                  (catch Throwable t (log-error t "Error when cleaning old versions")))
+             (catch Throwable t
+               (log-error t "Error when syncing data")
+               (throw t)))))))
 
 ;; TODO: Update this to remove  token references.
 ;;
