@@ -23,11 +23,17 @@
    :domains {"graph" "s3n://mybucket/elephantdb/graph"
              "docs"  "/data/docdb"}})
 
-(defn- init-domain-info-map [fs global-config]
-  (log-message "Global config: " global-config)
+(defn- init-domain-info-map
+  " Generates a map with kv pairs of the following form:
+    {\"domain-name\" {:shard-index {:hosts-to-shards <map>
+                                    :shards-to-hosts <map>}
+                      :domain-status <status-atom>
+                      :domain-data <data-atom>}}"
+  [fs global-config]
   (let [domain-shards (shard/shard-domains fs global-config)]
-    (->> (dofor [domain (keys (:domains global-config))]
-                [domain (domain/init-domain-info (domain-shards domain))])
+    (->> (keys (:domains global-config))
+         (map (juxt identity (comp domain/init-domain-info
+                                   domain-shards)))
          (into {}))))
 
 (defn load-and-sync-domain-status
@@ -108,7 +114,7 @@
                           (str (path local-dir domain))
                           (domain/host-shards (domains-info domain)))))))))
 
-(defn purge-unused-domains
+(defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
   all directories not present in the supplied domains-info map."
   [domains-info local-dir]
@@ -128,21 +134,20 @@
                                                global-config
                                                local-config))))
 
-(defn cleanup-domain
-  [domain domains-info local-config]
-  (let [lfs (local-filesystem)
-        local-dir (:local-dir local-config)]
-    (let [local-domain-root (str (path local-dir domain))
-          local-vs (DomainStore. lfs local-domain-root)]
-      (log-message "Cleaning up local domain versions (only keeping latest version) for domain: "
-                   domain)
-      (.cleanup local-vs 1))))
+(defn cleanup-domain!
+  [domain local-dir]
+  (let [local-domain-root (str (path local-dir domain))
+        local-vs (DomainStore. (local-filesystem)
+                               local-domain-root)]
+    (log-message "Cleaning up local domain versions (only keeping latest version) for domain: "
+                 domain)
+    (.cleanup local-vs 1)))
 
-(defn cleanup-domains
-  [domains-info local-config]
+(defn cleanup-domains!
+  [domains local-dir]
   (let [error (atom nil)]
-    (doseq [domain (keys domains-info)]
-      (try (cleanup-domain domain domains-info local-config)
+    (doseq [domain domains]
+      (try (cleanup-domain! domain local-dir)
            (catch Throwable t
              (log-error t "Error when cleaning old versions of domain: " domain)
              (reset! error t))))
@@ -156,18 +161,16 @@ Keep the cached versions of any domains that haven't been updated."
   (log-message "Loading remote data if necessary, otherwise loading cached data")
   (let [{:keys [hdfs-conf local-dir]} local-config
         domains-info (-> (filesystem hdfs-conf)
-                         (init-domain-info-map global-config))]
+                         (init-domain-info-map global-config))
+        domains (keys domains-info)]
     (log-message "Domains info: " domains-info)
     (future
-      (try (purge-unused-domains domains-info local-dir)
+      (try (purge-unused-domains! domains-info local-dir)
            (sync-data-updated domains-info global-config local-config)
-           (cleanup-domains domains-info local-config)
-           (log-message "Caching global config " global-config)
-           (cache-global-config! local-config global-config)
-           (log-message "Cached config " (read-cached-global-config local-config))
+           (cleanup-domains! domains local-dir)
            (log-message "Finished loading all updated domains from remote")
            (catch Throwable t
-             (log-error t "Error when syncing data")
+             (log-error t "Error when syncing data.")
              (throw t))))
     domains-info))
 
@@ -242,7 +245,8 @@ Keep the cached versions of any domains that haven't been updated."
                                    :domains all-domains)
              (log-message "Finished updating all domains from remote")
              (try (log-message "Removing all old versions of domains (CLEANUP)")
-                  (cleanup-domains domains-info local-config)
+                  (cleanup-domains! (keys domains-info)
+                                    (:local-dir local-config))
                   (catch Throwable t (log-error t "Error when cleaning old versions")))
              (catch Throwable t
                (log-error t "Error when syncing data")

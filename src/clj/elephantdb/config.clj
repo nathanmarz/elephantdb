@@ -32,15 +32,6 @@
 
 (defstruct domain-spec-struct :persistence-factory :num-shards)
 
-(defn global-config-cache-path
-  "Returns the default location for the cached global config on each
-  edb machine."
-  ([local-config]
-     (global-config-cache-path local-config "GLOBAL-CONF"))
-  ([local-config filename]
-     (str-path (:local-dir local-config)
-               (str filename ".clj"))))
-
 (defn read-clj-config
   "Reads a clojure map from the specified path, on the specified
   filesystem. Example usage:
@@ -54,26 +45,11 @@
 
 (defn write-clj-config!
   "Writes the supplied `conf` map to `str-path` on the supplied
-  filesytem."
+  filesystem."
   [conf fs str-path]
   {:pre [(map? conf)]}
   (with-open [w (d/writer (.create fs (path str-path) false))]
     (.print w conf)))
-
-(defn read-cached-global-config
-  "Configs are read/written this way b/c hadoop forks the process
-  using the write-clj-config! method"
-  [local-config]
-  (let [p (global-config-cache-path local-config)]
-    (when (.exists (d/file-str p))
-      (read-string (slurp p)))))
-
-(defn cache-global-config!
-  "Writes global config to cache-path specified in the local config
-  map."
-  [local-config global-config]
-  (d/spit (global-config-cache-path local-config)
-          global-config))
 
 (defn convert-java-domain-spec [spec]
   (struct domain-spec-struct

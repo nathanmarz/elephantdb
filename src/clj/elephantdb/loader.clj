@@ -40,7 +40,7 @@
 
 (defn close-domain
   [domain domain-info]
-  (log-message "Closing domain: %s with info: %s" domain domain-info)
+  (log-message (format "Closing domain: %s with info: %s" domain domain-info))
   (doseq [shard-data (domain/domain-data domain-info)]
     (close-shard shard-data domain))
   (log-message "Finished closing domain: " domain))
