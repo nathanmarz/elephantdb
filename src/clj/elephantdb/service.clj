@@ -123,10 +123,11 @@
   (load-and-sync-status domains-info
                         rw-lock
                         (fn [domain]
-                          (use-cache-or-update domain
-                                               (domain/host-shards (domains-info domain))
-                                               global-config
-                                               local-config))))
+                          (let [host-shards (domain/host-shards (domains-info domain))]
+                            (use-cache-or-update domain
+                                                 host-shards
+                                                 global-config
+                                                 local-config)))))
 
 (defn cleanup-domain!
   [domain-path]
@@ -200,58 +201,45 @@
             (not (.isDone @download-supervisor))))))
 
 (defn- update-domains
-  [service-handler download-supervisor all-domains domains-info global-config local-config rw-lock]
-  (if (service-updating? service-handler download-supervisor)
-    (log-message "UPDATER - Not updating as update process still in progress.")
-    (let [max-kbs (:max-online-download-rate-kb-s local-config)
-          all-shards (domain/all-shards domains-info)
-          ^DownloadState state (->> all-domains
-                                    (map (juxt identity all-shards))
-                                    (into {})
-                                    (mk-loader-state))
-          shard-amount (flattened-count (vals (:shard-states state)))]
-      (log-message "UPDATER - Updating domains: " (s/join ", " all-domains))
-      (reset! download-supervisor
-              (start-download-supervisor shard-amount max-kbs state))
-      (future
-        (try (load-and-sync-status (select-keys domains-info all-domains)
-                                   rw-lock
-                                   (fn [domain]
+  [download-supervisor domains-info global-config local-config rw-lock]
+  (let [{max-kbs :max-online-download-rate-kb-s
+         local-dir :local-dir} local-config
+         ^DownloadState state (-> domains-info
+                                  (domain/all-shards)
+                                  (mk-loader-state))
+         shard-amount (flattened-count (vals (:shard-states state)))]
+    (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
+    (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
+    (future
+      (try (load-and-sync-status domains-info
+                                 rw-lock
+                                 (fn [domain]
+                                   (let [host-shards (domain/host-shards (domains-info domain))]
                                      (use-cache-or-update domain
-                                                          (domain/host-shards (domains-info domain))
+                                                          host-shards
                                                           global-config
                                                           local-config
                                                           true
-                                                          state))
-                                   :update? true)
-             (log-message "Finished updating all domains from remote")
+                                                          state)))
+                                 :update? true)
+           (log-message "Finished updating all domains from remote.")
+           (log-message "Removing all old versions of updated domains!")
+           (try (cleanup-domains! (keys domains-info) local-dir)
+                (catch Throwable t
+                  (log-error t "Error when cleaning old versions")))
+           (catch Throwable t
+             (log-error t "Error when syncing data")
+             (throw t))))))
 
-             ;; Cleaning up old versions seems to happen after each
-             ;; load. TODO: Move this shit together.
-             (try (log-message "Removing all old versions of domains (CLEANUP)")
-                  (cleanup-domains! (keys domains-info)
-                                    (:local-dir local-config))
-                  (catch Throwable t (log-error t "Error when cleaning old versions")))
-             (catch Throwable t
-               (log-error t "Error when syncing data")
-               (throw t)))))))
+(defn- trigger-update
+  [service-handler download-supervisor domains-info global-config local-config rw-lock]
+  (with-ret true
+    (if (service-updating? service-handler download-supervisor)
+      (log-message "UPDATER - Not updating as update process still in progress.")
+      (update-domains download-supervisor domains-info global-config local-config rw-lock))))
 
-;; TODO: Update this to remove  token references.
-;;
-;; TODO: Take a purge flag, that'll trigger a data wipe.
-;;
-;; 5. (What does this mean?) Create Hadoop FS on demand... need retry
-;; logic if loaders fail?
-
-;;  Example of domains-info local:
-;;
-;; {test {:elephantdb.domain/shard-index {:elephantdb.shard/hosts-to-shards {192.168.1.3 #{0 1 2 3}}
-;;                                        :elephantdb.shard/shards-to-hosts {3 #{192.168.1.3}
-;;                                                                           2 #{192.168.1.3}
-;;                                                                           1 #{192.168.1.3}
-;;                                                                           0 #{192.168.1.3}}}
-;;        :elephantdb.domain/domain-status #<Atom@3643b5bb: #<DomainStatus <DomainStatus loading:LoadingStatus()>>>
-;;        :elephantdb.domain/domain-data #<Atom@4feaefc5: nil>}}
+;; 5. TODO: (What does this mean?) Create Hadoop FS on demand... need
+;; retry logic if loaders fail?
 
 (defn edb-proxy
   "See `src/elephantdb.thrift` for more information on the methods we
@@ -326,24 +314,20 @@
         (service-updating? this download-supervisor))
 
       (updateAll []
-        (with-ret true
-          (update-domains this
-                          download-supervisor
-                          (keys domains-info)
-                          domains-info
-                          global-config
-                          local-config
-                          rw-lock)))
+        (trigger-update this
+                        download-supervisor
+                        domains-info
+                        global-config
+                        local-config
+                        rw-lock))
       
       (update [^String domain]
-        (with-ret true
-          (update-domains this
-                          download-supervisor
-                          [domain]
-                          domains-info
-                          global-config
-                          local-config
-                          rw-lock))))))
+        (trigger-update this
+                        download-supervisor
+                        (select-keys domains-info [domain])
+                        global-config
+                        local-config
+                        rw-lock)))))
 
 (defn service-handler
   "Entry point to edb. `service-handler` returns a proxied
