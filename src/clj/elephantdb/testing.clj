@@ -44,7 +44,8 @@
    (for [t paths]
      (.delete fs (path t) true))))
 
-(defmacro with-fs-tmp [[fs-sym & tmp-syms] & body]
+(defmacro with-fs-tmp
+  [[fs-sym & tmp-syms] & body]
   (let [tmp-paths (mapcat (fn [t]
                             [t `(str "/tmp/unittests/" (uuid))])
                           tmp-syms)]
@@ -134,7 +135,8 @@
                       nil
                       nil)))
 
-(defnk mk-sharded-domain [fs path domain-spec keyvals :version nil]
+(defnk mk-sharded-domain
+  [fs path domain-spec keyvals :version nil]
   (with-local-tmp [lfs localtmp]
     (let [vs (DomainStore. fs path (convert-clj-domain-spec domain-spec))
           dpath (if version
@@ -146,8 +148,7 @@
           shardedkeyvals (map
                           (fn [[k v]]
                             [(test-key-to-shard k (:num-shards domain-spec))
-                             k
-                             v])
+                             k v])
                           keyvals)
           writer (mk-elephant-writer
                   (:num-shards domain-spec)
@@ -197,7 +198,8 @@
      (mk-sharded-domain fs# ~pathsym ~domain-spec ~keyvals)
      ~@body))
 
-(defmacro with-presharded-domain [[dname pathsym factory shardmap] & body]
+(defmacro with-presharded-domain
+  [[dname pathsym factory shardmap] & body]
   `(with-fs-tmp [fs# ~pathsym]
      (mk-presharded-domain
       fs#
@@ -222,13 +224,14 @@
          (try ~@body
               (finally (.shutdown ~handler-sym)))))))
 
-(defn mk-mocked-remote-multiget-fn [domain-to-host-to-shards shards-to-pairs down-hosts]
+(defn mk-mocked-remote-multiget-fn
+  [domain-to-host-to-shards shards-to-pairs down-hosts]
   (fn [host port domain keys]    
     (when (= host (local-hostname))
       (throw (RuntimeException. "Tried to make remote call to local server")))
-    (when ((set down-hosts) host)
+    (when (get (set down-hosts) host)
       (throw (TException. (str host " is down"))))
-    (let [shards ((domain-to-host-to-shards domain) host)
+    (let [shards (get (domain-to-host-to-shards domain) host)
           pairs (apply concat (vals (select-keys shards-to-pairs shards)))]
       (for [key keys]
         (if-let [myval (find-first #(barr= key (first %)) pairs)]
@@ -248,12 +251,13 @@
   `(with-service-handler [~handler-sym [(local-hostname)] ~domains-conf nil]
      ~@body))
 
-(defn check-domain-pred [domain-name handler pairs pred]
+(defn check-domain-pred
+  [domain-name handler pairs pred]
   (doseq [[k v] pairs]
     (let [newv (-> handler (.get domain-name k) (.get_data))]
-      (if (nil? v)
+      (if-not v
         (is (nil? newv))
-        (is (pred v newv) (str (seq k) (seq v) (seq newv)))))))
+        (is (pred v newv) (apply str (map seq [k v newv])))))))
 
 (defn- objify-kvpairs [pairs]
   (for [[k v] pairs]

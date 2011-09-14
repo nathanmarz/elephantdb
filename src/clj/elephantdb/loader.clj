@@ -1,6 +1,5 @@
 (ns elephantdb.loader
   (:use [elephantdb util hadoop config log])
-  (:require [elephantdb.domain :as domain])
   (:import [elephantdb.store DomainStore]))
 
 (defn- shard-path [domain-version shard]
@@ -39,9 +38,9 @@
          (throw t))))
 
 (defn close-domain
-  [domain domain-info]
-  (log-message (format "Closing domain: %s with info: %s" domain domain-info))
-  (doseq [shard-data (domain/domain-data domain-info)]
+  [domain domain-data]
+  (log-message (format "Closing domain: %s with data: %s" domain domain-data))
+  (doseq [shard-data domain-data]
     (close-shard shard-data domain))
   (log-message "Finished closing domain: " domain))
 
@@ -72,7 +71,7 @@
         remote-version     (.mostRecentVersion remote-vs)
         local-version-path (.createVersion local-vs remote-version)
         _                  (mkdirs lfs local-version-path)
-        domain-state       ((:shard-states state) domain)
+        domain-state       (get (:shard-states state) domain)
         shard-loaders      (dofor [s shards]
                                   (let [f (future (load-domain-shard!
                                                    fs

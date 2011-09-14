@@ -1,5 +1,6 @@
 (ns elephantdb.domain
-  (:use [elephantdb util thrift config])
+  (:use [elephantdb util thrift config]
+        [elephantdb.loader :only (close-domain)])
   (:require [elephantdb.shard :as s])
   (:import [elephantdb Utils]))
 
@@ -14,20 +15,25 @@
           (atom nil)))
 
 (defn domain-data
+  ([domain-info]
+     @(::domain-data domain-info))
   ([domain-info shard]
      (when-let [domain-data @(::domain-data domain-info)]
-       (domain-data shard)))
-  ([domain-info]
-     @(::domain-data domain-info)))
+       (domain-data shard))))
 
-(defn set-domain-data! [domain-info domain-data]
-  (reset! (::domain-data domain-info) domain-data))
+(defn set-domain-data! [domain domain-info new-data]
+  (let [old-data (domain-data domain-info)]
+    (reset! (::domain-data domain-info) new-data)
+    (when old-data
+      (close-domain domain old-data))))
 
 (defn domain-status [domain-info]
   @(::domain-status domain-info))
 
 (defn set-domain-status! [domain-info status]
   (reset! (::domain-status domain-info) status))
+
+
 
 (defn shard-index [domain-info]
   (::shard-index domain-info))

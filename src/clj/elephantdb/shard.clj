@@ -8,7 +8,10 @@
 (defstruct shard-index ::hosts-to-shards ::shards-to-hosts)
 
 (defn- host-shard-assigner [[hosts hosts-to-shards] shard]
-  (let [[host hosts] (find-first-next #(not ((get hosts-to-shards % #{}) shard)) hosts)
+  (let [[host hosts] (find-first-next #(not (-> hosts-to-shards
+                                                (get % #{})
+                                                (get shard)))
+                                      hosts)
         existing (get hosts-to-shards host #{})]
     [hosts (->> (conj existing shard)
                 (assoc hosts-to-shards host))]))
@@ -37,7 +40,6 @@
   [fs {:keys [domains hosts replication]}]
   (let [sharder (partial shard-domain hosts replication)]
     (log-message "Sharding domains...")
-    (println domains)
     (update-vals domains
                  (fn [domain remote-location]
                    (let [{shards :num-shards :as domain-spec}

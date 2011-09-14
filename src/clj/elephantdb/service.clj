@@ -43,22 +43,11 @@
                                     (if update?
                                       (thrift/ready-status true)
                                       (thrift/loading-status)))
-         ;; BUG: loader-fn, in update-domains, is...
-         ;; (fn [domain]
-         ;; (close-if-updated domain
-         ;;                   domains-info
-         ;;                   local-config
-         ;;                   (use-cache-or-update domain domains-info global-config local-config true state)))
-         ;;
-         ;; Actually, we should be checking the same condition as
-         ;; close-if-updated, and swapping first.
-         
-         (let [domain-data (loader-fn domain)]  
-           ;; FIX: Here, we finally do the swap. But how do we signal
-           ;; that we should close the old domain?
-           (when domain-data
-             (domain/set-domain-data! domain-info
-                                      domain-data))
+         (let [new-data (loader-fn domain)]  
+           (when (and (not= new-data :no-update)
+                      new-data)
+             (log-message "MY_DATA: " domain-info)
+             (domain/set-domain-data! domain domain-info new-data))
            (domain/set-domain-status! domain-info
                                       (thrift/ready-status false)))
          (catch Throwable t
@@ -67,15 +56,15 @@
                                       (thrift/failed-status t))))))
 
 (defnk load-and-sync-status
-  [domains-info loader-fn :update? false :domains (keys domains-info)]
-  (let [loaders (dofor [domain domains :let [info (domains-info domain)]]
+  [domains-info loader-fn :update? false]
+  (let [loaders (dofor [[domain info] domains-info]
                        (load-and-sync-domain-status domain
                                                     info
                                                     loader-fn
                                                     update?))]
     (with-ret (future-values loaders)
       (log-message "Successfully loaded domains: "
-                   (s/join ", " domains)))))
+                   (s/join ", " (keys domains-info))))))
 
 (defn domain-needs-update? [local-vs remote-vs]
   (or (nil? (.mostRecentVersion local-vs))
@@ -193,14 +182,6 @@ Keep the cached versions of any domains that haven't been updated."
       (throw (thrift/domain-not-loaded-ex domain)))
     info))
 
-;; If no update occurred, don't do anything.
-(defn- close-if-updated
-  [domain domain-info local-config new-data]
-  (when (not= new-data :no-update)
-    (when new-data
-      (close-domain domain domain-info))
-    new-data))
-
 (defn service-updating?
   [service-handler download-supervisor]
   (boolean
@@ -210,7 +191,6 @@ Keep the cached versions of any domains that haven't been updated."
        (and @download-supervisor
             (not (.isDone @download-supervisor))))))
 
-;; TODO: Fix this fucking thing. Why do we have two shard amounts?
 (defn- update-domains
   [service-handler download-supervisor all-domains domains-info global-config local-config]
   (if (service-updating? service-handler download-supervisor)
@@ -226,23 +206,15 @@ Keep the cached versions of any domains that haven't been updated."
       (reset! download-supervisor
               (start-download-supervisor shard-amount max-kbs state))
       (future
-        (try (load-and-sync-status domains-info
+        (try (load-and-sync-status (select-keys domains-info all-domains)
                                    (fn [domain]
-                                     ;; Update this to prevent
-                                     ;; that whole
-                                     ;; close-if-updated
-                                     ;; business.
-                                     (->> (use-cache-or-update domain
-                                                               domains-info
-                                                               global-config
-                                                               local-config
-                                                               true
-                                                               state)
-                                          (close-if-updated domain
-                                                            (domains-info domain)
-                                                            local-config)))
-                                   :update? true
-                                   :domains all-domains)
+                                     (use-cache-or-update domain
+                                                          domains-info
+                                                          global-config
+                                                          local-config
+                                                          true
+                                                          state))
+                                   :update? true)
              (log-message "Finished updating all domains from remote")
              (try (log-message "Removing all old versions of domains (CLEANUP)")
                   (cleanup-domains! (keys domains-info)

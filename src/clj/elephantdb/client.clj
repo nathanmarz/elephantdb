@@ -24,7 +24,9 @@
           :domain-shard-indexes (shard/shard-domains (filesystem fs-conf) global-conf)}]))
 
 (defn- get-index [this domain]
-  (if-let [index ((:domain-shard-indexes (.state this)) domain)]
+  (if-let [index (-> (.state this)
+                     (:domain-shard-indexes)
+                     (get domain))]
     index
     (throw (domain-not-found-ex domain))))
 
