@@ -13,3 +13,4 @@ pom.xml
 CHILD
 CHILDPY
 .lein-failures
+docs/

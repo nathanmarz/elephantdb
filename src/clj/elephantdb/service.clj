@@ -64,7 +64,10 @@
       (log-message "Successfully loaded domains: "
                    (s/join ", " (keys domains-info))))))
 
-(defn domain-needs-update? [local-vs remote-vs]
+(defn domain-needs-update?
+  "Returns true if the remote VersionedStore contains newer data than
+  its local copy, false otherwise."
+  [local-vs remote-vs]
   (or (nil? (.mostRecentVersion local-vs))
       (< (.mostRecentVersion local-vs)
          (.mostRecentVersion remote-vs))))
