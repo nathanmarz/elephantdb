@@ -21,9 +21,11 @@
      (when-let [domain-data @(::domain-data domain-info)]
        (domain-data shard))))
 
-(defn set-domain-data! [domain domain-info new-data]
+(defn set-domain-data!
+  [rw-lock domain domain-info new-data]
   (let [old-data (domain-data domain-info)]
-    (reset! (::domain-data domain-info) new-data)
+    (with-write-lock rw-lock
+      (reset! (::domain-data domain-info) new-data))
     (when old-data
       (close-domain domain old-data))))
 
@@ -32,8 +34,6 @@
 
 (defn set-domain-status! [domain-info status]
   (reset! (::domain-status domain-info) status))
-
-
 
 (defn shard-index [domain-info]
   (::shard-index domain-info))

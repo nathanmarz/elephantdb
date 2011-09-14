@@ -67,14 +67,14 @@
 (defn mk-rw-lock []
   (ReentrantReadWriteLock.))
 
-(defmacro read-locked [rw-lock & body]
+(defmacro with-read-lock [rw-lock & body]
   `(let [rlock# (.readLock ~rw-lock)]
      (try
        (.lock rlock#)
        ~@body
        (finally (.unlock rlock#)))))
 
-(defmacro write-locked [rw-lock & body]
+(defmacro with-write-lock [rw-lock & body]
   `(let [wlock# (.writeLock ~rw-lock)]
      (try
        (.lock wlock#)
