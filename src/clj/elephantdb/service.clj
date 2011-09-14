@@ -74,11 +74,10 @@
 
 ;; TODO: examine this... can we remove this use-cache deal?
 (defn use-cache-or-update
-  ([domain domains-info global-config local-config]
-     (->> {domain (domain/host-shards (domains-info domain))}
-          (mk-loader-state)
-          (use-cache-or-update domain domains-info global-config local-config false)))
-  ([domain domains-info global-config local-config update? ^DownloadState state]
+  ([domain host-shards global-config local-config]
+     (->> (mk-loader-state {domain host-shards})
+          (use-cache-or-update domain host-shards global-config local-config false)))
+  ([domain host-shards global-config local-config update? ^DownloadState state]
      (let [fs (filesystem (:hdfs-conf local-config))
            lfs (local-filesystem)
            local-dir (:local-dir local-config)
@@ -92,7 +91,7 @@
                       local-config
                       local-domain-root
                       remote-path
-                      (domain/host-shards (domains-info domain))
+                      host-shards
                       state)
          ;; use cached domain from local-dir (no update needed)
          (do
@@ -102,17 +101,19 @@
              :no-update
              (open-domain local-config
                           (str (path local-dir domain))
-                          (domain/host-shards (domains-info domain)))))))))
+                          host-shards)))))))
 
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
   all directories with names that aren't present in the supplied
-  `domain-set`."
-  [domain-set local-dir]
-  (let [lfs (local-filesystem)]
+  `domains`."
+  [domain-seq local-dir]
+  (let [lfs (local-filesystem)
+        domain-set (set domain-seq)]
     (dofor [domain-path (-> local-dir mk-local-path .listFiles)
             :when (and (.isDirectory domain-path)
-                       (not (contains? domain-set (.getName domain-path))))]
+                       (not (contains? domain-set
+                                       (.getName domain-path))))]
            (log-message "Deleting local path of deleted domain: " domain-path)
            (delete lfs (.getPath domain-path) true))))
 
@@ -123,7 +124,7 @@
                         rw-lock
                         (fn [domain]
                           (use-cache-or-update domain
-                                               domains-info
+                                               (domain/host-shards (domains-info domain))
                                                global-config
                                                local-config))))
 
@@ -161,7 +162,7 @@
         domains (keys domains-info)]
     (log-message "Domains info: " domains-info)
     (future
-      (try (purge-unused-domains! (set domains) local-dir)
+      (try (purge-unused-domains! domains local-dir)
            (sync-remote-data domains-info global-config local-config rw-lock)
            (cleanup-domains! domains local-dir)
            (log-message "Finished loading all updated domains from remote")
@@ -217,7 +218,7 @@
                                    rw-lock
                                    (fn [domain]
                                      (use-cache-or-update domain
-                                                          domains-info
+                                                          (domain/host-shards (domains-info domain))
                                                           global-config
                                                           local-config
                                                           true
