@@ -74,10 +74,8 @@
 (defmethod persistence-str LocalPersistenceFactory [persistence] (.getName (class persistence)))
 
 (defn persistence-options
-  [local-config persistence]
-  (get (:local-db-conf local-config)
-       (persistence-str persistence)
-       {}))
+  [db-conf persistence]
+  (get db-conf (persistence-str persistence) {}))
 
 (defn read-local-config
   [local-config-path]

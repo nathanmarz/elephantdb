@@ -74,33 +74,32 @@
 
 ;; TODO: examine this... can we remove this use-cache deal?
 (defn use-cache-or-update
-  ([domain host-shards global-config local-config]
+  ([domain host-shards remote-path local-config]
      (->> (mk-loader-state {domain host-shards})
-          (use-cache-or-update domain host-shards global-config local-config false)))
-  ([domain host-shards global-config local-config update? ^DownloadState state]
-     (let [fs (filesystem (:hdfs-conf local-config))
+          (use-cache-or-update domain host-shards remote-path local-config false)))
+  ([domain host-shards remote-path local-config update? ^DownloadState state]
+     (let [{:keys [hdfs-conf local-dir local-db-conf]} local-config
+           fs  (filesystem hdfs-conf)
            lfs (local-filesystem)
-           local-dir (:local-dir local-config)
            local-domain-root (str (path local-dir domain))
-           remote-path (-> global-config :domains (get domain))
            remote-vs (DomainStore. fs remote-path)
            local-vs  (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
        (if (domain-needs-update? local-vs remote-vs)
          (load-domain domain
                       fs
-                      local-config
+                      local-db-conf
                       local-domain-root
                       remote-path
                       host-shards
                       state)
-         ;; use cached domain from local-dir (no update needed)
-         (do
+         (let [{:keys [finished-loaders shard-states]} state]
+           ;; use cached domain from local-dir (no update needed)
            ;; signal all shards of domain are done loading
-           (swap! (:finished-loaders state) + (count (get (:shard-states state) domain)))
+           (swap! finished-loaders + (count (shard-states domain)))
            (if update?
              :no-update
-             (open-domain local-config
-                          (str (path local-dir domain))
+             (open-domain local-db-conf
+                          local-domain-root
                           host-shards)))))))
 
 (defn purge-unused-domains!
@@ -118,15 +117,17 @@
            (delete lfs (.getPath domain-path) true))))
 
 ;; TODO: take this out of the loop.
+;; TODO: This only needs the domains entry, under global-config.
 (defn sync-remote-data
   [domains-info global-config local-config rw-lock]
   (load-and-sync-status domains-info
                         rw-lock
                         (fn [domain]
-                          (let [host-shards (domain/host-shards (domains-info domain))]
+                          (let [host-shards (domain/host-shards (domains-info domain))
+                                remote-path (-> global-config :domains (get domain))]
                             (use-cache-or-update domain
                                                  host-shards
-                                                 global-config
+                                                 remote-path
                                                  local-config)))))
 
 (defn cleanup-domain!
@@ -214,10 +215,11 @@
       (try (load-and-sync-status domains-info
                                  rw-lock
                                  (fn [domain]
-                                   (let [host-shards (domain/host-shards (domains-info domain))]
+                                   (let [host-shards (domain/host-shards (domains-info domain))
+                                         remote-path (-> global-config :domains (get domain))]
                                      (use-cache-or-update domain
                                                           host-shards
-                                                          global-config
+                                                          remote-path
                                                           local-config
                                                           true
                                                           state)))
