@@ -144,7 +144,7 @@
   on completion."
   [domains local-dir]
   (let [error (atom nil)]
-    (dofor [domain domains :let [domain-path (str local-dir domain)]]
+    (dofor [domain domains :let [domain-path (str (path local-dir domain))]]
            (try (log-message "Purging old versions of domain: " domain)
                 (cleanup-domain! domain-path)
                 (catch Throwable t
