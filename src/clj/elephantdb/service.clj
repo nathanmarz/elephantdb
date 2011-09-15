@@ -138,17 +138,16 @@
     (when-let [e @error]
       (throw e))))
 
-(defn sync-updated!
-  [global-config local-config rw-lock]
-  (let [{remote-path-map :domains} global-config
-        {:keys [hdfs-conf local-dir]} local-config
+;; TODO: Integrate curry-func
+(defn sync-updated! [global-config local-config curry-func]
+  (let [{:keys [hdfs-conf local-dir]} local-config
         domains-info (-> (filesystem hdfs-conf)
                          (init-domain-info-map global-config))
         domains (keys domains-info)]
     (log-message "Domains info: " domains-info)
     (future
       (try (purge-unused-domains! domains local-dir)
-           (load-and-sync-status! remote-path-map local-config rw-lock domains-info)
+           (curry-func domains-info)
            (cleanup-domains! domains local-dir)
            (log-message "Finished loading all updated domains from remote")
            (catch Throwable t
@@ -184,8 +183,9 @@
        (and @download-supervisor
             (not (.isDone @download-supervisor))))))
 
+;; TODO: integrate curry-func, remove extra args
 (defn- update-domains
-  [download-supervisor domains-info global-config local-config rw-lock]
+  [download-supervisor domains-info local-config curry-func]
   (let [{max-kbs :max-online-download-rate-kb-s
          local-dir :local-dir} local-config
          ^DownloadState state (-> domains-info
@@ -195,12 +195,9 @@
     (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
     (future
-      (try (load-and-sync-status! (:domains global-config)
-                                  local-config
-                                  rw-lock
-                                  domains-info
-                                  :update? true
-                                  :state state)
+      (try (curry-func domains-info
+                       :update? true
+                       :state state)
            (log-message "Finished updating all domains from remote.")
            (log-message "Removing all old versions of updated domains!")
            (try (cleanup-domains! (keys domains-info) local-dir)
@@ -210,11 +207,11 @@
              (log-error t "Error when syncing data"))))))
 
 (defn- trigger-update
-  [service-handler download-supervisor domains-info global-config local-config rw-lock]
+  [service-handler download-supervisor domains-info local-config curry-func]
   (with-ret true
     (if (service-updating? service-handler download-supervisor)
       (log-message "UPDATER - Not updating as update process still in progress.")
-      (update-domains download-supervisor domains-info global-config local-config rw-lock))))
+      (update-domains download-supervisor domains-info local-config curry-func))))
 
 ;; 5. TODO: (What does this mean?) Create Hadoop FS on demand... need
 ;; retry logic if loaders fail?
@@ -229,7 +226,7 @@
                         local-config
                         rw-lock)
         ;; TODO: Pass curry into here, and down below on updater.
-        domains-info (sync-updated! global-config local-config rw-lock)
+        domains-info (sync-updated! global-config local-config curry!)
         download-supervisor (atom nil)]
     (proxy [ElephantDB$Iface Shutdownable] []
       (shutdown []
@@ -300,17 +297,15 @@
         (trigger-update this
                         download-supervisor
                         domains-info
-                        global-config
                         local-config
-                        rw-lock))
+                        curry!))
       
       (update [^String domain]
         (trigger-update this
                         download-supervisor
                         (select-keys domains-info [domain])
-                        global-config
                         local-config
-                        rw-lock)))))
+                        curry!)))))
 
 (defn service-handler
   "Entry point to edb. `service-handler` returns a proxied
