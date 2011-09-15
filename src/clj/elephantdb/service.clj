@@ -195,7 +195,6 @@
     (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
     (future
-      ;; TODO: Curry this!
       (try (load-and-sync-status! (:domains global-config)
                                   local-config
                                   rw-lock
@@ -225,6 +224,11 @@
   implement."
   [client global-config local-config]
   (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
+        curry! (partial load-and-sync-status!
+                        (:domains global-config)
+                        local-config
+                        rw-lock)
+        ;; TODO: Pass curry into here, and down below on updater.
         domains-info (sync-updated! global-config local-config rw-lock)
         download-supervisor (atom nil)]
     (proxy [ElephantDB$Iface Shutdownable] []
@@ -291,7 +295,7 @@
 
       (isUpdating []
         (service-updating? this download-supervisor))
-
+      
       (updateAll []
         (trigger-update this
                         download-supervisor
