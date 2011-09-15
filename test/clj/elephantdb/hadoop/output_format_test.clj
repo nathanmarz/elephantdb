@@ -1,15 +1,15 @@
 (ns elephantdb.hadoop.output-format-test
-  (:use clojure.test)
-  (:use [elephantdb testing hadoop config util])
-  (:import [elephantdb.hadoop ElephantOutputFormat ElephantOutputFormat$Args ElephantRecordWritable
-            ElephantUpdater])
-  (:import [org.apache.hadoop.io IntWritable])
-  (:import [elephantdb.persistence JavaBerkDB])
-  (:import [elephantdb Utils])
-  (:import [elephantdb.store VersionedStore])
-  (:import [elephantdb.test StringAppendUpdater])
-  (:import [java.util ArrayList])
-  (:import [org.apache.hadoop.mapred JobConf]))
+  (:use clojure.test
+        [elephantdb testing hadoop config util])
+  (:import [elephantdb.hadoop ElephantOutputFormat ElephantOutputFormat$Args
+            ElephantRecordWritable ElephantUpdater]
+           [org.apache.hadoop.io IntWritable]
+           [elephantdb.persistence JavaBerkDB]
+           [elephantdb Utils]
+           [elephantdb.store VersionedStore]
+           [elephantdb.test StringAppendUpdater]
+           [java.util ArrayList]
+           [org.apache.hadoop.mapred JobConf]))
 
 (defn write-data [writer data]
   (dofor [[s records] data]

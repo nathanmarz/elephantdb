@@ -1,14 +1,18 @@
 (ns elephantdb.config-test
-  (:use clojure.test)
-  (:import [elephantdb DomainSpec])
-  (:import [elephantdb.persistence JavaBerkDB])
-  (:use [elephantdb config testing]))
+  (:use clojure.test
+        [elephantdb config testing])
+  (:import [elephantdb.persistence JavaBerkDB]
+           [elephantdb DomainSpec]))
 
 (defn- norm-spec [s]
-  (assoc s :persistence-factory (-> (:persistence-factory s) (.getClass) (.getName))))
+  (assoc s :persistence-factory
+         (-> (:persistence-factory s)
+             (.getClass)
+             (.getName))))
 
 (defn- specs= [s1 s2]
-  (= (norm-spec s1) (norm-spec s2)))
+  (= (norm-spec s1)
+     (norm-spec s2)))
 
 (deffstest test-rw-domain-spec [fs tmp]
   (let [spec {:num-shards 20 :persistence-factory (JavaBerkDB.)}]

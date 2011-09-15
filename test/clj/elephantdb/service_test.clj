@@ -2,8 +2,8 @@
   (:use clojure.test
         [elephantdb service testing util config hadoop log])
   (:require [elephantdb [thrift :as thrift]])
-  (:import [elephantdb.persistence JavaBerkDB])
-  (:import [elephantdb.generated WrongHostException
+  (:import [elephantdb.persistence JavaBerkDB]
+           [elephantdb.generated WrongHostException
             DomainNotFoundException]))
 
 (defn get-val [elephant d k]

@@ -76,10 +76,12 @@
 ;; shard-loaders:    Vector of all shard-loader futures used by the download supervisor
 (defrecord DownloadState [shard-states finished-loaders shard-loaders])
 
-(defn mk-shard-states [shards]
-  (map-mapvals shards (fn [_]
-                        (ShardState. (atom 0)
-                                     (atom 0)))))
+(defn mk-shard-states
+  [shard-set]
+  (->> (repeatedly #(ShardState. (atom 0)
+                                 (atom 0)))
+       (interleave shard-set)
+       (apply hash-map)))
 
 (defn mk-loader-state
   "Create new LoaderState"

@@ -1,21 +1,22 @@
 (ns elephantdb.hadoop.exporter-test
-  (:import [elephantdb DomainSpec])
-  (:import [elephantdb.persistence JavaBerkDB])
-  (:import [elephantdb.hadoop Exporter])
-  (:import [org.apache.hadoop.io BytesWritable SequenceFile SequenceFile$CompressionType])
-  (:use [elephantdb testing util config hadoop])
-  (:use [clojure test])
-  (:require [elephantdb [thrift :as thrift]]))
+  (:use clojure.test
+        [elephantdb testing util config hadoop])
+  (:require [elephantdb.thrift :as thrift])
+  (:import [elephantdb DomainSpec]
+           [elephantdb.persistence JavaBerkDB]
+           [elephantdb.hadoop Exporter]
+           [org.apache.hadoop.io BytesWritable SequenceFile SequenceFile$CompressionType]))
 
 (defn- write-seqfile-records [fs dir pairs]
   (mkdirs fs dir)
-  (let [writer (SequenceFile/createWriter fs (.getConf fs)
-                                          (path dir "part0000") BytesWritable BytesWritable
-                                          SequenceFile$CompressionType/NONE)]
+  (with-open [writer (SequenceFile/createWriter fs
+                                                (.getConf fs)
+                                                (path dir "part0000") BytesWritable BytesWritable
+                                                SequenceFile$CompressionType/NONE)]
     (doseq [[k v] pairs]
-      (.append writer (BytesWritable. k) (BytesWritable. v)))
-    (.close writer)
-    ))
+      (.append writer
+               (BytesWritable. k)
+               (BytesWritable. v)))))
 
 (deftest test-basic-export
   (let [data [
@@ -34,5 +35,4 @@
       (write-seqfile-records fs input data)
       (Exporter/export input domain (DomainSpec. (JavaBerkDB.) 2))
       (with-single-service-handler [handler {"test" domain}]
-        (check-domain "test" handler data)
-        ))))
+        (check-domain "test" handler data)))))

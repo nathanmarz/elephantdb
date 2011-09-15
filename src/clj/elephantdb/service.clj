@@ -303,7 +303,7 @@
                         download-supervisor
                         (select-keys domains-info [domain])
                         local-config
-                        curry!)))))
+                        curry-func)))))
 
 (defn service-handler
   "Entry point to edb. `service-handler` returns a proxied

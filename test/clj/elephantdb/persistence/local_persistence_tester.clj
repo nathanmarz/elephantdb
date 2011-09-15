@@ -8,30 +8,28 @@
                '(do
                   ;; technically should do sorting and stuff here too
                   (deflocalfstest test-get-put [lfs t]
-                    (let [db (.createPersistence factory t {})]
+                    (with-open [db (.createPersistence factory t {})]
                       (is (= nil (get-string db "a")))
                       (add-string db "a" "1")
                       (add-string db "b" "2")
                       (is (= "1" (get-string db "a")))
                       (is (= "2" (get-string db "b")))
-                      (is (= nil (get-string db "c")))
-                      (.close db))
-                    (let [db (.openPersistenceForRead factory t {})]
+                      (is (= nil (get-string db "c"))))
+
+                    (with-open [db (.openPersistenceForRead factory t {})]
                       (is (= "1" (get-string db "a")))
                       (is (= "2" (get-string db "b")))
-                      (is (= nil (get-string db "c")))
-                      (.close db))
-                    (let [db (.openPersistenceForAppend factory t {})]
+                      (is (= nil (get-string db "c"))))
+
+                    (with-open [db (.openPersistenceForAppend factory t {})]
                       (is (= "1" (get-string db "a")))
                       (add-string db "a" "11")
-                      (is (= "11" (get-string db "a")))
-                      (.close db)))
+                      (is (= "11" (get-string db "a")))))
 
                   (defn is-db-pairs? [fact t pairs]
-                    (let [db (.openPersistenceForRead fact t {})]
-                      (is (= (set pairs) (set (get-string-kvpairs db))))
-                      (.close db)
-                      ))
+                    (with-open [db (.openPersistenceForRead fact t {})]
+                      (is (= (set pairs)
+                             (set (get-string-kvpairs db))))))
 
                   (deflocalfstest test-iterate [lfs t]
                     (create-string-pairs factory t [["a" "1"]])
