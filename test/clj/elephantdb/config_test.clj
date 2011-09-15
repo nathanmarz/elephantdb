@@ -14,7 +14,7 @@
   (= (norm-spec s1)
      (norm-spec s2)))
 
-(deffstest test-rw-domain-spec [fs tmp]
+(def-fs-test test-rw-domain-spec [fs tmp]
   (let [spec {:num-shards 20 :persistence-factory (JavaBerkDB.)}]
     (write-domain-spec! spec fs tmp)
     (is (specs= spec (read-domain-spec fs tmp))))
@@ -24,7 +24,7 @@
                                                    (.getClass)
                                                    (.getName))))))
 
-(deffstest test-rw-clj-configs [fs tmp1 tmp2]
+(def-fs-test test-rw-clj-configs [fs tmp1 tmp2]
   (let [config1 {:blah 2 :a "eee" :c [1 2 "a"]}
         config2 {:foo {:lalala {:a 1 "c" 3}}}]
     (write-clj-config! config1 fs tmp1)

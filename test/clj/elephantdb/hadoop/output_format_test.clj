@@ -34,7 +34,7 @@
                          (is (= nil (.get persistence (.getBytes k))))))
            )))
 
-(deffstest test-output-format [fs output-dir]
+(def-fs-test test-output-format [fs output-dir]
   (with-local-tmp [lfs etmp tmp2]
     (let [data {0 {"0a" "00" "0b" "01"} 4 {"4a" "40"}}
           writer  (mk-elephant-writer 10 (JavaBerkDB.) output-dir etmp)]
@@ -44,7 +44,7 @@
       (check-shards fs lfs output-dir tmp2 (JavaBerkDB.) data)
       )))
 
-(deffstest test-incremental [fs dir1 dir2]
+(def-fs-test test-incremental [fs dir1 dir2]
   (with-local-tmp [lfs ltmp1 ltmp2]
     (mk-presharded-domain fs dir1 (JavaBerkDB.)
                           {0 [[(.getBytes "a") (.getBytes "1")]]
@@ -63,5 +63,5 @@
                      2 {"x" "x"}})
       )))
 
-(deffstest test-errors [fs dir1]
+(def-fs-test test-errors [fs dir1]
   )

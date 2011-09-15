@@ -56,7 +56,8 @@
             (finally
              (delete-all ~fs-sym ~(vec tmp-syms)))))))
 
-(defmacro deffstest [name fs-args & body]
+(defmacro def-fs-test
+  [name fs-args & body]
   `(deftest ~name
      (with-fs-tmp ~fs-args
        ~@body)))
