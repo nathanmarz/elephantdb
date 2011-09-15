@@ -70,6 +70,7 @@
 
 (defmulti persistence-str class)
 (defmethod persistence-str String [persistence] persistence)
+
 (defmethod persistence-str Class [persistence] (.getName persistence))
 (defmethod persistence-str LocalPersistenceFactory [persistence] (.getName (class persistence)))
 

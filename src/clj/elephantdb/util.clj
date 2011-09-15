@@ -16,6 +16,14 @@
 (defmacro dofor [bindings & body]
   `(doall (for ~bindings (do ~@body))))
 
+(defmacro dofor [bindings & body]
+  `(doall (for ~bindings (do ~@body))))
+
+(defmacro p-dofor [bindings & body]
+  `(let [futures# (dofor ~bindings
+                         (future ~@body))]
+     (future-values futures#)))
+
 (defn update-vals
   "TODO: Note that this is the same as map-mapvals, just with a 2 arg
   function."

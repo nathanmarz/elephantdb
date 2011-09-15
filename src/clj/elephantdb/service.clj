@@ -76,11 +76,10 @@
   (let [status (if update?
                  (thrift/ready-status :loading? true)
                  (thrift/loading-status))
-        loaders (dofor [[domain info] domains-info
-                        :let [host-shards (domain/host-shards info)
-                              remote-path (get remote-path-map domain)
-                              loader-state (or state (mk-loader-state {domain host-shards}))]]
-                       (future
+        loaders (p-dofor [[domain info] domains-info
+                          :let [host-shards (domain/host-shards info)
+                                remote-path (get remote-path-map domain)
+                                loader-state (or state (mk-loader-state {domain host-shards}))]]
                          (try (domain/set-domain-status! info status)
                               (when-let [new-data (use-cache-or-update domain
                                                                        host-shards
@@ -93,8 +92,8 @@
                               (catch Throwable t
                                 (log-error t "Error when loading domain " domain)
                                 (domain/set-domain-status! info
-                                                           (thrift/failed-status t))))))]
-    (with-ret (future-values loaders)
+                                                           (thrift/failed-status t)))))]
+    (with-ret loaders
       (log-message "Successfully loaded domains: "
                    (s/join ", " (keys domains-info))))))
 
@@ -138,33 +137,33 @@
     (when-let [e @error]
       (throw e))))
 
-;; TODO: Integrate curry-func
+;; TODO: Merge local and global configs here.
 (defn sync-updated! [global-config local-config curry-func]
   (let [{:keys [hdfs-conf local-dir]} local-config
         domains-info (-> (filesystem hdfs-conf)
                          (init-domain-info-map global-config))
         domains (keys domains-info)]
     (log-message "Domains info: " domains-info)
-    (future
-      (try (purge-unused-domains! domains local-dir)
-           (curry-func domains-info)
-           (cleanup-domains! domains local-dir)
-           (log-message "Finished loading all updated domains from remote")
-           (catch Throwable t
-             (log-error t "Error when syncing data.")
-             (throw t))))
-    domains-info))
+    (with-ret domains-info
+      (future
+        (try (purge-unused-domains! domains local-dir)
+             (curry-func domains-info)
+             (cleanup-domains! domains local-dir)
+             (log-message "Finished loading all updated domains from remote.")
+             (catch Throwable t
+               (log-error t "Error when syncing data.")
+               (throw t)))))))
 
 (defn- close-lps
   [domains-info]
-  (doseq [[domain info] domains-info]
-    (doseq [shard (domain/host-shards info)]
-      (let [lp (domain/domain-data info shard)]
-        (log-message "Closing LP for " domain "/" shard)
-        (if lp
-          (.close lp)
-          (log-message "LP not loaded"))
-        (log-message "Closed LP for " domain "/" shard)))))
+  (doseq [[domain info] domains-info
+          shard (domain/host-shards info)]
+    (let [lp (domain/domain-data info shard)]
+      (log-message "Closing LP for " domain "/" shard)
+      (if lp
+        (.close lp)
+        (log-message "LP not loaded"))
+      (log-message "Closed LP for " domain "/" shard))))
 
 (defn- get-readable-domain-info [domains-info domain]
   (let [info (domains-info domain)]
@@ -221,12 +220,11 @@
   implement."
   [client global-config local-config]
   (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
-        curry! (partial load-and-sync-status!
-                        (:domains global-config)
-                        local-config
-                        rw-lock)
-        ;; TODO: Pass curry into here, and down below on updater.
-        domains-info (sync-updated! global-config local-config curry!)
+        curry-func (partial load-and-sync-status!
+                            (:domains global-config)
+                            local-config
+                            rw-lock)
+        domains-info (sync-updated! global-config local-config curry-func)
         download-supervisor (atom nil)]
     (proxy [ElephantDB$Iface Shutdownable] []
       (shutdown []
@@ -298,7 +296,7 @@
                         download-supervisor
                         domains-info
                         local-config
-                        curry!))
+                        curry-func))
       
       (update [^String domain]
         (trigger-update this

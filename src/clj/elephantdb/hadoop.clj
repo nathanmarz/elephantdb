@@ -1,19 +1,21 @@
 (ns elephantdb.hadoop
   (:use elephantdb.log
-        [elephantdb.util :only (map-mapvals)])
-  (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream])
-  (:import [org.apache.hadoop.fs FileSystem Path]
+        [elephantdb.util
+         :only (map-mapvals with-ret-bound dofor)])
+  (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream]
+           [org.apache.hadoop.fs FileSystem Path]
            [org.apache.hadoop.conf Configuration]))
 
-(defmulti conf-set (fn [obj] (class (:value obj))))
+(defmulti conf-set
+  (fn [obj] (class (:value obj))))
 
-(defmethod conf-set String [{key :key value :value conf :conf}]
+(defmethod conf-set String [{:keys [key value conf]}]
   (.set conf key value))
 
-(defmethod conf-set Integer [{key :key value :value conf :conf}]
+(defmethod conf-set Integer [{:keys [key value conf]}]
   (.setInt conf key value))
 
-(defmethod conf-set Float [{key :key value :value conf :conf}]
+(defmethod conf-set Float [{:keys [key value conf]}]
   (.setFloat conf key value))
 
 (defn path
@@ -30,11 +32,11 @@
      (apply str-path (str (path part1 (str part2))) components)))
 
 (defn configuration [conf-map]
-  (let [ret (Configuration.)]
-    (doall
-     (for [config conf-map]
-       (conf-set {:key (first config) :value (last config) :conf ret})))
-    ret))
+  (with-ret-bound [ret (Configuration.)]
+    (dofor [config conf-map]
+           (conf-set {:key (first config)
+                      :value (last config)
+                      :conf ret}))))
 
 (defn filesystem
   ([] (FileSystem/get (Configuration.)))
@@ -53,7 +55,8 @@
   (delete fs path true)
   (mkdirs fs path))
 
-(defn local-filesystem [] (FileSystem/getLocal (Configuration.)))
+(defn local-filesystem []
+  (FileSystem/getLocal (Configuration.)))
 
 (defn mk-local-path [local-dir]
   (.pathToFile (local-filesystem)
@@ -74,18 +77,17 @@
 (defrecord DownloadState [shard-states finished-loaders shard-loaders])
 
 (defn mk-shard-states [shards]
-  (->> shards
-       (map (fn [s]
-              [s (ShardState. (atom 0)
-                              (atom 0))]))
-       (into {})))
+  (map-mapvals shards (fn [_]
+                        (ShardState. (atom 0)
+                                     (atom 0)))))
 
 (defn mk-loader-state
   "Create new LoaderState"
   [domains-to-shards]
-  (let [shard-states (map-mapvals domains-to-shards
-                                  mk-shard-states)]
-    (DownloadState. shard-states (atom 0) (atom []))))
+  (-> domains-to-shards
+      (map-mapvals mk-shard-states)
+      (DownloadState. (atom 0)
+                      (atom []))))
 
 (declare copy-local*)
 
@@ -103,12 +105,11 @@
               (.write os buffer 0 amt)
               (swap! downloaded-kb + (int (/ amt 1024))) ;; increment downloaded-kb
               (recur)))
-          (do
-            (Thread/sleep @sleep-interval)
-            (recur)))))))
+          (do (Thread/sleep @sleep-interval)
+              (recur)))))))
 
 (defn copy-dir-local
-  [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
+  [^FileSystem fs ^Path path ^String target-local-path ^bytes buffer ^ShardState state]
   (.mkdir (File. target-local-path))
   (let [contents (seq (.listStatus fs path))]
     (doseq [c contents]
@@ -123,7 +124,7 @@
       (copy-file-local fs path target-local-path buffer state))))
 
 (defn copy-local
-  [#^FileSystem fs #^String spath #^String local-path ^ShardState state]
+  [^FileSystem fs ^String spath ^String local-path ^ShardState state]
   (let [target-file (File. local-path)
         source-name (.getName (Path. spath))
         buffer (byte-array (* 1024 15))

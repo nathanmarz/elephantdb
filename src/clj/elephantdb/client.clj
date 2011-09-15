@@ -37,7 +37,9 @@
   (:local-hostname (.state this)))
 
 (defn- get-priority-hosts [this domain key]
-  (let [hosts (shuffle (shard/key-hosts domain (get-index this domain) key))
+  (let [hosts (shuffle (shard/key-hosts domain
+                                        (get-index this domain)
+                                        key))
         localhost (my-local-hostname this)]
     (if (includes? hosts localhost)
       (cons localhost (remove-val localhost hosts))
@@ -104,23 +106,24 @@
         host-indexed-keys (host-indexed-keys this domain keys)]
     (loop [keys-to-get host-indexed-keys
            results []]
-      (let [host-map (group-by #(first (first %)) keys-to-get)
+      (let [host-map (group-by ffirst keys-to-get)
             rets (parallel-exec
                   (for [[host host-indexed-keys] host-map]
-                    #(vector host (multi-get* this domain host host-indexed-keys key-shard-fn multi-get-remote-fn))))
-            succeeded       (filter second rets)
+                    #(vector host (multi-get* this domain
+                                              host host-indexed-keys
+                                              key-shard-fn multi-get-remote-fn))))
+            succeeded (filter second rets)
             succeeded-hosts (map first succeeded)
-            results         (->> (map second succeeded)
-                                 (apply concat results))
+            results (->> (map second succeeded)
+                         (apply concat results))
             failed-host-map (apply dissoc host-map succeeded-hosts)]
         (if (empty? failed-host-map)
           (map second (sort-by first results))
-          (recur
-           (for [[[_ & hosts] gi key all-hosts] (apply concat (vals failed-host-map))]
-             (do (when (empty? hosts)
-                   (throw (hosts-down-ex all-hosts)))
-                 [hosts gi key all-hosts]))
-           results))))))
+          (recur (for [[[_ & hosts] gi key all-hosts] (apply concat (vals failed-host-map))]
+                   (if (empty? hosts)
+                     (throw (hosts-down-ex all-hosts))
+                     [hosts gi key all-hosts]))
+                 results))))))
 
 (defn -multiGetInt [this domain integers]
   (.multiGet this domain (map serialize-int integers)))

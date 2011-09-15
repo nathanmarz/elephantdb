@@ -2,11 +2,12 @@
   (:use [elephantdb util hadoop config log])
   (:import [elephantdb.store DomainStore]))
 
-(defn- shard-path [domain-version shard]
+(defn- shard-path
+  [domain-version shard]
   (str-path domain-version shard))
 
-;; TODO: Remove local-config completely.
-(defn open-domain-shard [persistence-factory db-conf local-shard-path]
+(defn open-domain-shard
+  [persistence-factory db-conf local-shard-path]
   (log-message "Opening LP " local-shard-path)
   (with-ret (.openPersistenceForRead
              persistence-factory
@@ -96,7 +97,7 @@
 
 (defn supervise-shard
   [max-kbs total-kb ^ShardState shard-state]
-  (let [downloaded-kb (:downloaded-kb shard-state)
+  (let [downloaded-kb  (:downloaded-kb shard-state)
         sleep-interval (:sleep-interval shard-state)]
     (let [dl-kb @downloaded-kb
           sleep-ms (rand 1000)] ;; sleep random amount of time up to 1s
@@ -107,30 +108,33 @@
                 0))
       (reset! downloaded-kb 0))))
 
-(defn supervise-downloads [amount-shards max-kbs interval-ms ^DownloadState state]
+(defn supervise-downloads
+  [amount-shards max-kbs interval-ms ^DownloadState state]
   (let [domain-to-shard-states (:shard-states state)
-        finished-loaders (:finished-loaders state)
-        shard-loaders (:shard-loaders state)
+        finished-loaders       (:finished-loaders state)
+        shard-loaders          (:shard-loaders state)
         total-kb (atom 0)]
     (loop []
       (reset! total-kb 0)
       (Thread/sleep interval-ms)
-      (let [finished-shard-loaders (count (filter #(.isDone %) @shard-loaders))]
+      (let [finished-shard-loaders (count (filter (memfn isDone)
+                                                  @shard-loaders))]
         (when (< (+ @finished-loaders finished-shard-loaders)
                  amount-shards)
-          (doseq [[domain shard-states] domain-to-shard-states]
-            (doseq [[s-id ^ShardState s-state] shard-states]
-              (supervise-shard max-kbs total-kb s-state)))
+          (doseq [[domain shard-states] domain-to-shard-states
+                  [s-id ^ShardState s-state] shard-states]
+            (supervise-shard max-kbs total-kb s-state))
           (recur))))))
 
-(defn start-download-supervisor [amount-shards max-kbs ^DownloadState state]
+(defn start-download-supervisor
+  [amount-shards max-kbs ^DownloadState state]
   (let [interval-factor-secs 0.1 ;; check every 0.01s
         interval-ms (int (* interval-factor-secs 1000))
         max-kbs-val (int (* max-kbs interval-factor-secs))]
     (future
       (log-message "Starting download supervisor for " amount-shards " shard loaders")
       (reset! (:finished-loaders state) 0)
-      (if (and (> amount-shards 0) ;; only monitor if there's an actual download throttle
-               (> max-kbs 0))      ;; and shards to be downloaded
+      (when (and (> amount-shards 0) ;; only monitor if there's an actual download throttle
+                 (> max-kbs 0))      ;; and shards to be downloaded
         (supervise-downloads amount-shards max-kbs-val interval-ms state))
       (log-message "Download supervisor finished"))))
