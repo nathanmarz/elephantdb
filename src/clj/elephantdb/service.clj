@@ -35,17 +35,6 @@
                  (fn [k _]
                    (-> k domain-shards domain/init-domain-info)))))
 
-(defn load-and-sync-domain-status
-  [domain domain-info loader-fn rw-lock]
-  (future
-    (try (when-let [new-data (loader-fn domain)]  
-           (domain/set-domain-data! rw-lock domain domain-info new-data))
-         (domain/set-domain-status! domain-info (thrift/ready-status))
-         (catch Throwable t
-           (log-error t "Error when loading domain " domain)
-           (domain/set-domain-status! domain-info
-                                      (thrift/failed-status t))))))
-
 (defn domain-needs-update?
   "Returns true if the remote VersionedStore contains newer data than
   its local copy, false otherwise."
@@ -81,7 +70,7 @@
                        host-shards))))))
 
 (defnk load-and-sync-status!
-  [domains-info remote-path-map local-config rw-lock
+  [remote-path-map local-config rw-lock domains-info
    :update? false
    :state nil]
   (let [status (if update?
@@ -159,7 +148,7 @@
     (log-message "Domains info: " domains-info)
     (future
       (try (purge-unused-domains! domains local-dir)
-           (load-and-sync-status! domains-info remote-path-map local-config rw-lock)
+           (load-and-sync-status! remote-path-map local-config rw-lock domains-info)
            (cleanup-domains! domains local-dir)
            (log-message "Finished loading all updated domains from remote")
            (catch Throwable t
@@ -207,10 +196,10 @@
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
     (future
       ;; TODO: Curry this!
-      (try (load-and-sync-status! domains-info
-                                  (:domains global-config)
+      (try (load-and-sync-status! (:domains global-config)
                                   local-config
                                   rw-lock
+                                  domains-info
                                   :update? true
                                   :state state)
            (log-message "Finished updating all domains from remote.")
