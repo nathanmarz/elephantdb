@@ -36,33 +36,15 @@
                    (-> k domain-shards domain/init-domain-info)))))
 
 (defn load-and-sync-domain-status
-  [domain domain-info loader-fn rw-lock update?]
+  [domain domain-info loader-fn rw-lock]
   (future
-    (try (domain/set-domain-status! domain-info
-                                    (if update?
-                                      (thrift/ready-status true)
-                                      (thrift/loading-status)))
-         (let [new-data (loader-fn domain)]  
-           (when (and new-data (not= new-data :no-update))
-             (domain/set-domain-data! rw-lock domain domain-info new-data))
-           (domain/set-domain-status! domain-info
-                                      (thrift/ready-status false)))
+    (try (when-let [new-data (loader-fn domain)]  
+           (domain/set-domain-data! rw-lock domain domain-info new-data))
+         (domain/set-domain-status! domain-info (thrift/ready-status))
          (catch Throwable t
            (log-error t "Error when loading domain " domain)
            (domain/set-domain-status! domain-info
                                       (thrift/failed-status t))))))
-
-(defnk load-and-sync-status
-  [domains-info rw-lock loader-fn :update? false]
-  (let [loaders (dofor [[domain info] domains-info]
-                       (load-and-sync-domain-status domain
-                                                    info
-                                                    loader-fn
-                                                    rw-lock
-                                                    update?))]
-    (with-ret (future-values loaders)
-      (log-message "Successfully loaded domains: "
-                   (s/join ", " (keys domains-info))))))
 
 (defn domain-needs-update?
   "Returns true if the remote VersionedStore contains newer data than
@@ -72,35 +54,58 @@
       (< (.mostRecentVersion local-vs)
          (.mostRecentVersion remote-vs))))
 
-;; TODO: examine this... can we remove this use-cache deal?
+;; TODO: examine this... can we remove this use-cachedeal?
 (defn use-cache-or-update
-  ([domain host-shards remote-path local-config]
-     (->> (mk-loader-state {domain host-shards})
-          (use-cache-or-update domain host-shards remote-path local-config false)))
-  ([domain host-shards remote-path local-config update? ^DownloadState state]
-     (let [{:keys [hdfs-conf local-dir local-db-conf]} local-config
-           fs  (filesystem hdfs-conf)
-           lfs (local-filesystem)
-           local-domain-root (str (path local-dir domain))
-           remote-vs (DomainStore. fs remote-path)
-           local-vs  (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
-       (if (domain-needs-update? local-vs remote-vs)
-         (load-domain domain
-                      fs
-                      local-db-conf
-                      local-domain-root
-                      remote-path
-                      host-shards
-                      state)
-         (let [{:keys [finished-loaders shard-states]} state]
-           ;; use cached domain from local-dir (no update needed)
-           ;; signal all shards of domain are done loading
-           (swap! finished-loaders + (count (shard-states domain)))
-           (if update?
-             :no-update
-             (open-domain local-db-conf
-                          local-domain-root
-                          host-shards)))))))
+  [domain host-shards remote-path local-config update? state]
+  (let [{:keys [hdfs-conf local-dir local-db-conf]} local-config
+        fs  (filesystem hdfs-conf)
+        lfs (local-filesystem)
+        local-domain-root (str (path local-dir domain))
+        remote-vs (DomainStore. fs remote-path)
+        local-vs  (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
+    (if (domain-needs-update? local-vs remote-vs)
+      (load-domain domain
+                   fs
+                   local-db-conf
+                   local-domain-root
+                   remote-path
+                   host-shards
+                   state)
+      (let [{:keys [finished-loaders shard-states]} state]
+        ;; use cached domain from local-dir (no update needed)
+        ;; signal all shards of domain are done loading
+        (swap! finished-loaders + (count (shard-states domain)))
+        (when-not update?
+          (open-domain local-db-conf
+                       local-domain-root
+                       host-shards))))))
+;; TODO: update state
+(defnk load-and-sync-status
+  [domains-info global-config local-config rw-lock
+   :update? false
+   :state nil]
+  (let [status (if update?
+                 (thrift/ready-status :loading? true)
+                 (thrift/loading-status))
+        loader-fn (fn [domain]
+                    (let [host-shards (domain/host-shards (domains-info domain))
+                          remote-path (-> global-config :domains (get domain))
+                          state (or state (mk-loader-state {domain host-shards}))]
+                      (use-cache-or-update domain
+                                           host-shards
+                                           remote-path
+                                           local-config
+                                           update?
+                                           state)))
+        loaders (dofor [[domain info] domains-info]
+                       (domain/set-domain-status! info status)
+                       (load-and-sync-domain-status domain
+                                                    info
+                                                    loader-fn
+                                                    rw-lock))]
+    (with-ret (future-values loaders)
+      (log-message "Successfully loaded domains: "
+                   (s/join ", " (keys domains-info))))))
 
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
@@ -121,14 +126,9 @@
 (defn sync-remote-data
   [domains-info global-config local-config rw-lock]
   (load-and-sync-status domains-info
-                        rw-lock
-                        (fn [domain]
-                          (let [host-shards (domain/host-shards (domains-info domain))
-                                remote-path (-> global-config :domains (get domain))]
-                            (use-cache-or-update domain
-                                                 host-shards
-                                                 remote-path
-                                                 local-config)))))
+                        global-config
+                        local-config
+                        rw-lock))
 
 (defn cleanup-domain!
   [domain-path]
@@ -212,26 +212,20 @@
     (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
     (future
+      ;; TODO: Curry this!
       (try (load-and-sync-status domains-info
+                                 global-config
+                                 local-config
                                  rw-lock
-                                 (fn [domain]
-                                   (let [host-shards (domain/host-shards (domains-info domain))
-                                         remote-path (-> global-config :domains (get domain))]
-                                     (use-cache-or-update domain
-                                                          host-shards
-                                                          remote-path
-                                                          local-config
-                                                          true
-                                                          state)))
-                                 :update? true)
+                                 :update? true
+                                 :state state)
            (log-message "Finished updating all domains from remote.")
            (log-message "Removing all old versions of updated domains!")
            (try (cleanup-domains! (keys domains-info) local-dir)
                 (catch Throwable t
                   (log-error t "Error when cleaning old versions")))
            (catch Throwable t
-             (log-error t "Error when syncing data")
-             (throw t))))))
+             (log-error t "Error when syncing data"))))))
 
 (defn- trigger-update
   [service-handler download-supervisor domains-info global-config local-config rw-lock]

@@ -28,7 +28,7 @@
   (let [{interval :update-interval-s} local-config
         {port :port} global-config
         handler (service/service-handler global-config local-config)
-        server (service/thrift-server handler port)]
+        server  (service/thrift-server handler port)]
     (util/register-shutdown-hook #(do (.shutdown handler)
                                       (.stop server)))
     (log/log-message "Starting updater process...")
