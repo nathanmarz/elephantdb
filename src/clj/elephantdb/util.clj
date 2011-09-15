@@ -7,16 +7,33 @@
       (.addShutdownHook (Thread. shutdown-func))))
 
 (defn repeat-seq
-  ([aseq]
-     (apply concat (repeat aseq)))
-  ([amt aseq]
-     (apply concat (repeat amt aseq))))
+  [amt aseq]
+  (apply concat (repeat amt aseq)))
 
 (defn flattened-count [xs]
   (reduce + (map count xs)))
 
-(defn map-mapvals [f amap]
-  (into {} (for [[k v] amap] [k (f v)])))
+(defmacro dofor [bindings & body]
+  `(doall (for ~bindings (do ~@body))))
+
+(defmacro dofor [bindings & body]
+  `(doall (for ~bindings (do ~@body))))
+
+(defmacro p-dofor [bindings & body]
+  `(let [futures# (dofor ~bindings
+                         (future ~@body))]
+     (future-values futures#)))
+
+(defn update-vals
+  "TODO: Note that this is the same as map-mapvals, just with a 2 arg
+  function."
+  [amap f]
+  (into {} (dofor [[k v] amap]
+                  [k (f k v)])))
+
+(defn map-mapvals [amap f]
+  (into {} (dofor [[k v] amap]
+                  [k (f v)])))
 
 (defn reverse-multimap
   "{:a [1 2] :b [1] :c [3]} -> {1 [:a :b] 2 [:a] 3 [:c]}"
@@ -25,7 +42,7 @@
          concat
          (mapcat
           (fn [[k vlist]]
-            (for [v vlist] {v [k]} ))
+            (for [v vlist] {v [k]}))
           amap)))
 
 (defn local-hostname []
@@ -36,9 +53,6 @@
     (if (pred curr)
       [curr restseq]
       (recur restseq))))
-
-(defmacro dofor [bindings & body]
-  `(doall (for ~bindings (do ~@body))))
 
 (defn future-values [futures]
   (dofor [f futures]
@@ -61,14 +75,14 @@
 (defn mk-rw-lock []
   (ReentrantReadWriteLock.))
 
-(defmacro read-locked [rw-lock & body]
+(defmacro with-read-lock [rw-lock & body]
   `(let [rlock# (.readLock ~rw-lock)]
      (try
        (.lock rlock#)
        ~@body
        (finally (.unlock rlock#)))))
 
-(defmacro write-locked [rw-lock & body]
+(defmacro with-write-lock [rw-lock & body]
   `(let [wlock# (.writeLock ~rw-lock)]
      (try
        (.lock wlock#)
@@ -83,3 +97,11 @@
 (defmacro with-ret [val & body]
   `(with-ret-bound [ret# ~val]
      ~@body))
+
+;; ## Error Handlers
+
+(defn throw-illegal [s]
+  (throw (IllegalArgumentException. s)))
+
+(defn throw-runtime [s]
+  (throw (RuntimeException. s)))

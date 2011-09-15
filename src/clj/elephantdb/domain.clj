@@ -1,5 +1,6 @@
 (ns elephantdb.domain
-  (:use [elephantdb util thrift config])
+  (:use [elephantdb util thrift config]
+        [elephantdb.loader :only (close-domain)])
   (:require [elephantdb.shard :as s])
   (:import [elephantdb Utils]))
 
@@ -14,14 +15,19 @@
           (atom nil)))
 
 (defn domain-data
+  ([domain-info]
+     @(::domain-data domain-info))
   ([domain-info shard]
      (when-let [domain-data @(::domain-data domain-info)]
-       (domain-data shard)))
-  ([domain-info]
-     @(::domain-data domain-info)))
+       (domain-data shard))))
 
-(defn set-domain-data! [domain-info domain-data]
-  (reset! (::domain-data domain-info) domain-data))
+(defn set-domain-data!
+  [rw-lock domain domain-info new-data]
+  (let [old-data (domain-data domain-info)]
+    (with-write-lock rw-lock
+      (reset! (::domain-data domain-info) new-data))
+    (when old-data
+      (close-domain domain old-data))))
 
 (defn domain-status [domain-info]
   @(::domain-status domain-info))
@@ -41,10 +47,7 @@
 (defn all-shards
   "Returns Map of domain-name to Set of shards for that domain"
   [domains-info]
-  (->> (keys domains-info)
-       (map (fn [domain]
-              {domain (host-shards (domains-info domain))}))
-       (into {})))
+  (map-mapvals domains-info host-shards))
 
 (defn key-hosts [domain domain-info #^bytes key]
   (s/key-hosts domain (::shard-index domain-info) key))

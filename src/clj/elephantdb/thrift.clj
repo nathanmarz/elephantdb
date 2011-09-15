@@ -1,4 +1,5 @@
 (ns elephantdb.thrift
+  (:use [clojure.contrib.def :only (defnk)])
   (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol]
            [org.apache.thrift.transport TTransport TFramedTransport TSocket]
            [elephantdb.generated LoadingStatus DomainStatus DomainStatus$_Fields ReadyStatus
@@ -14,7 +15,7 @@
 (defn shutdown-status []
   (DomainStatus/shutdown (ShutdownStatus.)))
 
-(defn ready-status [loading?]
+(defnk ready-status [:loading? false]
   (DomainStatus/ready
    (doto (ReadyStatus.)
      (.set_update_status (when loading? (LoadingStatus.))))))

@@ -1,24 +1,30 @@
 (ns elephantdb.hadoop
-  (:use elephantdb.log)
-  (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream])
-  (:import [org.apache.hadoop.fs FileSystem Path]
+  (:use elephantdb.log
+        [elephantdb.util
+         :only (map-mapvals with-ret-bound dofor)])
+  (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream]
+           [org.apache.hadoop.fs FileSystem Path]
            [org.apache.hadoop.conf Configuration]))
 
-(defmulti conf-set (fn [obj] (class (:value obj))))
+(defmulti conf-set
+  (fn [obj] (class (:value obj))))
 
-(defmethod conf-set String [{key :key value :value conf :conf}]
+(defmethod conf-set String [{:keys [key value conf]}]
   (.set conf key value))
 
-(defmethod conf-set Integer [{key :key value :value conf :conf}]
+(defmethod conf-set Integer [{:keys [key value conf]}]
   (.setInt conf key value))
 
-(defmethod conf-set Float [{key :key value :value conf :conf}]
+(defmethod conf-set Float [{:keys [key value conf]}]
   (.setFloat conf key value))
 
 (defn path
   ([str-or-path]
-     (if (instance? Path str-or-path) str-or-path (Path. str-or-path)))
-  ([parent child] (Path. parent child)))
+     (if (instance? Path str-or-path)
+       str-or-path
+       (Path. str-or-path)))
+  ([parent child]
+     (Path. parent child)))
 
 (defn str-path
   ([part1] part1)
@@ -26,11 +32,11 @@
      (apply str-path (str (path part1 (str part2))) components)))
 
 (defn configuration [conf-map]
-  (let [ret (Configuration.)]
-    (doall
-     (for [config conf-map]
-       (conf-set {:key (first config) :value (last config) :conf ret})))
-    ret))
+  (with-ret-bound [ret (Configuration.)]
+    (dofor [config conf-map]
+           (conf-set {:key (first config)
+                      :value (last config)
+                      :conf ret}))))
 
 (defn filesystem
   ([] (FileSystem/get (Configuration.)))
@@ -49,7 +55,8 @@
   (delete fs path true)
   (mkdirs fs path))
 
-(defn local-filesystem [] (FileSystem/getLocal (Configuration.)))
+(defn local-filesystem []
+  (FileSystem/getLocal (Configuration.)))
 
 (defn mk-local-path [local-dir]
   (.pathToFile (local-filesystem)
@@ -69,20 +76,20 @@
 ;; shard-loaders:    Vector of all shard-loader futures used by the download supervisor
 (defrecord DownloadState [shard-states finished-loaders shard-loaders])
 
-(defn mk-shard-states [shards]
-  (->> shards
-       (map (fn [s]
-              {s (ShardState. (atom 0) (atom 0))}))
-       (into {})))
+(defn mk-shard-states
+  [shard-set]
+  (->> (repeatedly #(ShardState. (atom 0)
+                                 (atom 0)))
+       (interleave shard-set)
+       (apply hash-map)))
 
 (defn mk-loader-state
   "Create new LoaderState"
   [domains-to-shards]
-  (let [shard-states (->> domains-to-shards
-                          (map (fn [[domain shards]]
-                                 {domain (mk-shard-states shards)}))
-                          (into {}))]
-    (DownloadState. shard-states (atom 0) (atom []))))
+  (-> domains-to-shards
+      (map-mapvals mk-shard-states)
+      (DownloadState. (atom 0)
+                      (atom []))))
 
 (declare copy-local*)
 
@@ -100,12 +107,11 @@
               (.write os buffer 0 amt)
               (swap! downloaded-kb + (int (/ amt 1024))) ;; increment downloaded-kb
               (recur)))
-          (do
-            (Thread/sleep @sleep-interval)
-            (recur)))))))
+          (do (Thread/sleep @sleep-interval)
+              (recur)))))))
 
 (defn copy-dir-local
-  [#^FileSystem fs #^Path path #^String target-local-path #^bytes buffer ^ShardState state]
+  [^FileSystem fs ^Path path ^String target-local-path ^bytes buffer ^ShardState state]
   (.mkdir (File. target-local-path))
   (let [contents (seq (.listStatus fs path))]
     (doseq [c contents]
@@ -120,7 +126,7 @@
       (copy-file-local fs path target-local-path buffer state))))
 
 (defn copy-local
-  [#^FileSystem fs #^String spath #^String local-path ^ShardState state]
+  [^FileSystem fs ^String spath ^String local-path ^ShardState state]
   (let [target-file (File. local-path)
         source-name (.getName (Path. spath))
         buffer (byte-array (* 1024 15))

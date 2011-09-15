@@ -1,10 +1,10 @@
 (ns elephantdb.service-test
-  (:use clojure.test)
-  (:import [elephantdb.persistence JavaBerkDB])
-  (:import [elephantdb.generated WrongHostException
-            DomainNotFoundException])
-  (:use [elephantdb service testing util config hadoop])
-  (:require [elephantdb [thrift :as thrift]]))
+  (:use clojure.test
+        [elephantdb service testing util config hadoop log])
+  (:require [elephantdb [thrift :as thrift]])
+  (:import [elephantdb.persistence JavaBerkDB]
+           [elephantdb.generated WrongHostException
+            DomainNotFoundException]))
 
 (defn get-val [elephant d k]
   (.get_data (.get elephant d k)))
@@ -278,6 +278,7 @@
                                 3 [3 3])
 
           ;; domain2 should not have changed either
+          
           (expected-domain-data handler "domain2"
                                 0 [10 10]
                                 1 [20 20]
@@ -285,12 +286,14 @@
                                 3 [40 40])
 
           ;; nothing should happen for domain1
+          
           (.update handler "domain1")
+          
 
           ;; wait a bit
           (while (.isUpdating handler)
             (Thread/sleep 100))
-
+          
           ;; domain1 should not have changed
           (expected-domain-data handler "domain1"
                                 0 [0 0]

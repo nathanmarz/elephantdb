@@ -25,16 +25,14 @@
 ;; TODO: Figure out how to get user into `ips!` and uncomment this in
 ;; `start!`.
 (defn ips! [ring]
-  (let [{:keys [group-name]} (node/edb-group-spec ring )
+  (let [{:keys [group-name]} (node/edb-group-spec ring)
         aws (compute-service-from-map (:deploy-creds (edb-configs/edb-config)))]
     (print-ips-for-tag! aws (name group-name))))
 
 (defn- converge-edb!
   [ring count local?]
   (let [{:keys [data-creds deploy-creds]} (edb-configs/edb-config)
-        deploy-creds (update-in deploy-creds
-                                [:user]
-                                util/resolve-keypaths)
+        deploy-creds (update-in deploy-creds [:user] util/resolve-keypaths)
         compute (if local?
                   (service "virtualbox")
                   (compute-service-from-map deploy-creds))
@@ -55,8 +53,7 @@
   (let [{count :node-count} (edb-configs/read-global-conf! ring)]
     (converge-edb! ring count local?)
     (println "Cluster Started.")
-    ;; (ips! ring)
-    ))
+    #_(ips! ring)))
 
 (defnk stop! [ring :local? false]
   (converge-edb! ring 0 local?)
@@ -72,7 +69,7 @@
      [ips? "Cluster IPs"]]
     (if-not ring
       (println "Please pass in a ring name with --ring.")
-      (cond  start? (start! ring local?)
-             stop? (stop! ring local?)
+      (cond  start? (start! ring :local? local?)
+             stop? (stop! ring :local? local?)
              ips? (ips! ring)
              :else (println "Must pass --start or --stop")))))

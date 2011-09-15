@@ -1,10 +1,10 @@
 (ns elephantdb.hadoop.input-format-test
-  (:use clojure.test)
-  (:import [elephantdb Utils])
-  (:import [elephantdb.persistence JavaBerkDB])
-  (:import [elephantdb.hadoop ElephantInputFormat ElephantInputFormat$Args])
-  (:import [org.apache.hadoop.mapred JobConf])
-  (:use [elephantdb testing util config]))
+  (:use clojure.test
+        [elephantdb testing util config])
+  (:import [elephantdb Utils]
+           [elephantdb.persistence JavaBerkDB]
+           [elephantdb.hadoop ElephantInputFormat ElephantInputFormat$Args]
+           [org.apache.hadoop.mapred JobConf]))
 
 (defn read-reader [reader]
   (let [key (.createKey reader)
@@ -17,7 +17,7 @@
                    )))
         ret (doall (map second (take-while first reads)))]
     (.close reader)
-    ret ))
+    ret))
 
 (defn read-domain [dpath]
   (let [input-format (ElephantInputFormat.)
@@ -30,8 +30,7 @@
                                  s
                                  conf
                                  nil))]
-    (apply concat (map read-reader readers))
-    ))
+    (mapcat read-reader readers)))
 
 (deftest test-read-what-write
   (let [pairs [[(barr 0) (barr 0 2)]
@@ -50,7 +49,6 @@
                           {:num-shards 6
                            :persistence-factory (JavaBerkDB.)}
                           pairs]
-      (is (kv-pairs= pairs (read-domain dpath)))
-      )))
+      (is (kv-pairs= pairs (read-domain dpath))))))
 
 ;; TODO: test read specific version vs read most recent

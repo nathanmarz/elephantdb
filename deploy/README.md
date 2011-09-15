@@ -1,9 +1,11 @@
 ## Setup
 
+TODO: Replace this with the good stuff.
+
 1) Add keys to ~/.ssh/elephantdb and ~/.ssh/elephantdb.pub. These will be installed on EDB server.
 2) Create ~/.pallet/config.clj with contents:
-(defpallet
-  :services {
+          (defpallet
+               :services {
               :elephantdb-deploy {
                          :provider "aws-ec2"
                          :identity "XXXX"
@@ -13,12 +15,11 @@
               :elephantdb-data {
                          :blobstore-provider "aws-s3"
                          :provider "aws-ec2"
-                                                  :identity "XXXX"
+                         :identity "XXXX"
                          :credential "XXXX"
                          }
              }
-    :environment {:algorithms
-                  {:lift-fn pallet.core/parallel-lift
+                               {:lift-fn pallet.core/parallel-lift
                    :converge-fn pallet.core/parallel-adjust-node-counts}})
 
 3) Add configuration files for your ring to ../deploy/conf/<ring name>
