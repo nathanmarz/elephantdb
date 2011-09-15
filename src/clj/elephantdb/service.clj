@@ -79,30 +79,32 @@
           (open-domain local-db-conf
                        local-domain-root
                        host-shards))))))
-;; TODO: update state
-(defnk load-and-sync-status
-  [domains-info global-config local-config rw-lock
+
+(defnk load-and-sync-status!
+  [domains-info remote-path-map local-config rw-lock
    :update? false
    :state nil]
   (let [status (if update?
                  (thrift/ready-status :loading? true)
                  (thrift/loading-status))
-        loader-fn (fn [domain]
-                    (let [host-shards (domain/host-shards (domains-info domain))
-                          remote-path (-> global-config :domains (get domain))
-                          state (or state (mk-loader-state {domain host-shards}))]
-                      (use-cache-or-update domain
-                                           host-shards
-                                           remote-path
-                                           local-config
-                                           update?
-                                           state)))
-        loaders (dofor [[domain info] domains-info]
-                       (domain/set-domain-status! info status)
-                       (load-and-sync-domain-status domain
-                                                    info
-                                                    loader-fn
-                                                    rw-lock))]
+        loaders (dofor [[domain info] domains-info
+                        :let [host-shards (domain/host-shards info)
+                              remote-path (get remote-path-map domain)
+                              loader-state (or state (mk-loader-state {domain host-shards}))]]
+                       (future
+                         (try (domain/set-domain-status! info status)
+                              (when-let [new-data (use-cache-or-update domain
+                                                                       host-shards
+                                                                       remote-path
+                                                                       local-config
+                                                                       update?
+                                                                       loader-state)]  
+                                (domain/set-domain-data! rw-lock domain info new-data))
+                              (domain/set-domain-status! info (thrift/ready-status))
+                              (catch Throwable t
+                                (log-error t "Error when loading domain " domain)
+                                (domain/set-domain-status! info
+                                                           (thrift/failed-status t))))))]
     (with-ret (future-values loaders)
       (log-message "Successfully loaded domains: "
                    (s/join ", " (keys domains-info))))))
@@ -120,15 +122,6 @@
                                        (.getName domain-path))))]
            (log-message "Deleting local path of deleted domain: " domain-path)
            (delete lfs (.getPath domain-path) true))))
-
-;; TODO: take this out of the loop.
-;; TODO: This only needs the domains entry, under global-config.
-(defn sync-remote-data
-  [domains-info global-config local-config rw-lock]
-  (load-and-sync-status domains-info
-                        global-config
-                        local-config
-                        rw-lock))
 
 (defn cleanup-domain!
   [domain-path]
@@ -158,14 +151,15 @@
 
 (defn sync-updated!
   [global-config local-config rw-lock]
-  (let [{:keys [hdfs-conf local-dir]} local-config
+  (let [{remote-path-map :domains} global-config
+        {:keys [hdfs-conf local-dir]} local-config
         domains-info (-> (filesystem hdfs-conf)
                          (init-domain-info-map global-config))
         domains (keys domains-info)]
     (log-message "Domains info: " domains-info)
     (future
       (try (purge-unused-domains! domains local-dir)
-           (sync-remote-data domains-info global-config local-config rw-lock)
+           (load-and-sync-status! domains-info remote-path-map local-config rw-lock)
            (cleanup-domains! domains local-dir)
            (log-message "Finished loading all updated domains from remote")
            (catch Throwable t
@@ -213,12 +207,12 @@
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
     (future
       ;; TODO: Curry this!
-      (try (load-and-sync-status domains-info
-                                 global-config
-                                 local-config
-                                 rw-lock
-                                 :update? true
-                                 :state state)
+      (try (load-and-sync-status! domains-info
+                                  (:domains global-config)
+                                  local-config
+                                  rw-lock
+                                  :update? true
+                                  :state state)
            (log-message "Finished updating all domains from remote.")
            (log-message "Removing all old versions of updated domains!")
            (try (cleanup-domains! (keys domains-info) local-dir)
