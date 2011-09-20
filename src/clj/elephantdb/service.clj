@@ -1,6 +1,5 @@
 (ns elephantdb.service
-  (:use [elephantdb config log util hadoop loader]
-        [clojure.contrib.def :only (defnk)])
+  (:use [elephantdb config log util hadoop loader])
   (:require [clojure.string :as s]
             [elephantdb.domain :as domain]
             [elephantdb.thrift :as thrift]
@@ -69,10 +68,8 @@
                        local-domain-root
                        host-shards))))))
 
-(defnk load-and-sync-status!
-  [remote-path-map local-config rw-lock domains-info
-   :update? false
-   :state nil]
+(defn load-and-sync-status!
+  [remote-path-map local-config rw-lock domains-info & {:keys [update? state]}]
   (let [status (if update?
                  (thrift/ready-status :loading? true)
                  (thrift/loading-status))
@@ -233,7 +230,7 @@
           (dofor [[_ info] domains-info]
                  (domain/set-domain-status! info (thrift/shutdown-status))))
         (close-lps domains-info))
-
+      
       (get [^String domain ^bytes key]
         (.get @client domain key))
 
