@@ -5,6 +5,7 @@
         [clojure.contrib.def :only (defnk)]
         [pallet.blobstore :only (blobstore-from-config)]
         [pallet.phase :only (phase-fn)]
+        [elephantdb.deploy.crate.raid0 :only [m1-large-raid0]]
         [pallet.configure :only (pallet-config compute-service-properties)])
   (:require [pallet.request-map :as request-map]
             [pallet.crate.automated-admin-user :as automated-admin-user]
@@ -20,7 +21,7 @@
               {:os-family :ubuntu
                :os-64-bit true}
               {:image-id "us-east-1/ami-08f40561"
-               :hardware-id "m1.large"
+               :hardware-id "m1.large" ;; This must be m1.large for RAID0 to work.
                :inbound-ports [22 port]}))))
 
 (defn edb-server-spec [admin-user]
@@ -31,6 +32,7 @@
                           (automated-admin-user/automated-admin-user
                            (.username admin-user)
                            (.public-key-path admin-user))
+                          (m1-large-raid0)
                           (edb/filelimits fd-limit users))
               :configure (phase-fn
                           (daemontools/daemontools)
