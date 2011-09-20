@@ -135,16 +135,16 @@
       (throw e))))
 
 ;; TODO: Merge local and global configs here.
-(defn sync-updated! [global-config local-config curry-func]
+(defn prepare-local-domains! [global-config local-config rw-lock]
   (let [{:keys [hdfs-conf local-dir]} local-config
         domains-info (-> (filesystem hdfs-conf)
                          (init-domain-info-map global-config))
         domains (keys domains-info)]
     (log-message "Domains info: " domains-info)
     (with-ret domains-info
-      (future
+      (future        
         (try (purge-unused-domains! domains local-dir)
-             (curry-func domains-info)
+             (load-and-sync-status! (:domains global-config) local-config rw-lock domains-info)
              (cleanup-domains! domains local-dir)
              (log-message "Finished loading all updated domains from remote.")
              (catch Throwable t
@@ -179,9 +179,8 @@
        (and @download-supervisor
             (not (.isDone @download-supervisor))))))
 
-;; TODO: integrate curry-func, remove extra args
 (defn- update-domains
-  [download-supervisor domains-info local-config curry-func]
+  [download-supervisor domains-info local-config global-config rw-lock]
   (let [{max-kbs :max-online-download-rate-kb-s
          local-dir :local-dir} local-config
          ^DownloadState state (-> domains-info
@@ -191,9 +190,12 @@
     (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
     (future
-      (try (curry-func domains-info
-                       :update? true
-                       :state state)
+      (try (load-and-sync-status! (:domains global-config)
+                                  local-config
+                                  rw-lock
+                                  domains-info
+                                  :update? true
+                                  :state state)
            (log-message "Finished updating all domains from remote.")
            (log-message "Removing all old versions of updated domains!")
            (try (cleanup-domains! (keys domains-info) local-dir)
@@ -203,11 +205,11 @@
              (log-error t "Error when syncing data"))))))
 
 (defn- trigger-update
-  [service-handler download-supervisor domains-info local-config curry-func]
+  [service-handler download-supervisor domains-info local-config global-config rw-lock]
   (with-ret true
     (if (service-updating? service-handler download-supervisor)
       (log-message "UPDATER - Not updating as update process still in progress.")
-      (update-domains download-supervisor domains-info local-config curry-func))))
+      (update-domains download-supervisor domains-info local-config global-config rw-lock))))
 
 ;; 5. TODO: (What does this mean?) Create Hadoop FS on demand... need
 ;; retry logic if loaders fail?
@@ -217,11 +219,7 @@
   implement."
   [client global-config local-config]
   (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
-        curry-func (partial load-and-sync-status!
-                            (:domains global-config)
-                            local-config
-                            rw-lock)
-        domains-info (sync-updated! global-config local-config curry-func)
+        domains-info (prepare-local-domains! global-config local-config rw-lock)
         download-supervisor (atom nil)]
     (proxy [ElephantDB$Iface Shutdownable] []
       (shutdown []
@@ -293,14 +291,16 @@
                         download-supervisor
                         domains-info
                         local-config
-                        curry-func))
+                        global-config
+                        rw-lock))
       
       (update [^String domain]
         (trigger-update this
                         download-supervisor
                         (select-keys domains-info [domain])
                         local-config
-                        curry-func)))))
+                        global-config
+                        rw-lock)))))
 
 (defn service-handler
   "Entry point to edb. `service-handler` returns a proxied
