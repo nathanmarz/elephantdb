@@ -9,9 +9,10 @@ from thrift.transport.TTransport import TTransportException
 from thrift.TSerialization import serialize, deserialize
 
 class ElephantDBClient:
-    def __init__(self, host, port):
+    def __init__(self, host, port, timeout=None):
         self._host = host
         self._port = port
+        self._timeout = timeout
         self._reset()
         self._connect()
 
@@ -88,7 +89,9 @@ class ElephantDBClient:
 
     def _connect(self):
         if self._conn is None:
-            self._conn = TTransport.TFramedTransport(TSocket.TSocket(self._host, self._port))
+            socket = TSocket.TSocket(self._host, self._port)
+            socket.setTimeout(self._timeout)
+            self._conn = TTransport.TFramedTransport(socket)
             self._client = ElephantDB.Client(TBinaryProtocol.TBinaryProtocol(self._conn))
             self._conn.open()
 
