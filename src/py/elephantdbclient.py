@@ -12,7 +12,7 @@ class ElephantDBClient:
     def __init__(self, host, port, timeout=None):
         self._host = host
         self._port = port
-        self._timeout = None
+        self._timeout = timeout
         self._reset()
         self._connect()
     
