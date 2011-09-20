@@ -34,11 +34,14 @@
                  (fn [k _]
                    (-> k domain-shards domain/init-domain-info)))))
 
+(defn domain-has-data? [local-vs]
+  (-> local-vs .mostRecentVersion boolean))
+
 (defn domain-needs-update?
   "Returns true if the remote VersionedStore contains newer data than
   its local copy, false otherwise."
   [local-vs remote-vs]
-  (or (nil? (.mostRecentVersion local-vs))
+  (or (not (domain-has-data? local-vs))
       (< (.mostRecentVersion local-vs)
          (.mostRecentVersion remote-vs))))
 
@@ -77,6 +80,55 @@
                           :let [host-shards (domain/host-shards info)
                                 remote-path (get remote-path-map domain)
                                 loader-state (or state (mk-loader-state {domain host-shards}))]]
+                         (try (domain/set-domain-status! info status)
+                              (when-let [new-data (use-cache-or-update domain
+                                                                       host-shards
+                                                                       remote-path
+                                                                       local-config
+                                                                       update?
+                                                                       loader-state)]  
+                                (domain/set-domain-data! rw-lock domain info new-data))
+                              (domain/set-domain-status! info (thrift/ready-status))
+                              (catch Throwable t
+                                (log-error t "Error when loading domain " domain)
+                                (domain/set-domain-status! info
+                                                           (thrift/failed-status t)))))]
+    (with-ret loaders
+      (log-message "Successfully loaded domains: "
+                   (s/join ", " (keys domains-info))))))
+
+(defn use-cache-or-update
+  [domain host-shards remote-path local-config update? state]
+  (let [{:keys [hdfs-conf local-dir local-db-conf]} local-config
+        fs  (filesystem hdfs-conf)
+        lfs (local-filesystem)
+        local-domain-root (str (path local-dir domain))
+        remote-vs (DomainStore. fs remote-path)
+        local-vs  (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
+    (if (domain-has-data? local-vs)
+      (load-domain domain
+                   fs
+                   local-db-conf
+                   local-domain-root
+                   remote-path
+                   host-shards
+                   state)
+      (let [{:keys [finished-loaders shard-states]} state]
+        ;; use cached domain from local-dir (no update needed)
+        ;; signal all shards of domain are done loading
+        (swap! finished-loaders + (count (shard-states domain)))
+        (when-not update?
+          (open-domain local-db-conf
+                       local-domain-root
+                       host-shards))))))
+(defn load-and-sync-status!
+  "TRYING out just an initial load."
+  [remote-path-map local-config rw-lock domains-info]
+  (let [status (thrift/loading-status)
+        loaders (p-dofor [[domain info] domains-info
+                          :let [host-shards  (domain/host-shards info)
+                                remote-path  (get remote-path-map domain)
+                                loader-state (mk-loader-state {domain host-shards})]]
                          (try (domain/set-domain-status! info status)
                               (when-let [new-data (use-cache-or-update domain
                                                                        host-shards
