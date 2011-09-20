@@ -15,4 +15,5 @@
                      [clojure-source "1.2.0"]
                      [lein-marginalia "0.6.0"]
                      [org.apache.hadoop/hadoop-core "0.20.2-dev"]]
-  :aot :all)
+  :aot [elephantdb.client
+        elephantdb.main])

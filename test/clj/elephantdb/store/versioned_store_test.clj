@@ -1,7 +1,7 @@
 (ns elephantdb.store.versioned-store-test
   (:use [clojure test]
-        [elephantdb testing hadoop util]
-        [elephantdb.store VersionedStore]))
+        [elephantdb testing hadoop util])
+  (:import [elephantdb.store VersionedStore]))
 
 (defmacro def-vs-test [name [vs-sym] & body]
   `(def-fs-test ~name [fs# dir#]

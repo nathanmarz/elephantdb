@@ -1,6 +1,5 @@
 (ns elephantdb.service
-  (:use [elephantdb config log util hadoop loader]
-        [clojure.contrib.def :only (defnk)])
+  (:use [elephantdb config log util hadoop loader])
   (:require [clojure.string :as s]
             [elephantdb.domain :as domain]
             [elephantdb.thrift :as thrift]
@@ -35,11 +34,14 @@
                  (fn [k _]
                    (-> k domain-shards domain/init-domain-info)))))
 
+(defn domain-has-data? [local-vs]
+  (-> local-vs .mostRecentVersion boolean))
+
 (defn domain-needs-update?
   "Returns true if the remote VersionedStore contains newer data than
   its local copy, false otherwise."
   [local-vs remote-vs]
-  (or (nil? (.mostRecentVersion local-vs))
+  (or (not (domain-has-data? local-vs))
       (< (.mostRecentVersion local-vs)
          (.mostRecentVersion remote-vs))))
 
@@ -69,10 +71,8 @@
                        local-domain-root
                        host-shards))))))
 
-(defnk load-and-sync-status!
-  [remote-path-map local-config rw-lock domains-info
-   :update? false
-   :state nil]
+(defn load-and-sync-status!
+  [remote-path-map local-config rw-lock domains-info & {:keys [update? state]}]
   (let [status (if update?
                  (thrift/ready-status :loading? true)
                  (thrift/loading-status))
@@ -138,16 +138,16 @@
       (throw e))))
 
 ;; TODO: Merge local and global configs here.
-(defn sync-updated! [global-config local-config curry-func]
+(defn prepare-local-domains! [global-config local-config rw-lock]
   (let [{:keys [hdfs-conf local-dir]} local-config
         domains-info (-> (filesystem hdfs-conf)
                          (init-domain-info-map global-config))
         domains (keys domains-info)]
     (log-message "Domains info: " domains-info)
     (with-ret domains-info
-      (future
+      (future        
         (try (purge-unused-domains! domains local-dir)
-             (curry-func domains-info)
+             (load-and-sync-status! (:domains global-config) local-config rw-lock domains-info)
              (cleanup-domains! domains local-dir)
              (log-message "Finished loading all updated domains from remote.")
              (catch Throwable t
@@ -182,9 +182,8 @@
        (and @download-supervisor
             (not (.isDone @download-supervisor))))))
 
-;; TODO: integrate curry-func, remove extra args
 (defn- update-domains
-  [download-supervisor domains-info local-config curry-func]
+  [download-supervisor domains-info local-config global-config rw-lock]
   (let [{max-kbs :max-online-download-rate-kb-s
          local-dir :local-dir} local-config
          ^DownloadState state (-> domains-info
@@ -194,9 +193,12 @@
     (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
     (future
-      (try (curry-func domains-info
-                       :update? true
-                       :state state)
+      (try (load-and-sync-status! (:domains global-config)
+                                  local-config
+                                  rw-lock
+                                  domains-info
+                                  :update? true
+                                  :state state)
            (log-message "Finished updating all domains from remote.")
            (log-message "Removing all old versions of updated domains!")
            (try (cleanup-domains! (keys domains-info) local-dir)
@@ -206,11 +208,11 @@
              (log-error t "Error when syncing data"))))))
 
 (defn- trigger-update
-  [service-handler download-supervisor domains-info local-config curry-func]
+  [service-handler download-supervisor domains-info local-config global-config rw-lock]
   (with-ret true
     (if (service-updating? service-handler download-supervisor)
       (log-message "UPDATER - Not updating as update process still in progress.")
-      (update-domains download-supervisor domains-info local-config curry-func))))
+      (update-domains download-supervisor domains-info local-config global-config rw-lock))))
 
 ;; 5. TODO: (What does this mean?) Create Hadoop FS on demand... need
 ;; retry logic if loaders fail?
@@ -220,11 +222,7 @@
   implement."
   [client global-config local-config]
   (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
-        curry-func (partial load-and-sync-status!
-                            (:domains global-config)
-                            local-config
-                            rw-lock)
-        domains-info (sync-updated! global-config local-config curry-func)
+        domains-info (prepare-local-domains! global-config local-config rw-lock)
         download-supervisor (atom nil)]
     (proxy [ElephantDB$Iface Shutdownable] []
       (shutdown []
@@ -233,7 +231,7 @@
           (dofor [[_ info] domains-info]
                  (domain/set-domain-status! info (thrift/shutdown-status))))
         (close-lps domains-info))
-
+      
       (get [^String domain ^bytes key]
         (.get @client domain key))
 
@@ -296,14 +294,16 @@
                         download-supervisor
                         domains-info
                         local-config
-                        curry-func))
+                        global-config
+                        rw-lock))
       
       (update [^String domain]
         (trigger-update this
                         download-supervisor
                         (select-keys domains-info [domain])
                         local-config
-                        curry-func)))))
+                        global-config
+                        rw-lock)))))
 
 (defn service-handler
   "Entry point to edb. `service-handler` returns a proxied
