@@ -77,28 +77,9 @@
     (when-let [e @error]
       (throw e))))
 
-(defn use-cache-or-update
-  [domain remote-path edb-config state]
-  (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
-        fs  (filesystem hdfs-conf)
-        lfs (local-filesystem)
-        local-domain-root (str (path local-dir domain))
-        remote-vs (DomainStore. fs remote-path)
-        local-vs  (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
-    (if (domain-needs-update? local-vs remote-vs)
-      (load-domain domain
-                   fs
-                   local-db-conf
-                   local-domain-root
-                   remote-path
-                   state)
-      (with-ret nil
-        (let [{:keys [finished-loaders shard-states]} state]
-          (swap! finished-loaders + (count (shard-states domain))))))))
-
 (defn load-and-sync-status!
   "TODO: Only note success for non-failed domains. check thrift status."
-  [edb-config rw-lock domains-info & {:keys [state]}]
+  [edb-config rw-lock domains-info loader-state]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-fs (filesystem hdfs-conf)
         remote-path-map (:domains edb-config)
@@ -109,14 +90,17 @@
                               (let [remote-path (get remote-path-map domain)
                                     remote-vs (DomainStore. remote-fs remote-path)
                                     local-domain-root (str (path local-dir domain))
-                                    local-vs (mk-local-vs remote-vs local-domain-root)
-                                    loader-state (or state (mk-loader-state
-                                                            {domain (domain/host-shards info)}))]
-                                (when-let [new-data (use-cache-or-update domain
-                                                                         remote-path
-                                                                         edb-config
-                                                                         loader-state)]  
-                                  (domain/set-domain-data! rw-lock domain info new-data)))
+                                    local-vs (mk-local-vs remote-vs local-domain-root)]
+                                (if (domain-needs-update? local-vs remote-vs)
+                                  (->> (load-domain domain
+                                                    remote-fs
+                                                    local-db-conf
+                                                    local-domain-root
+                                                    remote-path
+                                                    loader-state)
+                                       (domain/set-domain-data! rw-lock domain info))
+                                  (let [{:keys [finished-loaders shard-states]} loader-state]
+                                    (swap! finished-loaders + (count (shard-states domain))))))
                               (domain/set-domain-status! info (thrift/ready-status))
                               (catch Throwable t
                                 (log-error t "Error when loading domain " domain)
@@ -179,7 +163,8 @@
       (future        
         (try (purge-unused-domains! domain-seq local-dir)
              (load-cached-domains! edb-config rw-lock domains-info)
-             (load-and-sync-status! edb-config rw-lock domains-info)
+             (load-and-sync-status! edb-config rw-lock domains-info (map-mapvals domains-info
+                                                                                 domain/host-shards))
              (log-message "Finished loading all updated domains from remote.")
              (catch Throwable t
                (log-error t "Error when syncing data.")
