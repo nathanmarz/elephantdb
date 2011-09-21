@@ -18,10 +18,14 @@
      (-init nil fs-conf (read-clj-config (filesystem fs-conf)
                                          global-conf-path)))
   ([local-elephant fs-conf global-conf]
-     [[] {:local-hostname (local-hostname)
-          :local-elephant local-elephant
-          :global-conf global-conf
-          :domain-shard-indexes (shard/shard-domains (filesystem fs-conf) global-conf)}]))
+     (let [{:keys [domains hosts replication]} global-conf]
+       [[] {:local-hostname (local-hostname)
+            :local-elephant local-elephant
+            :global-conf global-conf       
+            :domain-shard-indexes (shard/shard-domains (filesystem fs-conf)
+                                                       domains
+                                                       hosts
+                                                       replication)}])))
 
 (defn- get-index [this domain]
   (if-let [index (-> (.state this)

@@ -28,9 +28,9 @@
                                     :shards-to-hosts <map>}
                       :domain-status <status-atom>
                       :domain-data <data-atom>}}"
-  [fs edb-config]
-  (let [domain-shards (shard/shard-domains fs edb-config)]
-    (update-vals (:domains edb-config)
+  [fs {:keys [domains hosts replication]}]
+  (let [domain-shards (shard/shard-domains fs domains hosts replication)]
+    (update-vals domains
                  (fn [k _]
                    (-> k domain-shards domain/init-domain-info)))))
 
@@ -70,6 +70,13 @@
                        local-domain-root
                        host-shards))))))
 
+(defn mk-local-vs
+  [remote-fs remote-path local-path]
+  (let [remote-vs (DomainStore. remote-fs remote-path)]
+    (DomainStore. (local-filesystem)
+                  local-path
+                  (.getSpec remote-vs))))
+
 (defn load-and-sync-status!
   [edb-config rw-lock domains-info & {:keys [update? state]}]
   (let [status (if update?
@@ -96,6 +103,31 @@
     (with-ret loaders
       (log-message "Successfully loaded domains: "
                    (s/join ", " (keys domains-info))))))
+
+(defn load-cached-domains!
+  [edb-config rw-lock domains-info]
+  (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
+        remote-path-map (:domains edb-config)
+        status (thrift/loading-status)
+        loaders (p-dofor [[domain info] domains-info]
+                         (try (domain/set-domain-status! info status)
+                              (let [host-shards  (domain/host-shards info)
+                                    remote-path  (get remote-path-map domain)
+                                    local-domain-root (str (path local-dir domain))
+                                    local-vs (mk-local-vs (filesystem hdfs-conf)
+                                                          remote-path
+                                                          local-domain-root)]  
+                                (when-let [new-data (and (domain-has-data? local-vs)
+                                                         (open-domain local-db-conf
+                                                                      local-domain-root
+                                                                      host-shards))]  
+                                  (domain/set-domain-data! rw-lock domain info new-data)))
+                              (domain/set-domain-status! info (thrift/ready-status))
+                              (catch Throwable t
+                                (log-error t "Error when loading domain " domain)
+                                (domain/set-domain-status! info (thrift/failed-status t)))))]
+    (with-ret loaders
+      (log-message "Successfully loaded cached domains: " (s/join ", " (keys domains-info))))))
 
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
@@ -137,15 +169,14 @@
     (when-let [e @error]
       (throw e))))
 
-(defn prepare-local-domains! [edb-config rw-lock]
-  (let [{:keys [hdfs-conf local-dir]} edb-config
-        domains-info (-> (filesystem hdfs-conf)
-                         (init-domain-info-map edb-config))
+(defn prepare-local-domains!
+  [domains-info edb-config rw-lock]
+  (let [{:keys [local-dir]} edb-config
         domain-seq (keys domains-info)]
-    (log-message "Domains info: " domains-info)
     (with-ret domains-info
       (future        
         (try (purge-unused-domains! domain-seq local-dir)
+             (load-cached-domains! edb-config rw-lock domains-info)
              (load-and-sync-status! edb-config rw-lock domains-info)
              (cleanup-domains! domain-seq local-dir)
              (log-message "Finished loading all updated domains from remote.")
@@ -218,10 +249,12 @@
 (defn edb-proxy
   "See `src/elephantdb.thrift` for more information on the methods we
   implement."
-  [client edb-config]
+  [client {:keys [hdfs-conf local-dir] :as edb-config}]
   (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
-        domains-info (prepare-local-domains! edb-config rw-lock)
+        domains-info (-> (filesystem hdfs-conf)
+                         (init-domain-info-map edb-config))
         download-supervisor (atom nil)]
+    (prepare-local-domains! domains-info edb-config rw-lock)
     (proxy [ElephantDB$Iface Shutdownable] []
       (shutdown []
         (log-message "ElephantDB received shutdown notice...")
