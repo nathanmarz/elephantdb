@@ -64,7 +64,7 @@
 
 (defn load-domain
   "returns a map from shard to LP."
-  [domain fs local-db-conf local-domain-root remote-path shards state]
+  [domain fs local-db-conf local-domain-root remote-path state]
   (log-message "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs           (local-filesystem)
         remote-vs     (DomainStore. fs remote-path)
@@ -77,6 +77,7 @@
         remote-v-path  (.versionPath remote-vs remote-version)
         _              (mkdirs lfs local-v-path)
         domain-state   (get (:shard-states state) domain)
+        shards         (keys domain-state)
         shard-loaders  (dofor [s shards]
                               (with-ret-bound [f (future
                                                    (load-domain-shard!

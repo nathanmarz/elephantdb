@@ -45,8 +45,15 @@
       (< (.mostRecentVersion local-vs)
          (.mostRecentVersion remote-vs))))
 
+(defn mk-local-vs
+  [remote-fs remote-path local-path]
+  (let [remote-vs (DomainStore. remote-fs remote-path)]
+    (DomainStore. (local-filesystem)
+                  local-path
+                  (.getSpec remote-vs))))
+
 (defn use-cache-or-update
-  [domain host-shards remote-path edb-config update? state]
+  [domain remote-path edb-config state]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         fs  (filesystem hdfs-conf)
         lfs (local-filesystem)
@@ -59,40 +66,24 @@
                    local-db-conf
                    local-domain-root
                    remote-path
-                   host-shards
                    state)
-      (let [{:keys [finished-loaders shard-states]} state]
-        ;; use cached domain from local-dir (no update needed)
-        ;; signal all shards of domain are done loading
-        (swap! finished-loaders + (count (shard-states domain)))
-        (when-not update?
-          (open-domain local-db-conf
-                       local-domain-root
-                       host-shards))))))
-
-(defn mk-local-vs
-  [remote-fs remote-path local-path]
-  (let [remote-vs (DomainStore. remote-fs remote-path)]
-    (DomainStore. (local-filesystem)
-                  local-path
-                  (.getSpec remote-vs))))
+      (with-ret nil
+        (let [{:keys [finished-loaders shard-states]} state]
+          (swap! finished-loaders + (count (shard-states domain))))))))
 
 (defn load-and-sync-status!
-  [edb-config rw-lock domains-info & {:keys [update? state]}]
-  (let [status (if update?
-                 (thrift/ready-status :loading? true)
-                 (thrift/loading-status))
-        remote-path-map (:domains edb-config)
+  "TODO: Only note success for non-failed domains. check thrift status."
+  [edb-config rw-lock domains-info & {:keys [state]}]
+  (let [remote-path-map (:domains edb-config)
+        status (thrift/ready-status :loading? true)
         loaders (p-dofor [[domain info] domains-info
-                          :let [host-shards (domain/host-shards info)
-                                remote-path (get remote-path-map domain)
-                                loader-state (or state (mk-loader-state {domain host-shards}))]]
+                          :let [remote-path (get remote-path-map domain)
+                                loader-state (or state (mk-loader-state
+                                                        {domain (domain/host-shards info)}))]]
                          (try (domain/set-domain-status! info status)
                               (when-let [new-data (use-cache-or-update domain
-                                                                       host-shards
                                                                        remote-path
                                                                        edb-config
-                                                                       update?
                                                                        loader-state)]  
                                 (domain/set-domain-data! rw-lock domain info new-data))
                               (domain/set-domain-status! info (thrift/ready-status))
@@ -121,6 +112,7 @@
                                                          (open-domain local-db-conf
                                                                       local-domain-root
                                                                       host-shards))]  
+                                  (println "LOADING CACHED: " domain)
                                   (domain/set-domain-data! rw-lock domain info new-data)))
                               (domain/set-domain-status! info (thrift/ready-status))
                               (catch Throwable t
@@ -213,6 +205,7 @@
             (not (.isDone @download-supervisor))))))
 
 (defn- update-domains
+  "TODO: Always cleanup after update?"
   [download-supervisor domains-info edb-config rw-lock]
   (let [{max-kbs :max-online-download-rate-kb-s
          local-dir :local-dir} edb-config
@@ -226,7 +219,6 @@
       (try (load-and-sync-status! edb-config
                                   rw-lock
                                   domains-info
-                                  :update? true
                                   :state download-state)
            (log-message "Finished updating all domains from remote.")
            (log-message "Removing all old versions of updated domains!")
