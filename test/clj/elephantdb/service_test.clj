@@ -171,7 +171,7 @@
           (is (thrift/status-failed? (.getDomainStatus handler "do-update")))
           (is (thrift/status-ready? (.getDomainStatus handler "no-update")))
           (.shutdown handler))
-
+        
         ;; if we delete a domain from the global conf, it should
         ;; remove the local version of it too (delete dir), when starting up edb
         (delete fs gtmp) ;; delete config

@@ -37,7 +37,7 @@
         (->> (struct shard-index hosts-to-shards)))))
 
 (defn shard-domains
-  [fs {:keys [domains hosts replication]}]
+  [fs domains hosts replication]
   (let [sharder (partial shard-domain hosts replication)]
     (log-message "Sharding domains...")
     (update-vals domains

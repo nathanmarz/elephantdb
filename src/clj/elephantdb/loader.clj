@@ -52,7 +52,7 @@
 ;; limited with the other shards...)
 
 (defn load-domain-shard!
-  [fs persistence-factory persistence-opts local-shard-path remote-shard-path ^ShardState state]
+  [fs persistence-factory persistence-opts local-shard-path remote-shard-path state]
   (if (.exists fs (path remote-shard-path))
     (do (log-message "Copying " remote-shard-path " to " local-shard-path)
         (copy-local fs remote-shard-path local-shard-path state)
@@ -64,7 +64,7 @@
 
 (defn load-domain
   "returns a map from shard to LP."
-  [domain fs local-db-conf local-domain-root remote-path shards ^DownloadState state]
+  [domain fs local-db-conf local-domain-root remote-path state]
   (log-message "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs           (local-filesystem)
         remote-vs     (DomainStore. fs remote-path)
@@ -77,12 +77,14 @@
         remote-v-path  (.versionPath remote-vs remote-version)
         _              (mkdirs lfs local-v-path)
         domain-state   (get (:shard-states state) domain)
+        shards         (keys domain-state)
         shard-loaders  (dofor [s shards]
                               (with-ret-bound [f (future
                                                    (load-domain-shard!
                                                     fs
                                                     factory
-                                                    (persistence-options local-db-conf factory)
+                                                    (persistence-options local-db-conf
+                                                                         factory)
                                                     (shard-path local-v-path s)
                                                     (shard-path remote-v-path s)
                                                     (domain-state s)))]
@@ -111,20 +113,24 @@
 (defn supervise-downloads
   [amount-shards max-kbs interval-ms ^DownloadState state]
   (let [domain-to-shard-states (:shard-states state)
-        finished-loaders       (:finished-loaders state)
-        shard-loaders          (:shard-loaders state)
+        finished-loaders (:finished-loaders state)
+        shard-loaders (:shard-loaders state)
         total-kb (atom 0)]
+    (log-message (format "Starting download supervisor for %d shard loaders."
+                         amount-shards))
     (loop []
       (reset! total-kb 0)
       (Thread/sleep interval-ms)
-      (let [finished-shard-loaders (count (filter (memfn isDone)
-                                                  @shard-loaders))]
-        (when (< (+ @finished-loaders finished-shard-loaders)
-                 amount-shards)
-          (doseq [[domain shard-states] domain-to-shard-states
-                  [s-id ^ShardState s-state] shard-states]
-            (supervise-shard max-kbs total-kb s-state))
-          (recur))))))
+      (let [loader-count (->> @shard-loaders
+                              (filter (memfn isDone))
+                              (count)
+                              (+ @finished-loaders))]
+        (if (< loader-count amount-shards)
+          (do (doseq [[_ shard-states] domain-to-shard-states
+                      [_ s-state] shard-states]
+                (supervise-shard max-kbs total-kb s-state))
+              (recur))
+          (log-message "Download supervisor finished"))))))
 
 (defn start-download-supervisor
   [amount-shards max-kbs ^DownloadState state]
@@ -132,9 +138,7 @@
         interval-ms (int (* interval-factor-secs 1000))
         max-kbs-val (int (* max-kbs interval-factor-secs))]
     (future
-      (log-message "Starting download supervisor for " amount-shards " shard loaders")
       (reset! (:finished-loaders state) 0)
-      (when (and (> amount-shards 0) ;; only monitor if there's an actual download throttle
-                 (> max-kbs 0))      ;; and shards to be downloaded
-        (supervise-downloads amount-shards max-kbs-val interval-ms state))
-      (log-message "Download supervisor finished"))))
+      (when (and (pos? amount-shards) ;; only monitor if there's an actual download throttle
+                 (pos? max-kbs))      ;; and shards to be downloaded
+        (supervise-downloads amount-shards max-kbs-val interval-ms state)))))

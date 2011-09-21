@@ -1,5 +1,6 @@
 (ns elephantdb.testing
   (:use clojure.test
+        [elephantdb.log :only (with-log-level log-message)]
         [elephantdb util hadoop config shard service thrift]
         [clojure.contrib.seq-utils :only (find-first)]
         [clojure.contrib.def :only (defnk)])
@@ -65,14 +66,18 @@
 (defn local-temp-path []
   (str (System/getProperty "java.io.tmpdir") "/" (uuid)))
 
-(defmacro with-local-tmp [[fs-sym & tmp-syms] & body]
-  (let [tmp-paths (mapcat (fn [t] [t `(local-temp-path)]) tmp-syms)]
-    `(let [~fs-sym (local-filesystem)
-           ~@tmp-paths]
-       (try
-         ~@body
-         (finally
-          (delete-all ~fs-sym ~(vec tmp-syms)))))))
+(defmacro with-local-tmp [[fs-sym & tmp-syms] & [kw & more :as body]]
+  (let [[log-lev body] (if (keyword? kw)
+                         [kw more]
+                         [:warn body])
+        tmp-paths (mapcat (fn [t] [t `(local-temp-path)]) tmp-syms)]
+    `(with-log-level ~log-lev
+       (let [~fs-sym (local-filesystem)
+             ~@tmp-paths]
+         (try
+           ~@body
+           (finally
+            (delete-all ~fs-sym ~(vec tmp-syms))))))))
 
 (defmacro deflocalfstest [name local-args & body]
   `(deftest ~name
@@ -189,7 +194,7 @@
                                      compute-host-to-shards)]
     (let [handler (service-handler global-config (mk-local-config localdir))]
       (while (not (.isFullyLoaded handler))
-        (println "waiting...")
+        (log-message "waiting...")
         (Thread/sleep 500))
       handler)))
 
