@@ -2,6 +2,10 @@
   (:import [java.net InetAddress]
            [java.util.concurrent.locks ReentrantReadWriteLock]))
 
+(defn sleep [len]
+  (when (pos? len)
+    (Thread/sleep len)))
+
 (defn register-shutdown-hook [shutdown-func]
   (-> (Runtime/getRuntime)
       (.addShutdownHook (Thread. shutdown-func))))

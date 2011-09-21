@@ -1,7 +1,6 @@
 (ns elephantdb.hadoop
-  (:use elephantdb.log
-        [elephantdb.util
-         :only (map-mapvals with-ret-bound dofor)])
+  (:use elephantdb.log)
+  (:require [elephantdb.util :as u])
   (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream]
            [org.apache.hadoop.fs FileSystem Path]
            [org.apache.hadoop.conf Configuration]))
@@ -32,8 +31,8 @@
      (apply str-path (str (path part1 (str part2))) components)))
 
 (defn configuration [conf-map]
-  (with-ret-bound [ret (Configuration.)]
-    (dofor [config conf-map]
+  (u/with-ret-bound [ret (Configuration.)]
+    (u/dofor [config conf-map]
            (conf-set {:key (first config)
                       :value (last config)
                       :conf ret}))))
@@ -87,7 +86,7 @@
   "Create new LoaderState"
   [domains-to-shards]
   (-> domains-to-shards
-      (map-mapvals mk-shard-states)
+      (u/map-mapvals mk-shard-states)
       (DownloadState. (atom 0)
                       (atom []))))
 
@@ -100,23 +99,26 @@
     (with-open [is (.open fs path)
                 os (BufferedOutputStream.
                     (FileOutputStream. target-local-path))]
-      (loop []
-        (if (= @sleep-interval 0)
+      (loop [sleep-time @sleep-interval]
+        (u/sleep sleep-time)
+        (if (pos? @sleep-interval)
+          (recur @sleep-interval)
           (let [amt (.read is buffer)]
-            (when (> amt 0)
+            (when (pos? amt)
               (.write os buffer 0 amt)
               (swap! downloaded-kb + (int (/ amt 1024))) ;; increment downloaded-kb
-              (recur)))
-          (do (Thread/sleep @sleep-interval)
-              (recur)))))))
+              (recur @sleep-interval))))))))
 
 (defn copy-dir-local
   [^FileSystem fs ^Path path ^String target-local-path ^bytes buffer ^ShardState state]
   (.mkdir (File. target-local-path))
-  (let [contents (seq (.listStatus fs path))]
-    (doseq [c contents]
-      (let [subpath (.getPath c)]
-        (copy-local* fs subpath (str-path target-local-path (.getName subpath)) buffer state)))))
+  (doseq [c (seq (.listStatus fs path))]
+    (let [subpath (.getPath c)]
+      (copy-local* fs
+                   subpath
+                   (str-path target-local-path (.getName subpath))
+                   buffer
+                   state))))
 
 (defn- copy-local*
   [^FileSystem fs ^Path path target-local-path buffer state]
@@ -141,6 +143,5 @@
                            (str "Unknown error, local file is neither file nor dir " local-path))))]
     (if (.exists fs (path spath))
       (copy-local* fs (path spath) dest-path buffer state)
-      (throw
-       (FileNotFoundException.
-        (str "Could not find on remote " spath))))))
+      (throw (FileNotFoundException.
+              (str "Could not find on remote " spath))))))
