@@ -52,25 +52,6 @@
                   local-path
                   (.getSpec remote-vs))))
 
-(defn use-cache-or-update
-  [domain remote-path edb-config state]
-  (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
-        fs  (filesystem hdfs-conf)
-        lfs (local-filesystem)
-        local-domain-root (str (path local-dir domain))
-        remote-vs (DomainStore. fs remote-path)
-        local-vs  (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
-    (if (domain-needs-update? local-vs remote-vs)
-      (load-domain domain
-                   fs
-                   local-db-conf
-                   local-domain-root
-                   remote-path
-                   state)
-      (with-ret nil
-        (let [{:keys [finished-loaders shard-states]} state]
-          (swap! finished-loaders + (count (shard-states domain))))))))
-
 (defn cleanup-domain!
   [domain-path]
   "Destroys all but the most recent version in the versioned store
@@ -97,6 +78,25 @@
     (when-let [e @error]
       (throw e))))
 
+(defn use-cache-or-update
+  [domain remote-path edb-config state]
+  (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
+        fs  (filesystem hdfs-conf)
+        lfs (local-filesystem)
+        local-domain-root (str (path local-dir domain))
+        remote-vs (DomainStore. fs remote-path)
+        local-vs  (DomainStore. lfs local-domain-root (.getSpec remote-vs))]
+    (if (domain-needs-update? local-vs remote-vs)
+      (load-domain domain
+                   fs
+                   local-db-conf
+                   local-domain-root
+                   remote-path
+                   state)
+      (with-ret nil
+        (let [{:keys [finished-loaders shard-states]} state]
+          (swap! finished-loaders + (count (shard-states domain))))))))
+
 (defn load-and-sync-status!
   "TODO: Only note success for non-failed domains. check thrift status."
   [edb-config rw-lock domains-info & {:keys [state]}]
@@ -104,16 +104,16 @@
          local-dir :local-dir} edb-config
          status (thrift/ready-status :loading? true)
          domain-names (keys domains-info)
-         loaders (p-dofor [[domain info] domains-info
-                           :let [remote-path (get remote-path-map domain)
-                                 loader-state (or state (mk-loader-state
-                                                         {domain (domain/host-shards info)}))]]
+         loaders (p-dofor [[domain info] domains-info]
                           (try (domain/set-domain-status! info status)
-                               (when-let [new-data (use-cache-or-update domain
-                                                                        remote-path
-                                                                        edb-config
-                                                                        loader-state)]  
-                                 (domain/set-domain-data! rw-lock domain info new-data))
+                               (let [remote-path (get remote-path-map domain)
+                                     loader-state (or state (mk-loader-state
+                                                             {domain (domain/host-shards info)}))]
+                                 (when-let [new-data (use-cache-or-update domain
+                                                                          remote-path
+                                                                          edb-config
+                                                                          loader-state)]  
+                                   (domain/set-domain-data! rw-lock domain info new-data)))
                                (domain/set-domain-status! info (thrift/ready-status))
                                (catch Throwable t
                                  (log-error t "Error when loading domain " domain)
