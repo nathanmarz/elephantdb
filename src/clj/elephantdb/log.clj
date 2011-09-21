@@ -8,6 +8,9 @@
 (defn log-message [& args]
   (log/info (apply str args)))
 
+(defn log-warning [& args]
+  (log/warn (apply str args)))
+
 (defn log-error [e & args]
   (log/error (apply str args) e))
 

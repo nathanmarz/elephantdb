@@ -78,11 +78,19 @@
       (throw e))))
 
 (defn try-thrift
+  "Applies each kv pair to the supplied `func` in parallel, farming
+  the work out to futures; each domain is set to `initial-status` at
+  the beginning of the func, and `thrift/ready-status` on successful
+  completion. (Failures are marked as appropriate.)
+
+  After completing all functions, we remove all versions of each
+  domain but the last."
   [domains-info local-dir initial-status func]
   (with-ret (p-dofor [[domain info] domains-info]
                      (try (domain/set-domain-status! info initial-status)
                           (func domain info)
                           (domain/set-domain-status! info (thrift/ready-status))
+                          (log-message "Finished loading all updated domains from remote.")
                           (catch Throwable t
                             (log-error t "Error when loading domain " domain)
                             (domain/set-domain-status! info (thrift/failed-status t)))))
@@ -91,7 +99,10 @@
          (catch Throwable t
            (log-error t "Error when cleaning old versions.")))))
 
-(defn load-and-sync-status!
+(defn update-and-sync-status!
+  "Triggers throttled update routine for all domains keyed in
+  `domains-info`. Once these complete, atomically swaps them into for
+  the current data and registers success."
   [edb-config rw-lock domains-info loader-state]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-path-map (:domains edb-config)
@@ -154,15 +165,14 @@
         domain-seq (keys domains-info)]
     (with-ret domains-info
       (future        
-        (try (purge-unused-domains! domain-seq local-dir)
-             (load-cached-domains! edb-config rw-lock domains-info)
-             (load-and-sync-status! edb-config rw-lock domains-info (->> domain/host-shards
-                                                                         (map-mapvals domains-info)
-                                                                         (mk-loader-state)))
-             (log-message "Finished loading all updated domains from remote.")
-             (catch Throwable t
-               (log-error t "Error when syncing data.")
-               (throw t)))))))
+        (purge-unused-domains! domain-seq local-dir)
+        (load-cached-domains! edb-config rw-lock domains-info)
+        (update-and-sync-status! edb-config
+                                 rw-lock
+                                 domains-info
+                                 (->> domain/host-shards
+                                      (map-mapvals domains-info)
+                                      (mk-loader-state)))))))
 
 (defn- close-lps
   [domains-info]
@@ -171,10 +181,10 @@
     (let [lp (domain/domain-data info shard)]
       (log-message "Closing LP for " domain "/" shard)
       (if lp
-        (.close lp)
-        (log-message "LP not loaded"))
-      (log-message "Closed LP for " domain "/" shard))))
-
+        (do (.close lp)
+            (log-message "Closed LP for " domain "/" shard))
+        (log-warning "LP not loaded for " domain "/" shard)))))
+ 
 (defn- get-readable-domain-info [domains-info domain]
   (let [info (domains-info domain)]
     (when-not info
@@ -202,14 +212,10 @@
          shard-amount (flattened-count (vals (:shard-states download-state)))]
     (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs download-state))
-    (future
-      (try (load-and-sync-status! edb-config
-                                  rw-lock
-                                  domains-info
-                                  download-state)
-           (log-message "Finished updating all domains from remote.")
-           (catch Throwable t
-             (log-error t "Error when syncing data"))))))
+    (future (update-and-sync-status! edb-config
+                                     rw-lock
+                                     domains-info
+                                     download-state))))
 
 (defn- trigger-update
   [service-handler download-supervisor domains-info edb-config rw-lock]
