@@ -160,6 +160,8 @@
            (delete lfs (.getPath domain-path) true))))
 
 (defn prepare-local-domains!
+  "Wipe domains not being used, make ready all cached domains, and get
+  the downloading process started for all others."
   [domains-info edb-config rw-lock]
   (let [{:keys [local-dir]} edb-config
         domain-seq (keys domains-info)]
