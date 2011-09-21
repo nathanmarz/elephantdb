@@ -28,9 +28,9 @@
                                     :shards-to-hosts <map>}
                       :domain-status <status-atom>
                       :domain-data <data-atom>}}"
-  [fs global-config]
-  (let [domain-shards (shard/shard-domains fs global-config)]
-    (update-vals (:domains global-config)
+  [fs edb-config]
+  (let [domain-shards (shard/shard-domains fs edb-config)]
+    (update-vals (:domains edb-config)
                  (fn [k _]
                    (-> k domain-shards domain/init-domain-info)))))
 
@@ -45,10 +45,9 @@
       (< (.mostRecentVersion local-vs)
          (.mostRecentVersion remote-vs))))
 
-;; TODO: examine this... can we remove this use-cachedeal?
 (defn use-cache-or-update
-  [domain host-shards remote-path local-config update? state]
-  (let [{:keys [hdfs-conf local-dir local-db-conf]} local-config
+  [domain host-shards remote-path edb-config update? state]
+  (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         fs  (filesystem hdfs-conf)
         lfs (local-filesystem)
         local-domain-root (str (path local-dir domain))
@@ -72,10 +71,11 @@
                        host-shards))))))
 
 (defn load-and-sync-status!
-  [remote-path-map local-config rw-lock domains-info & {:keys [update? state]}]
+  [edb-config rw-lock domains-info & {:keys [update? state]}]
   (let [status (if update?
                  (thrift/ready-status :loading? true)
                  (thrift/loading-status))
+        remote-path-map (:domains edb-config)
         loaders (p-dofor [[domain info] domains-info
                           :let [host-shards (domain/host-shards info)
                                 remote-path (get remote-path-map domain)
@@ -84,7 +84,7 @@
                               (when-let [new-data (use-cache-or-update domain
                                                                        host-shards
                                                                        remote-path
-                                                                       local-config
+                                                                       edb-config
                                                                        update?
                                                                        loader-state)]  
                                 (domain/set-domain-data! rw-lock domain info new-data))
@@ -137,18 +137,17 @@
     (when-let [e @error]
       (throw e))))
 
-;; TODO: Merge local and global configs here.
-(defn prepare-local-domains! [global-config local-config rw-lock]
-  (let [{:keys [hdfs-conf local-dir]} local-config
+(defn prepare-local-domains! [edb-config rw-lock]
+  (let [{:keys [hdfs-conf local-dir]} edb-config
         domains-info (-> (filesystem hdfs-conf)
-                         (init-domain-info-map global-config))
-        domains (keys domains-info)]
+                         (init-domain-info-map edb-config))
+        domain-seq (keys domains-info)]
     (log-message "Domains info: " domains-info)
     (with-ret domains-info
       (future        
-        (try (purge-unused-domains! domains local-dir)
-             (load-and-sync-status! (:domains global-config) local-config rw-lock domains-info)
-             (cleanup-domains! domains local-dir)
+        (try (purge-unused-domains! domain-seq local-dir)
+             (load-and-sync-status! edb-config rw-lock domains-info)
+             (cleanup-domains! domain-seq local-dir)
              (log-message "Finished loading all updated domains from remote.")
              (catch Throwable t
                (log-error t "Error when syncing data.")
@@ -183,22 +182,21 @@
             (not (.isDone @download-supervisor))))))
 
 (defn- update-domains
-  [download-supervisor domains-info local-config global-config rw-lock]
+  [download-supervisor domains-info edb-config rw-lock]
   (let [{max-kbs :max-online-download-rate-kb-s
-         local-dir :local-dir} local-config
-         ^DownloadState state (-> domains-info
-                                  (domain/all-shards)
-                                  (mk-loader-state))
-         shard-amount (flattened-count (vals (:shard-states state)))]
+         local-dir :local-dir} edb-config
+         download-state (-> domains-info
+                            (domain/all-shards)
+                            (mk-loader-state))
+         shard-amount (flattened-count (vals (:shard-states download-state)))]
     (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
-    (reset! download-supervisor (start-download-supervisor shard-amount max-kbs state))
+    (reset! download-supervisor (start-download-supervisor shard-amount max-kbs download-state))
     (future
-      (try (load-and-sync-status! (:domains global-config)
-                                  local-config
+      (try (load-and-sync-status! edb-config
                                   rw-lock
                                   domains-info
                                   :update? true
-                                  :state state)
+                                  :state download-state)
            (log-message "Finished updating all domains from remote.")
            (log-message "Removing all old versions of updated domains!")
            (try (cleanup-domains! (keys domains-info) local-dir)
@@ -208,11 +206,11 @@
              (log-error t "Error when syncing data"))))))
 
 (defn- trigger-update
-  [service-handler download-supervisor domains-info local-config global-config rw-lock]
+  [service-handler download-supervisor domains-info edb-config rw-lock]
   (with-ret true
     (if (service-updating? service-handler download-supervisor)
       (log-message "UPDATER - Not updating as update process still in progress.")
-      (update-domains download-supervisor domains-info local-config global-config rw-lock))))
+      (update-domains download-supervisor domains-info edb-config rw-lock))))
 
 ;; 5. TODO: (What does this mean?) Create Hadoop FS on demand... need
 ;; retry logic if loaders fail?
@@ -220,9 +218,9 @@
 (defn edb-proxy
   "See `src/elephantdb.thrift` for more information on the methods we
   implement."
-  [client global-config local-config]
+  [client edb-config]
   (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
-        domains-info (prepare-local-domains! global-config local-config rw-lock)
+        domains-info (prepare-local-domains! edb-config rw-lock)
         download-supervisor (atom nil)]
     (proxy [ElephantDB$Iface Shutdownable] []
       (shutdown []
@@ -293,24 +291,23 @@
         (trigger-update this
                         download-supervisor
                         domains-info
-                        local-config
-                        global-config
+                        edb-config
                         rw-lock))
       
       (update [^String domain]
         (trigger-update this
                         download-supervisor
                         (select-keys domains-info [domain])
-                        local-config
-                        global-config
+                        edb-config
                         rw-lock)))))
 
 (defn service-handler
   "Entry point to edb. `service-handler` returns a proxied
   implementation of EDB's interface."
   [global-config local-config]
-  (let [client (atom nil)]
-    (with-ret-bound [ret (edb-proxy client global-config local-config)]
+  (let [client (atom nil)
+        edb-config (merge global-config local-config)]
+    (with-ret-bound [ret (edb-proxy client edb-config)]
       (reset! client (client. ret
                               (:hdfs-conf local-config)
                               global-config)))))

@@ -52,7 +52,7 @@
 ;; limited with the other shards...)
 
 (defn load-domain-shard!
-  [fs persistence-factory persistence-opts local-shard-path remote-shard-path ^ShardState state]
+  [fs persistence-factory persistence-opts local-shard-path remote-shard-path state]
   (if (.exists fs (path remote-shard-path))
     (do (log-message "Copying " remote-shard-path " to " local-shard-path)
         (copy-local fs remote-shard-path local-shard-path state)
@@ -64,7 +64,7 @@
 
 (defn load-domain
   "returns a map from shard to LP."
-  [domain fs local-db-conf local-domain-root remote-path shards ^DownloadState state]
+  [domain fs local-db-conf local-domain-root remote-path shards state]
   (log-message "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs           (local-filesystem)
         remote-vs     (DomainStore. fs remote-path)
@@ -82,7 +82,8 @@
                                                    (load-domain-shard!
                                                     fs
                                                     factory
-                                                    (persistence-options local-db-conf factory)
+                                                    (persistence-options local-db-conf
+                                                                         factory)
                                                     (shard-path local-v-path s)
                                                     (shard-path remote-v-path s)
                                                     (domain-state s)))]
