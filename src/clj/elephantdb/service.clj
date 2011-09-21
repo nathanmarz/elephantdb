@@ -46,11 +46,10 @@
          (.mostRecentVersion remote-vs))))
 
 (defn mk-local-vs
-  [remote-fs remote-path local-path]
-  (let [remote-vs (DomainStore. remote-fs remote-path)]
-    (DomainStore. (local-filesystem)
-                  local-path
-                  (.getSpec remote-vs))))
+  [remote-vs local-path]
+  (DomainStore. (local-filesystem)
+                local-path
+                (.getSpec remote-vs)))
 
 (defn cleanup-domain!
   [domain-path]
@@ -100,24 +99,28 @@
 (defn load-and-sync-status!
   "TODO: Only note success for non-failed domains. check thrift status."
   [edb-config rw-lock domains-info & {:keys [state]}]
-  (let [{remote-path-map :domains
-         local-dir :local-dir} edb-config
-         status (thrift/ready-status :loading? true)
-         domain-names (keys domains-info)
-         loaders (p-dofor [[domain info] domains-info]
-                          (try (domain/set-domain-status! info status)
-                               (let [remote-path (get remote-path-map domain)
-                                     loader-state (or state (mk-loader-state
-                                                             {domain (domain/host-shards info)}))]
-                                 (when-let [new-data (use-cache-or-update domain
-                                                                          remote-path
-                                                                          edb-config
-                                                                          loader-state)]  
-                                   (domain/set-domain-data! rw-lock domain info new-data)))
-                               (domain/set-domain-status! info (thrift/ready-status))
-                               (catch Throwable t
-                                 (log-error t "Error when loading domain " domain)
-                                 (domain/set-domain-status! info (thrift/failed-status t)))))]
+  (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
+        remote-fs (filesystem hdfs-conf)
+        remote-path-map (:domains edb-config)
+        status (thrift/ready-status :loading? true)
+        domain-names (keys domains-info)
+        loaders (p-dofor [[domain info] domains-info]
+                         (try (domain/set-domain-status! info status)
+                              (let [remote-path (get remote-path-map domain)
+                                    remote-vs (DomainStore. remote-fs remote-path)
+                                    local-domain-root (str (path local-dir domain))
+                                    local-vs (mk-local-vs remote-vs local-domain-root)
+                                    loader-state (or state (mk-loader-state
+                                                            {domain (domain/host-shards info)}))]
+                                (when-let [new-data (use-cache-or-update domain
+                                                                         remote-path
+                                                                         edb-config
+                                                                         loader-state)]  
+                                  (domain/set-domain-data! rw-lock domain info new-data)))
+                              (domain/set-domain-status! info (thrift/ready-status))
+                              (catch Throwable t
+                                (log-error t "Error when loading domain " domain)
+                                (domain/set-domain-status! info (thrift/failed-status t)))))]
     (with-ret loaders
       (try (log-message "Removing all old versions of updated domains!")
            (cleanup-domains! domain-names local-dir)
@@ -129,15 +132,15 @@
   [edb-config rw-lock domains-info]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-path-map (:domains edb-config)
+        remote-fs (filesystem hdfs-conf)
         status (thrift/loading-status)
         domain-names (keys domains-info)
         loaders (p-dofor [[domain info] domains-info]
                          (try (domain/set-domain-status! info status)
                               (let [remote-path  (get remote-path-map domain)
+                                    remote-vs (DomainStore. remote-fs remote-path)
                                     local-domain-root (str (path local-dir domain))
-                                    local-vs (mk-local-vs (filesystem hdfs-conf)
-                                                          remote-path
-                                                          local-domain-root)]  
+                                    local-vs (mk-local-vs remote-vs local-domain-root)]  
                                 (when-let [new-data (and (domain-has-data? local-vs)
                                                          (open-domain local-db-conf
                                                                       local-domain-root
