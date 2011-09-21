@@ -7,6 +7,7 @@ from thrift.protocol import TBinaryProtocol
 from thrift.Thrift import TException
 from thrift.transport.TTransport import TTransportException
 from thrift.TSerialization import serialize, deserialize
+import socket
 
 class ElephantDBClient:
     def __init__(self, host, port, timeout=None):
@@ -80,7 +81,7 @@ class ElephantDBClient:
         self._connect()
         try:
             return func(self._client)
-        except (TException, TTransportException), e:
+        except (TException, TTransportException, socket.timeout, socket.error, MemoryError, EOFError), e:
             if trynum >= 5:
                 raise e
             else:
