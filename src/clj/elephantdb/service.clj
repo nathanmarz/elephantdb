@@ -77,69 +77,62 @@
     (when-let [e @error]
       (throw e))))
 
+(defn try-thrift
+  [domains-info local-dir initial-status func]
+  (with-ret (p-dofor [[domain info] domains-info]
+                     (try (domain/set-domain-status! info initial-status)
+                          (func domain info)
+                          (domain/set-domain-status! info (thrift/ready-status))
+                          (catch Throwable t
+                            (log-error t "Error when loading domain " domain)
+                            (domain/set-domain-status! info (thrift/failed-status t)))))
+    (try (log-message "Removing all old versions of updated domains!")
+         (cleanup-domains! (keys domains-info) local-dir)
+         (catch Throwable t
+           (log-error t "Error when cleaning old versions.")))))
+
 (defn load-and-sync-status!
-  "TODO: Only note success for non-failed domains. check thrift status."
   [edb-config rw-lock domains-info loader-state]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
-        remote-fs (filesystem hdfs-conf)
         remote-path-map (:domains edb-config)
-        status (thrift/ready-status :loading? true)
-        domain-names (keys domains-info)
-        loaders (p-dofor [[domain info] domains-info]
-                         (try (domain/set-domain-status! info status)
-                              (let [remote-path (get remote-path-map domain)
-                                    remote-vs (DomainStore. remote-fs remote-path)
-                                    local-domain-root (str (path local-dir domain))
-                                    local-vs (mk-local-vs remote-vs local-domain-root)]
-                                (if (domain-needs-update? local-vs remote-vs)
-                                  (->> (load-domain domain
-                                                    remote-fs
-                                                    local-db-conf
-                                                    local-domain-root
-                                                    remote-path
-                                                    loader-state)
-                                       (domain/set-domain-data! rw-lock domain info))
-                                  (let [{:keys [finished-loaders shard-states]} loader-state]
-                                    (swap! finished-loaders + (count (shard-states domain))))))
-                              (domain/set-domain-status! info (thrift/ready-status))
-                              (catch Throwable t
-                                (log-error t "Error when loading domain " domain)
-                                (domain/set-domain-status! info (thrift/failed-status t)))))]
-    (with-ret loaders
-      (try (log-message "Removing all old versions of updated domains!")
-           (cleanup-domains! domain-names local-dir)
-           (catch Throwable t
-             (log-error t "Error when cleaning old versions.")))
-      (log-message "Successfully loaded domains: " (s/join ", " domain-names)))))
+        remote-fs (filesystem hdfs-conf)]
+    (try-thrift domains-info
+                local-dir
+                (thrift/ready-status :loading? true)
+                (fn [domain info]
+                  (let [remote-path (get remote-path-map domain)
+                        remote-vs (DomainStore. remote-fs remote-path)
+                        local-domain-root (str (path local-dir domain))
+                        local-vs (mk-local-vs remote-vs local-domain-root)]
+                    (if (domain-needs-update? local-vs remote-vs)
+                      (->> (load-domain domain
+                                        remote-fs
+                                        local-db-conf
+                                        local-domain-root
+                                        remote-path
+                                        loader-state)
+                           (domain/set-domain-data! rw-lock domain info))
+                      (let [{:keys [finished-loaders shard-states]} loader-state]
+                        (swap! finished-loaders + (count (shard-states domain))))))))))
 
 (defn load-cached-domains!
   [edb-config rw-lock domains-info]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-path-map (:domains edb-config)
-        remote-fs (filesystem hdfs-conf)
-        status (thrift/loading-status)
-        domain-names (keys domains-info)
-        loaders (p-dofor [[domain info] domains-info]
-                         (try (domain/set-domain-status! info status)
-                              (let [remote-path  (get remote-path-map domain)
-                                    remote-vs (DomainStore. remote-fs remote-path)
-                                    local-domain-root (str (path local-dir domain))
-                                    local-vs (mk-local-vs remote-vs local-domain-root)]  
-                                (when-let [new-data (and (domain-has-data? local-vs)
-                                                         (open-domain local-db-conf
-                                                                      local-domain-root
-                                                                      (domain/host-shards info)))]  
-                                  (domain/set-domain-data! rw-lock domain info new-data)))
-                              (domain/set-domain-status! info (thrift/ready-status))
-                              (catch Throwable t
-                                (log-error t "Error when loading domain " domain)
-                                (domain/set-domain-status! info (thrift/failed-status t)))))]
-    (with-ret loaders
-      (try (log-message "Removing all old versions of updated domains!")
-           (cleanup-domains! domain-names local-dir)
-           (catch Throwable t
-             (log-error t "Error when cleaning old versions.")))
-      (log-message "Successfully loaded cached domains: " (s/join ", " domain-names)))))
+        remote-fs (filesystem hdfs-conf)]
+    (try-thrift domains-info
+                local-dir
+                (thrift/loading-status)
+                (fn [domain info]
+                  (let [remote-path  (get remote-path-map domain)
+                        remote-vs (DomainStore. remote-fs remote-path)
+                        local-path (str (path local-dir domain))
+                        local-vs (mk-local-vs remote-vs local-path)]  
+                    (when-let [new-data (and (domain-has-data? local-vs)
+                                             (open-domain local-db-conf
+                                                          local-path
+                                                          (domain/host-shards info)))]
+                      (domain/set-domain-data! rw-lock domain info new-data)))))))
 
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
@@ -163,8 +156,9 @@
       (future        
         (try (purge-unused-domains! domain-seq local-dir)
              (load-cached-domains! edb-config rw-lock domains-info)
-             (load-and-sync-status! edb-config rw-lock domains-info (map-mapvals domains-info
-                                                                                 domain/host-shards))
+             (load-and-sync-status! edb-config rw-lock domains-info (->> domain/host-shards
+                                                                         (map-mapvals domains-info)
+                                                                         (mk-loader-state)))
              (log-message "Finished loading all updated domains from remote.")
              (catch Throwable t
                (log-error t "Error when syncing data.")
@@ -212,7 +206,7 @@
       (try (load-and-sync-status! edb-config
                                   rw-lock
                                   domains-info
-                                  :state download-state)
+                                  download-state)
            (log-message "Finished updating all domains from remote.")
            (catch Throwable t
              (log-error t "Error when syncing data"))))))
