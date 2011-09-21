@@ -47,10 +47,9 @@
   (log-message "Finished closing domain: " domain))
 
 ;; TODO: respect the max copy rate
-;;
+
 ;; TODO: do a streaming recursive copy that can be rate limited (rate
 ;; limited with the other shards...)
-
 (defn load-domain-shard!
   [fs persistence-factory persistence-opts local-shard-path remote-shard-path state]
   (if (.exists fs (path remote-shard-path))

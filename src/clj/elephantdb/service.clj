@@ -106,7 +106,12 @@
   [edb-config rw-lock domains-info loader-state]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-path-map (:domains edb-config)
-        remote-fs (filesystem hdfs-conf)]
+        remote-fs (filesystem hdfs-conf)
+
+        ;; Do we throttle? TODO: Use this arg.
+        throttle? (->> (vals domains-info)
+                       (map domain/domain-status)
+                       (some thrift/status-ready?))]
     (try-thrift domains-info
                 local-dir
                 (thrift/ready-status :loading? true)
@@ -198,9 +203,8 @@
 (defn service-updating?
   [service-handler download-supervisor]
   (boolean
-   (or (some (fn [[domain status]]
-               (thrift/status-loading? status))
-             (-> service-handler .getStatus .get_domain_statuses))
+   (or (some thrift/status-loading?
+             (-> service-handler .getStatus .get_domain_statuses vals))
        (and @download-supervisor
             (not (.isDone @download-supervisor))))))
 
@@ -228,6 +232,11 @@
 
 ;; 5. TODO: (What does this mean?) Create Hadoop FS on demand... need
 ;; retry logic if loaders fail?
+
+;; When we first start up the service, we trigger an unthrottled
+;; download. It'd be good if we had access to the download supervisor
+;; inside of prepare-local-domain, and could decide whether or not to
+;; throttle the thing.
 
 (defn edb-proxy
   "See `src/elephantdb.thrift` for more information on the methods we

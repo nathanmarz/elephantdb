@@ -132,15 +132,15 @@
   (let [target-file (File. local-path)
         source-name (.getName (Path. spath))
         buffer (byte-array (* 1024 15))
-        dest-path (cond
-                   (not (.exists target-file)) local-path
-                   (.isFile target-file) (throw
-                                          (IllegalArgumentException.
-                                           (str "File exists " local-path)))
-                   (.isDirectory target-file) (str-path local-path source-name)
-                   :else (throw
-                          (IllegalArgumentException.
-                           (str "Unknown error, local file is neither file nor dir " local-path))))]
+        dest-path (cond (not (.exists target-file)) local-path
+                        (.isFile target-file) (throw
+                                               (IllegalArgumentException.
+                                                (str "File exists " local-path)))
+                        (.isDirectory target-file) (str-path local-path source-name)
+                        :else (throw
+                               (IllegalArgumentException.
+                                (str "Unknown error, local file is neither file nor dir "
+                                     local-path))))]
     (if (.exists fs (path spath))
       (copy-local* fs (path spath) dest-path buffer state)
       (throw (FileNotFoundException.
