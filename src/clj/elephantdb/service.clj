@@ -272,10 +272,10 @@
 
       (directMultiGet [^String domain keys]
         (with-read-lock rw-lock
-          (dofor [key keys]
-                 (let [info (get-readable-domain-info domains-info domain)
-                       shard (domain/key-shard domain info key)
-                       ^LocalPersistence lp (domain/domain-data info shard)]
+          (let [info (get-readable-domain-info domains-info domain)]
+            (dofor [key keys
+                    :let [shard (domain/key-shard domain info key)
+                          ^LocalPersistence lp (domain/domain-data info shard)]]
                    (log-debug "Direct get key " (seq key) "at shard " shard)
                    (if lp
                      (thrift/mk-value (.get lp key))
