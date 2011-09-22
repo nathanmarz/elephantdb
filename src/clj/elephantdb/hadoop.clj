@@ -5,8 +5,7 @@
            [org.apache.hadoop.fs FileSystem Path]
            [org.apache.hadoop.conf Configuration]))
 
-(defmulti conf-set
-  (fn [obj] (class (:value obj))))
+(defmulti conf-set (comp class :value))
 
 (defmethod conf-set String [{:keys [key value conf]}]
   (.set conf key value))
@@ -33,9 +32,9 @@
 (defn configuration [conf-map]
   (u/with-ret-bound [ret (Configuration.)]
     (u/dofor [config conf-map]
-           (conf-set {:key (first config)
-                      :value (last config)
-                      :conf ret}))))
+             (conf-set {:key (first config)
+                        :value (last config)
+                        :conf ret}))))
 
 (defn filesystem
   ([] (FileSystem/get (Configuration.)))

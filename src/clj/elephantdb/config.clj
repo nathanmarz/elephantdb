@@ -86,5 +86,5 @@
 (defn read-global-config
   [global-config-path local-config]
   (merge DEFAULT-GLOBAL-CONFIG
-         (read-clj-config (filesystem (:hdfs-conf local-config))
+         (read-clj-config (filesystem (:blob-conf local-config))
                           global-config-path)))
