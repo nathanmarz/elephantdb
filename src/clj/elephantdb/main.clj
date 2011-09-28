@@ -1,5 +1,6 @@
 (ns elephantdb.main
-  (:use [elephantdb config hadoop])
+  (:use [elephantdb config hadoop]
+        hadoop-util.core)
   (:require [elephantdb.log :as log]
             [elephantdb.service :as service]
             [elephantdb.util :as util])

@@ -1,5 +1,6 @@
 (ns elephantdb.loader
-  (:use [elephantdb util hadoop config log])
+  (:use [elephantdb util hadoop config log]
+        hadoop-util.core)
   (:import [elephantdb.store DomainStore]))
 
 (defn- shard-path

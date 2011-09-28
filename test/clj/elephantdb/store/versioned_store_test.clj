@@ -1,5 +1,6 @@
 (ns elephantdb.store.versioned-store-test
-  (:use [clojure test]
+  (:use clojure.test
+        hadoop-util.core
         [elephantdb testing hadoop util])
   (:import [elephantdb.store VersionedStore]))
 

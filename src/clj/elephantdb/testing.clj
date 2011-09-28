@@ -1,5 +1,6 @@
 (ns elephantdb.testing
   (:use clojure.test
+        hadoop-util.core
         [elephantdb.log :only (with-log-level log-message)]
         [elephantdb util hadoop config shard service thrift]
         [clojure.contrib.seq-utils :only (find-first)]

@@ -1,5 +1,6 @@
 (ns elephantdb.service-test
   (:use clojure.test
+        hadoop-util.core
         [elephantdb service testing util config hadoop log])
   (:require [elephantdb [thrift :as thrift]])
   (:import [elephantdb.persistence JavaBerkDB]

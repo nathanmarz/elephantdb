@@ -1,6 +1,7 @@
 (ns elephantdb.client
   (:use [clojure.contrib.seq-utils :only (includes?)]
-        [elephantdb thrift hadoop config types util log])
+        [elephantdb thrift hadoop config types util log]
+        hadoop-util.core)
   (:require [clojure.contrib.seq-utils :as seq-utils]
             [elephantdb.shard :as shard])
   (:import [elephantdb.generated ElephantDB$Iface WrongHostException

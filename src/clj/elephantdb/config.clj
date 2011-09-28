@@ -2,7 +2,8 @@
 ;; write and create elephantdb config maps.
 
 (ns elephantdb.config
-  (:use elephantdb.hadoop)
+  (:use elephantdb.hadoop
+        hadoop-util.core)
   (:require [clojure.contrib.duck-streams :as d])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.persistence LocalPersistenceFactory]))

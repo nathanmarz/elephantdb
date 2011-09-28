@@ -1,64 +1,10 @@
 (ns elephantdb.hadoop
-  (:use elephantdb.log)
+  (:use elephantdb.log
+        hadoop-util.core)
   (:require [elephantdb.util :as u])
   (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream]
            [org.apache.hadoop.fs FileSystem Path]
            [org.apache.hadoop.conf Configuration]))
-
-(defmulti conf-set (comp class :value))
-
-(defmethod conf-set String [{:keys [key value conf]}]
-  (.set conf key value))
-
-(defmethod conf-set Integer [{:keys [key value conf]}]
-  (.setInt conf key value))
-
-(defmethod conf-set Float [{:keys [key value conf]}]
-  (.setFloat conf key value))
-
-(defn path
-  ([str-or-path]
-     (if (instance? Path str-or-path)
-       str-or-path
-       (Path. str-or-path)))
-  ([parent child]
-     (Path. parent child)))
-
-(defn str-path
-  ([part1] part1)
-  ([part1 part2 & components]
-     (apply str-path (str (path part1 (str part2))) components)))
-
-(defn configuration [conf-map]
-  (u/with-ret-bound [ret (Configuration.)]
-    (u/dofor [config conf-map]
-             (conf-set {:key (first config)
-                        :value (last config)
-                        :conf ret}))))
-
-(defn filesystem
-  ([] (FileSystem/get (Configuration.)))
-  ([conf-map]
-     (FileSystem/get (configuration conf-map))))
-
-(defn mkdirs [fs path]
-  (.mkdirs fs (Path. path)))
-
-(defn delete
-  ([fs path] (delete fs path false))
-  ([fs path recursive?]
-     (.delete fs (Path. path) recursive?)))
-
-(defn clear-dir [fs path]
-  (delete fs path true)
-  (mkdirs fs path))
-
-(defn local-filesystem []
-  (FileSystem/getLocal (Configuration.)))
-
-(defn mk-local-path [local-dir]
-  (.pathToFile (local-filesystem)
-               (path local-dir)))
 
 ;; ShardState:
 ;; downloaded-kb:    holds the total amount of bytes of data downloaded since the last

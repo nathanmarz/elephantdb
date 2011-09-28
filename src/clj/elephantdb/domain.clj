@@ -1,7 +1,7 @@
 (ns elephantdb.domain
   (:use [elephantdb util thrift config]
         [elephantdb.loader :only (close-domain)]
-        [elephantdb.hadoop :only (local-filesystem)])
+        [hadoop-util.core :only (local-filesystem)])
   (:require [elephantdb.shard :as s])
   (:import [elephantdb Utils]))
 

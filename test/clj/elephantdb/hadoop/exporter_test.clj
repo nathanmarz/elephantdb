@@ -1,5 +1,6 @@
 (ns elephantdb.hadoop.exporter-test
   (:use clojure.test
+        hadoop-util.core
         [elephantdb testing util config hadoop])
   (:require [elephantdb.thrift :as thrift])
   (:import [elephantdb DomainSpec]
