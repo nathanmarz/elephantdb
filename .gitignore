@@ -14,3 +14,4 @@ CHILD
 CHILDPY
 .lein-failures
 docs/
+.idea
