@@ -54,12 +54,18 @@
                 local-path
                 (.getSpec remote-vs)))
 
+(defn try-domain-store
+  "Attempts to return a DomainStore object from the current path and
+  filesystem; if this doesn't exist, returns nil."  [fs domain-path]
+  (try (DomainStore. fs domain-path)
+       (catch IllegalArgumentException _)))
+
 (defn cleanup-domain!
   [domain-path]
   "Destroys all but the most recent version in the versioned store
   located at `domain-path`."
-  (when-let [store (try (DomainStore. (local-filesystem) domain-path)
-                        (catch IllegalArgumentException _))]
+  (when-let [store (try-domain-store (local-filesystem)
+                                     domain-path)]
     (doto store (.cleanup 1))))
 
 (defn cleanup-domains!
@@ -102,6 +108,7 @@
          (catch Throwable t
            (log-error t "Error when cleaning old versions.")))))
 
+;; TODO: Test this deal with the finished loaders, etc.
 (defn update-and-sync-status!
   "Triggers throttled update routine for all domains keyed in
   `domains-info`. Once these complete, atomically swaps them into for
@@ -110,7 +117,7 @@
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-path-map (:domains edb-config)
         remote-fs (filesystem hdfs-conf)
-
+        
         ;; Do we throttle? TODO: Use this arg.
         throttle? (->> (vals domains-info)
                        (map domain/domain-status)
@@ -120,20 +127,21 @@
                 (thrift/ready-status :loading? true)
                 (fn [domain info]
                   (let [remote-path (get remote-path-map domain)
-                        remote-vs (DomainStore. remote-fs remote-path)
-                        local-domain-root (str (path local-dir domain))
-                        local-vs (mk-local-vs remote-vs local-domain-root)]
-                    (if (domain-needs-update? local-vs remote-vs)
-                      (->> (load-domain domain
-                                        remote-fs
-                                        local-db-conf
-                                        local-domain-root
-                                        remote-path
-                                        loader-state)
-                           (domain/set-domain-data! rw-lock domain info)
-                           (log-message "Finished loading all updated domains from remote."))
-                      (let [{:keys [finished-loaders shard-states]} loader-state]
-                        (swap! finished-loaders + (count (shard-states domain))))))))))
+                        remote-vs (try-domain-store remote-fs remote-path)]
+                    (when remote-vs
+                      (let [local-domain-root (str (path local-dir domain))
+                            local-vs (mk-local-vs remote-vs local-domain-root)]
+                        (if (domain-needs-update? local-vs remote-vs)
+                          (->> (load-domain domain
+                                            remote-fs
+                                            local-db-conf
+                                            local-domain-root
+                                            remote-path
+                                            loader-state)
+                               (domain/set-domain-data! rw-lock domain info)
+                               (log-message "Finished loading all updated domains from remote."))
+                          (let [{:keys [finished-loaders shard-states]} loader-state]
+                            (swap! finished-loaders + (count (shard-states domain))))))))))))
 
 (defn load-cached-domains!
   [edb-config rw-lock domains-info]

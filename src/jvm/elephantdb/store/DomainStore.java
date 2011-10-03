@@ -36,7 +36,7 @@ public class DomainStore {
        if(DomainSpec.exists(fs, path)) {
            _spec = DomainSpec.readFromFileSystem(fs, path);
            
-           if(!_spec.equals(spec)) {
+           if(spec!=null && !_spec.equals(spec)) {
                throw new IllegalArgumentException(spec.toString() + " does not match existing " + _spec.toString());
            }
        } else {

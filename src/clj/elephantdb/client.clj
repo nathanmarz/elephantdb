@@ -9,7 +9,7 @@
            [org.apache.thrift TException])
   (:gen-class
    :init init
-   :implements [elephantdb.client.IElephantClient]
+   :implements [elephantdb.iface.IElephantClient]
    :constructors {[elephantdb.generated.ElephantDB$Iface java.util.Map java.util.Map] []
                   [java.util.Map String] []}
    :state state))
