@@ -12,7 +12,7 @@ import org.apache.hadoop.fs.FileUtil;
 public class DomainStore {
    VersionedStore _vs;
    DomainSpec _spec;
-   
+
    public DomainStore(FileSystem fs, String path) throws IOException {
        this(new VersionedStore(fs, path), null);
    }
@@ -35,19 +35,24 @@ public class DomainStore {
        FileSystem fs = vs.getFileSystem();
        if(DomainSpec.exists(fs, path)) {
            _spec = DomainSpec.readFromFileSystem(fs, path);
-           if(spec!=null && !_spec.equals(spec)) {
+           
+           if(!_spec.equals(spec)) {
                throw new IllegalArgumentException(spec.toString() + " does not match existing " + _spec.toString());
            }
        } else {
-           _spec = spec;
-           spec.writeToFileSystem(fs, path);
+           if(spec == null) {
+               throw new IllegalArgumentException("You must supply a DomainSpec when creating a DomainStore.");
+           } else {
+               _spec = spec;
+               spec.writeToFileSystem(fs, path);
+           }
        }
    }
-   
+
    public DomainSpec getSpec() {
        return _spec;
    }
-   
+
    public FileSystem getFileSystem() {
        return _vs.getFileSystem();
    }
@@ -95,7 +100,7 @@ public class DomainStore {
    public void succeedVersion(String path) throws IOException {
        _vs.succeedVersion(path);
    }
-   
+
    public static void synchronizeVersions(FileSystem fs, DomainSpec spec, String oldv, String newv) throws IOException {
        // TODO: might want to do a distcp here if the files are large
        // kept simple here for now since large domains implies large updates which will hit every shard
@@ -111,10 +116,10 @@ public class DomainStore {
            }
        }
    }
-   
+
    /**
     * When updating the prior version:
-    * 
+    *
     * After the version at path has been completed, call this method to copy over any shards that didn't have any records for them
     * and so weren't processed in the MapReduce job.
     */

@@ -56,8 +56,9 @@
   [domain-path]
   "Destroys all but the most recent version in the versioned store
   located at `domain-path`."
-  (doto (DomainStore. (local-filesystem) domain-path)
-    (.cleanup 1)))
+  (when-let [store (try (DomainStore. (local-filesystem) domain-path)
+                        (catch IllegalArgumentException _))]
+    (doto store (.cleanup 1))))
 
 (defn cleanup-domains!
   "Destroys every old version for each domain in `domains` located
@@ -91,7 +92,6 @@
                      (try (domain/set-domain-status! info initial-status)
                           (func domain info)
                           (domain/set-domain-status! info (thrift/ready-status))
-                          (log-message "Finished loading all updated domains from remote.")
                           (catch Throwable t
                             (log-error t "Error when loading domain " domain)
                             (domain/set-domain-status! info (thrift/failed-status t)))))
@@ -128,7 +128,8 @@
                                         local-domain-root
                                         remote-path
                                         loader-state)
-                           (domain/set-domain-data! rw-lock domain info))
+                           (domain/set-domain-data! rw-lock domain info)
+                           (log-message "Finished loading all updated domains from remote."))
                       (let [{:keys [finished-loaders shard-states]} loader-state]
                         (swap! finished-loaders + (count (shard-states domain))))))))))
 

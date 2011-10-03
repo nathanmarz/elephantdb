@@ -16,7 +16,6 @@ import java.util.Iterator;
 import java.util.Map;
 import org.apache.log4j.Logger;
 
-
 public class JavaBerkDB extends LocalPersistenceFactory {
     public static Logger LOG = Logger.getLogger(JavaBerkDB.class);
 

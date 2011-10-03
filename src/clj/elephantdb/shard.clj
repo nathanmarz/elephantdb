@@ -37,6 +37,8 @@
         (->> (struct shard-index hosts-to-shards)))))
 
 (defn shard-domains
+  "TODO: Test that we don't get a FAILURE if the domain-spec doesn't
+  exist."
   [fs domains hosts replication]
   (let [sharder (partial shard-domain hosts replication)]
     (log-message "Sharding domains...")
