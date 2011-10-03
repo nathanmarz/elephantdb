@@ -21,16 +21,16 @@ public class DomainStore {
        this(new VersionedStore(fs, path), spec);
    }
 
-   public DomainStore(String path) throws IOException {
-       this(path, null);
-   }
+    public DomainStore(String path) throws IOException {
+        this(path, null);
+    }
 
-   public DomainStore(String path, DomainSpec spec) throws IOException {
+    public DomainStore(String path, DomainSpec spec) throws IOException {
        this(new VersionedStore(path), spec);
    }
 
-   protected DomainStore(VersionedStore vs, DomainSpec spec) throws IOException {
-       _vs = vs;
+    protected DomainStore(VersionedStore vs, DomainSpec spec) throws IOException {
+        _vs = vs;
        String path = vs.getRoot();
        FileSystem fs = vs.getFileSystem();
        if(DomainSpec.exists(fs, path)) {

@@ -15,3 +15,5 @@ CHILDPY
 .lein-failures
 docs/
 .idea
+*.ipr
+*.iws
