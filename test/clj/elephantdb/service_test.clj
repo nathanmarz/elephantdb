@@ -30,8 +30,7 @@
 
 (deftest test-basic
   (with-sharded-domain [dpath
-                        {:num-shards 4
-                         :persistence-factory (JavaBerkDB.)}
+                        {:num-shards 4 :persistence-factory (JavaBerkDB.)}
                         [[(barr 0) (barr 0 0)]
                          [(barr 1) (barr 1 1)]
                          [(barr 2) (barr 2 2)]
@@ -120,9 +119,9 @@
 
         ;; start edb and shutdown right away to get version 1 of both
         ;; domains
-        (.shutdown
-         (-> (read-global-config gtmp local-config)
-             (mk-service-handler local-dir nil)))
+        (-> (read-global-config gtmp local-config)
+            (mk-service-handler local-dir nil)
+            (.shutdown))
 
         ;; create new version only for do-update domain
         ;;

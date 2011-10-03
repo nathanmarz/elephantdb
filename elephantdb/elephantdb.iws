@@ -2,12 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="44730b68-5c13-4423-862a-83d35f919bf2" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../elephantdb_elephantdb.iml" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../src/jvm/elephantdb/client/IElephantClient.java" afterPath="$PROJECT_DIR$/../src/jvm/elephantdb/iface/IElephantClient.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../src/clj/elephantdb/service.clj" afterPath="$PROJECT_DIR$/../src/clj/elephantdb/service.clj" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../src/clj/elephantdb/shard.clj" afterPath="$PROJECT_DIR$/../src/clj/elephantdb/shard.clj" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../src/jvm/elephantdb/persistence/JavaBerkDB.java" afterPath="$PROJECT_DIR$/../src/jvm/elephantdb/persistence/JavaBerkDB.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/elephantdb.iws" afterPath="$PROJECT_DIR$/elephantdb.iws" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../src/jvm/elephantdb/store/DomainStore.java" afterPath="$PROJECT_DIR$/../src/jvm/elephantdb/store/DomainStore.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../test/clj/elephantdb/service_test.clj" afterPath="$PROJECT_DIR$/../test/clj/elephantdb/service_test.clj" />
     </list>
     <ignored path="elephantdb.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -69,7 +66,18 @@
       <file leaf-file-name="DomainStore.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../src/jvm/elephantdb/store/DomainStore.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="49" column="3" selection-start="1557" selection-end="1557" vertical-scroll-proportion="0.7156767">
+            <state line="119" column="6" selection-start="3677" selection-end="3677" vertical-scroll-proportion="0.54722494">
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="IElephantClient.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../src/jvm/elephantdb/iface/IElephantClient.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="10" column="0" selection-start="317" selection-end="317" vertical-scroll-proportion="0.0">
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -285,8 +293,9 @@
     <property name="project.structure.proportion" value="0.0" />
     <property name="options.splitter.main.proportions" value="0.3" />
     <property name="MemberChooser.sorted" value="false" />
-    <property name="options.lastSelected" value="preferences.keymap" />
+    <property name="options.lastSelected" value="preferences.sourceCode.General" />
     <property name="project.structure.side.proportion" value="0.0" />
+    <property name="GoToClass.includeJavaFiles" value="false" />
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
     <property name="MemberChooser.showClasses" value="true" />
@@ -519,15 +528,6 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/../src/jvm/elephantdb/iface/IElephantClient.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="17" selection-start="258" selection-end="258" vertical-scroll-proportion="0.11684518">
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../elephantdb_elephantdb.iml">
       <provider selected="true" editor-type-id="text-editor">
         <state line="27" column="0" selection-start="1026" selection-end="1026" vertical-scroll-proportion="0.3943525">
@@ -572,9 +572,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../src/jvm/elephantdb/iface/IElephantClient.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="10" column="0" selection-start="317" selection-end="317" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/../src/jvm/elephantdb/store/DomainStore.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="49" column="3" selection-start="1557" selection-end="1557" vertical-scroll-proportion="0.7156767">
+        <state line="119" column="6" selection-start="3677" selection-end="3677" vertical-scroll-proportion="0.54722494">
           <folding>
             <element signature="imports" expanded="true" />
           </folding>

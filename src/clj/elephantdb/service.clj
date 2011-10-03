@@ -43,8 +43,10 @@
   its local copy, false otherwise."
   [local-vs remote-vs]
   (or (not (domain-has-data? local-vs))
-      (< (.mostRecentVersion local-vs)
-         (.mostRecentVersion remote-vs))))
+      (let [local-version  (.mostRecentVersion local-vs)
+            remote-version (.mostRecentVersion remote-vs)]
+        (when (and local-version remote-version)
+          (< local-version remote-version)))))
 
 (defn mk-local-vs
   [remote-vs local-path]
