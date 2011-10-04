@@ -44,8 +44,8 @@ Add the following form to `config.clj`, replacing appropriate fields with your i
                             :domains {"example-domain" "s3n://yourbucket/example-shards"}}
                    :local {:local-dir "/mnt/elephantdb"
                            :max-online-download-rate-kb-s 1024
-                           :local-db-conf {"elephantdb.JavaBerkDB" {}
-                                           "elephantdb.TokyoCabinet" {}}
+                           :local-db-conf {"elephantdb.persistence.JavaBerkDB" {}
+                                           "elephantdb.persistence.TokyoCabinet" {}}
                            :hdfs-conf {"fs.default.name" "s3n://yourbucket"
                                        "fs.s3n.awsAccessKeyId" "youraccesskey"
                                        "fs.s3n.awsSecretAccessKey" "yoursecret"}}}}

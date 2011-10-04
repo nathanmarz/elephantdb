@@ -357,3 +357,15 @@
                   (TNonblockingServerSocket. port)
                   (TBinaryProtocol$Factory.)
                   options)))
+
+(defn launch-updater!
+  "Returns a future."
+  [interval-secs ^ElephantDB$Iface service-handler]
+  (let [interval-ms (* 1000 interval-secs)]
+    (future
+      (log-message (format "Starting updater process with an interval of: %s seconds..."
+                           interval-secs))
+      (while true
+        (Thread/sleep interval-ms)
+        (log-message "Updater process: Checking if update is possible...")
+        (.updateAll service-handler)))))

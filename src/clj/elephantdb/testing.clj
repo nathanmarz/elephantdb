@@ -3,8 +3,7 @@
         hadoop-util.core
         [elephantdb.log :only (with-log-level log-message)]
         [elephantdb util hadoop config shard service thrift]
-        [clojure.contrib.seq-utils :only (find-first)]
-        [clojure.contrib.def :only (defnk)])
+        [clojure.contrib.seq-utils :only (find-first)])
   (:require [elephantdb.client :as client])
   (:import [java.util UUID ArrayList]
            [java.io IOException]
@@ -142,8 +141,8 @@
                       nil
                       nil)))
 
-(defnk mk-sharded-domain
-  [fs path domain-spec keyvals :version nil]
+(defn mk-sharded-domain
+  [fs path domain-spec keyvals & {:keys [version]}]
   (with-local-tmp [lfs localtmp]
     (let [vs (DomainStore. fs path (convert-clj-domain-spec domain-spec))
           dpath (if version
@@ -227,9 +226,11 @@
     `(with-local-tmp [lfs# localtmp#]
        (let [~handler-sym (mk-service-handler ~global-conf
                                               localtmp#
-                                              ~domain-to-host-to-shards)]
+                                              ~domain-to-host-to-shards)
+             updater# (launch-updater! 100 ~handler-sym)]
          (try ~@body
-              (finally (.shutdown ~handler-sym)))))))
+              (finally (.shutdown ~handler-sym)
+                       (future-cancel updater#)))))))
 
 (defn mk-mocked-remote-multiget-fn
   [domain-to-host-to-shards shards-to-pairs down-hosts]

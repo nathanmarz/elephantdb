@@ -69,10 +69,15 @@
     (.writeToFileSystem spec fs path)))
 
 (defmulti persistence-str class)
-(defmethod persistence-str String [persistence] persistence)
 
-(defmethod persistence-str Class [persistence] (.getName persistence))
-(defmethod persistence-str LocalPersistenceFactory [persistence] (.getName (class persistence)))
+(defmethod persistence-str String
+  [persistence] persistence)
+
+(defmethod persistence-str Class
+  [persistence] (.getName persistence))
+
+(defmethod persistence-str LocalPersistenceFactory
+  [persistence] (.getName (class persistence)))
 
 (defn persistence-options
   [db-conf persistence]

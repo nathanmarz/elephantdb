@@ -13,17 +13,6 @@
 ;; watches all domains and trigger an atomic update in the background
 ;; when some new version appears in domains.
 
-(defn launch-updater!
-  [interval-secs service-handler]
-  (let [interval-ms (* 1000 interval-secs)]
-    (future
-      (log/log-message (format "Starting updater process with an interval of: %s seconds..."
-                               interval-secs))
-      (while true
-        (Thread/sleep interval-ms)
-        (log/log-message "Updater process: Checking if update is possible...")
-        (.updateAll service-handler)))))
-
 (defn launch-server!
   [global-config local-config]
   (let [{interval :update-interval-s} local-config
@@ -33,7 +22,7 @@
     (util/register-shutdown-hook #(do (.shutdown handler)
                                       (.stop server)))
     (log/log-message "Starting updater process...")
-    (launch-updater! interval handler)
+    (service/launch-updater! interval handler)
     (log/log-message "Starting ElephantDB server...")
     (.serve server)))
 
