@@ -27,4 +27,5 @@
             :jar-name "elephantdb-server.jar"
             :app-user  "backtype"
             :app-group "backtype"
-            :layout-size "10G"}  )
+            :layout-size "10G"
+            :include-dev true})
