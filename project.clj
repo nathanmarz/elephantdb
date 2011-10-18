@@ -16,15 +16,7 @@
                  [log4j/log4j "1.2.16"]
                  [com.sleepycat/je "4.1.10"]
                  [hadoop-util "0.2.1"]]
-  :dev-dependencies [[swank-clojure "1.4.0-SNAPSHOT"]
-                     [clojure-source "1.2.0"]
-                     [lein-marginalia "0.6.0"]
-                     [lein-app "1.0.0"]
-                     [org.apache.hadoop/hadoop-core "0.20.2-dev"]]
-  :aot [elephantdb.client elephantdb.main]
-  :app-app {:bastion "nest1.corp.twitter.com"
-            :jar-name "elephantdb-server.jar"
-            :app-user  "backtype"
-            :app-group "backtype"
-            :layout-size "10G"
-            :include-dev true})
+  :dev-dependencies [[org.apache.hadoop/hadoop-core "0.20.2-dev"]
+                     [swank-clojure "1.4.0-SNAPSHOT"]
+                     [lein-marginalia "0.6.1"]]
+  :aot [elephantdb.client elephantdb.main])
