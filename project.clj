@@ -4,7 +4,6 @@
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
   :repositories {"oracle" "http://download.oracle.com/maven"}
-  :main elephantdb.main
   :dependencies [[org.clojure/clojure "1.2.1"]
                  [org.clojure/clojure-contrib "1.2.0"]
                  [jvyaml "1.0.0"]
@@ -15,4 +14,5 @@
   :dev-dependencies [[org.apache.hadoop/hadoop-core "0.20.2-dev"]
                      [swank-clojure "1.4.0-SNAPSHOT"]
                      [lein-marginalia "0.6.1"]]
-  :aot [elephantdb.client elephantdb.main])
+  :aot [elephantdb.client elephantdb.main]
+  :main elephantdb.main)

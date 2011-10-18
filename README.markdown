@@ -66,8 +66,8 @@ Add new domains to the EDB ring by adding kv pairs under the `:domains` key of g
 
 To deploy ElephantDB, you'll need to install [Leiningen](https://github.com/technomancy/leiningen). Once that's complete, run the following commands to prep your system for deploy:
 
-    $ git clone git://github.com/nathanmarz/elephantdb.git
-    $ cd elephantdb/deploy
+    $ git clone git://github.com/sritchie/elephantdb-deploy.git
+    $ cd elephantdb-deploy
     $ lein deps
 
 These commands will pull in all dependencies required to deploy ElephantDB. Finally, run:
