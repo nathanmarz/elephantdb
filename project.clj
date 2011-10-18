@@ -21,8 +21,7 @@
                      [lein-marginalia "0.6.0"]
                      [lein-app "1.0.0"]
                      [org.apache.hadoop/hadoop-core "0.20.2-dev"]]
-  :aot [elephantdb.client
-        elephantdb.main]
+  :aot [elephantdb.client elephantdb.main]
   :app-app {:bastion "nest1.corp.twitter.com"
             :jar-name "elephantdb-server.jar"
             :app-user  "backtype"
