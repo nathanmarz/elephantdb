@@ -3,11 +3,7 @@
   :test-path "test/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
-  :repositories {"private"
-                 {:url "http://ec2-72-44-56-146.compute-1.amazonaws.com/repo/"
-                  :username "backtype"
-                  :password "btpreview"}
-                 "oracle" "http://download.oracle.com/maven"}
+  :repositories {"oracle" "http://download.oracle.com/maven"}
   :main elephantdb.main
   :dependencies [[org.clojure/clojure "1.2.1"]
                  [org.clojure/clojure-contrib "1.2.0"]
