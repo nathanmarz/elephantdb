@@ -1,5 +1,5 @@
 (ns elephantdb.log
-  (:require [clojure.contrib.logging :as log])
+  (:require [clojure.tools.logging :as log])
   (:import [org.apache.log4j PropertyConfigurator Logger Level]))
 
 (defn configure-logging [path]

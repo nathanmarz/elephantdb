@@ -4,7 +4,6 @@
 (ns elephantdb.config
   (:use elephantdb.hadoop
         hadoop-util.core)
-  (:require [clojure.contrib.duck-streams :as d])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.persistence LocalPersistenceFactory]))
 
@@ -48,8 +47,8 @@
   filesystem."
   [conf fs str-path]
   {:pre [(map? conf)]}
-  (with-open [w (d/writer (.create fs (path str-path) false))]
-    (.print w conf)))
+  (let [stream (.create fs (path str-path) false)]
+    (spit stream conf)))
 
 (defn convert-java-domain-spec [spec]
   (struct domain-spec-struct

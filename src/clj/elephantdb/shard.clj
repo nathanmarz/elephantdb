@@ -19,7 +19,9 @@
 (defn shard-log [s domain hosts numshards replication]
   (log-message (s/join ", " [s domain hosts numshards replication])))
 
-(defn compute-host-to-shards [domain hosts numshards replication]
+(defn compute-host-to-shards
+  {:dynamic true}
+  [domain hosts numshards replication]
   (shard-log "host to shards" domain hosts numshards replication)
   (when (> replication (count hosts))
     (throw-illegal "Replication greater than number of servers"))
@@ -57,7 +59,9 @@
 (defn num-shards [index]
   (count (keys (::shards-to-hosts index))))
 
-(defn key-shard [domain key amt]
+(defn key-shard
+  {:dynamic true}
+  [domain key amt]
   (Utils/keyShard key amt))
 
 (defn key-hosts

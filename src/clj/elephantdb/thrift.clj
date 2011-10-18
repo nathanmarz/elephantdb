@@ -1,10 +1,11 @@
 (ns elephantdb.thrift
-  (:use [clojure.contrib.def :only (defnk)])
   (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol]
            [org.apache.thrift.transport TTransport TFramedTransport TSocket]
-           [elephantdb.generated LoadingStatus DomainStatus DomainStatus$_Fields ReadyStatus
+           [elephantdb.generated LoadingStatus DomainStatus
+            DomainStatus$_Fields ReadyStatus
             FailedStatus ShutdownStatus ElephantDB$Client Value Status
-            DomainNotFoundException DomainNotLoadedException HostsDownException WrongHostException]))
+            DomainNotFoundException DomainNotLoadedException
+            HostsDownException WrongHostException]))
 
 (defn loading-status []
   (DomainStatus/loading (LoadingStatus.)))
@@ -15,7 +16,7 @@
 (defn shutdown-status []
   (DomainStatus/shutdown (ShutdownStatus.)))
 
-(defnk ready-status [:loading? false]
+(defn ready-status [& {:keys [loading?]}]
   (DomainStatus/ready
    (doto (ReadyStatus.)
      (.set_update_status (when loading? (LoadingStatus.))))))

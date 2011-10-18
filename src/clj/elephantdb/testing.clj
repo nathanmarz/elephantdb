@@ -2,8 +2,7 @@
   (:use clojure.test
         hadoop-util.core
         [elephantdb.log :only (with-log-level log-message)]
-        [elephantdb util hadoop config shard service thrift]
-        [clojure.contrib.seq-utils :only (find-first)])
+        [elephantdb util hadoop config shard service thrift])
   (:require [elephantdb.client :as client])
   (:import [java.util UUID ArrayList]
            [java.io IOException]
@@ -114,8 +113,10 @@
       (add-string db k v))
     (.close db)))
 
-;;bind this to get different behavior when making sharded domains
-(defn test-key-to-shard [key numshards]
+(defn test-key-to-shard
+  "bind this to get different behavior when making sharded domains."
+  {:dynamic true}
+  [key numshards]
   (Utils/keyShard key numshards))
 
 (defn mk-elephant-writer
@@ -190,8 +191,8 @@
 (defn mk-service-handler
   [global-config localdir domain-to-host-to-shards]
   (binding [compute-host-to-shards (if domain-to-host-to-shards
-                                     (fn [d _ _ _] (domain-to-host-to-shards d))
-                                     compute-host-to-shards)]
+                                       (fn [d _ _ _] (domain-to-host-to-shards d))
+                                       compute-host-to-shards)]
     (let [handler (service-handler global-config (mk-local-config localdir))]
       (while (not (.isFullyLoaded handler))
         (log-message "waiting...")
@@ -242,7 +243,7 @@
     (let [shards (get (domain-to-host-to-shards domain) host)
           pairs (apply concat (vals (select-keys shards-to-pairs shards)))]
       (for [key keys]
-        (if-let [myval (find-first #(barr= key (first %)) pairs)]
+        (if-let [myval (first (filter #(barr= key (first %)) pairs))]
           (mk-value (second myval))
           (throw (wrong-host-ex)))))))
 

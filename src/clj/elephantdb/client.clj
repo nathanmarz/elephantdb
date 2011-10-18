@@ -1,9 +1,7 @@
 (ns elephantdb.client
-  (:use [clojure.contrib.seq-utils :only (includes?)]
-        [elephantdb thrift hadoop config types util log]
+  (:use [elephantdb thrift hadoop config types util log]
         hadoop-util.core)
-  (:require [clojure.contrib.seq-utils :as seq-utils]
-            [elephantdb.shard :as shard])
+  (:require [elephantdb.shard :as shard])
   (:import [elephantdb.generated ElephantDB$Iface WrongHostException
             DomainNotFoundException DomainNotLoadedException]
            [org.apache.thrift TException])
@@ -46,14 +44,16 @@
                                         (get-index this domain)
                                         key))
         localhost (my-local-hostname this)]
-    (if (includes? hosts localhost)
+    (if (some #{localhost} hosts)
       (cons localhost (remove-val localhost hosts))
       hosts)))
 
 (defn- ring-port [this]
   (-> this .state :global-conf :port))
 
-(defn multi-get-remote [host port domain keys]
+(defn multi-get-remote
+  {:dynamic true}
+  [host port domain keys]
   (with-elephant-connection host port client
     (.directMultiGet client domain keys)))
 
@@ -90,7 +90,7 @@
 (defn- host-indexed-keys
   "returns [hosts-to-try global-index key all-hosts] seq"
   [this domain keys]
-  (for [[gi key] (seq-utils/indexed keys)
+  (for [[gi key] (map-indexed vector keys)
         :let [priority-hosts (get-priority-hosts this domain key)]]
     [priority-hosts gi key priority-hosts]))
 
