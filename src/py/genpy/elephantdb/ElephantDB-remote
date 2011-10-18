@@ -34,6 +34,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '   getDomains()'
   print '  Status getStatus()'
   print '  bool isFullyLoaded()'
+  print '  bool isUpdating()'
   print '  void updateAll()'
   print '  bool update(string domain)'
   print ''
@@ -161,6 +162,12 @@ elif cmd == 'isFullyLoaded':
     print 'isFullyLoaded requires 0 args'
     sys.exit(1)
   pp.pprint(client.isFullyLoaded())
+
+elif cmd == 'isUpdating':
+  if len(args) != 0:
+    print 'isUpdating requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.isUpdating())
 
 elif cmd == 'updateAll':
   if len(args) != 0:

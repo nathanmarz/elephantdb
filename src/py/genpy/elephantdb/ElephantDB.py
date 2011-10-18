@@ -5,6 +5,7 @@
 #
 
 from thrift.Thrift import *
+import sys
 from ttypes import *
 from thrift.Thrift import TProcessor
 from thrift.transport import TTransport
@@ -102,6 +103,9 @@ class Iface:
     pass
 
   def isFullyLoaded(self, ):
+    pass
+
+  def isUpdating(self, ):
     pass
 
   def updateAll(self, ):
@@ -569,6 +573,31 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "isFullyLoaded failed: unknown result");
 
+  def isUpdating(self, ):
+    self.send_isUpdating()
+    return self.recv_isUpdating()
+
+  def send_isUpdating(self, ):
+    self._oprot.writeMessageBegin('isUpdating', TMessageType.CALL, self._seqid)
+    args = isUpdating_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_isUpdating(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = isUpdating_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success != None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "isUpdating failed: unknown result");
+
   def updateAll(self, ):
     self.send_updateAll()
     self.recv_updateAll()
@@ -642,6 +671,7 @@ class Processor(Iface, TProcessor):
     self._processMap["getDomains"] = Processor.process_getDomains
     self._processMap["getStatus"] = Processor.process_getStatus
     self._processMap["isFullyLoaded"] = Processor.process_isFullyLoaded
+    self._processMap["isUpdating"] = Processor.process_isUpdating
     self._processMap["updateAll"] = Processor.process_updateAll
     self._processMap["update"] = Processor.process_update
 
@@ -866,6 +896,17 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
+  def process_isUpdating(self, seqid, iprot, oprot):
+    args = isUpdating_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = isUpdating_result()
+    result.success = self._handler.isUpdating()
+    oprot.writeMessageBegin("isUpdating", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
   def process_updateAll(self, seqid, iprot, oprot):
     args = updateAll_args()
     args.read(iprot)
@@ -962,6 +1003,25 @@ class get_args:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class get_result:
   """
   Attributes:
@@ -1057,6 +1117,25 @@ class get_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class getString_args:
   """
   Attributes:
@@ -1124,6 +1203,25 @@ class getString_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class getString_result:
   """
@@ -1220,6 +1318,25 @@ class getString_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class getInt_args:
   """
   Attributes:
@@ -1287,6 +1404,25 @@ class getInt_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class getInt_result:
   """
@@ -1383,6 +1519,25 @@ class getInt_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class getLong_args:
   """
   Attributes:
@@ -1450,6 +1605,25 @@ class getLong_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class getLong_result:
   """
@@ -1546,6 +1720,25 @@ class getLong_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class multiGet_args:
   """
   Attributes:
@@ -1621,6 +1814,25 @@ class multiGet_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class multiGet_result:
   """
@@ -1725,6 +1937,25 @@ class multiGet_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class multiGetString_args:
   """
   Attributes:
@@ -1800,6 +2031,25 @@ class multiGetString_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class multiGetString_result:
   """
@@ -1904,6 +2154,25 @@ class multiGetString_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class multiGetInt_args:
   """
   Attributes:
@@ -1979,6 +2248,25 @@ class multiGetInt_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class multiGetInt_result:
   """
@@ -2083,6 +2371,25 @@ class multiGetInt_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class multiGetLong_args:
   """
   Attributes:
@@ -2158,6 +2465,25 @@ class multiGetLong_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class multiGetLong_result:
   """
@@ -2262,6 +2588,25 @@ class multiGetLong_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class directMultiGet_args:
   """
   Attributes:
@@ -2337,6 +2682,25 @@ class directMultiGet_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class directMultiGet_result:
   """
@@ -2441,6 +2805,25 @@ class directMultiGet_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class getDomainStatus_args:
   """
   Attributes:
@@ -2496,6 +2879,25 @@ class getDomainStatus_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class getDomainStatus_result:
   """
@@ -2553,6 +2955,25 @@ class getDomainStatus_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class getDomains_args:
 
   thrift_spec = (
@@ -2590,6 +3011,25 @@ class getDomains_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class getDomains_result:
   """
@@ -2654,6 +3094,25 @@ class getDomains_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class getStatus_args:
 
   thrift_spec = (
@@ -2691,6 +3150,25 @@ class getStatus_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class getStatus_result:
   """
@@ -2748,6 +3226,25 @@ class getStatus_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class isFullyLoaded_args:
 
   thrift_spec = (
@@ -2785,6 +3282,25 @@ class isFullyLoaded_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class isFullyLoaded_result:
   """
@@ -2841,6 +3357,156 @@ class isFullyLoaded_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
+class isUpdating_args:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('isUpdating_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
+class isUpdating_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('isUpdating_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class updateAll_args:
 
   thrift_spec = (
@@ -2878,6 +3544,25 @@ class updateAll_args:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 class updateAll_result:
   """
@@ -2936,6 +3621,25 @@ class updateAll_result:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class update_args:
   """
   Attributes:
@@ -2992,6 +3696,25 @@ class update_args:
   def __ne__(self, other):
     return not (self == other)
 
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
+
 class update_result:
   """
   Attributes:
@@ -3046,5 +3769,24 @@ class update_result:
 
   def __ne__(self, other):
     return not (self == other)
+
+  def union_value(self):
+    d = self.__dict__
+    for key in d:
+      val = d[key]
+      if not val is None:
+        return val
+
+  def get_set_field(self):
+    for attr in self.__dict__:
+      if not self.__dict__[attr] is None:
+        return attr
+
+  def get_set_field_id(self):
+    for idx, tup in enumerate(self.__class__.thrift_spec):
+      if tup:
+        key = tup[2]
+        if not self.__dict__[key] is None:
+          return idx
 
 

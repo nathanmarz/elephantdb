@@ -16,25 +16,25 @@ class ElephantDBClient:
         self._timeout = timeout
         self._reset()
         self._connect()
-    
+
     def get(self, domain, key):
         return self._exec(lambda client: client.get(domain, key))
-    
+
     def getString(self, domain, key):
         return self._exec(lambda client: client.getString(domain, key))
-    
+
     def getInt(self, domain, key):
         return self._exec(lambda client: client.getInt(domain, key))
-    
+
     def getLong(self, domain, key):
         return self._exec(lambda client: client.getLong(domain, key))
-    
+
     def getThrift(self, domain, key):
         return self._exec(lambda client: client.get(domain, serialize(key)))
-    
+
     def directGet(self, domain, key):
         return self._exec(lambda client: client.directGet(domain, key))
-    
+
     def multiGet(self, domain, keys):
         return self._exec(lambda client: client.multiGet(domain, keys))
 
@@ -49,28 +49,34 @@ class ElephantDBClient:
 
     def multiGetThrift(self, domain, keys):
         return self._exec(lambda client: client.multiGet(domain, map(serialize, keys)))
-    
+
     def getDomainStatus(self, domain):
         return self._exec(lambda client: client.getDomainStatus(domain))
-    
+
     def getDomains(self):
         return self._exec(lambda client: client.getDomains())
-    
+
     def getStatus(self):
         return self._exec(lambda client: client.getStatus())
-    
+
     def isFullyLoaded(self):
         return self._exec(lambda client: client.isFullyLoaded())
-    
+
+    def updateAll(self):
+        return self._exec(lambda client: client.updateAll())
+
+    def updateDomain(self, domain):
+        return self._exec(lambda client: client.updateDomain(domain))
+
     def close(self):
         if self._conn is not None:
             self._conn.close()
             self._reset()
-    
+
     def _reset(self):
         self._conn = None
         self._client = None
-    
+
     def _exec(self, func, trynum=1):
         self._connect()
         try:
@@ -81,7 +87,7 @@ class ElephantDBClient:
             else:
                 self._reset()
                 return self._exec(func, trynum+1)
-    
+
     def _connect(self):
         if self._conn is None:
             socket = TSocket.TSocket(self._host, self._port)
@@ -89,6 +95,6 @@ class ElephantDBClient:
             self._conn = TTransport.TFramedTransport(socket)
             self._client = ElephantDB.Client(TBinaryProtocol.TBinaryProtocol(self._conn))
             self._conn.open()
-    
+
     def __del__(self):
         self.close()

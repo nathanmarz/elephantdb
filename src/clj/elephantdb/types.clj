@@ -7,5 +7,5 @@
 (defn serialize-long [l]
   (Utils/serializeLong l))
 
-(defn serialize-string [#^String s]
+(defn serialize-string [^String s]
   (Utils/serializeString s))

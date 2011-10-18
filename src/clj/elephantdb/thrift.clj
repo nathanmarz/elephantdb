@@ -1,10 +1,11 @@
 (ns elephantdb.thrift
-  (:import [elephantdb.generated LoadingStatus DomainStatus DomainStatus$_Fields ReadyStatus
-              FailedStatus ShutdownStatus ElephantDB$Client Value Status
-              DomainNotFoundException DomainNotLoadedException HostsDownException WrongHostException])
-  (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol])
-  (:import [org.apache.thrift.transport TTransport TFramedTransport TSocket])
-  )
+  (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol]
+           [org.apache.thrift.transport TTransport TFramedTransport TSocket]
+           [elephantdb.generated LoadingStatus DomainStatus
+            DomainStatus$_Fields ReadyStatus
+            FailedStatus ShutdownStatus ElephantDB$Client Value Status
+            DomainNotFoundException DomainNotLoadedException
+            HostsDownException WrongHostException]))
 
 (defn loading-status []
   (DomainStatus/loading (LoadingStatus.)))
@@ -15,16 +16,22 @@
 (defn shutdown-status []
   (DomainStatus/shutdown (ShutdownStatus.)))
 
-(defn ready-status [loading?]
+(defn ready-status [& {:keys [loading?]}]
   (DomainStatus/ready
-    (doto (ReadyStatus.)
-          (.set_update_status (when loading? (LoadingStatus.))))))
+   (doto (ReadyStatus.)
+     (.set_update_status (when loading? (LoadingStatus.))))))
 
 (defn status-ready? [#^DomainStatus domain-status]
   (= (.getSetField domain-status) DomainStatus$_Fields/READY))
 
 (defn status-failed? [#^DomainStatus domain-status]
   (= (.getSetField domain-status) DomainStatus$_Fields/FAILED))
+
+(defn status-loading? [#^DomainStatus domain-status]
+  (let [field (.getSetField domain-status)]
+    (or (= field DomainStatus$_Fields/LOADING)
+        (and (= field DomainStatus$_Fields/READY)
+             (.get_update_status (.get_ready domain-status))))))
 
 (defn domain-not-found-ex [domain]
   (DomainNotFoundException. domain))
@@ -39,7 +46,8 @@
   (HostsDownException. hosts))
 
 (defn mk-value [val]
-  (doto (Value.) (.set_data val)))
+  (doto (Value.)
+    (.set_data val)))
 
 (defn elephant-status [domain-status-map]
   (Status. domain-status-map))
@@ -48,12 +56,10 @@
   (let [transport (TFramedTransport. (TSocket. host port))
         prot (TBinaryProtocol. transport)
         client (ElephantDB$Client. prot)]
-        (.open transport)
-        [client transport] ))
+    (.open transport)
+    [client transport]))
 
 (defmacro with-elephant-connection [host port client-sym & body]
   `(let [[#^ElephantDB$Client ~client-sym #^TTransport conn#] (elephant-client-and-conn ~host ~port)]
-      (try
-        ~@body
-      (finally (.close conn#)))
-    ))
+     (try ~@body
+          (finally (.close conn#)))))

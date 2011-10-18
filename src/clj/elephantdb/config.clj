@@ -1,99 +1,95 @@
+;; Namespace includes all functions necessary to destructure, read,
+;; write and create elephantdb config maps.
+
 (ns elephantdb.config
-  (:require [clojure.contrib [duck-streams :as d]])
-  (:use [elephantdb hadoop])
-  (:import [elephantdb DomainSpec Utils])
-  (:import [elephantdb.persistence LocalPersistenceFactory]))
+  (:use elephantdb.hadoop
+        hadoop-util.core)
+  (:import [elephantdb DomainSpec Utils]
+           [elephantdb.persistence LocalPersistenceFactory]))
 
+;; ## Local and Global Configs
+;;
+;; TODO: Discuss what's included in the local and global
+;; configurations.
 
-; { :replication 2
-;   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
-;   :port 3578
-;   :domains {"graph" "s3n://mybucket/elephantdb/graph"
-;             "docs"  "/data/docdb"
-;             }
-; }
+(comment
+  { :replication 2
+   :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
+   :port 3578
+   :domains {"graph" "s3n://mybucket/elephantdb/graph"
+             "docs"  "/data/docdb"}})
 
 (def DEFAULT-GLOBAL-CONFIG
-     {
-      :replication 1
-      :port 3578
-      })
+  {:replication 1
+   :port 3578})
 
 (def DEFAULT-LOCAL-CONFIG
-     {
-      :max-online-download-rate-kb-s 128
-      :local-db-conf {}
-      :hdfs-conf {}
-      })
+  {:max-online-download-rate-kb-s 128
+   :update-interval-s 60
+   :local-db-conf {}
+   :hdfs-conf {}})
 
 (defstruct domain-spec-struct :persistence-factory :num-shards)
 
-(defn local-global-config-cache [local-config]
-  (str-path (:local-dir local-config) "GLOBAL-CONF.clj"))
+(defn read-clj-config
+  "Reads a clojure map from the specified path, on the specified
+  filesystem. Example usage:
 
-;; TODO: do an eval? any security risks with that?
-(defn read-clj-config [fs str-path]
-  (if-not (.exists fs (path str-path))
-    nil
-    (with-in-str (Utils/convertStreamToString
-                  (.open fs (path str-path)))
-      (read))))
+  (read-clj-config (local-filesystem) \"/path/to/local-config.clj\")"
+  [fs str-path]
+  (let [p (path str-path)]
+    (when (.exists fs p)
+      (read-string (Utils/convertStreamToString
+                    (.open fs p))))))
 
-(defn write-clj-config! [conf fs str-path]
-  (with-open [w (d/writer (.create fs (path str-path) false))]
-    (.print w conf)
-    ))
-
-
-;; Configs are read/written this way b/c hadoop forks the process using the write-clj-config! method
-(defn read-cached-global-config [local-config]
-  (let [p (local-global-config-cache local-config)]
-    (when (.exists (d/file-str p))
-      (with-in-str (slurp p) (read)))
-    ))
-
-(defn cache-global-config! [local-config global-config]
-  (let [p (local-global-config-cache local-config)]
-    (d/spit p global-config)
-    ))
-
-(defn cache? [global-config token]
-  (= (:token global-config) token))
+(defn write-clj-config!
+  "Writes the supplied `conf` map to `str-path` on the supplied
+  filesystem."
+  [conf fs str-path]
+  {:pre [(map? conf)]}
+  (let [stream (.create fs (path str-path) false)]
+    (spit stream conf)))
 
 (defn convert-java-domain-spec [spec]
-  (struct domain-spec-struct (.getLPFactory spec) (.getNumShards spec)))
+  (struct domain-spec-struct
+          (.getLPFactory spec)
+          (.getNumShards spec)))
 
 (defn convert-clj-domain-spec [spec-map]
-  (DomainSpec. (:persistence-factory spec-map) (:num-shards spec-map)))
+  (DomainSpec. (:persistence-factory spec-map)
+               (:num-shards spec-map)))
 
 (defn read-domain-spec [fs path]
-  (let [spec (DomainSpec/readFromFileSystem fs path)]
-    (if-not spec
-      nil
-      (convert-java-domain-spec spec))))
+  (when-let [spec (DomainSpec/readFromFileSystem fs path)]
+    (convert-java-domain-spec spec)))
 
 (defn write-domain-spec! [spec-map fs path]
   (let [spec (convert-clj-domain-spec spec-map)]
     (.writeToFileSystem spec fs path)))
 
 (defmulti persistence-str class)
-(defmethod persistence-str String [persistence] persistence)
-(defmethod persistence-str Class [persistence] (.getName persistence))
-(defmethod persistence-str LocalPersistenceFactory [persistence] (.getName (class persistence)))
 
-(defn persistence-options [local-config persistence]
-  (if-let [local-db-conf (:local-db-conf local-config)]
-    (get local-db-conf (persistence-str persistence) {})
-    {}
-    ))
+(defmethod persistence-str String
+  [persistence] persistence)
 
-(defn read-global-config [global-config-path local-config token]
-  (let [lfs (local-filesystem)
-        cached-global (read-cached-global-config local-config)]
-    (if (and cached-global (cache? cached-global token))
-      cached-global
-      (merge DEFAULT-GLOBAL-CONFIG
-             (read-clj-config
-              (filesystem (:hdfs-conf local-config))
-              global-config-path)))
-    ))
+(defmethod persistence-str Class
+  [persistence] (.getName persistence))
+
+(defmethod persistence-str LocalPersistenceFactory
+  [persistence] (.getName (class persistence)))
+
+(defn persistence-options
+  [db-conf persistence]
+  (get db-conf (persistence-str persistence) {}))
+
+(defn read-local-config
+  [local-config-path]
+  (merge DEFAULT-LOCAL-CONFIG
+         (read-clj-config (local-filesystem)
+                          local-config-path)))
+
+(defn read-global-config
+  [global-config-path local-config]
+  (merge DEFAULT-GLOBAL-CONFIG
+         (read-clj-config (filesystem (:blob-conf local-config))
+                          global-config-path)))

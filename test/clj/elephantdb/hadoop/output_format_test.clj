@@ -1,40 +1,41 @@
 (ns elephantdb.hadoop.output-format-test
-  (:use clojure.test)
-  (:use [elephantdb testing hadoop config util])
-  (:import [elephantdb.hadoop ElephantOutputFormat ElephantOutputFormat$Args ElephantRecordWritable
-            ElephantUpdater])
-  (:import [org.apache.hadoop.io IntWritable])
-  (:import [elephantdb.persistence JavaBerkDB])
-  (:import [elephantdb Utils])
-  (:import [elephantdb.store VersionedStore])
-  (:import [elephantdb.test StringAppendUpdater])
-  (:import [java.util ArrayList])
-  (:import [org.apache.hadoop.mapred JobConf]))
+  (:use clojure.test
+        hadoop-util.core
+        [elephantdb testing hadoop config util])
+  (:import [elephantdb.hadoop ElephantOutputFormat ElephantOutputFormat$Args
+            ElephantRecordWritable ElephantUpdater]
+           [org.apache.hadoop.io IntWritable]
+           [elephantdb.persistence JavaBerkDB]
+           [elephantdb Utils]
+           [elephantdb.store VersionedStore]
+           [elephantdb.test StringAppendUpdater]
+           [java.util ArrayList]
+           [org.apache.hadoop.mapred JobConf]))
 
 (defn write-data [writer data]
   (dofor [[s records] data]
-    (dofor [[k v] records]
-      (.write
-        writer
-        (IntWritable. s)
-        (ElephantRecordWritable.
-          (.getBytes k)
-          (.getBytes v))))))
+         (dofor [[k v] records]
+                (.write
+                 writer
+                 (IntWritable. s)
+                 (ElephantRecordWritable.
+                  (.getBytes k)
+                  (.getBytes v))))))
 
 (defn check-shards [fs lfs output-dir local-tmp factory expected]
   (.mkdirs lfs (path local-tmp))
   (dofor [[s records] expected]
-    (let [local-shard-path (str-path local-tmp s)
-          _                (.copyToLocalFile fs (path output-dir (str s)) (path local-shard-path))
-          persistence      (.openPersistenceForRead factory local-shard-path {})]
-      (dofor [[k v] records]
-        (is (= v (String. (.get persistence (.getBytes k))))))
-      (dofor [[_ non-records] (dissoc expected s)]
-        (dofor [[k _] non-records]
-          (is (= nil (.get persistence (.getBytes k))))))
-      )))
+         (let [local-shard-path (str-path local-tmp s)
+               _                (.copyToLocalFile fs (path output-dir (str s)) (path local-shard-path))
+               persistence      (.openPersistenceForRead factory local-shard-path {})]
+           (dofor [[k v] records]
+                  (is (= v (String. (.get persistence (.getBytes k))))))
+           (dofor [[_ non-records] (dissoc expected s)]
+                  (dofor [[k _] non-records]
+                         (is (= nil (.get persistence (.getBytes k))))))
+           )))
 
-(deffstest test-output-format [fs output-dir]
+(def-fs-test test-output-format [fs output-dir]
   (with-local-tmp [lfs etmp tmp2]
     (let [data {0 {"0a" "00" "0b" "01"} 4 {"4a" "40"}}
           writer  (mk-elephant-writer 10 (JavaBerkDB.) output-dir etmp)]
@@ -44,7 +45,7 @@
       (check-shards fs lfs output-dir tmp2 (JavaBerkDB.) data)
       )))
 
-(deffstest test-incremental [fs dir1 dir2]
+(def-fs-test test-incremental [fs dir1 dir2]
   (with-local-tmp [lfs ltmp1 ltmp2]
     (mk-presharded-domain fs dir1 (JavaBerkDB.)
                           {0 [[(.getBytes "a") (.getBytes "1")]]
@@ -63,5 +64,5 @@
                      2 {"x" "x"}})
       )))
 
-(deffstest test-errors [fs dir1]
+(def-fs-test test-errors [fs dir1]
   )

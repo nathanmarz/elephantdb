@@ -1,22 +1,21 @@
 (ns elephantdb.store.versioned-store-test
-  (:use [clojure test])
-  (:use [elephantdb testing hadoop util])
+  (:use clojure.test
+        hadoop-util.core
+        [elephantdb testing hadoop util])
   (:import [elephantdb.store VersionedStore]))
 
-(defmacro defvstest [name [vs-sym] & body]
-  `(deffstest ~name [fs# dir#]
+(defmacro def-vs-test [name [vs-sym] & body]
+  `(def-fs-test ~name [fs# dir#]
     (let [~vs-sym (VersionedStore. fs# dir#)]
-      ~@body
-      )))
+      ~@body)))
 
-(defvstest test-empty-version [vs]
+(def-vs-test test-empty-version [vs]
   (let [v (.createVersion vs)]
     (.succeedVersion vs v)
     (is (= 1 (count (.getAllVersions vs))))
-    (is (= v (.mostRecentVersionPath vs)))
-    ))
+    (is (= v (.mostRecentVersionPath vs)))))
 
-(defvstest test-multiple-versions [vs]
+(def-vs-test test-multiple-versions [vs]
   (.succeedVersion vs (.createVersion vs))
   (Thread/sleep 100)
   (let [v (.createVersion vs)]
@@ -25,11 +24,10 @@
     (is (= v (.mostRecentVersionPath vs)))
     (Thread/sleep 100)
     (.createVersion vs)
-    (is (= v (.mostRecentVersionPath vs)))
-    ))
+    (is (= v (.mostRecentVersionPath vs)))))
 
-(defvstest test-error [vs]
+(def-vs-test test-error [vs]
   )
 
-(defvstest test-cleanup [vs]
+(def-vs-test test-cleanup [vs]
   )

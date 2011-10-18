@@ -1,4 +1,4 @@
-package elephantdb.client;
+package elephantdb.iface;
 
 import elephantdb.generated.DomainNotFoundException;
 import elephantdb.generated.DomainNotLoadedException;
