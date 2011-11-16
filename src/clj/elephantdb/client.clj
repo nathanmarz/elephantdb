@@ -1,9 +1,12 @@
 (ns elephantdb.client
-  (:use [elephantdb thrift config types]
+  (:use elephantdb.config
+        elephantdb.thrift
+        elephantdb.types
         elephantdb.common.hadoop
         elephantdb.common.util
         hadoop-util.core)
-  (:require [elephantdb.shard :as shard]
+  (:require [elephantdb.common.shard :as shard]
+            [elephantdb.common.config :as conf]
             [elephantdb.common.log :as log])
   (:import [elephantdb.generated ElephantDB$Iface WrongHostException
             DomainNotFoundException DomainNotLoadedException]
@@ -17,8 +20,8 @@
 
 (defn -init
   ([fs-conf global-conf-path]
-     (-init nil fs-conf (read-clj-config (filesystem fs-conf)
-                                         global-conf-path)))
+     (-init nil fs-conf (conf/read-clj-config (filesystem fs-conf)
+                                              global-conf-path)))
   ([local-elephant fs-conf global-conf]
      (let [{:keys [domains hosts replication]} global-conf]
        [[] {:local-hostname (local-hostname)
@@ -75,20 +78,12 @@
          (log/error e "Could not find domain when executing read on " totry ":" domain "/" keys)
          (throw e))
        (catch DomainNotLoadedException e
-         (log/error e "Domain not loaded when executing read on " totry ":" domain "/" keys)
+         (log/error e "Domain not loaded when executing read on "
+                    totry ":" domain "/" keys)
          (throw e))))
 
 (defn -get [this domain key]
-  (first (.multiGet this domain [key])))
-
-(defn -getInt [this domain i]
-  (.get this domain (serialize-int i)))
-
-(defn -getString [this domain s]
-  (.get this domain (serialize-string s)))
-
-(defn -getLong [this domain l]
-  (.get this domain (serialize-long l)))
+  (first (.multiGet this domain [(serialize key)])))
 
 (defn- host-indexed-keys
   "returns [hosts-to-try global-index key all-hosts] seq"
@@ -108,36 +103,35 @@
            host-indexed-keys))))
 
 (defn -multiGet [this domain keys]
-  (let [ ;; this trickery is to get around issues with binding/tests
+  (let [
+        ;; this trickery is to get around issues with binding/tests
         key-shard-fn shard/key-shard
         multi-get-remote-fn multi-get-remote
+        ;; trickery ends
+
+        keys (map serialize keys)
         host-indexed-keys (host-indexed-keys this domain keys)]
     (loop [keys-to-get host-indexed-keys
            results []]
       (let [host-map (group-by ffirst keys-to-get)
             rets (parallel-exec
                   (for [[host host-indexed-keys] host-map]
-                    #(vector host (multi-get* this domain
-                                              host host-indexed-keys
-                                              key-shard-fn multi-get-remote-fn))))
-            succeeded (filter second rets)
+                    #(vector host (multi-get* this
+                                              domain
+                                              host
+                                              host-indexed-keys
+                                              key-shard-fn
+                                              multi-get-remote-fn))))
+            succeeded       (filter second rets)
             succeeded-hosts (map first succeeded)
             results (->> (map second succeeded)
                          (apply concat results))
             failed-host-map (apply dissoc host-map succeeded-hosts)]
         (if (empty? failed-host-map)
           (map second (sort-by first results))
-          (recur (for [[[_ & hosts] gi key all-hosts] (apply concat (vals failed-host-map))]
+          (recur (for [[[_ & hosts] gi key all-hosts]
+                       (apply concat (vals failed-host-map))]
                    (if (empty? hosts)
                      (throw (hosts-down-ex all-hosts))
                      [hosts gi key all-hosts]))
                  results))))))
-
-(defn -multiGetInt [this domain integers]
-  (.multiGet this domain (map serialize-int integers)))
-
-(defn -multiGetString [this domain strings]
-  (.multiGet this domain (map serialize-string strings)))
-
-(defn -multiGetLong [this domain longs]
-  (.multiGet this domain (map serialize-long longs)))

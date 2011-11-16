@@ -2,8 +2,8 @@
 ;; write and create elephantdb config maps.
 
 (ns elephantdb.config
-  (:use elephantdb.common.hadoop
-        hadoop-util.core)
+  (:use [hadoop-util.core :only (filesystem local-filesystem)])
+  (:require [elephantdb.common.config :as conf])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.persistence LocalPersistenceFactory]))
 
@@ -12,8 +12,8 @@
 ;; TODO: Discuss what's included in the local and global
 ;; configurations.
 
-(comment
-  { :replication 2
+(def example-global-config
+  {:replication 2
    :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
    :port 3578
    :domains {"graph" "s3n://mybucket/elephantdb/graph"
@@ -28,44 +28,6 @@
    :update-interval-s 60
    :local-db-conf {}
    :hdfs-conf {}})
-
-(defstruct domain-spec-struct :persistence-factory :num-shards)
-
-(defn read-clj-config
-  "Reads a clojure map from the specified path, on the specified
-  filesystem. Example usage:
-
-  (read-clj-config (local-filesystem) \"/path/to/local-config.clj\")"
-  [fs str-path]
-  (let [p (path str-path)]
-    (when (.exists fs p)
-      (read-string (Utils/convertStreamToString
-                    (.open fs p))))))
-
-(defn write-clj-config!
-  "Writes the supplied `conf` map to `str-path` on the supplied
-  filesystem."
-  [conf fs str-path]
-  {:pre [(map? conf)]}
-  (let [stream (.create fs (path str-path) false)]
-    (spit stream conf)))
-
-(defn convert-java-domain-spec [spec]
-  (struct domain-spec-struct
-          (.getLPFactory spec)
-          (.getNumShards spec)))
-
-(defn convert-clj-domain-spec [spec-map]
-  (DomainSpec. (:persistence-factory spec-map)
-               (:num-shards spec-map)))
-
-(defn read-domain-spec [fs path]
-  (when-let [spec (DomainSpec/readFromFileSystem fs path)]
-    (convert-java-domain-spec spec)))
-
-(defn write-domain-spec! [spec-map fs path]
-  (let [spec (convert-clj-domain-spec spec-map)]
-    (.writeToFileSystem spec fs path)))
 
 (defmulti persistence-str class)
 
@@ -85,11 +47,11 @@
 (defn read-local-config
   [local-config-path]
   (merge DEFAULT-LOCAL-CONFIG
-         (read-clj-config (local-filesystem)
+         (conf/read-clj-config (local-filesystem)
                           local-config-path)))
 
 (defn read-global-config
   [global-config-path local-config]
   (merge DEFAULT-GLOBAL-CONFIG
-         (read-clj-config (filesystem (:blob-conf local-config))
-                          global-config-path)))
+         (conf/read-clj-config (filesystem (:blob-conf local-config))
+                               global-config-path)))

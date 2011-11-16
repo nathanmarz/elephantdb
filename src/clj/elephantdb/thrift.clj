@@ -60,6 +60,7 @@
     [client transport]))
 
 (defmacro with-elephant-connection [host port client-sym & body]
-  `(let [[#^ElephantDB$Client ~client-sym #^TTransport conn#] (elephant-client-and-conn ~host ~port)]
+  `(let [[#^ElephantDB$Client ~client-sym #^TTransport conn#]
+         (elephant-client-and-conn ~host ~port)]
      (try ~@body
           (finally (.close conn#)))))

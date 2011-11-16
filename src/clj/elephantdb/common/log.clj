@@ -2,7 +2,6 @@
   (:require [clojure.tools.logging :as log])
   (:import [org.apache.log4j PropertyConfigurator Logger Level]))
 
-
 ;; TODO: Delete and move to jackknife.logging
 (defn configure-logging [path]
   (PropertyConfigurator/configure path))

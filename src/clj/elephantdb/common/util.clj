@@ -53,22 +53,18 @@
                          (future ~@body))]
      (future-values futures#)))
 
-(defn update-vals
-  "TODO: Note that this is the same as map-mapvals, just with a 2 arg
-  function."
-  [amap f]
-  (into {} (dofor [[k v] amap]
-                  [k (f k v)])))
+(defn update-vals [f m]
+  (into {} (for [[k v] m]
+             [k (f k v)])))
 
-(defn map-mapvals [amap f]
-  (into {} (dofor [[k v] amap]
-                  [k (f v)])))
+(defn val-map [f m]
+  (into {} (for [[k v] m]
+             [k (f v)])))
 
 (defn reverse-multimap
   "{:a [1 2] :b [1] :c [3]} -> {1 [:a :b] 2 [:a] 3 [:c]}"
   [amap]
-  (apply merge-with
-         concat
+  (apply merge-with concat
          (mapcat
           (fn [[k vlist]]
             (for [v vlist] {v [k]}))

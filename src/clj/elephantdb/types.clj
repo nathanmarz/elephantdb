@@ -1,11 +1,19 @@
 (ns elephantdb.types
   (:import [elephantdb Utils]))
 
-(defn serialize-int [i]
-  (Utils/serializeInt i))
+(defprotocol ISerialize
+  (serialize [x]))
 
-(defn serialize-long [l]
-  (Utils/serializeLong l))
+(extend-protocol ISerialize
+  Integer
+  (serialize [x] (Utils/serializeInt x))
 
-(defn serialize-string [^String s]
-  (Utils/serializeString s))
+  Long
+  (serialize [x] (Utils/serializeLong x))
+
+  String
+  (serialize [x]  (Utils/serializeString x)))
+
+(extend (Class/forName "[B") 
+  ISerialize
+  {:serialize identity})

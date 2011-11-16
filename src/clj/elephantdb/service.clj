@@ -6,7 +6,7 @@
   (:require [clojure.string :as s]
             [elephantdb.domain :as domain]
             [elephantdb.thrift :as thrift]
-            [elephantdb.shard :as shard]
+            [elephantdb.common.shard :as shard]
             [elephantdb.common.log :as log])
   (:import [java.io File]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
@@ -34,9 +34,9 @@
                       :domain-data <data-atom>}}"
   [fs {:keys [domains hosts replication]}]
   (let [domain-shards (shard/shard-domains fs domains hosts replication)]
-    (update-vals domains
-                 (fn [k _]
-                   (-> k domain-shards domain/init-domain-info)))))
+    (update-vals (fn [k _]
+                   (-> k domain-shards domain/init-domain-info))
+                 domains)))
 
 (defn domain-has-data? [local-vs]
   (-> local-vs .mostRecentVersion boolean))
@@ -193,8 +193,8 @@
         (update-and-sync-status! edb-config
                                  rw-lock
                                  domains-info
-                                 (->> domain/host-shards
-                                      (map-mapvals domains-info)
+                                 (->> domains-info
+                                      (val-map domain/host-shards)
                                       (mk-loader-state)))))))
 
 (defn- close-lps
@@ -271,29 +271,11 @@
                  (domain/set-domain-status! info (thrift/shutdown-status))))
         (close-lps domains-info))
       
-      (get [^String domain ^bytes key]
+      (get [^String domain key]
         (.get @client domain key))
-
-      (getString [^String domain ^String key]
-        (.getString @client domain key))
-
-      (getInt [^String domain key]
-        (.getInt @client domain key))
-
-      (getLong [^String domain key]
-        (.getLong @client domain key))
 
       (multiGet [^String domain keys]
         (.multiGet @client domain keys))
-
-      (multiGetString [^String domain ^String keys]
-        (.multiGetString @client domain keys))
-
-      (multiGetInt [^String domain keys]
-        (.multiGetInt @client domain keys))
-      
-      (multiGetLong [^String domain keys]
-        (.multiGetLong @client domain keys))
 
       (directMultiGet [^String domain keys]
         (with-read-lock rw-lock
@@ -317,7 +299,7 @@
       
       (getStatus []
         (thrift/elephant-status
-         (map-mapvals domains-info domain/domain-status)))
+         (val-map domain/domain-status domains-info)))
 
       (isFullyLoaded []
         (let [stat (.get_domain_statuses (.getStatus this))]

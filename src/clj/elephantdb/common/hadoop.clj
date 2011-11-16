@@ -30,8 +30,7 @@
 (defn mk-loader-state
   "Create new LoaderState"
   [domains-to-shards]
-  (-> domains-to-shards
-      (u/map-mapvals mk-shard-states)
+  (-> (u/val-map mk-shard-states domains-to-shards)
       (DownloadState. (atom 0)
                       (atom []))))
 

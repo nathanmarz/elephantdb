@@ -1,11 +1,12 @@
 (ns elephantdb.service-test
   (:use clojure.test
-        hadoop-util.core
-        elephantdb.common.log
-        elephantdb.common.hadoop
-        elephantdb.common.util
-        [elephantdb service testing config])
-  (:require [elephantdb [thrift :as thrift]])
+        elephantdb.testing
+        [elephantdb.config :only (read-global-config)])
+  (:require [hadoop-util.core :as h]
+            [elephantdb.thrift :as thrift]
+            [elephantdb.common.config :as conf]
+            [elephantdb.service :as service]
+            [elephantdb.common.util :as u])
   (:import [elephantdb.persistence JavaBerkDB]))
 
 (defn get-val [elephant d k]
@@ -31,7 +32,7 @@
                          [(barr 1) (barr 1 1)]
                          [(barr 2) (barr 2 2)]]]
     (with-service-handler [elephant
-                           [(local-hostname)]
+                           [(u/local-hostname)]
                            {"test1" dpath}
                            nil]
       (expected-domain-data elephant "test1"
@@ -72,9 +73,9 @@
                                            21 [21 1])
                             3 (domain-data 30 [30 0])}]
     (with-service-handler [elephant
-                           [(local-hostname) "host2"]
+                           [(u/local-hostname) "host2"]
                            {"test1" dpath}
-                           {"test1" {(local-hostname) [0 2] "host2" [1 3]}}]
+                           {"test1" {(u/local-hostname) [0 2] "host2" [1 3]}}]
       (expected-domain-data elephant "test1"
                             0 [0 0]
                             20 [20 0]
@@ -86,11 +87,11 @@
     (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
       (let [domain-spec {:num-shards 4 :persistence-factory (JavaBerkDB.)}
             local-config (mk-local-config local-dir)]
-        (write-clj-config! {:replication 1
-                            :hosts [(local-hostname)]
-                            :domains {"no-update" dtmp1 "do-update" dtmp2}}
-                           fs
-                           gtmp)
+        (conf/write-clj-config! {:replication 1
+                                 :hosts [(u/local-hostname)]
+                                 :domains {"no-update" dtmp1 "do-update" dtmp2}}
+                                fs
+                                gtmp)
 
         ;; create version 1 for no-update
         (mk-sharded-domain fs dtmp1 domain-spec
@@ -148,7 +149,7 @@
 
         ;; now test with new version but different domain-spec
         (let [domain-spec-new {:num-shards 6 :persistence-factory (JavaBerkDB.)}]
-          (delete fs dtmp2 true)
+          (h/delete fs dtmp2 true)
           (mk-sharded-domain fs dtmp2 domain-spec-new
                              (domain-data 0 [55 55]
                                           1 [66 66]
@@ -163,15 +164,15 @@
         
         ;; if we delete a domain from the global conf, it should
         ;; remove the local version of it too (delete dir), when starting up edb
-        (delete fs gtmp) ;; delete config
-        (write-clj-config! {:replication 1
-                            :hosts [(local-hostname)]
-                            :domains {"no-update" dtmp1}}
-                           fs
-                           gtmp)
+        (h/delete fs gtmp) ;; delete config
+        (conf/write-clj-config! {:replication 1
+                                 :hosts [(u/local-hostname)]
+                                 :domains {"no-update" dtmp1}}
+                                fs
+                                gtmp)
         (let [handler (-> (read-global-config gtmp local-config)
                           (mk-service-handler local-dir nil))
-              deleted-domain-path (.pathToFile lfs (path local-dir "do-update"))]
+              deleted-domain-path (.pathToFile lfs (h/path local-dir "do-update"))]
           (is (= 1 (.size (.getDomains handler))))
           (is (= "no-update" (first (.getDomains handler))))
 
@@ -189,13 +190,13 @@
                                         21 [21 1]
                                         22 nil)
                          3 (domain-data 30 [30 0])}
-        domain-to-host-to-shards {"test1" {(local-hostname) [0 3]
+        domain-to-host-to-shards {"test1" {(u/local-hostname) [0 3]
                                            "host2" [1 0]
                                            "host3" [2 1]
                                            "host4" [3 2]}}]
     (with-presharded-domain ["test1" dpath (JavaBerkDB.) shards-to-pairs]
       (with-service-handler [elephant
-                             [(local-hostname) "host2"]
+                             [(u/local-hostname) "host2"]
                              {"test1" dpath}
                              domain-to-host-to-shards]
         (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host4"]]
@@ -219,11 +220,11 @@
     (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
       (let [domain-spec {:num-shards 4 :persistence-factory (JavaBerkDB.)}
             local-config (mk-local-config local-dir)]
-        (write-clj-config! {:replication 1
-                            :hosts [(local-hostname)]
-                            :domains {"domain1" dtmp1 "domain2" dtmp2}}
-                           fs
-                           gtmp)
+        (conf/write-clj-config! {:replication 1
+                                 :hosts [(u/local-hostname)]
+                                 :domains {"domain1" dtmp1 "domain2" dtmp2}}
+                                fs
+                                gtmp)
 
         ;; create version 1 for domain1
         (mk-sharded-domain fs dtmp1 domain-spec
@@ -339,9 +340,9 @@
           (is (thrift/status-ready? (.getDomainStatus handler "domain2")))
 
           ;; make sure the old versions have been deleted locally
-          (let [domain1-old-path1 (.pathToFile lfs (path (str-path local-dir "domain1" "1")))
-                domain2-old-path1 (.pathToFile lfs (path (str-path local-dir "domain2" "1")))
-                domain2-old-path2 (.pathToFile lfs (path (str-path local-dir "domain2" "2")))]
+          (let [domain1-old-path1 (.pathToFile lfs (h/path (h/str-path local-dir "domain1" "1")))
+                domain2-old-path1 (.pathToFile lfs (h/path (h/str-path local-dir "domain2" "1")))
+                domain2-old-path2 (.pathToFile lfs (h/path (h/str-path local-dir "domain2" "2")))]
             (is (= false (.exists domain1-old-path1)))
             (is (= false (.exists domain2-old-path1)))
             (is (= false (.exists domain2-old-path2))))

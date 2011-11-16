@@ -1,38 +1,38 @@
 (ns elephantdb.loader
-  (:use elephantdb.common.hadoop
-        elephantdb.common.log
-        elephantdb.common.util
-        elephantdb.config
-        hadoop-util.core)
-  (:require [elephantdb.common.log :as log])
+  (:use [elephantdb.config :only (persistence-options)])
+  (:require [hadoop-util.core :as h]
+            [elephantdb.common.hadoop :as hadoop]
+            [elephantdb.common.log :as log]
+            [elephantdb.common.config :as conf]
+            [elephantdb.common.util :as u])
   (:import [elephantdb.store DomainStore]
            [elephantdb.common.hadoop ShardState DownloadState]))
 
 (defn- shard-path
   [domain-version shard]
-  (str-path domain-version shard))
+  (h/str-path domain-version shard))
 
 (defn open-domain-shard
   [persistence-factory db-conf local-shard-path]
   (log/info "Opening LP " local-shard-path)
-  (with-ret (.openPersistenceForRead
-             persistence-factory
-             local-shard-path
-             (persistence-options db-conf persistence-factory))
+  (u/with-ret (.openPersistenceForRead
+               persistence-factory
+               local-shard-path
+               (persistence-options db-conf persistence-factory))
     (log/info "Opened LP " local-shard-path)))
 
 (defn open-domain
   [db-conf local-domain-root shards]
-  (let [lfs (local-filesystem)
+  (let [lfs (h/local-filesystem)
         local-store (DomainStore. lfs local-domain-root)
-        domain-spec (read-domain-spec lfs local-domain-root)
+        domain-spec (conf/read-domain-spec lfs local-domain-root)
         local-version-path (.mostRecentVersionPath local-store)
-        future-lps (dofor [s shards]
-                          [s (future (open-domain-shard
-                                      (:persistence-factory domain-spec)
-                                      db-conf
-                                      (shard-path local-version-path s)))])]
-    (with-ret (map-mapvals future-lps (memfn get))
+        future-lps (u/dofor [s shards]
+                            [s (future (open-domain-shard
+                                        (:persistence-factory domain-spec)
+                                        db-conf
+                                        (shard-path local-version-path s)))])]
+    (u/with-ret (u/val-map (memfn get) future-lps)
       (log/info "Finished opening domain at " local-domain-root))))
 
 (defn close-shard
@@ -58,9 +58,9 @@
 ;; limited with the other shards...)
 (defn load-domain-shard!
   [fs persistence-factory persistence-opts local-shard-path remote-shard-path state]
-  (if (.exists fs (path remote-shard-path))
+  (if (.exists fs (h/path remote-shard-path))
     (do (log/info "Copying " remote-shard-path " to " local-shard-path)
-        (copy-local fs remote-shard-path local-shard-path state)
+        (hadoop/copy-local fs remote-shard-path local-shard-path state)
         (log/info "Copied " remote-shard-path " to " local-shard-path))
     (do (log/info "Shard " remote-shard-path " did not exist. Creating empty LP")
         (.close (.createPersistence persistence-factory
@@ -71,30 +71,31 @@
   "returns a map from shard to LP."
   [domain fs local-db-conf local-domain-root remote-path state]
   (log/info "Loading domain at " remote-path " to " local-domain-root)
-  (let [lfs           (local-filesystem)
+  (let [lfs           (h/local-filesystem)
         remote-vs     (DomainStore. fs remote-path)
         factory       (-> (.getSpec remote-vs)
-                          (convert-java-domain-spec)
+                          (conf/convert-java-domain-spec)
                           (:persistence-factory))
         local-vs       (DomainStore. lfs local-domain-root (.getSpec remote-vs))
         remote-version (.mostRecentVersion remote-vs)
         local-v-path   (.createVersion local-vs remote-version)
         remote-v-path  (.versionPath remote-vs remote-version)
-        _              (mkdirs lfs local-v-path)
+        _              (h/mkdirs lfs local-v-path)
         domain-state   (get (:shard-states state) domain)
         shards         (keys domain-state)
-        shard-loaders  (dofor [s shards]
-                              (with-ret-bound [f (future
-                                                   (load-domain-shard!
-                                                    fs
-                                                    factory
-                                                    (persistence-options local-db-conf
-                                                                         factory)
-                                                    (shard-path local-v-path s)
-                                                    (shard-path remote-v-path s)
-                                                    (domain-state s)))]
-                                (swap! (:shard-loaders state) conj f)))]
-    (future-values shard-loaders)
+        shard-loaders  (u/dofor [s shards]
+                                (u/with-ret-bound
+                                  [f (future
+                                       (load-domain-shard!
+                                        fs
+                                        factory
+                                        (persistence-options local-db-conf
+                                                             factory)
+                                        (shard-path local-v-path s)
+                                        (shard-path remote-v-path s)
+                                        (domain-state s)))]
+                                  (swap! (:shard-loaders state) conj f)))]
+    (u/future-values shard-loaders)
     (.succeedVersion local-vs local-v-path)
     (log/info (format "Successfully loaded domain at %s to %s with version %s."
                       remote-path

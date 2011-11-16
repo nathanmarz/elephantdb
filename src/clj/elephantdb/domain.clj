@@ -3,23 +3,17 @@
         [elephantdb thrift config]
         [elephantdb.loader :only (close-domain)]
         [hadoop-util.core :only (local-filesystem)])
-  (:require [elephantdb.shard :as s])
+  (:require [elephantdb.common.shard :as s])
   (:import [elephantdb Utils]))
-
-;; domain-status is an atom around a DomainStatus thrift object
-;; domain-data is an atom map from shard to local persistence (or nil if it's not loaded yet)
-(defstruct domain-info-struct ::shard-index ::domain-status ::domain-data)
 
 (defn init-domain-info
   [domain-shard-index]
-  (struct domain-info-struct
-          domain-shard-index
-          (atom (loading-status))
-          (atom nil)))
+  {::shard-index    domain-shard-index
+   ::domain-status (atom (loading-status))
+   ::domain-data   (atom nil)})
 
 (defn domain-data
-  ([domain-info]
-     @(::domain-data domain-info))
+  ([domain-info] @(::domain-data domain-info))
   ([domain-info shard]
      (when-let [domain-data @(::domain-data domain-info)]
        (domain-data shard))))
@@ -50,7 +44,7 @@
 (defn all-shards
   "Returns Map of domain-name to Set of shards for that domain"
   [domains-info]
-  (map-mapvals domains-info host-shards))
+  (val-map host-shards domains-info))
 
 (defn key-hosts [domain domain-info #^bytes key]
   (s/key-hosts domain (::shard-index domain-info) key))
