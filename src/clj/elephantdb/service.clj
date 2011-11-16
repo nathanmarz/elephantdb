@@ -1,12 +1,13 @@
 (ns elephantdb.service
-  (:use elephantdb.common.log
-        elephantdb.common.hadoop
+  (:use elephantdb.common.hadoop
+        elephantdb.common.util
         hadoop-util.core
-        [elephantdb config util loader])
+        [elephantdb config loader])
   (:require [clojure.string :as s]
             [elephantdb.domain :as domain]
             [elephantdb.thrift :as thrift]
-            [elephantdb.shard :as shard])
+            [elephantdb.shard :as shard]
+            [clojure.tools.logging :as log])
   (:import [java.io File]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
@@ -81,10 +82,10 @@
   [domains local-dir]
   (let [error (atom nil)]
     (dofor [domain domains :let [domain-path (str (path local-dir domain))]]
-           (try (log-message "Purging old versions of domain: " domain)
+           (try (log/info "Purging old versions of domain: " domain)
                 (cleanup-domain! domain-path)
                 (catch Throwable t
-                  (log-error t "Error when purging old versions of domain: " domain)
+                  (log/error t "Error when purging old versions of domain: " domain)
                   (reset! error t))))
     (when-let [e @error]
       (throw e))))
@@ -103,12 +104,13 @@
                           (func domain info)
                           (domain/set-domain-status! info (thrift/ready-status))
                           (catch Throwable t
-                            (log-error t "Error when loading domain " domain)
-                            (domain/set-domain-status! info (thrift/failed-status t)))))
-    (try (log-message "Removing all old versions of updated domains!")
+                            (log/error t "Error when loading domain " domain)
+                            (domain/set-domain-status! info
+                                                       (thrift/failed-status t)))))
+    (try (log/info "Removing all old versions of updated domains!")
          (cleanup-domains! (keys domains-info) local-dir)
          (catch Throwable t
-           (log-error t "Error when cleaning old versions.")))))
+           (log/error t "Error when cleaning old versions.")))))
 
 ;; TODO: Test this deal with the finished loaders, etc.
 (defn update-and-sync-status!
@@ -141,7 +143,7 @@
                                             remote-path
                                             loader-state)
                                (domain/set-domain-data! rw-lock domain info)
-                               (log-message "Finished loading all updated domains from remote."))
+                               (log/info "Finished loading all updated domains from remote."))
                           (let [{:keys [finished-loaders shard-states]} loader-state]
                             (swap! finished-loaders + (count (shard-states domain))))))))))))
 
@@ -175,7 +177,7 @@
             :when (and (.isDirectory domain-path)
                        (not (contains? domain-set
                                        (.getName domain-path))))]
-           (log-message "Deleting local path of deleted domain: " domain-path)
+           (log/info "Deleting local path of deleted domain: " domain-path)
            (delete lfs (.getPath domain-path) true))))
 
 (defn prepare-local-domains!
@@ -200,11 +202,11 @@
   (doseq [[domain info] domains-info
           shard (domain/host-shards info)]
     (let [lp (domain/domain-data info shard)]
-      (log-message "Closing LP for " domain "/" shard)
+      (log/info "Closing LP for " domain "/" shard)
       (if lp
         (do (.close lp)
-            (log-message "Closed LP for " domain "/" shard))
-        (log-warning "LP not loaded for " domain "/" shard)))))
+            (log/info "Closed LP for " domain "/" shard))
+        (log/info "LP not loaded for " domain "/" shard)))))
  
 (defn- get-readable-domain-info [domains-info domain]
   (let [info (domains-info domain)]
@@ -230,7 +232,7 @@
                             (domain/all-shards)
                             (mk-loader-state))
          shard-amount (flattened-count (vals (:shard-states download-state)))]
-    (log-message "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
+    (log/info "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (start-download-supervisor shard-amount max-kbs download-state))
     (future (update-and-sync-status! edb-config
                                      rw-lock
@@ -241,7 +243,7 @@
   [service-handler download-supervisor domains-info edb-config rw-lock]
   (with-ret true
     (if (service-updating? service-handler download-supervisor)
-      (log-message "UPDATER - Not updating as update process still in progress.")
+      (log/info "UPDATER - Not updating as update process still in progress.")
       (update-domains download-supervisor domains-info edb-config rw-lock))))
 
 ;; 5. TODO: (What does this mean?) Create Hadoop FS on demand... need
@@ -263,7 +265,7 @@
     (prepare-local-domains! domains-info edb-config rw-lock)
     (proxy [ElephantDB$Iface Shutdownable] []
       (shutdown []
-        (log-message "ElephantDB received shutdown notice...")
+        (log/info "ElephantDB received shutdown notice...")
         (with-write-lock rw-lock
           (dofor [[_ info] domains-info]
                  (domain/set-domain-status! info (thrift/shutdown-status))))
@@ -299,11 +301,11 @@
             (dofor [key keys
                     :let [shard (domain/key-shard domain info key)
                           ^LocalPersistence lp (domain/domain-data info shard)]]
-                   (log-debug "Direct get key " (seq key) "at shard " shard)
+                   (log/debug "Direct get key " (seq key) "at shard " shard)
                    (if lp
                      (thrift/mk-value (.get lp key))
                      (throw (thrift/wrong-host-ex)))))))
-
+      
       (getDomainStatus [^String domain]
         (let [info (domains-info domain)]
           (when-not info
@@ -365,9 +367,9 @@
   [interval-secs ^ElephantDB$Iface service-handler]
   (let [interval-ms (* 1000 interval-secs)]
     (future
-      (log-message (format "Starting updater process with an interval of: %s seconds..."
+      (log/info (format "Starting updater process with an interval of: %s seconds..."
                            interval-secs))
       (while true
         (Thread/sleep interval-ms)
-        (log-message "Updater process: Checking if update is possible...")
+        (log/info "Updater process: Checking if update is possible...")
         (.updateAll service-handler)))))

@@ -1,21 +1,9 @@
 (ns elephantdb.common.log
-  (:require [clojure.tools.logging :as log])
   (:import [org.apache.log4j PropertyConfigurator Logger Level]))
 
+;; TODO: Delete and move to jackknife.logging
 (defn configure-logging [path]
   (PropertyConfigurator/configure path))
-
-(defn log-message [& args]
-  (log/info (apply str args)))
-
-(defn log-warning [& args]
-  (log/warn (apply str args)))
-
-(defn log-error [e & args]
-  (log/error (apply str args) e))
-
-(defn log-debug [& args]
-  (log/debug (apply str args)))
 
 (def log-levels
   {:fatal Level/FATAL

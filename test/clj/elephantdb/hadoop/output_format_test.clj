@@ -2,7 +2,8 @@
   (:use clojure.test
         hadoop-util.core
         elephantdb.common.hadoop
-        [elephantdb testing config util])
+        elephantdb.common.util
+        [elephantdb testing config])
   (:import [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args
             ElephantRecordWritable ElephantUpdater]

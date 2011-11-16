@@ -1,6 +1,18 @@
-(ns elephantdb.util
+(ns elephantdb.common.util
   (:import [java.net InetAddress]
            [java.util.concurrent.locks ReentrantReadWriteLock]))
+
+(defn >=s
+  ">= for strings."
+  [s1 s2]
+  (= s2 (first (sort [s1 s2]))))
+
+(defmacro safe-assert
+  ([x] `(safe-assert ~x ""))
+  ([x msg]
+     (if (>=s (clojure-version) "1.3.0")
+       `(assert ~x ~msg)
+       `(assert ~x))))
 
 (defn sleep [len]
   (when (pos? len)
@@ -9,6 +21,12 @@
 (defn register-shutdown-hook [shutdown-func]
   (-> (Runtime/getRuntime)
       (.addShutdownHook (Thread. shutdown-func))))
+
+(defn find-first-next [pred aseq]
+  (loop [[curr & restseq] aseq]
+    (if (pred curr)
+      [curr restseq]
+      (recur restseq))))
 
 (defn repeat-seq
   [amt aseq]
@@ -22,6 +40,13 @@
 
 (defmacro dofor [bindings & body]
   `(doall (for ~bindings (do ~@body))))
+
+(defmacro as-futures [[a args] & body]
+  (let [parts          (partition-by #{'=>} body)
+        [acts _ [res]] (partition-by #{:as} (first parts))
+        [_ _ task]     parts]
+    `(let [~res (for [~a ~args] (future ~@acts))]
+       ~@task)))
 
 (defmacro p-dofor [bindings & body]
   `(let [futures# (dofor ~bindings
@@ -51,12 +76,6 @@
 
 (defn local-hostname []
   (.getHostAddress (InetAddress/getLocalHost)))
-
-(defn find-first-next [pred aseq]
-  (loop [[curr & restseq] aseq]
-    (if (pred curr)
-      [curr restseq]
-      (recur restseq))))
 
 (defn future-values [futures]
   (dofor [f futures]

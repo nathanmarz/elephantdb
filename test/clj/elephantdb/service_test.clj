@@ -3,11 +3,10 @@
         hadoop-util.core
         elephantdb.common.log
         elephantdb.common.hadoop
-        [elephantdb service testing util config])
+        elephantdb.common.util
+        [elephantdb service testing config])
   (:require [elephantdb [thrift :as thrift]])
-  (:import [elephantdb.persistence JavaBerkDB]
-           [elephantdb.generated WrongHostException
-            DomainNotFoundException]))
+  (:import [elephantdb.persistence JavaBerkDB]))
 
 (defn get-val [elephant d k]
   (.get_data (.get elephant d k)))
@@ -19,16 +18,11 @@
   (map (memfn get_data) (.multiGet elephant domain keys)))
 
 (defmacro expected-domain-data [handler domain & key-value-pairs]
-  (let [pair-sym (gensym "pair")
-        key-sym (gensym "key")
-        values-sym (gensym "values")]
-    `(doseq [~pair-sym '~(partition 2 key-value-pairs)]
-       (let [~key-sym (first ~pair-sym)
-             ~values-sym (second ~pair-sym)]
-         (if-not (nil? ~values-sym)
-           (is (barr= (apply barr ~values-sym)
-                      (get-val ~handler ~domain (barr ~key-sym))))
-           (is (= ~values-sym (get-val ~handler ~domain (barr ~key-sym)))))))))
+  `(doseq [[key-sym# val-sym#] (partition 2 [~@key-value-pairs])]
+     (if-not (nil? val-sym#)
+       (is (barr= (apply barr val-sym#)
+                  (get-val ~handler ~domain (barr key-sym#))))
+       (is (= val-sym# (get-val ~handler ~domain (barr key-sym#)))))))
 
 (deftest test-basic
   (with-sharded-domain [dpath
@@ -54,7 +48,6 @@
         data2 (domain-data 5 [5 0]
                            15 [15 15]
                            105 [110])]
-
     (with-sharded-domain [dpath1
                           {:num-shards 2 :persistence-factory (JavaBerkDB.)}
                           data1]

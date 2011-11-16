@@ -2,9 +2,11 @@
   (:use clojure.test
         hadoop-util.core
         elephantdb.common.hadoop
-        [elephantdb.common.log :only (with-log-level log-message)]
-        [elephantdb util config shard service thrift])
-  (:require [elephantdb.client :as client])
+        elephantdb.common.util
+        [elephantdb.common.log :only (with-log-level)]
+        [elephantdb config shard service thrift])
+  (:require [elephantdb.client :as client]
+            [clojure.tools.logging :as log])
   (:import [java.util UUID ArrayList]
            [java.io IOException]
            [elephantdb Utils ByteArray]
@@ -196,7 +198,7 @@
                                        compute-host-to-shards)]
     (let [handler (service-handler global-config (mk-local-config localdir))]
       (while (not (.isFullyLoaded handler))
-        (log-message "waiting...")
+        (log/info "waiting...")
         (Thread/sleep 500))
       handler)))
 
@@ -251,9 +253,10 @@
 (defmacro with-mocked-remote
   [[domain-to-host-to-shards shards-to-pairs down-hosts] & body]
   ;; mock client/try-multi-get only for non local-hostname hosts
-  `(binding [client/multi-get-remote (mk-mocked-remote-multiget-fn ~domain-to-host-to-shards
-                                                                   ~shards-to-pairs
-                                                                   ~down-hosts)]
+  `(binding [client/multi-get-remote
+             (mk-mocked-remote-multiget-fn ~domain-to-host-to-shards
+                                           ~shards-to-pairs
+                                           ~down-hosts)]
      ~@body))
 
 (defmacro with-single-service-handler

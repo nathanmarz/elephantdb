@@ -1,5 +1,6 @@
 (ns elephantdb.domain
-  (:use [elephantdb util thrift config]
+  (:use elephantdb.common.util
+        [elephantdb thrift config]
         [elephantdb.loader :only (close-domain)]
         [hadoop-util.core :only (local-filesystem)])
   (:require [elephantdb.shard :as s])
@@ -9,7 +10,8 @@
 ;; domain-data is an atom map from shard to local persistence (or nil if it's not loaded yet)
 (defstruct domain-info-struct ::shard-index ::domain-status ::domain-data)
 
-(defn init-domain-info [domain-shard-index]
+(defn init-domain-info
+  [domain-shard-index]
   (struct domain-info-struct
           domain-shard-index
           (atom (loading-status))

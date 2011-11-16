@@ -1,6 +1,7 @@
 (ns elephantdb.hadoop.input-format-test
   (:use clojure.test
-        [elephantdb testing util config])
+        elephantdb.common.util
+        [elephantdb testing config])
   (:import [elephantdb Utils]
            [elephantdb.persistence JavaBerkDB]
            [elephantdb.hadoop ElephantInputFormat ElephantInputFormat$Args]

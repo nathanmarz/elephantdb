@@ -1,31 +1,32 @@
 (ns elephantdb.shard
-  (:use [elephantdb util config]
-        elephantdb.common.log)
-  (:require [clojure.string :as s])
+  (:use elephantdb.config
+        elephantdb.common.util)
+  (:require [clojure.string :as s]
+            [clojure.tools.logging :as log])
   (:import [elephantdb Utils]))
 
 ;; ## This namespace 
 
 (defstruct shard-index ::hosts-to-shards ::shards-to-hosts)
 
-(defn- host-shard-assigner [[hosts hosts-to-shards] shard]
-  (let [[host hosts] (find-first-next #(not (-> hosts-to-shards
-                                                (get % #{})
-                                                (get shard)))
-                                      hosts)
+(defn- host-shard-assigner
+  [[hosts hosts-to-shards] shard]
+  (let [[host & hosts] (drop-while #(get-in hosts-to-shards
+                                            [% shard])
+                                   hosts)
         existing (get hosts-to-shards host #{})]
     [hosts (->> (conj existing shard)
                 (assoc hosts-to-shards host))]))
 
 (defn shard-log [s domain hosts numshards replication]
-  (log-message (s/join ", " [s domain hosts numshards replication])))
+  (log/info (s/join ", " [s domain hosts numshards replication])))
 
 (defn compute-host-to-shards
   {:dynamic true}
   [domain hosts numshards replication]
   (shard-log "host to shards" domain hosts numshards replication)
-  (when (> replication (count hosts))
-    (throw-illegal "Replication greater than number of servers"))
+  (safe-assert (>= (count hosts) replication)
+               "Replication greater than number of servers")
   (->> (repeat-seq replication (range numshards))
        (reduce host-shard-assigner [(cycle hosts) {}])
        (second)))
@@ -44,7 +45,7 @@
   exist."
   [fs domains hosts replication]
   (let [sharder (partial shard-domain hosts replication)]
-    (log-message "Sharding domains...")
+    (log/info "Sharding domains...")
     (update-vals domains
                  (fn [domain remote-location]
                    (let [{shards :num-shards :as domain-spec}

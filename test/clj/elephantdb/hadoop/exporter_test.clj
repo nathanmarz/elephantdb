@@ -3,7 +3,8 @@
         hadoop-util.core
         elephantdb.common.log
         elephantdb.common.hadoop
-        [elephantdb testing util config])
+        elephantdb.common.util
+        [elephantdb testing config])
   (:require [elephantdb.thrift :as thrift])
   (:import [elephantdb DomainSpec]
            [elephantdb.persistence JavaBerkDB]

@@ -1,8 +1,10 @@
 (ns elephantdb.loader
   (:use elephantdb.common.hadoop
         elephantdb.common.log
-        hadoop-util.core
-        [elephantdb util config])
+        elephantdb.common.util
+        elephantdb.config
+        hadoop-util.core)
+  (:require [clojure.tools.logging :as log])
   (:import [elephantdb.store DomainStore]
            [elephantdb.common.hadoop ShardState DownloadState]))
 
@@ -12,12 +14,12 @@
 
 (defn open-domain-shard
   [persistence-factory db-conf local-shard-path]
-  (log-message "Opening LP " local-shard-path)
+  (log/info "Opening LP " local-shard-path)
   (with-ret (.openPersistenceForRead
              persistence-factory
              local-shard-path
              (persistence-options db-conf persistence-factory))
-    (log-message "Opened LP " local-shard-path)))
+    (log/info "Opened LP " local-shard-path)))
 
 (defn open-domain
   [db-conf local-domain-root shards]
@@ -31,13 +33,13 @@
                                       db-conf
                                       (shard-path local-version-path s)))])]
     (with-ret (map-mapvals future-lps (memfn get))
-      (log-message "Finished opening domain at " local-domain-root))))
+      (log/info "Finished opening domain at " local-domain-root))))
 
 (defn close-shard
   [[shard lp] domain]
   (try (.close lp)
        (catch Throwable t
-         (log-error t "Error when closing local persistence for domain: "
+         (log/error t "Error when closing local persistence for domain: "
                     domain
                     " and shard: "
                     shard)
@@ -45,10 +47,10 @@
 
 (defn close-domain
   [domain domain-data]
-  (log-message (format "Closing domain: %s with data: %s" domain domain-data))
+  (log/info (format "Closing domain: %s with data: %s" domain domain-data))
   (doseq [shard-data domain-data]
     (close-shard shard-data domain))
-  (log-message "Finished closing domain: " domain))
+  (log/info "Finished closing domain: " domain))
 
 ;; TODO: respect the max copy rate
 
@@ -57,10 +59,10 @@
 (defn load-domain-shard!
   [fs persistence-factory persistence-opts local-shard-path remote-shard-path state]
   (if (.exists fs (path remote-shard-path))
-    (do (log-message "Copying " remote-shard-path " to " local-shard-path)
+    (do (log/info "Copying " remote-shard-path " to " local-shard-path)
         (copy-local fs remote-shard-path local-shard-path state)
-        (log-message "Copied " remote-shard-path " to " local-shard-path))
-    (do (log-message "Shard " remote-shard-path " did not exist. Creating empty LP")
+        (log/info "Copied " remote-shard-path " to " local-shard-path))
+    (do (log/info "Shard " remote-shard-path " did not exist. Creating empty LP")
         (.close (.createPersistence persistence-factory
                                     local-shard-path
                                     persistence-opts)))))
@@ -68,7 +70,7 @@
 (defn load-domain
   "returns a map from shard to LP."
   [domain fs local-db-conf local-domain-root remote-path state]
-  (log-message "Loading domain at " remote-path " to " local-domain-root)
+  (log/info "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs           (local-filesystem)
         remote-vs     (DomainStore. fs remote-path)
         factory       (-> (.getSpec remote-vs)
@@ -94,10 +96,10 @@
                                 (swap! (:shard-loaders state) conj f)))]
     (future-values shard-loaders)
     (.succeedVersion local-vs local-v-path)
-    (log-message (format "Successfully loaded domain at %s to %s with version %s."
-                         remote-path
-                         local-domain-root
-                         remote-version))
+    (log/info (format "Successfully loaded domain at %s to %s with version %s."
+                      remote-path
+                      local-domain-root
+                      remote-version))
     (open-domain local-db-conf local-domain-root shards)))
 
 (defn supervise-shard
@@ -119,8 +121,8 @@
         finished-loaders (:finished-loaders state)
         shard-loaders (:shard-loaders state)
         total-kb (atom 0)]
-    (log-message (format "Starting download supervisor for %d shard loaders."
-                         amount-shards))
+    (log/info (format "Starting download supervisor for %d shard loaders."
+                      amount-shards))
     (loop []
       (reset! total-kb 0)
       (Thread/sleep interval-ms)
@@ -133,7 +135,7 @@
                       [_ s-state] shard-states]
                 (supervise-shard max-kbs total-kb s-state))
               (recur))
-          (log-message "Download supervisor finished"))))))
+          (log/info "Download supervisor finished"))))))
 
 (defn start-download-supervisor
   [amount-shards max-kbs ^DownloadState state]
