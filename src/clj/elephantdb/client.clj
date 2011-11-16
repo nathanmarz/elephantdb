@@ -4,7 +4,7 @@
         elephantdb.common.util
         hadoop-util.core)
   (:require [elephantdb.shard :as shard]
-            [clojure.tools.logging :as log])
+            [elephantdb.common.log :as log])
   (:import [elephantdb.generated ElephantDB$Iface WrongHostException
             DomainNotFoundException DomainNotLoadedException]
            [org.apache.thrift TException])

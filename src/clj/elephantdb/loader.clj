@@ -4,7 +4,7 @@
         elephantdb.common.util
         elephantdb.config
         hadoop-util.core)
-  (:require [clojure.tools.logging :as log])
+  (:require [elephantdb.common.log :as log])
   (:import [elephantdb.store DomainStore]
            [elephantdb.common.hadoop ShardState DownloadState]))
 

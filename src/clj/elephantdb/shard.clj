@@ -2,7 +2,7 @@
   (:use elephantdb.config
         elephantdb.common.util)
   (:require [clojure.string :as s]
-            [clojure.tools.logging :as log])
+            [elephantdb.common.log :as log])
   (:import [elephantdb Utils]))
 
 ;; ## This namespace 

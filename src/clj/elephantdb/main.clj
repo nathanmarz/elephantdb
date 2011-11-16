@@ -3,7 +3,7 @@
         hadoop-util.core)
   (:require [elephantdb.service :as service]
             [elephantdb.common.util :as util]
-            [clojure.tools.logging :as log])
+            [elephantdb.common.log :as log])
   (:import [org.apache.log4j PropertyConfigurator])
   (:gen-class))
 

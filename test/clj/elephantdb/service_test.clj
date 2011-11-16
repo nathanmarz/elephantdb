@@ -19,7 +19,7 @@
 
 (defmacro expected-domain-data [handler domain & key-value-pairs]
   `(doseq [[key-sym# val-sym#] (partition 2 [~@key-value-pairs])]
-     (if-not (nil? val-sym#)
+     (if (seq val-sym#)
        (is (barr= (apply barr val-sym#)
                   (get-val ~handler ~domain (barr key-sym#))))
        (is (= val-sym# (get-val ~handler ~domain (barr key-sym#)))))))

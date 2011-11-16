@@ -7,7 +7,7 @@
             [elephantdb.domain :as domain]
             [elephantdb.thrift :as thrift]
             [elephantdb.shard :as shard]
-            [clojure.tools.logging :as log])
+            [elephantdb.common.log :as log])
   (:import [java.io File]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol$Factory]

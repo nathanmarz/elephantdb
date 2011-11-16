@@ -3,10 +3,9 @@
         hadoop-util.core
         elephantdb.common.hadoop
         elephantdb.common.util
-        [elephantdb.common.log :only (with-log-level)]
         [elephantdb config shard service thrift])
   (:require [elephantdb.client :as client]
-            [clojure.tools.logging :as log])
+            [elephantdb.common.log :as log])
   (:import [java.util UUID ArrayList]
            [java.io IOException]
            [elephantdb Utils ByteArray]
@@ -21,6 +20,7 @@
 (defn uuid []
   (str (UUID/randomUUID)))
 
+;; TODO: Add (when vals
 (defn barr [& vals]
   (byte-array (map byte vals)))
 
@@ -73,7 +73,7 @@
                          [kw more]
                          [:warn body])
         tmp-paths (mapcat (fn [t] [t `(local-temp-path)]) tmp-syms)]
-    `(with-log-level ~log-lev
+    `(log/with-log-level ~log-lev
        (let [~fs-sym (local-filesystem)
              ~@tmp-paths]
          (try
