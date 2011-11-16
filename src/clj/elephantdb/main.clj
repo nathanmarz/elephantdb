@@ -1,6 +1,5 @@
 (ns elephantdb.main
   (:use [elephantdb config hadoop]
-        [clojure.java.io :only (resource)]
         hadoop-util.core)
   (:require [elephantdb.log :as log]
             [elephantdb.service :as service]
@@ -35,7 +34,7 @@
 
   `local-config-path`: the path to `local-config.clj` on this machine."
   [global-config-hdfs-path local-config-path]
-  (log/configure-logging (resource "log4j.properties"))
+  (log/configure-logging "log4j/log4j.properties")
   (let [local-config  (read-local-config local-config-path)
         global-config (read-global-config global-config-hdfs-path
                                           local-config)]

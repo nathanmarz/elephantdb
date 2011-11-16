@@ -310,7 +310,7 @@
 
       (getDomains []
         (keys domains-info))
-
+      
       (getStatus []
         (thrift/elephant-status
          (map-mapvals domains-info domain/domain-status)))
