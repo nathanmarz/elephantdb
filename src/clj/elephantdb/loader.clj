@@ -1,8 +1,10 @@
 (ns elephantdb.loader
-  (:use [elephantdb util hadoop config log]
-        hadoop-util.core)
+  (:use elephantdb.common.hadoop
+        elephantdb.common.log
+        hadoop-util.core
+        [elephantdb util config])
   (:import [elephantdb.store DomainStore]
-           [elephantdb.hadoop ShardState DownloadState]))
+           [elephantdb.common.hadoop ShardState DownloadState]))
 
 (defn- shard-path
   [domain-version shard]

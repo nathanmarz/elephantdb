@@ -1,8 +1,10 @@
 (ns elephantdb.hadoop.output-format-test
   (:use clojure.test
         hadoop-util.core
-        [elephantdb testing hadoop config util])
-  (:import [elephantdb.hadoop ElephantOutputFormat ElephantOutputFormat$Args
+        elephantdb.common.hadoop
+        [elephantdb testing config util])
+  (:import [elephantdb.hadoop ElephantOutputFormat
+            ElephantOutputFormat$Args
             ElephantRecordWritable ElephantUpdater]
            [org.apache.hadoop.io IntWritable]
            [elephantdb.persistence JavaBerkDB]

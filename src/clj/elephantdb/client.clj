@@ -1,16 +1,18 @@
 (ns elephantdb.client
-  (:use [elephantdb thrift hadoop config types util log]
+  (:use [elephantdb thrift config types util]
+        elephantdb.common.hadoop
+        elephantdb.common.log
         hadoop-util.core)
   (:require [elephantdb.shard :as shard])
   (:import [elephantdb.generated ElephantDB$Iface WrongHostException
             DomainNotFoundException DomainNotLoadedException]
            [org.apache.thrift TException])
-  (:gen-class
-   :init init
-   :implements [elephantdb.iface.IElephantClient]
-   :constructors {[elephantdb.generated.ElephantDB$Iface java.util.Map java.util.Map] []
-                  [java.util.Map String] []}
-   :state state))
+  (:gen-class :init init
+              :implements [elephantdb.iface.IElephantClient]
+              :constructors {[elephantdb.generated.ElephantDB$Iface java.util.Map
+                              java.util.Map] []
+                              [java.util.Map String] []}
+              :state state))
 
 (defn -init
   ([fs-conf global-conf-path]

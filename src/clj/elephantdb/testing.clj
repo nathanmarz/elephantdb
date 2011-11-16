@@ -1,8 +1,9 @@
 (ns elephantdb.testing
   (:use clojure.test
         hadoop-util.core
-        [elephantdb.log :only (with-log-level log-message)]
-        [elephantdb util hadoop config shard service thrift])
+        elephantdb.common.hadoop
+        [elephantdb.common.log :only (with-log-level log-message)]
+        [elephantdb util config shard service thrift])
   (:require [elephantdb.client :as client])
   (:import [java.util UUID ArrayList]
            [java.io IOException]

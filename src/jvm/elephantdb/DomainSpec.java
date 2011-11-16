@@ -28,20 +28,20 @@ public class DomainSpec implements Writable, Serializable {
 
     private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
     private static final String NUM_SHARDS_CONF = "num_shards";
-    
+
 
     public DomainSpec() {
-        
+
     }
 
     public DomainSpec(String factClass, int numShards) {
         this(Utils.classForName(factClass), numShards);
     }
-    
+
     public DomainSpec(Class factClass, int numShards) {
         this((LocalPersistenceFactory)Utils.newInstance(factClass), numShards);
     }
-    
+
     public DomainSpec(LocalPersistenceFactory localFact, int numShards) {
         this._localFact = localFact;
         this._numShards = numShards;
@@ -51,13 +51,13 @@ public class DomainSpec implements Writable, Serializable {
     public String toString() {
         return mapify().toString();
     }
-    
+
     @Override
     public boolean equals(Object other) {
         DomainSpec o = (DomainSpec) other;
         return mapify().equals(o.mapify());
     }
-    
+
     @Override
     public int hashCode() {
         return mapify().hashCode();
@@ -66,10 +66,10 @@ public class DomainSpec implements Writable, Serializable {
     public int getNumShards() {
         return _numShards;
     }
-    
+
     public LocalPersistenceFactory getLPFactory() {
         return _localFact;
-    }    
+    }
 
     public static DomainSpec readFromFileSystem(FileSystem fs, String dirpath) throws IOException {
         Path filePath = new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME);
@@ -82,7 +82,7 @@ public class DomainSpec implements Writable, Serializable {
         is.close();
         return ret;
     }
-    
+
     public static boolean exists(FileSystem fs, String dirpath) throws IOException {
         return fs.exists(new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME));
     }
@@ -94,7 +94,7 @@ public class DomainSpec implements Writable, Serializable {
 
     protected static DomainSpec parseFromMap(Map<String, Object> specmap) {
         return new DomainSpec((String)specmap.get(LOCAL_PERSISTENCE_CONF),
-                               ((Long)specmap.get(NUM_SHARDS_CONF)).intValue());
+            ((Long)specmap.get(NUM_SHARDS_CONF)).intValue());
     }
 
     public void writeToStream(OutputStream os) {

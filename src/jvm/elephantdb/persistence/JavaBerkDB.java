@@ -121,9 +121,9 @@ public class JavaBerkDB extends LocalPersistenceFactory {
                     if(cursor==null) {
                         cursor = _db.openCursor(null, null);
                         cacheNext();
-                    }                    
+                    }
                 }
-                
+
                 public boolean hasNext() {
                     initCursor();
                     return next!=null;
@@ -144,10 +144,10 @@ public class JavaBerkDB extends LocalPersistenceFactory {
                 public void close() {
                     if(cursor!=null) cursor.close();
                 }
-                
+
             };
         }
-        
+
     }
 
 }

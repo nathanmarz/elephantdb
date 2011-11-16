@@ -88,3 +88,11 @@ local-config-path: A local path containing the local configuration. The local co
 
 token: The token can be any string. The token is used to indicate to ElephantDB whether it should refresh its data cache with what exists on the DFS, or whether ElephantDB should just start up using its local cache. As long as the token given is different than what ElephantDB was given the last time it successfully loaded, ElephantDB will refresh its local cache. Typically you update the token with the current timestamp when you want to update the data it serves.
 
+
+
+# Developing on EDB
+
+*The following documentation is in progress!*
+
+* Building Thrift
+* Generating schema files

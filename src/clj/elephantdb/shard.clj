@@ -1,5 +1,6 @@
 (ns elephantdb.shard
-  (:use [elephantdb util config log])
+  (:use [elephantdb util config]
+        elephantdb.common.log)
   (:require [clojure.string :as s])
   (:import [elephantdb Utils]))
 

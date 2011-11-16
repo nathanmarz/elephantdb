@@ -1,8 +1,8 @@
-(ns elephantdb.hadoop
-  (:use elephantdb.log
-        hadoop-util.core)
+(ns elephantdb.common.hadoop
+  (:use hadoop-util.core)
   (:require [elephantdb.util :as u])
-  (:import [java.io File FileNotFoundException FileOutputStream BufferedOutputStream]
+  (:import [java.io File FileNotFoundException
+            FileOutputStream BufferedOutputStream]
            [org.apache.hadoop.fs FileSystem Path]
            [org.apache.hadoop.conf Configuration]))
 

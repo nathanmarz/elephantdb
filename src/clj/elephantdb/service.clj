@@ -1,6 +1,8 @@
 (ns elephantdb.service
-  (:use [elephantdb config log util hadoop loader]
-        hadoop-util.core)
+  (:use elephantdb.common.log
+        elephantdb.common.hadoop
+        hadoop-util.core
+        [elephantdb config util loader])
   (:require [clojure.string :as s]
             [elephantdb.domain :as domain]
             [elephantdb.thrift :as thrift]

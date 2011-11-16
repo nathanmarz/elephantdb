@@ -12,7 +12,7 @@ public class ElephantRecordWritable implements Writable {
 
 
     public ElephantRecordWritable() {
-        
+
     }
 
     public ElephantRecordWritable(byte[] key, byte[] val) {
@@ -22,12 +22,12 @@ public class ElephantRecordWritable implements Writable {
 
     public void write(DataOutput d) throws IOException {
         Utils.writeByteArray(d, key);
-        Utils.writeByteArray(d, val);        
+        Utils.writeByteArray(d, val);
     }
 
     public void readFields(DataInput di) throws IOException {
         this.key = Utils.readByteArray(di);
         this.val = Utils.readByteArray(di);
     }
-    
+
 }

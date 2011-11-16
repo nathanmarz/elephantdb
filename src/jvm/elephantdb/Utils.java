@@ -50,7 +50,7 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static Object newInstance(String klassname) {
         return newInstance(classForName(klassname));
     }

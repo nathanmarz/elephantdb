@@ -1,7 +1,8 @@
 (ns elephantdb.main
-  (:use [elephantdb config hadoop]
+  (:use elephantdb.common.hadoop
+        elephantdb.config
         hadoop-util.core)
-  (:require [elephantdb.log :as log]
+  (:require [elephantdb.common.log :as log]
             [elephantdb.service :as service]
             [elephantdb.util :as util])
   (:gen-class))

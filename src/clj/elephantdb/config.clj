@@ -2,7 +2,7 @@
 ;; write and create elephantdb config maps.
 
 (ns elephantdb.config
-  (:use elephantdb.hadoop
+  (:use elephantdb.common.hadoop
         hadoop-util.core)
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.persistence LocalPersistenceFactory]))

@@ -34,7 +34,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
 
         public ElephantUpdater updater = new ReplaceUpdater();
         public String updateDirHdfs = null;
-        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();    
+        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
 
         public Args(DomainSpec spec, String outputDirHdfs) {
             this.spec = spec;

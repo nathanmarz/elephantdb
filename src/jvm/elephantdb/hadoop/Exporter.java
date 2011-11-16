@@ -55,7 +55,7 @@ public class Exporter {
             shardKey = new byte[WritableUtils.readVInt(di)];
             di.readFully(shardKey);
         }
-        
+
     }
 
 
@@ -79,7 +79,7 @@ public class Exporter {
 
         public void close() throws IOException {
         }
-        
+
     }
 
     public static class ExporterReducer implements Reducer<CompoundKey, ElephantRecordWritable, IntWritable, ElephantRecordWritable> {
@@ -104,13 +104,13 @@ public class Exporter {
     public static class ElephantPartitioner implements Partitioner<CompoundKey, ElephantRecordWritable> {
 
         public int getPartition(CompoundKey k2, ElephantRecordWritable v2, int numPartitions) {
-           return k2.shard % numPartitions;
+            return k2.shard % numPartitions;
         }
 
         public void configure(JobConf jc) {
 
         }
-        
+
     }
 
     public static class Args {
@@ -133,7 +133,7 @@ public class Exporter {
             try {
                 return WritableUtils.readVInt(s1) - WritableUtils.readVInt(s2);
             } catch (IOException e) {
-               throw new RuntimeException(e);
+                throw new RuntimeException(e);
             }
 
         }

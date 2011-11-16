@@ -35,7 +35,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
 
         public Args(String inputDirHdfs) {
             this.inputDirHdfs = inputDirHdfs;
-        }        
+        }
     }
 
     public static class ElephantRecordReader implements RecordReader<BytesWritable, BytesWritable> {
@@ -53,10 +53,10 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             _reporter = reporter;
             _args = (Args) Utils.getObject(_split.conf, ARGS_CONF);
             _manager = new LocalElephantManager(Utils.getFS(_split.shardPath, split.conf),
-                    _split.spec, _args.persistenceOptions, LocalElephantManager.getTmpDirs(_split.conf));
+                _split.spec, _args.persistenceOptions, LocalElephantManager.getTmpDirs(_split.conf));
             String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
-           _lp = _split.spec.getLPFactory().openPersistenceForRead(localpath, _args.persistenceOptions);
-           _iterator = _lp.iterator();
+            _lp = _split.spec.getLPFactory().openPersistenceForRead(localpath, _args.persistenceOptions);
+            _iterator = _lp.iterator();
         }
 
         public boolean next(BytesWritable k, BytesWritable v) throws IOException {
@@ -97,7 +97,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             } else {
                 return 0;
             }
-        }        
+        }
     }
 
     public static class ElephantInputSplit implements InputSplit {
@@ -106,7 +106,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
         private JobConf conf;
 
         public ElephantInputSplit() {
-            
+
         }
 
         public ElephantInputSplit(String shardPath, DomainSpec spec, JobConf conf) {
@@ -137,7 +137,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             shardPath = WritableUtils.readString(di);
             conf = new JobConf();
             conf.readFields(di);
-        }     
+        }
     }
 
 
