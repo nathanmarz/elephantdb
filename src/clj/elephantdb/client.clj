@@ -1,10 +1,10 @@
 (ns elephantdb.client
   (:use elephantdb.config
         elephantdb.thrift
-        elephantdb.types
         elephantdb.common.hadoop
         elephantdb.common.util
-        hadoop-util.core)
+        hadoop-util.core
+        [elephantdb.common.types :only (serialize)])
   (:require [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf]
             [elephantdb.common.log :as log])
@@ -40,10 +40,10 @@
     (throw (domain-not-found-ex domain))))
 
 (defn- my-local-elephant [this]
-  (:local-elephant (.state this)))
+  (-> this .state :local-elephant))
 
 (defn- my-local-hostname [this]
-  (:local-hostname (.state this)))
+  (-> this .state :local-hostname))
 
 (defn- get-priority-hosts [this domain key]
   (let [hosts (shuffle (shard/key-hosts domain
@@ -64,23 +64,23 @@
     (.directMultiGet client domain keys)))
 
 (defn- try-multi-get [this domain keys totry]
-  (try (if (and (my-local-elephant this)
-                (= totry (my-local-hostname this)))
-         (.directMultiGet (my-local-elephant this) domain keys)
-         (multi-get-remote totry (ring-port this) domain keys))
-       (catch TException e
-         ;; try next host
-         (log/error e "Thrift exception on " totry ":" domain "/" keys))
-       (catch WrongHostException e
-         (log/error e "Fatal exception on " totry ":" domain "/" keys)
-         (throw (TException. "Fatal exception when performing get" e)))
-       (catch DomainNotFoundException e
-         (log/error e "Could not find domain when executing read on " totry ":" domain "/" keys)
-         (throw e))
-       (catch DomainNotLoadedException e
-         (log/error e "Domain not loaded when executing read on "
-                    totry ":" domain "/" keys)
-         (throw e))))
+  (let [suffix (format "%s:%s/%s" totry domain keys)]
+    (try (if (and (my-local-elephant this)
+                  (= totry (my-local-hostname this)))
+           (.directMultiGet (my-local-elephant this) domain keys)
+           (multi-get-remote totry (ring-port this) domain keys))
+         (catch TException e
+           ;; try next host
+           (log/error e "Thrift exception on " suffix))
+         (catch WrongHostException e
+           (log/error e "Fatal exception on " suffix)
+           (throw (TException. "Fatal exception when performing get" e)))
+         (catch DomainNotFoundException e
+           (log/error e "Could not find domain when executing read on " suffix)
+           (throw e))
+         (catch DomainNotLoadedException e
+           (log/error e "Domain not loaded when executing read on " suffix)
+           (throw e)))))
 
 (defn -get [this domain key]
   (first (.multiGet this domain [(serialize key)])))
@@ -103,25 +103,20 @@
            host-indexed-keys))))
 
 (defn -multiGet [this domain keys]
-  (let [
-        ;; this trickery is to get around issues with binding/tests
-        key-shard-fn shard/key-shard
-        multi-get-remote-fn multi-get-remote
-        ;; trickery ends
-
-        keys (map serialize keys)
+  (let [keys              (map serialize keys)
         host-indexed-keys (host-indexed-keys this domain keys)]
     (loop [keys-to-get host-indexed-keys
            results []]
       (let [host-map (group-by ffirst keys-to-get)
             rets (parallel-exec
                   (for [[host host-indexed-keys] host-map]
-                    #(vector host (multi-get* this
-                                              domain
-                                              host
-                                              host-indexed-keys
-                                              key-shard-fn
-                                              multi-get-remote-fn))))
+                    (constantly
+                     [host (multi-get* this
+                                       domain
+                                       host
+                                       host-indexed-keys
+                                       shard/key-shard
+                                       multi-get-remote)])))
             succeeded       (filter second rets)
             succeeded-hosts (map first succeeded)
             results (->> (map second succeeded)

@@ -1,4 +1,4 @@
-(ns elephantdb.types
+(ns elephantdb.common.types
   (:import [elephantdb Utils]))
 
 (defprotocol ISerialize
