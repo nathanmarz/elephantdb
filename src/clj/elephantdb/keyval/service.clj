@@ -271,13 +271,31 @@
           (dofor [[_ info] domains-info]
                  (domain/set-domain-status! info (thrift/shutdown-status))))
         (close-lps domains-info))
-      
+
       (get [^String domain key]
         (.get @client domain key))
 
+      (getInt [^String domain key]
+        (.getInt @client domain key))
+
+      (getLong [^String domain key]
+        (.getLong @client domain key))
+
+      (getString [^String domain ^String key]
+        (.getString @client domain key))
+      
       (multiGet [^String domain keys]
         (.multiGet @client domain keys))
+      
+      (multiGetInt [^String domain keys]
+        (.multiGetInt @client domain keys))
+      
+      (multiGetLong [^String domain keys]
+        (.multiGetLong @client domain keys))
 
+      (multiGetString [^String domain keys]
+        (.multiGetString @client domain keys))
+      
       (directMultiGet [^String domain keys]
         (with-read-lock rw-lock
           (let [info (get-readable-domain-info domains-info domain)]

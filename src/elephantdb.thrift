@@ -6,8 +6,7 @@ struct Value {
   1: optional binary data;
 }
 
-struct LoadingStatus {
-  
+struct LoadingStatus {  
 }
 
 struct ReadyStatus {
@@ -19,7 +18,6 @@ struct FailedStatus {
 }
 
 struct ShutdownStatus {
-
 }
 
 union DomainStatus {
@@ -52,7 +50,6 @@ exception InvalidConfigurationException {
 }
 
 exception WrongHostException {
-
 }
 
 service ElephantDB {

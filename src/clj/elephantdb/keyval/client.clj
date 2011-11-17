@@ -84,7 +84,16 @@
            (throw e)))))
 
 (defn -get [this domain key]
-  (first (.multiGet this domain [(serialize key)])))
+  (first (.multiGet this domain [key])))
+
+(defn -getInt [this domain ^Integer key]
+  (.get this domain (serialize key)))
+
+(defn -getLong [this domain ^Long key]
+  (.get this domain (serialize key)))
+
+(defn -getString [this domain ^String key]
+  (.get this domain (serialize key)))
 
 (defn- host-indexed-keys
   "returns [hosts-to-try global-index key all-hosts] seq"
@@ -104,8 +113,7 @@
            host-indexed-keys))))
 
 (defn -multiGet [this domain keys]
-  (let [keys              (map serialize keys)
-        host-indexed-keys (host-indexed-keys this domain keys)]
+  (let [host-indexed-keys (host-indexed-keys this domain keys)]
     (loop [keys-to-get host-indexed-keys
            results []]
       (let [host-map (group-by ffirst keys-to-get)
@@ -131,3 +139,12 @@
                      (throw (hosts-down-ex all-hosts))
                      [hosts gi key all-hosts]))
                  results))))))
+
+(defn -multiGetInt [this domain integers]
+  (.multiGet this domain (map serialize integers)))
+
+(defn -multiGetLong [this domain longs]
+  (.multiGet this domain (map serialize longs)))
+
+(defn -multiGetString [this domain strings]
+  (.multiGet this domain (map serialize strings)))
