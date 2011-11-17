@@ -21,8 +21,10 @@
 
 (defn -init
   ([fs-conf global-conf-path]
-     (-init nil fs-conf (conf/read-clj-config (filesystem fs-conf)
-                                              global-conf-path)))
+     (-init fs-conf
+            (conf/read-clj-config (filesystem fs-conf)
+                                  global-conf-path)
+            nil))
   ([fs-conf global-conf local-elephant]
      (let [{:keys [domains hosts replication]} global-conf]
        [[] {:local-hostname (local-hostname)
