@@ -20,7 +20,7 @@
   (compute-host-to-shards 5 [\"a\" \"b\"] 1)
   ;=> {\"b\" #{1 3}, \"a\" #{0 2 4}}"
   {:dynamic true}
-  [shard-count hosts replication]
+  [hosts shard-count replication]
   (log/info "host->shards: " (s/join "," [shard-count hosts replication]))
   (u/safe-assert (>= (count hosts) replication)
                  "Replication greater than number of servers")
@@ -30,9 +30,9 @@
 
 (defn- shard-domain
   "Shard a single domain."
-  [shard-count hosts replication]
-  (let [hosts-to-shards (compute-host-to-shards shard-count
-                                                hosts
+  [hosts shard-count replication]
+  (let [hosts-to-shards (compute-host-to-shards hosts
+                                                shard-count
                                                 replication)]
     {::hosts-to-shards hosts-to-shards
      ::shards-to-hosts (->> (u/reverse-multimap hosts-to-shards)
@@ -47,7 +47,7 @@
                    (let [{:keys [num-shards]}
                          (read-domain-spec fs remote-location)]
                      (log/info "Sharding domain " domain)
-                     (shard-domain num-shards hosts replication)))
+                     (shard-domain hosts num-shards replication)))
                  domain-map))
 
 (defn host-shards [index host]
