@@ -1,4 +1,4 @@
-(ns elephantdb.testing
+(ns elephantdb.keyval.testing
   (:use clojure.test)
   (:require [hadoop-util.core :as h]
             [elephantdb.keyval.client :as client]
@@ -182,7 +182,8 @@
 (defn mk-presharded-domain [fs path factory shardmap]
   (let [keyvals (apply concat (vals shardmap))
         shards (reverse-pre-sharded shardmap)
-        domain-spec {:num-shards (count shardmap) :persistence-factory factory}]
+        domain-spec {:num-shards (count shardmap)
+                     :persistence-factory factory}]
     (binding [test-key-to-shard (fn [k _] (shards (ByteArray. k)))]
       (mk-sharded-domain fs path domain-spec keyvals))))
 
@@ -192,12 +193,12 @@
    :update-interval-s 60})
 
 (defn mk-service-handler
-  [global-config localdir domain-to-host-to-shards]
-  (binding [shard/compute-host-to-shards
-            (if domain-to-host-to-shards
-              (fn [d _ _ _] (domain-to-host-to-shards d))
-              shard/compute-host-to-shards)]
-    (let [handler (service/service-handler global-config (mk-local-config localdir))]
+  [global-config localdir host-to-shards]
+  (binding [shard/compute-host-to-shards (if host-to-shards
+                                           (constantly host-to-shards)
+                                           shard/compute-host-to-shards)]
+    (let [handler (service/service-handler global-config
+                                           (mk-local-config localdir))]
       (while (not (.isFullyLoaded handler))
         (log/info "waiting...")
         (Thread/sleep 500))
@@ -226,12 +227,12 @@
        ~@body)))
 
 (defmacro with-service-handler
-  [[handler-sym hosts domains-conf domain-to-host-to-shards] & body]
+  [[handler-sym hosts domains-conf & [host-to-shards]] & body]
   (let [global-conf {:replication 1 :hosts hosts :domains domains-conf}]
     `(with-local-tmp [lfs# localtmp#]
        (let [~handler-sym (mk-service-handler ~global-conf
                                               localtmp#
-                                              ~domain-to-host-to-shards)
+                                              ~host-to-shards)
              updater# (service/launch-updater! 100 ~handler-sym)]
          (try ~@body
               (finally (.shutdown ~handler-sym)
@@ -262,7 +263,7 @@
 
 (defmacro with-single-service-handler
   [[handler-sym domains-conf] & body]
-  `(with-service-handler [~handler-sym [(u/local-hostname)] ~domains-conf nil]
+  `(with-service-handler [~handler-sym [(u/local-hostname)] ~domains-conf]
      ~@body))
 
 (defn check-domain-pred

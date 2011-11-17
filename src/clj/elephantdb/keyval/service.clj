@@ -15,7 +15,8 @@
            [org.apache.thrift.transport TNonblockingServerSocket]
            [java.util.concurrent.locks ReentrantReadWriteLock]
            [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor]
-           [elephantdb Shutdownable client]
+           [elephantdb.keyval client]
+           [elephantdb Shutdownable]
            [elephantdb.persistence LocalPersistence]
            [elephantdb.store DomainStore]))
 

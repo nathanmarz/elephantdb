@@ -1,4 +1,4 @@
-(ns elephantdb.thrift
+(ns elephantdb.keyval.thrift
   (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol]
            [org.apache.thrift.transport TTransport TFramedTransport TSocket]
            [elephantdb.generated LoadingStatus DomainStatus

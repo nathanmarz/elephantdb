@@ -1,12 +1,12 @@
 (ns elephantdb.service-test
   (:use clojure.test
-        elephantdb.testing
-        [elephantdb.config :only (read-global-config)])
+        elephantdb.keyval.testing
+        [elephantdb.keyval.config :only (read-global-config)])
   (:require [hadoop-util.core :as h]
-            [elephantdb.thrift :as thrift]
             [elephantdb.common.config :as conf]
-            [elephantdb.service :as service]
-            [elephantdb.common.util :as u])
+            [elephantdb.common.util :as u]
+            [elephantdb.keyval.thrift :as thrift]
+            [elephantdb.keyval.service :as service])
   (:import [elephantdb.persistence JavaBerkDB]))
 
 (defn get-val [elephant d k]
@@ -33,8 +33,7 @@
                          [(barr 2) (barr 2 2)]]]
     (with-service-handler [elephant
                            [(u/local-hostname)]
-                           {"test1" dpath}
-                           nil]
+                           {"test1" dpath}]
       (expected-domain-data elephant "test1"
                             0 [0 0]
                             1 [1 1]
@@ -75,7 +74,7 @@
     (with-service-handler [elephant
                            [(u/local-hostname) "host2"]
                            {"test1" dpath}
-                           {"test1" {(u/local-hostname) [0 2] "host2" [1 3]}}]
+                           {(u/local-hostname) [0 2] "host2" [1 3]}]
       (expected-domain-data elephant "test1"
                             0 [0 0]
                             20 [20 0]
@@ -198,7 +197,10 @@
       (with-service-handler [elephant
                              [(u/local-hostname) "host2"]
                              {"test1" dpath}
-                             domain-to-host-to-shards]
+                             {(u/local-hostname) [0 3]
+                              "host2" [1 0]
+                              "host3" [2 1]
+                              "host4" [3 2]}]
         (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host4"]]
           (expected-domain-data elephant
                                 "test1"

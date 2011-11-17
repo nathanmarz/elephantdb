@@ -4,8 +4,9 @@
         elephantdb.common.log
         elephantdb.common.hadoop
         elephantdb.common.util
-        [elephantdb testing config])
-  (:require [elephantdb.thrift :as thrift])
+        elephantdb.keyval.testing
+        elephantdb.keyval.config)
+  (:require [elephantdb.keyval.thrift :as thrift])
   (:import [elephantdb DomainSpec]
            [elephantdb.persistence JavaBerkDB]
            [elephantdb.hadoop Exporter]

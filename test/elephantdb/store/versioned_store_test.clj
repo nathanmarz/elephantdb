@@ -1,12 +1,12 @@
 (ns elephantdb.store.versioned-store-test
-  (:use elephantdb.testing
+  (:use elephantdb.keyval.testing
         clojure.test)
   (:import [elephantdb.store VersionedStore]))
 
 (defmacro def-vs-test [name [vs-sym] & body]
   `(def-fs-test ~name [fs# dir#]
-    (let [~vs-sym (VersionedStore. fs# dir#)]
-      ~@body)))
+     (let [~vs-sym (VersionedStore. fs# dir#)]
+       ~@body)))
 
 (def-vs-test test-empty-version [vs]
   (let [v (.createVersion vs)]

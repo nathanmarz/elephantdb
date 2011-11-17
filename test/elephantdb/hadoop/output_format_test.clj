@@ -3,7 +3,8 @@
         hadoop-util.core
         elephantdb.common.hadoop
         elephantdb.common.util
-        [elephantdb testing config])
+        elephantdb.keyval.testing
+        elephantdb.keyval.config)
   (:import [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args
             ElephantRecordWritable ElephantUpdater]

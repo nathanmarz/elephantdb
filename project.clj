@@ -1,6 +1,5 @@
 (defproject elephantdb/elephantdb "0.2.0-SNAPSHOT"
   :source-path "src/clj"
-  :test-path "test/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
   :repositories {"oracle" "http://download.oracle.com/maven"}
@@ -13,6 +12,8 @@
                  [hadoop-util "0.2.3"]]
   :dev-dependencies [[org.apache.hadoop/hadoop-core "0.20.2-dev"]
                      [swank-clojure "1.4.0-SNAPSHOT"]
-                     [lein-marginalia "0.6.1"]]
-  :aot [elephantdb.client elephantdb.main]
-  :main elephantdb.main)
+                     [lein-marginalia "0.6.1"]
+                     [midje "1.3-alpha4"]
+                     [lein-midje "1.0.4"]]
+  :aot [elephantdb.keyval.client elephantdb.keyval.main]
+  :main elephantdb.keyval.main)

@@ -19,7 +19,20 @@
                               elephantdb.generated.ElephantDB$Iface] []}
               :state state))
 
+(def example-shard-index
+  {"index-a" {::hosts-to-shards {"host1" #{1, 3}, "host2" #{2, 4}}
+              ::shards-to-hosts {1 #{"host1"}, 2 #{"host2"},
+                                 3 #{"host1"}, 4 #{"host2"}}}})
+
 (defn -init
+  "fs-conf is a map meant to create a hadoop Filesystem object. For
+   AWS, this usually includes `fs.default.name`,
+   `fs.s3n.awsAccessKeyId` and `fs.s3n.awsSecretAccesskey`.
+
+   global-conf-path: path to global-conf.clj on the filesystem
+   specified by fs-conf.
+
+   local-elephant: instance returned by elephantdb.keyval/edb-proxy."
   ([fs-conf global-conf-path]
      (-init fs-conf
             (conf/read-clj-config (filesystem fs-conf)
@@ -27,26 +40,36 @@
             nil))
   ([fs-conf global-conf local-elephant]
      (let [{:keys [domains hosts replication]} global-conf]
-       [[] {:local-hostname (local-hostname)
-            :local-elephant local-elephant
-            :global-conf global-conf       
+       [[] {:local-hostname       (local-hostname)
+            :local-elephant       local-elephant
+            :global-conf          global-conf
             :domain-shard-indexes (shard/shard-domains (filesystem fs-conf)
                                                        domains
                                                        hosts
                                                        replication)}])))
 
-(defn- get-index [this domain]
+(defn- get-index
+  "Returns map of domain->host-sets and host->domain-sets."
+  [this domain]
   (if-let [index (-> (.state this)
                      (:domain-shard-indexes)
                      (get domain))]
     index
     (throw (domain-not-found-ex domain))))
 
-(defn- my-local-elephant [this]
+(defn- my-local-elephant
+  "Returns a reference to the local elephantdb service."
+  [this]
   (-> this .state :local-elephant))
 
-(defn- my-local-hostname [this]
+(defn- my-local-hostname
+  "Returns a reference to the client's local hostname."
+  [this]
   (-> this .state :local-hostname))
+
+{:elephantdb.common.shard/domain->host {"host1" #{1, 3}, "host2" #{2, 4}}
+ :elephantdb.common.shardhost->domain {1 #{"host1"}, 2 #{"host2"},
+                                       3 #{"host1"}, 4 #{"host2"}}}
 
 (defn- get-priority-hosts [this domain key]
   (let [hosts (shuffle (shard/key-hosts domain
@@ -66,6 +89,10 @@
   (with-elephant-connection host port client
     (.directMultiGet client domain keys)))
 
+;; If the client has a "local-elephant", or an enclosed edb service,
+;; and the "totry" private IP address fits the local-hostname, go
+;; ahead and do a direct multi-get internally. Else, create a
+;; connection to the other server and do that direct multiget.
 (defn- try-multi-get [this domain keys totry]
   (let [suffix (format "%s:%s/%s" totry domain keys)]
     (try (if (and (my-local-elephant this)
