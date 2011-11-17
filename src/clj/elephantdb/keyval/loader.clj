@@ -1,5 +1,5 @@
 (ns elephantdb.loader
-  (:use [elephantdb.config :only (persistence-options)])
+  (:use [elephantdb.keyval.config :only (persistence-options)])
   (:require [hadoop-util.core :as h]
             [elephantdb.common.hadoop :as hadoop]
             [elephantdb.common.log :as log]

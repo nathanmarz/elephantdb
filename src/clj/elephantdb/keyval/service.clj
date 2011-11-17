@@ -1,11 +1,12 @@
-(ns elephantdb.service
+(ns elephantdb.keyval.service
   (:use elephantdb.common.hadoop
         elephantdb.common.util
         hadoop-util.core
-        [elephantdb config loader])
+        elephantdb.keyval.config
+        elephantdb.keyval.loader)
   (:require [clojure.string :as s]
-            [elephantdb.domain :as domain]
-            [elephantdb.thrift :as thrift]
+            [elephantdb.keyval.domain :as domain]
+            [elephantdb.keyval.thrift :as thrift]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.log :as log])
   (:import [java.io File]
@@ -328,12 +329,12 @@
   "Entry point to edb. `service-handler` returns a proxied
   implementation of EDB's interface."
   [global-config local-config]
-  (let [client (atom nil)
+  (let [client     (atom nil)
         edb-config (merge global-config local-config)]
     (with-ret-bound [ret (edb-proxy client edb-config)]
-      (reset! client (client. ret
-                              (:hdfs-conf local-config)
-                              global-config)))))
+      (reset! client (client. (:hdfs-conf local-config)
+                              global-config
+                              ret)))))
 
 (defn thrift-server
   [service-handler port]

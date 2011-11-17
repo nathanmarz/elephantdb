@@ -1,7 +1,7 @@
 ;; Namespace includes all functions necessary to destructure, read,
 ;; write and create elephantdb config maps.
 
-(ns elephantdb.config
+(ns elephantdb.keyval.config
   (:use [hadoop-util.core :only (filesystem local-filesystem)])
   (:require [elephantdb.common.config :as conf])
   (:import [elephantdb DomainSpec Utils]

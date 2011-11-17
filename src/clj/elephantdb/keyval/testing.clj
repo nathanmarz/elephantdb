@@ -1,13 +1,13 @@
 (ns elephantdb.testing
   (:use clojure.test)
   (:require [hadoop-util.core :as h]
+            [elephantdb.keyval.client :as client]
+            [elephantdb.keyval.service :as service]
+            [elephantdb.keyval.thrift :as thrift]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf]
-            [elephantdb.client :as client]
             [elephantdb.common.log :as log]
-            [elephantdb.common.util :as u]
-            [elephantdb.service :as service]
-            [elephantdb.thrift :as thrift])
+            [elephantdb.common.util :as u])
   (:import [java.util UUID ArrayList]
            [elephantdb Utils ByteArray]
            [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
@@ -197,8 +197,7 @@
             (if domain-to-host-to-shards
               (fn [d _ _ _] (domain-to-host-to-shards d))
               shard/compute-host-to-shards)]
-    (let [handler (service/service-handler global-config
-                                           (mk-local-config localdir))]
+    (let [handler (service/service-handler global-config (mk-local-config localdir))]
       (while (not (.isFullyLoaded handler))
         (log/info "waiting...")
         (Thread/sleep 500))

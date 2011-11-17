@@ -1,10 +1,9 @@
-(ns elephantdb.main
-  (:use elephantdb.config
+(ns elephantdb.keyval.main
+  (:use elephantdb.keyval.config
         hadoop-util.core)
-  (:require [elephantdb.service :as service]
+  (:require [elephantdb.keyval.service :as service]
             [elephantdb.common.util :as util]
             [elephantdb.common.log :as log])
-  (:import [org.apache.log4j PropertyConfigurator])
   (:gen-class))
 
 ;; # Main Access
@@ -17,7 +16,7 @@
 (defn launch-server!
   [global-config local-config]
   (let [{interval :update-interval-s} local-config
-        {port :port} global-config
+        {port :port}                  global-config
         handler (service/service-handler global-config local-config)
         server  (service/thrift-server handler port)]
     (util/register-shutdown-hook #(do (.shutdown handler)
@@ -35,7 +34,7 @@
 
   `local-config-path`: the path to `local-config.clj` on this machine."
   [global-config-hdfs-path local-config-path]
-  (PropertyConfigurator/configure "log4j/log4j.properties")
+  (log/configure-logging "log4j/log4j.properties")
   (let [local-config   (read-local-config local-config-path)
         global-config (read-global-config global-config-hdfs-path
                                           local-config)]

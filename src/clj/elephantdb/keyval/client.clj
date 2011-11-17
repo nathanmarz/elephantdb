@@ -1,10 +1,10 @@
-(ns elephantdb.client
-  (:use elephantdb.config
-        elephantdb.thrift
+(ns elephantdb.keyval.client
+  (:use elephantdb.keyval.config
+        elephantdb.keyval.thrift
         elephantdb.common.hadoop
         elephantdb.common.util
-        hadoop-util.core
-        [elephantdb.common.types :only (serialize)])
+        [elephantdb.common.types :only (serialize)]
+        hadoop-util.core)
   (:require [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf]
             [elephantdb.common.log :as log])
@@ -13,16 +13,17 @@
            [org.apache.thrift TException])
   (:gen-class :init init
               :implements [elephantdb.iface.IElephantClient]
-              :constructors {[elephantdb.generated.ElephantDB$Iface java.util.Map
-                              java.util.Map] []
-                              [java.util.Map String] []}
+              :constructors {[java.util.Map String] []
+                             [java.util.Map
+                              java.util.Map
+                              elephantdb.generated.ElephantDB$Iface] []}
               :state state))
 
 (defn -init
   ([fs-conf global-conf-path]
      (-init nil fs-conf (conf/read-clj-config (filesystem fs-conf)
                                               global-conf-path)))
-  ([local-elephant fs-conf global-conf]
+  ([fs-conf global-conf local-elephant]
      (let [{:keys [domains hosts replication]} global-conf]
        [[] {:local-hostname (local-hostname)
             :local-elephant local-elephant

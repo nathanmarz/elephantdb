@@ -1,7 +1,8 @@
-(ns elephantdb.domain
+(ns elephantdb.keyval.domain
   (:use elephantdb.common.util
-        [elephantdb thrift config]
-        [elephantdb.loader :only (close-domain)]
+        elephantdb.keyval.thrift
+        elephantdb.keyval.config
+        [elephantdb.keyval.loader :only (close-domain)]
         [hadoop-util.core :only (local-filesystem)])
   (:require [elephantdb.common.shard :as s])
   (:import [elephantdb Utils]))
