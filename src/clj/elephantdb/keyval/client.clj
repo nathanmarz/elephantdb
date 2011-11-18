@@ -134,14 +134,21 @@
 (defn- multi-get*
   "executes multi-get, returns seq of [global-index val]"
   [this domain host host-indexed-keys key-shard-fn multi-get-remote-fn]
-  (binding [shard/key-shard key-shard-fn
+  (binding [shard/key-shard  key-shard-fn
             multi-get-remote multi-get-remote-fn]
     (when-let [vals (try-multi-get this domain (map third host-indexed-keys) host)]
       (map (fn [v [hosts gi key all-hosts]] [gi v])
            vals
            host-indexed-keys))))
 
-(defn -multiGet [this domain keys]
+
+(defn -multiGet
+  "This is really the only function that matters for ElephantDB
+  Key-Value; all others are just views on this. And THIS only depends
+  on directMultiGet.
+
+  directMulti"
+  [this domain keys]
   (let [host-indexed-keys (host-indexed-keys this domain keys)]
     (loop [keys-to-get host-indexed-keys
            results []]
@@ -177,3 +184,35 @@
 
 (defn -multiGetString [this domain strings]
   (.multiGet this domain (map serialize strings)))
+
+
+Orders
+;; id,acc,user
+
+(def user-src
+  [[1 1 1]
+   [2 1 1]
+   [3 1 1]
+   [4 2 1]
+   [5 2 1]
+   [6 3 2]
+   [7 4 2]])
+
+;; id,credit
+(def opportunities-src
+  [[1 true]
+   [2 true]
+   [3 true]
+   [4 false]])
+
+(defn account-query
+  [opp-path accounts-path]
+  (let [opptys (hfs-textline opp-path)
+        accounts (hfs-textline accounts-path)]
+    (?<- (stdout)
+         [?user ?count]
+         (opptys ?o-line)
+         (my-csv-parser ?o-line :> ?oppty-id ?acc-id ?user)
+         (accounts ?a-line)
+         (my-csv-parser ?a-line :> ?acc-id ?acc-credit)
+         (c/count ?count))))

@@ -1,7 +1,8 @@
 (ns elephantdb.keyval.service
-  (:use elephantdb.common.hadoop
+  (:use hadoop-util.core
+        elephantdb.common.hadoop
         elephantdb.common.util
-        hadoop-util.core
+        elephantdb.common.interface
         elephantdb.keyval.config
         elephantdb.keyval.loader)
   (:require [clojure.string :as s]
@@ -14,9 +15,8 @@
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
            [org.apache.thrift.transport TNonblockingServerSocket]
            [java.util.concurrent.locks ReentrantReadWriteLock]
-           [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor]
            [elephantdb.keyval client]
-           [elephantdb Shutdownable]
+           [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor]
            [elephantdb.persistence LocalPersistence]
            [elephantdb.store DomainStore]))
 
@@ -359,8 +359,8 @@
 
 (defn thrift-server
   [service-handler port]
-  (let [options (THsHaServer$Options.)
-        _ (set! (.maxWorkerThreads options) 64)]
+  (let [options (THsHaServer$Options.)]
+    (set! (.maxWorkerThreads options) 64)
     (THsHaServer. (ElephantDB$Processor. service-handler)
                   (TNonblockingServerSocket. port)
                   (TBinaryProtocol$Factory.)
@@ -372,7 +372,7 @@
   (let [interval-ms (* 1000 interval-secs)]
     (future
       (log/info (format "Starting updater process with an interval of: %s seconds..."
-                           interval-secs))
+                        interval-secs))
       (while true
         (Thread/sleep interval-ms)
         (log/info "Updater process: Checking if update is possible...")
