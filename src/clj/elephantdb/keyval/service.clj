@@ -265,39 +265,41 @@
                          (init-domain-info-map edb-config))
         download-supervisor (atom nil)]
     (prepare-local-domains! domains-info edb-config rw-lock)
-    (proxy [ElephantDB$Iface Shutdownable] []
-      (shutdown []
+    (reify
+      Shutdownable
+      (shutdown [_]
         (log/info "ElephantDB received shutdown notice...")
         (with-write-lock rw-lock
           (dofor [[_ info] domains-info]
                  (domain/set-domain-status! info (thrift/shutdown-status))))
         (close-lps domains-info))
 
-      (get [^String domain key]
+      ElephantDB$Iface
+      (get [_ domain key]
         (.get @client domain key))
 
-      (getInt [^String domain key]
+      (getInt [_ domain key]
         (.getInt @client domain key))
-
-      (getLong [^String domain key]
+      
+      (getLong [_ domain key]
         (.getLong @client domain key))
 
-      (getString [^String domain ^String key]
+      (getString [_ domain key]
         (.getString @client domain key))
       
-      (multiGet [^String domain keys]
+      (multiGet [_ domain keys]
         (.multiGet @client domain keys))
       
-      (multiGetInt [^String domain keys]
+      (multiGetInt [_ domain keys]
         (.multiGetInt @client domain keys))
       
-      (multiGetLong [^String domain keys]
+      (multiGetLong [_ domain keys]
         (.multiGetLong @client domain keys))
 
-      (multiGetString [^String domain keys]
+      (multiGetString [_ domain keys]
         (.multiGetString @client domain keys))
       
-      (directMultiGet [^String domain keys]
+      (directMultiGet [_ domain keys]
         (with-read-lock rw-lock
           (let [info (get-readable-domain-info domains-info domain)]
             (dofor [key keys
@@ -308,36 +310,36 @@
                      (thrift/mk-value (.get lp key))
                      (throw (thrift/wrong-host-ex)))))))
       
-      (getDomainStatus [^String domain]
+      (getDomainStatus [_ domain]
         (let [info (domains-info domain)]
           (when-not info
             (throw (thrift/domain-not-found-ex domain)))
           (domain/domain-status info)))
 
-      (getDomains []
+      (getDomains [_]
         (keys domains-info))
       
-      (getStatus []
+      (getStatus [_]
         (thrift/elephant-status
          (val-map domain/domain-status domains-info)))
 
-      (isFullyLoaded []
+      (isFullyLoaded [this]
         (let [stat (.get_domain_statuses (.getStatus this))]
           (every? #(or (thrift/status-ready? %)
                        (thrift/status-failed? %))
                   (vals stat))))
 
-      (isUpdating []
+      (isUpdating [this]
         (service-updating? this download-supervisor))
       
-      (updateAll []
+      (updateAll [this]
         (trigger-update this
                         download-supervisor
                         domains-info
                         edb-config
                         rw-lock))
       
-      (update [^String domain]
+      (update [this domain]
         (trigger-update this
                         download-supervisor
                         (select-keys domains-info [domain])

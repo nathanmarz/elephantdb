@@ -15,15 +15,16 @@
 (defrecord ShardState [downloaded-kb sleep-interval])
 
 ;; DownloadState:
-;; shard-states:     Map of domain name to list of ShardStates per shard of a domain
+;; shard-states: Map of domain name to list of ShardStates per
+;; shard of a domain
+
 ;; finished-loaders: gets incremented when a shard has finished loading
 ;; shard-loaders:    Vector of all shard-loader futures used by the download supervisor
 (defrecord DownloadState [shard-states finished-loaders shard-loaders])
 
 (defn mk-shard-states
   [shard-set]
-  (->> (repeatedly #(ShardState. (atom 0)
-                                 (atom 0)))
+  (->> (repeatedly #(ShardState. (atom 0) (atom 0)))
        (interleave shard-set)
        (apply hash-map)))
 
@@ -31,8 +32,7 @@
   "Create new LoaderState"
   [domains-to-shards]
   (-> (u/val-map mk-shard-states domains-to-shards)
-      (DownloadState. (atom 0)
-                      (atom []))))
+      (DownloadState. (atom 0) (atom []))))
 
 (declare copy-local*)
 
