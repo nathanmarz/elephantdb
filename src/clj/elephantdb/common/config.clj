@@ -1,7 +1,17 @@
 (ns elephantdb.common.config
+  "Functions for common configuration between elephantDB base and
+   interfaces."
   (:use [hadoop-util.core :only (path)])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.persistence LocalPersistenceFactory]))
+
+(def ^{:doc "Example, meant to be ignored."}
+  example-global-conf
+  {:replication 1
+   :port 3578
+   :hosts ["localhost"]
+   :domains {"graph" "/mybucket/elephantdb/graph"
+             "docs"  "/data/docdb"}})
 
 (defn read-clj-config
   "Reads a clojure map from the specified path, on the specified

@@ -5,8 +5,11 @@
 
 (comment
   "Example:"
+  (defprotocol )
+
   (defrecord Icing [color]
-    Cake (face [this] "hi."))
+    Cake
+    (face [this] "hi."))
 
   "after arg vector, defrecord implement combinations of
    protocol/interface and methods."

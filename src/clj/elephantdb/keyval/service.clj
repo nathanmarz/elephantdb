@@ -4,7 +4,8 @@
         elephantdb.common.util
         elephantdb.common.interface
         elephantdb.keyval.config
-        elephantdb.keyval.loader)
+        elephantdb.keyval.loader
+        [elephantdb.common.types :only (serialize)])
   (:require [clojure.string :as s]
             [elephantdb.keyval.domain :as domain]
             [elephantdb.keyval.thrift :as thrift]
@@ -15,18 +16,11 @@
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
            [org.apache.thrift.transport TNonblockingServerSocket]
            [java.util.concurrent.locks ReentrantReadWriteLock]
-           [elephantdb.keyval client]
-           [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor]
+           [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor
+            WrongHostException DomainNotFoundException DomainNotLoadedException]
            [elephantdb.persistence LocalPersistence]
-           [elephantdb.store DomainStore]))
-
-(def ^{:doc "Example, meant to be ignored."}
-  example-global-conf
-  {:replication 1
-   :port 3578
-   :hosts ["localhost"]
-   :domains {"graph" "/mybucket/elephantdb/graph"
-             "docs"  "/data/docdb"}})
+           [elephantdb.store DomainStore]
+           [org.apache.thrift TException]))
 
 (defn- init-domain-info-map
   " Generates a map with kv pairs of the following form:
@@ -132,7 +126,7 @@
                 local-dir
                 (thrift/ready-status :loading? true)
                 (fn [domain info]
-                  (let [remote-path (get remote-path-map domain)
+                  (let [remote-path (clojure.core/get remote-path-map domain)
                         remote-vs (try-domain-store remote-fs remote-path)]
                     (when remote-vs
                       (let [local-domain-root (str (path local-dir domain))
@@ -158,7 +152,7 @@
                 local-dir
                 (thrift/loading-status)
                 (fn [domain info]
-                  (let [remote-path  (get remote-path-map domain)
+                  (let [remote-path  (clojure.core/get remote-path-map domain)
                         remote-vs (DomainStore. remote-fs remote-path)
                         local-path (str (path local-dir domain))
                         local-vs (mk-local-vs remote-vs local-path)]  
@@ -256,14 +250,87 @@
 ;; inside of prepare-local-domain, and could decide whether or not to
 ;; throttle the thing.
 
+(defn- get-index
+  "Returns map of domain->host-sets and host->domain-sets."
+  [domain-shard-indexes domain]
+  (or (clojure.core/get domain-shard-indexes domain)
+      (throw (thrift/domain-not-found-ex domain))))
+
+(defn- prioritize-hosts
+  [localhost domain-shard-indexes domain key]
+  (let [index (get-index domain-shard-indexes domain)
+        hosts (shuffle (shard/key-hosts domain index key))]
+    (if (some #{localhost} hosts)
+      (cons localhost (remove-val localhost hosts))
+      hosts)))
+
+(defn multi-get-remote
+  {:dynamic true}
+  [host port domain keys]
+  (thrift/with-elephant-connection host port service
+    (.directMultiGet service domain keys)))
+
+;; If the client has a "local-elephant", or an enclosed edb service,
+;; and the "totry" private IP address fits the local-hostname, go
+;; ahead and do a direct multi-get internally. Else, create a
+;; connection to the other server and do that direct multiget.
+
+(defn try-multi-get
+  [service local-hostname port domain keys totry]
+  (let [suffix (format "%s:%s/%s" totry domain keys)]
+    (try (if (= totry local-hostname)
+           (.directMultiGet service domain keys)
+           (multi-get-remote totry port domain keys))
+         (catch TException e
+           (log/error e "Thrift exception on " suffix)) ;; try next host
+         (catch WrongHostException e
+           (log/error e "Fatal exception on " suffix)
+           (throw (TException. "Fatal exception when performing get" e)))
+         (catch DomainNotFoundException e
+           (log/error e "Could not find domain when executing read on " suffix)
+           (throw e))
+         (catch DomainNotLoadedException e
+           (log/error e "Domain not loaded when executing read on " suffix)
+           (throw e)))))
+
+(defn- host-indexed-keys
+  "returns [hosts-to-try global-index key all-hosts] seq"
+  [localhost domain-shard-indexes domain keys]
+  (for [[gi key] (map-indexed vector keys)
+        :let [priority-hosts
+              (prioritize-hosts localhost domain-shard-indexes domain key)]]
+    [priority-hosts gi key priority-hosts]))
+
+(defn- multi-get*
+  "executes multi-get, returns seq of [global-index val]"
+  [service localhost port domain host
+   host-indexed-keys key-shard-fn multi-get-remote-fn]
+  (binding [shard/key-shard  key-shard-fn
+            multi-get-remote multi-get-remote-fn]
+    (when-let [vals (try-multi-get service
+                                   localhost
+                                   port
+                                   domain
+                                   (map third host-indexed-keys)
+                                   host)]
+      (map (fn [v [hosts gi key all-hosts]] [gi v])
+           vals
+           host-indexed-keys))))
+
 (defn edb-proxy
   "See `src/elephantdb.thrift` for more information on the methods we
   implement."
-  [client {:keys [hdfs-conf local-dir] :as edb-config}]
+  [{:keys [hdfs-conf local-dir port domains
+           hosts replication] :as edb-config}]
   (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
+        download-supervisor (atom nil)
+        localhost           (local-hostname)
         domains-info (-> (filesystem hdfs-conf)
                          (init-domain-info-map edb-config))
-        download-supervisor (atom nil)]
+        domain-shard-indexes (shard/shard-domains (filesystem hdfs-conf)
+                                                  domains
+                                                  hosts
+                                                  replication)]
     (prepare-local-domains! domains-info edb-config rw-lock)
     (reify
       Shutdownable
@@ -275,30 +342,18 @@
         (close-lps domains-info))
 
       ElephantDB$Iface
-      (get [_ domain key]
-        (.get @client domain key))
+      (get [this domain key]
+        (first (.multiGet this domain [key])))
 
-      (getInt [_ domain key]
-        (.getInt @client domain key))
-      
-      (getLong [_ domain key]
-        (.getLong @client domain key))
+      (getInt [this domain key]
+        (.get this domain (serialize key)))
 
-      (getString [_ domain key]
-        (.getString @client domain key))
-      
-      (multiGet [_ domain keys]
-        (.multiGet @client domain keys))
-      
-      (multiGetInt [_ domain keys]
-        (.multiGetInt @client domain keys))
-      
-      (multiGetLong [_ domain keys]
-        (.multiGetLong @client domain keys))
+      (getLong [this domain key]
+        (.get this domain (serialize key)))
 
-      (multiGetString [_ domain keys]
-        (.multiGetString @client domain keys))
-      
+      (getString [this domain key]
+        (.get this domain (serialize key)))
+
       (directMultiGet [_ domain keys]
         (with-read-lock rw-lock
           (let [info (get-readable-domain-info domains-info domain)]
@@ -309,7 +364,49 @@
                    (if lp
                      (thrift/mk-value (.get lp key))
                      (throw (thrift/wrong-host-ex)))))))
-      
+
+      (multiGet [this domain keys]
+        (let [host-indexed-keys (host-indexed-keys localhost
+                                                   domain-shard-indexes
+                                                   domain
+                                                   keys)]
+          (loop [keys-to-get host-indexed-keys
+                 results []]
+            (let [host-map (group-by ffirst keys-to-get)
+                  rets (parallel-exec
+                        (for [[host host-indexed-keys] host-map]
+                          (constantly
+                           [host (multi-get* this
+                                             localhost
+                                             port
+                                             domain
+                                             host
+                                             host-indexed-keys
+                                             shard/key-shard
+                                             multi-get-remote)])))
+                  succeeded       (filter second rets)
+                  succeeded-hosts (map first succeeded)
+                  results (->> (map second succeeded)
+                               (apply concat results))
+                  failed-host-map (apply dissoc host-map succeeded-hosts)]
+              (if (empty? failed-host-map)
+                (map second (sort-by first results))
+                (recur (for [[[_ & hosts] gi key all-hosts]
+                             (apply concat (vals failed-host-map))]
+                         (if (empty? hosts)
+                           (throw (thrift/hosts-down-ex all-hosts))
+                           [hosts gi key all-hosts]))
+                       results))))))
+
+      (multiGetInt [this domain keys]
+        (.multiGet this domain (map serialize keys)))
+
+      (multiGetLong [this domain keys]
+        (.multiGet this domain (map serialize keys)))
+
+      (multiGetString [this domain keys]
+        (.multiGet this domain (map serialize keys)))
+         
       (getDomainStatus [_ domain]
         (let [info (domains-info domain)]
           (when-not info
@@ -350,12 +447,7 @@
   "Entry point to edb. `service-handler` returns a proxied
   implementation of EDB's interface."
   [global-config local-config]
-  (let [client     (atom nil)
-        edb-config (merge global-config local-config)]
-    (with-ret-bound [ret (edb-proxy client edb-config)]
-      (reset! client (client. (:hdfs-conf local-config)
-                              global-config
-                              ret)))))
+  (edb-proxy (merge global-config local-config)))
 
 (defn thrift-server
   [service-handler port]

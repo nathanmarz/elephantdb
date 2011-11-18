@@ -1,7 +1,6 @@
 (ns elephantdb.keyval.testing
   (:use clojure.test)
   (:require [hadoop-util.core :as h]
-            [elephantdb.keyval.client :as client]
             [elephantdb.keyval.service :as service]
             [elephantdb.keyval.thrift :as thrift]
             [elephantdb.common.shard :as shard]
@@ -254,8 +253,8 @@
 
 (defmacro with-mocked-remote
   [[domain-to-host-to-shards shards-to-pairs down-hosts] & body]
-  ;; mock client/try-multi-get only for non local-hostname hosts
-  `(binding [client/multi-get-remote
+  ;; mock service/try-multi-get only for non local-hostname hosts
+  `(binding [service/multi-get-remote
              (mk-mocked-remote-multiget-fn ~domain-to-host-to-shards
                                            ~shards-to-pairs
                                            ~down-hosts)]
