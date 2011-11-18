@@ -1,9 +1,9 @@
 (ns elephantdb.keyval.main
-  (:use elephantdb.keyval.config
-        hadoop-util.core)
-  (:require [elephantdb.keyval.service :as service]
+  (:use elephantdb.keyval.config)
+  (:require [hadoop-util.core :as h]
+            [elephantdb.keyval.service :as service]
             [elephantdb.common.util :as util]
-            [elephantdb.common.log :as log])
+            [elephantdb.common.logging :as log])
   (:gen-class))
 
 ;; # Main Access
@@ -17,7 +17,7 @@
   [global-config local-config]
   (let [{interval :update-interval-s} local-config
         {port :port}                  global-config
-        handler (service/service-handler global-config local-config)
+        handler (service/service-handler (merge global-config local-config))
         server  (service/thrift-server handler port)]
     (util/register-shutdown-hook #(do (.shutdown handler)
                                       (.stop server)))

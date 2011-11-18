@@ -1,11 +1,13 @@
 (ns elephantdb.service-test
   (:use clojure.test
         elephantdb.keyval.testing
+        elephantdb.common.testing
         [elephantdb.keyval.config :only (read-global-config)])
   (:require [hadoop-util.core :as h]
-            [elephantdb.common.config :as conf]
             [elephantdb.common.util :as u]
-            [elephantdb.keyval.thrift :as thrift]
+            [elephantdb.common.config :as conf]
+            [elephantdb.common.logging :as log]
+            [elephantdb.common.thrift :as thrift]
             [elephantdb.keyval.service :as service])
   (:import [elephantdb.persistence JavaBerkDB]))
 
@@ -16,7 +18,8 @@
   (.get_data (first (.directMultiGet elephant d [k]))))
 
 (defn multi-get-vals [elephant domain keys]
-  (map (memfn get_data) (.multiGet elephant domain keys)))
+  (map (memfn get_data)
+       (.multiGet elephant domain keys)))
 
 (defmacro expected-domain-data [handler domain & key-value-pairs]
   `(doseq [[key-sym# val-sym#] (partition 2 [~@key-value-pairs])]

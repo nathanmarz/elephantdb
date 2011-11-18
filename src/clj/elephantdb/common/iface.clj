@@ -1,11 +1,30 @@
-(ns elephantdb.common.interface)
+(ns elephantdb.common.iface
+  (:import [elephantdb Utils]))
 
-(defprotocol Shutdownable
+(defprotocol IShutdownable
   (shutdown [_]))
 
+(defprotocol ISerialize
+  (serialize [x]))
+
+(extend-protocol ISerialize
+  Integer
+  (serialize [x] (Utils/serializeInt x))
+
+  Long
+  (serialize [x] (Utils/serializeLong x))
+
+  String
+  (serialize [x]  (Utils/serializeString x)))
+
+(extend (Class/forName "[B") 
+  ISerialize
+  {:serialize identity})
+
 (comment
-  "Example:"
-  (defprotocol )
+  "Examples of records and protocols:"
+  (defprotocol Cake
+    (face [_] "Docstring for face."))
 
   (defrecord Icing [color]
     Cake

@@ -1,14 +1,14 @@
 (ns elephantdb.keyval.testing
-  (:use clojure.test)
+  (:use clojure.test
+        elephantdb.common.testing)
   (:require [hadoop-util.core :as h]
             [elephantdb.keyval.service :as service]
-            [elephantdb.keyval.thrift :as thrift]
+            [elephantdb.common.thrift :as thrift]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf]
-            [elephantdb.common.log :as log]
+            [elephantdb.common.logging :as log]
             [elephantdb.common.util :as u])
-  (:import [java.util UUID ArrayList]
-           [elephantdb Utils ByteArray]
+  (:import [elephantdb Utils ByteArray]
            [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
            [elephantdb.store DomainStore]
@@ -16,74 +16,12 @@
            [org.apache.hadoop.mapred JobConf]
            [org.apache.thrift TException]))
 
-(defn uuid []
-  (str (UUID/randomUUID)))
-
-;; TODO: Add (when vals ,,,)
-(defn barr [& vals]
-  (byte-array (map byte vals)))
-
-(defn barr= [& vals]
-  (apply = (map #(ByteArray. %) vals)))
-
-(defn barrs= [& arrs]
-  (and (apply = (map count arrs))
-       (every? identity
-               (apply map (fn [& vals]
-                            (or (every? nil? vals)
-                                (apply barr= vals)))
-                      arrs))))
-
 (defn domain-data [& key-val-pairs]
   (map (fn [x]
          [(barr (first x))
           (if-not (nil? (second x))
             (apply barr (second x)))])
        (partition 2 key-val-pairs)))
-
-(defn delete-all [fs paths]
-  (dorun
-   (for [t paths]
-     (.delete fs (h/path t) true))))
-
-(defmacro with-fs-tmp
-  [[fs-sym & tmp-syms] & body]
-  (let [tmp-paths (mapcat (fn [t]
-                            [t `(str "/tmp/unittests/" (uuid))])
-                          tmp-syms)]
-    `(let [~fs-sym (h/filesystem)
-           ~@tmp-paths]
-       (.mkdirs ~fs-sym (h/path "/tmp/unittests"))
-       (try ~@body
-            (finally
-             (delete-all ~fs-sym [~@tmp-syms]))))))
-
-(defmacro def-fs-test
-  [name fs-args & body]
-  `(deftest ~name
-     (with-fs-tmp ~fs-args
-       ~@body)))
-
-(defn local-temp-path []
-  (str (System/getProperty "java.io.tmpdir") "/" (uuid)))
-
-(defmacro with-local-tmp [[fs-sym & tmp-syms] & [kw & more :as body]]
-  (let [[log-lev body] (if (keyword? kw)
-                         [kw more]
-                         [:warn body])
-        tmp-paths (mapcat (fn [t] [t `(local-temp-path)]) tmp-syms)]
-    `(log/with-log-level ~log-lev
-       (let [~fs-sym (h/local-filesystem)
-             ~@tmp-paths]
-         (try
-           ~@body
-           (finally
-            (delete-all ~fs-sym ~(vec tmp-syms))))))))
-
-(defmacro deflocalfstest [name local-args & body]
-  `(deftest ~name
-     (with-local-tmp ~local-args
-       ~@body)))
 
 (defn add-string [db key value]
   (.add db
@@ -115,11 +53,10 @@
       (add-string db k v))
     (.close db)))
 
-(defn test-key-to-shard
-  "bind this to get different behavior when making sharded domains."
-  {:dynamic true}
-  [key numshards]
-  (Utils/keyShard key numshards))
+;; bind this to get different behavior when making sharded domains.
+;; TODO: Remove first arg from key-shard.
+(def ^:dynamic test-key->shard
+  (partial shard/key-shard "testdomain"))
 
 (defn mk-elephant-writer
   [shards factory output-dir tmpdir & kargs]
@@ -156,7 +93,7 @@
                   (.createVersion vs))
           shardedkeyvals (map
                           (fn [[k v]]
-                            [(test-key-to-shard k (:num-shards domain-spec))
+                            [(test-key->shard k (:num-shards domain-spec))
                              k v])
                           keyvals)
           writer (mk-elephant-writer
@@ -183,7 +120,7 @@
         shards (reverse-pre-sharded shardmap)
         domain-spec {:num-shards (count shardmap)
                      :persistence-factory factory}]
-    (binding [test-key-to-shard (fn [k _] (shards (ByteArray. k)))]
+    (binding [test-key->shard (fn [k _] (shards (ByteArray. k)))]
       (mk-sharded-domain fs path domain-spec keyvals))))
 
 (defn mk-local-config [local-dir]
@@ -196,8 +133,8 @@
   (binding [shard/compute-host-to-shards (if host-to-shards
                                            (constantly host-to-shards)
                                            shard/compute-host-to-shards)]
-    (let [handler (service/service-handler global-config
-                                           (mk-local-config localdir))]
+    (let [handler (service/service-handler
+                   (merge global-config (mk-local-config localdir)))]
       (while (not (.isFullyLoaded handler))
         (log/info "waiting...")
         (Thread/sleep 500))
@@ -212,17 +149,15 @@
 (defmacro with-presharded-domain
   [[dname pathsym factory shardmap] & body]
   `(with-fs-tmp [fs# ~pathsym]
-     (mk-presharded-domain
-      fs#
-      ~pathsym
-      ~factory
-      ~shardmap)
-     (binding [shard/key-shard (let [prev# shard/key-shard
-                                     rev# (reverse-pre-sharded ~shardmap)]
+     (mk-presharded-domain fs#
+                           ~pathsym
+                           ~factory
+                           ~shardmap)
+     (binding [shard/key-shard (let [rev# (reverse-pre-sharded ~shardmap)]
                                  (fn [d# k# a#]
                                    (if (= d# ~dname)
                                      (rev# (ByteArray. k#))
-                                     (prev# d# k# a#))))]
+                                     (shard/key-shard d# k# a#))))]
        ~@body)))
 
 (defmacro with-service-handler

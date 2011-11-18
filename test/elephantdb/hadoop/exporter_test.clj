@@ -1,12 +1,10 @@
 (ns elephantdb.hadoop.exporter-test
   (:use clojure.test
-        hadoop-util.core
-        elephantdb.common.log
-        elephantdb.common.hadoop
-        elephantdb.common.util
         elephantdb.keyval.testing
-        elephantdb.keyval.config)
-  (:require [elephantdb.keyval.thrift :as thrift])
+        [elephantdb.common.testing :only (barr with-fs-tmp)])
+  (:require [hadoop-util.core :as h]
+            [elephantdb.common.util :as u]
+            [elephantdb.keyval.thrift :as thrift])
   (:import [elephantdb DomainSpec]
            [elephantdb.persistence JavaBerkDB]
            [elephantdb.hadoop Exporter]
@@ -14,10 +12,10 @@
             SequenceFile$CompressionType]))
 
 (defn- write-seqfile-records [fs dir pairs]
-  (mkdirs fs dir)
+  (h/mkdirs fs dir)
   (with-open [writer (SequenceFile/createWriter fs
                                                 (.getConf fs)
-                                                (path dir "part0000")
+                                                (h/path dir "part0000")
                                                 BytesWritable BytesWritable
                                                 SequenceFile$CompressionType/NONE)]
     (doseq [[k v] pairs]

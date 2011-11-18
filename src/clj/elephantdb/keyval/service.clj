@@ -1,17 +1,17 @@
 (ns elephantdb.keyval.service
-  (:use hadoop-util.core
-        elephantdb.common.hadoop
-        elephantdb.common.util
-        elephantdb.common.interface
-        elephantdb.keyval.config
-        elephantdb.keyval.loader
-        [elephantdb.common.types :only (serialize)])
+  (:use [elephantdb.keyval.thrift :only (with-elephant-connection)]
+        [elephantdb.common.iface :only (serialize)])
   (:require [clojure.string :as s]
-            [elephantdb.keyval.domain :as domain]
-            [elephantdb.keyval.thrift :as thrift]
+            [hadoop-util.core :as h]
+            [elephantdb.common.util :as u]
+            [elephantdb.common.loader :as loader]
+            [elephantdb.common.hadoop :as hadoop]
+            [elephantdb.common.domain :as domain]
+            [elephantdb.common.thrift :as thrift]
             [elephantdb.common.shard :as shard]
-            [elephantdb.common.log :as log])
+            [elephantdb.common.logging :as log])
   (:import [java.io File]
+           [elephantdb.common.iface IShutdownable]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
            [org.apache.thrift.transport TNonblockingServerSocket]
@@ -30,61 +30,9 @@
                       :domain-data <data-atom>}}"
   [fs {:keys [domains hosts replication]}]
   (let [domain-shards (shard/shard-domains fs domains hosts replication)]
-    (update-vals (fn [k _]
-                   (-> k domain-shards domain/init-domain-info))
-                 domains)))
-
-(defn domain-has-data? [local-vs]
-  (-> local-vs .mostRecentVersion boolean))
-
-(defn domain-needs-update?
-  "Returns true if the remote VersionedStore contains newer data than
-  its local copy, false otherwise."
-  [local-vs remote-vs]
-  (or (not (domain-has-data? local-vs))
-      (let [local-version  (.mostRecentVersion local-vs)
-            remote-version (.mostRecentVersion remote-vs)]
-        (when (and local-version remote-version)
-          (< local-version remote-version)))))
-
-(defn mk-local-vs
-  [remote-vs local-path]
-  (DomainStore. (local-filesystem)
-                local-path
-                (.getSpec remote-vs)))
-
-(defn try-domain-store
-  "Attempts to return a DomainStore object from the current path and
-  filesystem; if this doesn't exist, returns nil."  [fs domain-path]
-  (try (DomainStore. fs domain-path)
-       (catch IllegalArgumentException _)))
-
-(defn cleanup-domain!
-  [domain-path]
-  "Destroys all but the most recent version in the versioned store
-  located at `domain-path`."
-  (when-let [store (try-domain-store (local-filesystem)
-                                     domain-path)]
-    (doto store (.cleanup 1))))
-
-(defn cleanup-domains!
-  "Destroys every old version for each domain in `domains` located
-  inside of `local-dir`. (Each domain directory contains a versioned
-  store, capable of being 'cleaned up' in this fashion.)
-
-  If any cleanup operation throws an error, `cleanup-domains!` will
-  try to operate on the rest of the domains, and throw a single error
-  on completion."
-  [domains local-dir]
-  (let [error (atom nil)]
-    (dofor [domain domains :let [domain-path (str (path local-dir domain))]]
-           (try (log/info "Purging old versions of domain: " domain)
-                (cleanup-domain! domain-path)
-                (catch Throwable t
-                  (log/error t "Error when purging old versions of domain: " domain)
-                  (reset! error t))))
-    (when-let [e @error]
-      (throw e))))
+    (u/update-vals (fn [k _]
+                     (-> k domain-shards domain/init-domain-info))
+                   domains)))
 
 (defn try-thrift
   "Applies each kv pair to the supplied `func` in parallel, farming
@@ -95,16 +43,16 @@
   After completing all functions, we remove all versions of each
   domain but the last."
   [domains-info local-dir initial-status func]
-  (with-ret (p-dofor [[domain info] domains-info]
-                     (try (domain/set-domain-status! info initial-status)
-                          (func domain info)
-                          (domain/set-domain-status! info (thrift/ready-status))
-                          (catch Throwable t
-                            (log/error t "Error when loading domain " domain)
-                            (domain/set-domain-status! info
-                                                       (thrift/failed-status t)))))
+  (u/with-ret (u/p-dofor [[domain info] domains-info]
+                         (try (domain/set-domain-status! info initial-status)
+                              (func domain info)
+                              (domain/set-domain-status! info (thrift/ready-status))
+                              (catch Throwable t
+                                (log/error t "Error when loading domain " domain)
+                                (domain/set-domain-status! info
+                                                           (thrift/failed-status t)))))
     (try (log/info "Removing all old versions of updated domains!")
-         (cleanup-domains! (keys domains-info) local-dir)
+         (domain/cleanup-domains! (keys domains-info) local-dir)
          (catch Throwable t
            (log/error t "Error when cleaning old versions.")))))
 
@@ -116,7 +64,7 @@
   [edb-config rw-lock domains-info loader-state]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-path-map (:domains edb-config)
-        remote-fs (filesystem hdfs-conf)
+        remote-fs (h/filesystem hdfs-conf)
         
         ;; Do we throttle? TODO: Use this arg.
         throttle? (->> (vals domains-info)
@@ -127,39 +75,42 @@
                 (thrift/ready-status :loading? true)
                 (fn [domain info]
                   (let [remote-path (clojure.core/get remote-path-map domain)
-                        remote-vs (try-domain-store remote-fs remote-path)]
+                        remote-vs (domain/try-domain-store remote-fs remote-path)]
                     (when remote-vs
-                      (let [local-domain-root (str (path local-dir domain))
-                            local-vs (mk-local-vs remote-vs local-domain-root)]
-                        (if (domain-needs-update? local-vs remote-vs)
-                          (->> (load-domain domain
-                                            remote-fs
-                                            local-db-conf
-                                            local-domain-root
-                                            remote-path
-                                            loader-state)
+                      (let [local-domain-root (str (h/path local-dir domain))
+                            local-vs (domain/mk-local-vs remote-vs local-domain-root)]
+                        (if (domain/domain-needs-update? local-vs remote-vs)
+                          (->> (loader/load-domain domain
+                                                   remote-fs
+                                                   local-db-conf
+                                                   local-domain-root
+                                                   remote-path
+                                                   loader-state)
                                (domain/set-domain-data! rw-lock domain info)
-                               (log/info "Finished loading all updated domains from remote."))
+                               (log/info
+                                "Finished loading all updated domains from remote."))
                           (let [{:keys [finished-loaders shard-states]} loader-state]
-                            (swap! finished-loaders + (count (shard-states domain))))))))))))
+                            (swap! finished-loaders +
+                                   (count (shard-states domain))))))))))))
 
 (defn load-cached-domains!
   [edb-config rw-lock domains-info]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-path-map (:domains edb-config)
-        remote-fs (filesystem hdfs-conf)]
+        remote-fs (h/filesystem hdfs-conf)]
     (try-thrift domains-info
                 local-dir
                 (thrift/loading-status)
                 (fn [domain info]
                   (let [remote-path  (clojure.core/get remote-path-map domain)
                         remote-vs (DomainStore. remote-fs remote-path)
-                        local-path (str (path local-dir domain))
-                        local-vs (mk-local-vs remote-vs local-path)]  
-                    (when-let [new-data (and (domain-has-data? local-vs)
-                                             (open-domain local-db-conf
-                                                          local-path
-                                                          (domain/host-shards info)))]
+                        local-path (str (h/path local-dir domain))
+                        local-vs (domain/mk-local-vs remote-vs local-path)]  
+                    (when-let [new-data (and (domain/domain-has-data? local-vs)
+                                             (loader/open-domain
+                                              local-db-conf
+                                              local-path
+                                              (domain/host-shards info)))]
                       (domain/set-domain-data! rw-lock domain info new-data)))))))
 
 (defn purge-unused-domains!
@@ -167,14 +118,14 @@
   all directories with names that aren't present in the supplied
   `domains`."
   [domain-seq local-dir]
-  (let [lfs (local-filesystem)
+  (let [lfs (h/local-filesystem)
         domain-set (set domain-seq)]
-    (dofor [domain-path (-> local-dir mk-local-path .listFiles)
-            :when (and (.isDirectory domain-path)
-                       (not (contains? domain-set
-                                       (.getName domain-path))))]
-           (log/info "Deleting local path of deleted domain: " domain-path)
-           (delete lfs (.getPath domain-path) true))))
+    (u/dofor [domain-path (-> local-dir h/mk-local-path .listFiles)
+              :when (and (.isDirectory domain-path)
+                         (not (contains? domain-set
+                                         (.getName domain-path))))]
+             (log/info "Deleting local path of deleted domain: " domain-path)
+             (h/delete lfs (.getPath domain-path) true))))
 
 (defn prepare-local-domains!
   "Wipe domains not being used, make ready all cached domains, and get
@@ -182,7 +133,7 @@
   [domains-info edb-config rw-lock]
   (let [{:keys [local-dir]} edb-config
         domain-seq (keys domains-info)]
-    (with-ret domains-info
+    (u/with-ret domains-info
       (future        
         (purge-unused-domains! domain-seq local-dir)
         (load-cached-domains! edb-config rw-lock domains-info)
@@ -190,8 +141,8 @@
                                  rw-lock
                                  domains-info
                                  (->> domains-info
-                                      (val-map domain/host-shards)
-                                      (mk-loader-state)))))))
+                                      (u/val-map domain/host-shards)
+                                      (hadoop/mk-loader-state)))))))
 
 (defn- close-lps
   [domains-info]
@@ -226,10 +177,11 @@
          local-dir :local-dir} edb-config
          download-state (-> domains-info
                             (domain/all-shards)
-                            (mk-loader-state))
-         shard-amount (flattened-count (vals (:shard-states download-state)))]
+                            (hadoop/mk-loader-state))
+         shard-amount (u/flattened-count (vals (:shard-states download-state)))]
     (log/info "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
-    (reset! download-supervisor (start-download-supervisor shard-amount max-kbs download-state))
+    (reset! download-supervisor (loader/start-download-supervisor
+                                 shard-amount max-kbs download-state))
     (future (update-and-sync-status! edb-config
                                      rw-lock
                                      domains-info
@@ -237,7 +189,7 @@
 
 (defn- trigger-update
   [service-handler download-supervisor domains-info edb-config rw-lock]
-  (with-ret true
+  (u/with-ret true
     (if (service-updating? service-handler download-supervisor)
       (log/info "UPDATER - Not updating as update process still in progress.")
       (update-domains download-supervisor domains-info edb-config rw-lock))))
@@ -261,13 +213,13 @@
   (let [index (get-index domain-shard-indexes domain)
         hosts (shuffle (shard/key-hosts domain index key))]
     (if (some #{localhost} hosts)
-      (cons localhost (remove-val localhost hosts))
+      (cons localhost (u/remove-val localhost hosts))
       hosts)))
 
 (defn multi-get-remote
   {:dynamic true}
   [host port domain keys]
-  (thrift/with-elephant-connection host port service
+  (with-elephant-connection host port service
     (.directMultiGet service domain keys)))
 
 ;; If the client has a "local-elephant", or an enclosed edb service,
@@ -303,41 +255,37 @@
 
 (defn- multi-get*
   "executes multi-get, returns seq of [global-index val]"
-  [service localhost port domain host
-   host-indexed-keys key-shard-fn multi-get-remote-fn]
-  (binding [shard/key-shard  key-shard-fn
-            multi-get-remote multi-get-remote-fn]
-    (when-let [vals (try-multi-get service
-                                   localhost
-                                   port
-                                   domain
-                                   (map third host-indexed-keys)
-                                   host)]
-      (map (fn [v [hosts gi key all-hosts]] [gi v])
-           vals
-           host-indexed-keys))))
+  [service localhost port domain host host-indexed-keys]
+  (when-let [vals (try-multi-get service
+                                 localhost
+                                 port
+                                 domain
+                                 (map u/third host-indexed-keys)
+                                 host)]
+    (map (fn [v [hosts gi key all-hosts]] [gi v])
+         vals
+         host-indexed-keys)))
 
-(defn edb-proxy
-  "See `src/elephantdb.thrift` for more information on the methods we
-  implement."
-  [{:keys [hdfs-conf local-dir port domains
-           hosts replication] :as edb-config}]
-  (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
+(defn service-handler
+  "Entry point to edb. `service-handler` returns a proxied
+  implementation of EDB's interface."
+  [{:keys [hdfs-conf local-dir port domains hosts replication] :as edb-config}]
+  (let [^ReentrantReadWriteLock rw-lock (u/mk-rw-lock)
         download-supervisor (atom nil)
-        localhost           (local-hostname)
-        domains-info (-> (filesystem hdfs-conf)
-                         (init-domain-info-map edb-config))
-        domain-shard-indexes (shard/shard-domains (filesystem hdfs-conf)
+        localhost   (u/local-hostname)
+        filesystem  (h/filesystem hdfs-conf)
+        domains-info (init-domain-info-map filesystem edb-config)
+        domain-shard-indexes (shard/shard-domains filesystem
                                                   domains
                                                   hosts
                                                   replication)]
     (prepare-local-domains! domains-info edb-config rw-lock)
     (reify
-      Shutdownable
+      IShutdownable
       (shutdown [_]
         (log/info "ElephantDB received shutdown notice...")
-        (with-write-lock rw-lock
-          (dofor [[_ info] domains-info]
+        (u/with-write-lock rw-lock
+          (u/dofor [[_ info] domains-info]
                  (domain/set-domain-status! info (thrift/shutdown-status))))
         (close-lps domains-info))
 
@@ -355,15 +303,15 @@
         (.get this domain (serialize key)))
 
       (directMultiGet [_ domain keys]
-        (with-read-lock rw-lock
+        (u/with-read-lock rw-lock
           (let [info (get-readable-domain-info domains-info domain)]
-            (dofor [key keys
-                    :let [shard (domain/key-shard domain info key)
-                          ^LocalPersistence lp (domain/domain-data info shard)]]
-                   (log/debug "Direct get key " (seq key) "at shard " shard)
-                   (if lp
-                     (thrift/mk-value (.get lp key))
-                     (throw (thrift/wrong-host-ex)))))))
+            (u/dofor [key keys
+                      :let [shard (domain/key-shard domain info key)
+                            ^LocalPersistence lp (domain/domain-data info shard)]]
+                     (log/debug "Direct get key " (seq key) "at shard " shard)
+                     (if lp
+                       (thrift/mk-value (.get lp key))
+                       (throw (thrift/wrong-host-ex)))))))
 
       (multiGet [this domain keys]
         (let [host-indexed-keys (host-indexed-keys localhost
@@ -373,7 +321,7 @@
           (loop [keys-to-get host-indexed-keys
                  results []]
             (let [host-map (group-by ffirst keys-to-get)
-                  rets (parallel-exec
+                  rets (u/parallel-exec
                         (for [[host host-indexed-keys] host-map]
                           (constantly
                            [host (multi-get* this
@@ -381,9 +329,7 @@
                                              port
                                              domain
                                              host
-                                             host-indexed-keys
-                                             shard/key-shard
-                                             multi-get-remote)])))
+                                             host-indexed-keys)])))
                   succeeded       (filter second rets)
                   succeeded-hosts (map first succeeded)
                   results (->> (map second succeeded)
@@ -418,7 +364,7 @@
       
       (getStatus [_]
         (thrift/elephant-status
-         (val-map domain/domain-status domains-info)))
+         (u/val-map domain/domain-status domains-info)))
 
       (isFullyLoaded [this]
         (let [stat (.get_domain_statuses (.getStatus this))]
@@ -443,12 +389,6 @@
                         edb-config
                         rw-lock)))))
 
-(defn service-handler
-  "Entry point to edb. `service-handler` returns a proxied
-  implementation of EDB's interface."
-  [global-config local-config]
-  (edb-proxy (merge global-config local-config)))
-
 (defn thrift-server
   [service-handler port]
   (let [options (THsHaServer$Options.)]
@@ -469,3 +409,5 @@
         (Thread/sleep interval-ms)
         (log/info "Updater process: Checking if update is possible...")
         (.updateAll service-handler)))))
+
+

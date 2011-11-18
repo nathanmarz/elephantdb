@@ -2,7 +2,7 @@
   (:use [elephantdb.common.config :only (read-domain-spec)])
   (:require [elephantdb.common.util :as u]
             [clojure.string :as s]
-            [elephantdb.common.log :as log])
+            [elephantdb.common.logging :as log])
   (:import [elephantdb Utils]))
 
 (defn- host-shard-assigner
@@ -60,6 +60,7 @@
   (count (keys (::shards-to-hosts index))))
 
 (defn key-shard
+  "TODO: Remove domain."
   {:dynamic true}
   [domain key amt]
   (Utils/keyShard key amt))

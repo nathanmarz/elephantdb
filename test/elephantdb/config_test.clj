@@ -1,6 +1,6 @@
 (ns elephantdb.config-test
   (:use clojure.test
-        elephantdb.keyval.testing)
+        elephantdb.common.testing)
   (:require [elephantdb.common.config :as conf])
   (:import [elephantdb.persistence JavaBerkDB]
            [elephantdb DomainSpec]))

@@ -4,6 +4,7 @@
 (defmacro test-lp [lp-classname]
   (let [exprs ['(use (quote clojure.test))
                '(use (quote elephantdb.keyval.testing))
+               '(use (quote elephantdb.common.testing))
                `(def ~'factory (new ~lp-classname))
                '(do
                   ;; technically should do sorting and stuff here too

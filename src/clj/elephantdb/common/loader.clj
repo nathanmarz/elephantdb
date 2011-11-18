@@ -1,8 +1,8 @@
-(ns elephantdb.keyval.loader
+(ns elephantdb.common.loader
   (:use [elephantdb.keyval.config :only (persistence-options)])
   (:require [hadoop-util.core :as h]
             [elephantdb.common.hadoop :as hadoop]
-            [elephantdb.common.log :as log]
+            [elephantdb.common.logging :as log]
             [elephantdb.common.config :as conf]
             [elephantdb.common.util :as u])
   (:import [elephantdb.store DomainStore]
