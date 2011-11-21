@@ -12,7 +12,8 @@
 (defn barr [& vals]
   (byte-array (map byte vals)))
 
-(defn barr= [& vals]
+(defn barr=
+  [& vals]
   (apply = (map #(ByteArray. %) vals)))
 
 (defn barrs= [& arrs]
