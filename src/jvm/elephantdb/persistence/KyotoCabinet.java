@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 
 /** User: sritchie Date: 11/20/11 Time: 8:20 PM
  *  Shell for KyotoCabinet persistence.
+ *  This might help: http://maven.cloudhopper.com/repos/third-party/kyotocabinet/kyotocabinet/1.21/
  * */
 
 public class KyotoCabinet extends LocalPersistenceFactory {

@@ -50,9 +50,9 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             _split = split;
             _reporter = reporter;
             _args = (Args) Utils.getObject(_split.conf, ARGS_CONF);
-            _manager = new LocalElephantManager(Utils.getFS(_split.shardPath, split.conf),
-                _split.spec, _args.persistenceOptions,
-                LocalElephantManager.getTmpDirs(_split.conf));
+            _manager = new LocalElephantManager(Utils
+                .getFS(_split.shardPath, split.conf), _split.spec, _args.persistenceOptions, LocalElephantManager
+                .getTmpDirs(_split.conf));
             String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
             _lp = _split.spec.getLPFactory()
                 .openPersistenceForRead(localpath, _args.persistenceOptions);
@@ -82,6 +82,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
         }
 
         public long getPos() throws IOException {
+            // TODO: switch this to use a property on the iterator.
             return numRead;
         }
 

@@ -129,5 +129,19 @@ byte[] deserializeVal(Object val);
 
 void updateElephant(LocalPersistence lp, byte[] newKey, byte[] newVal);
 
-LocalPersistence interface:
+We need to extend the INPUT FORMAT and override:
 
+    createKey
+    createVal
+   next(Object k, Object v)
+
+So that we can interact properly with a custom iterator. That or farm out the work inside of "next" to an interfaced method:
+
+    processNext(k, v, nextVal);
+
+On the output format side, we have:
+
+    _args.updater.updateElephant(lp, record.key, record.val);
+
+
+## Local persistence formatt
