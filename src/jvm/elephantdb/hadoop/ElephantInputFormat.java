@@ -6,6 +6,12 @@ import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.LocalPersistence;
 import elephantdb.persistence.LocalPersistence.KeyValuePair;
 import elephantdb.store.DomainStore;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.mapred.*;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -14,15 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.hadoop.mapred.InputFormat;
-import org.apache.hadoop.mapred.InputSplit;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.Reporter;
 
 
 public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWritable> {
@@ -48,27 +45,30 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
         boolean finished = false;
         int numRead = 0;
 
-        public ElephantRecordReader(ElephantInputSplit split, Reporter reporter) throws IOException {
+        public ElephantRecordReader(ElephantInputSplit split, Reporter reporter)
+            throws IOException {
             _split = split;
             _reporter = reporter;
             _args = (Args) Utils.getObject(_split.conf, ARGS_CONF);
             _manager = new LocalElephantManager(Utils.getFS(_split.shardPath, split.conf),
-                _split.spec, _args.persistenceOptions, LocalElephantManager.getTmpDirs(_split.conf));
+                _split.spec, _args.persistenceOptions,
+                LocalElephantManager.getTmpDirs(_split.conf));
             String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
-            _lp = _split.spec.getLPFactory().openPersistenceForRead(localpath, _args.persistenceOptions);
+            _lp = _split.spec.getLPFactory()
+                .openPersistenceForRead(localpath, _args.persistenceOptions);
             _iterator = _lp.iterator();
         }
 
         public boolean next(BytesWritable k, BytesWritable v) throws IOException {
-            if(_iterator.hasNext()) {
+            if (_iterator.hasNext()) {
                 KeyValuePair pair = _iterator.next();
                 k.set(pair.key, 0, pair.key.length);
                 v.set(pair.value, 0, pair.value.length);
                 numRead++;
-                if(_reporter!=null) _reporter.progress();
+                if (_reporter != null) { _reporter.progress(); }
                 return true;
             } else {
-                if(_reporter!=null) _reporter.progress();
+                if (_reporter != null) { _reporter.progress(); }
                 return false;
             }
         }
@@ -92,7 +92,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
         }
 
         public float getProgress() throws IOException {
-            if(finished) {
+            if (finished) {
                 return 1;
             } else {
                 return 0;
@@ -122,7 +122,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
 
         public String[] getLocations() throws IOException {
             // TODO: look at a file in the shardpath
-            return new String[] {};
+            return new String[]{};
         }
 
         public void write(DataOutput d) throws IOException {
@@ -146,16 +146,16 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
         FileSystem fs = Utils.getFS(args.inputDirHdfs, jc);
         DomainStore store = new DomainStore(fs, args.inputDirHdfs);
         String versionPath;
-        if(args.version==null) {
+        if (args.version == null) {
             versionPath = store.mostRecentVersionPath();
         } else {
             versionPath = store.versionPath(args.version);
         }
         DomainSpec spec = store.getSpec();
         List<InputSplit> ret = new ArrayList<InputSplit>();
-        for(int i=0; i<spec.getNumShards(); i++) {
+        for (int i = 0; i < spec.getNumShards(); i++) {
             String shardPath = versionPath + "/" + i;
-            if(fs.exists(new Path(shardPath))) {
+            if (fs.exists(new Path(shardPath))) {
                 ret.add(new ElephantInputSplit(shardPath, spec, jc));
             }
         }
@@ -163,7 +163,8 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
     }
 
 
-    public RecordReader<BytesWritable, BytesWritable> getRecordReader(InputSplit is, JobConf jc, Reporter reporter) throws IOException {
+    public RecordReader<BytesWritable, BytesWritable> getRecordReader(InputSplit is, JobConf jc,
+        Reporter reporter) throws IOException {
         return new ElephantRecordReader((ElephantInputSplit) is, reporter);
     }
 }

@@ -88,11 +88,46 @@ local-config-path: A local path containing the local configuration. The local co
 
 token: The token can be any string. The token is used to indicate to ElephantDB whether it should refresh its data cache with what exists on the DFS, or whether ElephantDB should just start up using its local cache. As long as the token given is different than what ElephantDB was given the last time it successfully loaded, ElephantDB will refresh its local cache. Typically you update the token with the current timestamp when you want to update the data it serves.
 
-
-
 # Developing on EDB
 
 *The following documentation is in progress!*
 
 * Building Thrift
 * Generating schema files
+
+## Next Steps
+
+Lucene integration:
+ 
+    [org.apache.lucene/lucene-core "3.4.0"]
+
+## Program Flow
+
+When shards get written to a domain, a `domain-spec.yaml` file shows up too. Here's an example:
+
+     --- 
+     local_persistence: elephantdb.persistence.JavaBerkDB
+     num_shards: 32
+
+The `local_persistence` is a string version of LocalPersistenceFactory. This LocalPersistenceFactory subclass will define the nature of the key-value store being worked with.
+
+## Interface notes
+
+* Tap needs to take as an option some object that will allow for proper serialization of keys and values. Right 
+* NOTE CURRENTLY that if you don't pass in null, you'll get a replace updater. If the passed-in updater is set to nil, the updateDirHdfs never gets set and you wont' load remote shards for updating! This magic happens in ElephantDBTap; the real sauce is in the elephantdb output format.
+** Instead, should we have a `:do-update` flag?
+
+// Pushed into interfaces:
+int shardIndex(key, val)       // both unserialized
+int shardIndex(key, val, opts) // both unserialized, again
+
+byte[] serializeKey(Object key);
+byte[] deserializeKey(Object key);
+
+byte[] serializeVal(Object val);
+byte[] deserializeVal(Object val);
+
+void updateElephant(LocalPersistence lp, byte[] newKey, byte[] newVal);
+
+LocalPersistence interface:
+

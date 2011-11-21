@@ -1,4 +1,7 @@
 (ns elephantdb.common.loader
+  "This namespace handles shard downloading. the actual download
+  mechanics are inside of elephantdb.common.hadoop; this namespace
+  triggers downloads and opens and closes domains and shards."
   (:use [elephantdb.keyval.config :only (persistence-options)])
   (:require [hadoop-util.core :as h]
             [elephantdb.common.hadoop :as hadoop]
@@ -13,6 +16,8 @@
   (h/str-path domain-version shard))
 
 (defn open-domain-shard
+  "Opens and returns a LocalPersistence object standing in for the
+  shard at the supplied path."
   [persistence-factory db-conf local-shard-path]
   (log/info "Opening LP " local-shard-path)
   (u/with-ret (.openPersistenceForRead
@@ -22,6 +27,7 @@
     (log/info "Opened LP " local-shard-path)))
 
 (defn open-domain
+  "Returns a sequence of LocalPersistence objects on success."
   [db-conf local-domain-root shards]
   (let [lfs (h/local-filesystem)
         local-store (DomainStore. lfs local-domain-root)
@@ -36,16 +42,20 @@
       (log/info "Finished opening domain at " local-domain-root))))
 
 (defn close-shard
+  "Returns nil; throws IOException when some sort of failure occurs."
   [[shard lp] domain]
   (try (.close lp)
        (catch Throwable t
-         (log/error t "Error when closing local persistence for domain: "
+         (log/error t
+                    "Error when closing local persistence for domain: "
                     domain
                     " and shard: "
                     shard)
          (throw t))))
 
 (defn close-domain
+  "Closes all shards in the supplied domain. TODO: If a shard throws
+  an error, is this behavior predictable?"
   [domain domain-data]
   (log/info (format "Closing domain: %s with data: %s" domain domain-data))
   (doseq [shard-data domain-data]
@@ -140,11 +150,11 @@
 
 (defn start-download-supervisor
   [amount-shards max-kbs ^DownloadState state]
-  (let [interval-factor-secs 0.1 ;; check every 0.01s
+  (let [interval-factor-secs 0.1 ;; check every 0.1s
         interval-ms (int (* interval-factor-secs 1000))
         max-kbs-val (int (* max-kbs interval-factor-secs))]
     (future
       (reset! (:finished-loaders state) 0)
-      (when (and (pos? amount-shards) ;; only monitor if there's an actual download throttle
+      (when (and (pos? amount-shards) ;; only monitor if there's a download throttle
                  (pos? max-kbs))      ;; and shards to be downloaded
         (supervise-downloads amount-shards max-kbs-val interval-ms state)))))

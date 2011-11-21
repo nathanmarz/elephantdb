@@ -1,24 +1,15 @@
 package elephantdb.persistence;
 
-import com.sleepycat.je.CheckpointConfig;
-import com.sleepycat.je.Cursor;
-import com.sleepycat.je.CursorConfig;
-import com.sleepycat.je.Database;
-import com.sleepycat.je.DatabaseConfig;
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.LockMode;
-import com.sleepycat.je.OperationStatus;
-import java.io.File;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
+import com.sleepycat.je.*;
 import org.apache.log4j.Logger;
 
-public class JavaBerkDB extends LocalPersistenceFactory {
-    public static Logger LOG = Logger.getLogger(JavaBerkDB.class);
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
 
+// subclass get() and add() to provide key->set etc functionality with BerkeleyDB.
+public class JavaBerkDB extends LocalPersistenceFactory {
+    public static Logger LOG = Logger.getLogger(File.class);
 
     @Override
     public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
@@ -48,9 +39,11 @@ public class JavaBerkDB extends LocalPersistenceFactory {
             envConf.setReadOnly(readOnly);
             envConf.setLocking(false);
             envConf.setTransactional(false);
+
+            // TODO: Loop through options, setConfigParam for each one.
             envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "80");
             envConf.setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
-
+            
             _env = new Environment(new File(root), envConf);
 
             DatabaseConfig dbConf = new DatabaseConfig();
@@ -63,8 +56,9 @@ public class JavaBerkDB extends LocalPersistenceFactory {
 
         public byte[] get(byte[] key) throws IOException {
             DatabaseEntry val = new DatabaseEntry();
-            OperationStatus stat = _db.get(null, new DatabaseEntry(key), val, LockMode.READ_UNCOMMITTED);
-            if(stat == OperationStatus.SUCCESS) {
+            OperationStatus stat =
+                _db.get(null, new DatabaseEntry(key), val, LockMode.READ_UNCOMMITTED);
+            if (stat == OperationStatus.SUCCESS) {
                 return val.getData();
             } else {
                 return null;
@@ -76,7 +70,7 @@ public class JavaBerkDB extends LocalPersistenceFactory {
         }
 
         public void close() throws IOException {
-            if(!_db.getConfig().getReadOnly()) {
+            if (!_db.getConfig().getReadOnly()) {
                 LOG.info("Syncing environment at " + _env.getHome().getPath());
                 _env.sync();
                 LOG.info("Done syncing environment at " + _env.getHome().getPath());
@@ -108,8 +102,10 @@ public class JavaBerkDB extends LocalPersistenceFactory {
                 private void cacheNext() {
                     DatabaseEntry key = new DatabaseEntry();
                     DatabaseEntry val = new DatabaseEntry();
+
+                    // cursor stores the next key and value in the above mutable objects.
                     OperationStatus stat = cursor.getNext(key, val, LockMode.READ_UNCOMMITTED);
-                    if(stat == OperationStatus.SUCCESS) {
+                    if (stat == OperationStatus.SUCCESS) {
                         next = new KeyValuePair(key.getData(), val.getData());
                     } else {
                         next = null;
@@ -118,7 +114,7 @@ public class JavaBerkDB extends LocalPersistenceFactory {
                 }
 
                 private void initCursor() {
-                    if(cursor==null) {
+                    if (cursor == null) {
                         cursor = _db.openCursor(null, null);
                         cacheNext();
                     }
@@ -126,23 +122,23 @@ public class JavaBerkDB extends LocalPersistenceFactory {
 
                 public boolean hasNext() {
                     initCursor();
-                    return next!=null;
+                    return next != null;
                 }
 
                 public KeyValuePair next() {
                     initCursor();
-                    if(next==null) throw new RuntimeException("No key/value pair available");
-                    KeyValuePair ret = next;
-                    cacheNext();
-                    return ret;
+                    if (next == null) { throw new RuntimeException("No key/value pair available"); }
+                    KeyValuePair ret = next; // not pointers, so we actually store the value?
+                    cacheNext(); // caches up n + 1,
+                    return ret;  // return the old.
                 }
 
                 public void remove() {
                     throw new UnsupportedOperationException("Not supported.");
                 }
-
+                
                 public void close() {
-                    if(cursor!=null) cursor.close();
+                    if (cursor != null) { cursor.close(); }
                 }
 
             };

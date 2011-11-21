@@ -4,29 +4,13 @@ import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.persistence.KeySorter;
 import elephantdb.store.DomainStore;
-import java.io.ByteArrayInputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.IOException;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapred.*;
+
+import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.RawComparator;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparator;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Partitioner;
-import org.apache.hadoop.mapred.Reducer;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.RunningJob;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 
 
 public class Exporter {
@@ -59,11 +43,14 @@ public class Exporter {
     }
 
 
-    public static class ExporterMapper implements Mapper<BytesWritable, BytesWritable, CompoundKey, ElephantRecordWritable> {
+    public static class ExporterMapper
+        implements Mapper<BytesWritable, BytesWritable, CompoundKey, ElephantRecordWritable> {
         KeySorter sorter;
         int _numShards;
 
-        public void map(BytesWritable key, BytesWritable val, OutputCollector<CompoundKey, ElephantRecordWritable> oc, Reporter rprtr) throws IOException {
+        public void map(BytesWritable key, BytesWritable val,
+            OutputCollector<CompoundKey, ElephantRecordWritable> oc, Reporter rprtr)
+            throws IOException {
             byte[] keyBytes = Utils.getBytes(key);
             byte[] sortKey = sorter.getSortableKey(keyBytes);
             byte[] valBytes = Utils.getBytes(val);
@@ -72,7 +59,8 @@ public class Exporter {
         }
 
         public void configure(JobConf jc) {
-            ElephantOutputFormat.Args args = (ElephantOutputFormat.Args) Utils.getObject(jc, ElephantOutputFormat.ARGS_CONF);
+            ElephantOutputFormat.Args args =
+                (ElephantOutputFormat.Args) Utils.getObject(jc, ElephantOutputFormat.ARGS_CONF);
             _numShards = args.spec.getNumShards();
             sorter = args.spec.getLPFactory().getKeySorter();
         }
@@ -82,12 +70,15 @@ public class Exporter {
 
     }
 
-    public static class ExporterReducer implements Reducer<CompoundKey, ElephantRecordWritable, IntWritable, ElephantRecordWritable> {
+    public static class ExporterReducer implements
+        Reducer<CompoundKey, ElephantRecordWritable, IntWritable, ElephantRecordWritable> {
         IntWritable shard = new IntWritable();
 
 
-        public void reduce(CompoundKey key, Iterator<ElephantRecordWritable> it, OutputCollector<IntWritable, ElephantRecordWritable> oc, Reporter rprtr) throws IOException {
-            while(it.hasNext()) {
+        public void reduce(CompoundKey key, Iterator<ElephantRecordWritable> it,
+            OutputCollector<IntWritable, ElephantRecordWritable> oc, Reporter rprtr)
+            throws IOException {
+            while (it.hasNext()) {
                 shard.set(key.shard);
                 oc.collect(shard, it.next());
             }
@@ -101,16 +92,15 @@ public class Exporter {
 
     }
 
-    public static class ElephantPartitioner implements Partitioner<CompoundKey, ElephantRecordWritable> {
+    public static class ElephantPartitioner
+        implements Partitioner<CompoundKey, ElephantRecordWritable> {
 
         public int getPartition(CompoundKey k2, ElephantRecordWritable v2, int numPartitions) {
             return k2.shard % numPartitions;
         }
 
         public void configure(JobConf jc) {
-
         }
-
     }
 
     public static class Args {
@@ -127,7 +117,13 @@ public class Exporter {
     }
 
     public static final class ElephantPrimarySort implements RawComparator<CompoundKey> {
+
+        /**
+         *
+         */
         public int compare(byte[] key1, int start1, int length1, byte[] key2, int start2, int length2) {
+
+            //
             DataInputStream s1 = new DataInputStream(new ByteArrayInputStream(key1, start1, length1));
             DataInputStream s2 = new DataInputStream(new ByteArrayInputStream(key2, start2, length2));
             try {
@@ -161,24 +157,27 @@ public class Exporter {
         }
 
         public int compare(CompoundKey key1, CompoundKey key2) {
-            if(key1.shard!=key2.shard) {
+            if (key1.shard != key2.shard) {
                 return key1.shard - key2.shard;
             } else {
+                // why not just do this above, then call the compare method here?
                 return WritableComparator.compareBytes(key1.shardKey, 0, key1.shardKey.length, key2.shardKey, 0, key2.shardKey.length);
             }
         }
     }
 
-    public static void export(String srcDir, String outDir, Args args) throws IOException, InterruptedException {
+    public static void export(String srcDir, String outDir, Args args)
+        throws IOException, InterruptedException {
         DomainStore store = new DomainStore(outDir, args.spec);
         String newVersion = store.createVersion();
         String oldVersion = store.mostRecentVersionPath();
         ElephantOutputFormat.Args jobargs = new ElephantOutputFormat.Args(args.spec, newVersion);
         jobargs.persistenceOptions = args.persistenceOptions;
-        if(args.updater!=null) {
+        if (args.updater != null) {
             jobargs.updater = args.updater;
             jobargs.updateDirHdfs = oldVersion;
         }
+
         JobConf conf = new JobConf();
         SequenceFileInputFormat.setInputPaths(conf, srcDir);
         conf.setInputFormat(SequenceFileInputFormat.class);
@@ -190,6 +189,7 @@ public class Exporter {
         conf.setMapperClass(ExporterMapper.class);
         conf.setReducerClass(ExporterReducer.class);
         conf.setPartitionerClass(ElephantPartitioner.class);
+
         conf.setOutputValueGroupingComparator(ElephantPrimarySort.class);
         conf.setOutputKeyComparatorClass(ElephantSecondarySort.class);
 
@@ -201,24 +201,25 @@ public class Exporter {
 
         try {
             RunningJob job = new JobClient(conf).submitJob(conf);
-            while(!job.isComplete()) {
+            while (!job.isComplete()) {
                 Thread.sleep(100);
             }
 
-            if(!job.isSuccessful()) throw new IOException("BalancedDistcp failed");
+            if (!job.isSuccessful()) { throw new IOException("BalancedDistcp failed"); }
             //run job
-            if(oldVersion!=null) {
+            if (oldVersion != null) {
                 DomainStore.synchronizeVersions(Utils.getFS(outDir, conf), args.spec, oldVersion, newVersion);
             }
             store.succeedVersion(newVersion);
-        } catch(IOException e) {
+        } catch (IOException e) {
             store.failVersion(newVersion);
             throw e;
         }
 
     }
 
-    public static void export(String srcDir, String outDir, DomainSpec spec) throws IOException, InterruptedException {
+    public static void export(String srcDir, String outDir, DomainSpec spec)
+        throws IOException, InterruptedException {
         export(srcDir, outDir, new Args(spec));
     }
 

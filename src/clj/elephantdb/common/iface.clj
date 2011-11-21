@@ -5,7 +5,7 @@
 ;; that we need something that implements IDomainStore to contain
 ;; shards.
 
-domain store, either remote or local, that should
+;; domain store, either remote or local, that should
 ;; be able to provide paths and connections within its guts (but have
 ;; no real knowledge of the filesyste, etc.
 

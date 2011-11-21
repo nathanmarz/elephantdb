@@ -2,20 +2,15 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.persistence.LocalPersistenceFactory;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-import java.util.Collection;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.ChecksumFileSystem;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
 
 
 public class LocalElephantManager {
@@ -27,11 +22,11 @@ public class LocalElephantManager {
 
     public static List<String> getTmpDirs(Configuration conf) {
         String[] res = conf.getStrings(TMP_DIRS_CONF, new String[0]);
-        List<String> ret =  new ArrayList<String>();
-        if(res.length==0) {
+        List<String> ret = new ArrayList<String>();
+        if (res.length == 0) {
             ret.add("/tmp");
         } else {
-            for(String s: res) {
+            for (String s : res) {
                 ret.add(s);
             }
         }
@@ -44,7 +39,8 @@ public class LocalElephantManager {
     DomainSpec _spec;
     Map<String, Object> _persistenceOptions;
 
-    public LocalElephantManager(FileSystem fs, DomainSpec spec, Map<String, Object> persistenceOptions, List<String> tmpDirs) throws IOException {
+    public LocalElephantManager(FileSystem fs, DomainSpec spec,
+        Map<String, Object> persistenceOptions, List<String> tmpDirs) throws IOException {
         _localRoot = selectAndFlagRoot(tmpDirs);
         _fs = fs;
         _spec = spec;
@@ -52,21 +48,19 @@ public class LocalElephantManager {
     }
 
     /**
-     * Creates a temporary directory, downloads the remotePath (tied to the FS), and returns it. If remotePath is null or doesn't exist,
-     * creates an empty local elephant and closes it.
+     * Creates a temporary directory, downloads the remotePath (tied to the FS), and returns it. If
+     * remotePath is null or doesn't exist, creates an empty local elephant and closes it.
      */
     public String downloadRemoteShard(String id, String remotePath) throws IOException {
         LocalPersistenceFactory fact = _spec.getLPFactory();
         String returnDir = localTmpDir(id);
-        if(remotePath==null || !_fs.exists(new Path(remotePath))) {
-            fact.createPersistence(
-                returnDir,
-                _persistenceOptions)
-                .close();
+        if (remotePath == null || !_fs.exists(new Path(remotePath))) {
+            fact.createPersistence(returnDir, _persistenceOptions).close();
         } else {
             _fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
-            Collection<File> crcs = FileUtils.listFiles(new File(returnDir), new String[] {"crc"}, true);
-            for(File crc: crcs) {
+            Collection<File> crcs =
+                FileUtils.listFiles(new File(returnDir), new String[]{"crc"}, true);
+            for (File crc : crcs) {
                 FileUtils.forceDelete(crc);
             }
         }
@@ -89,11 +83,11 @@ public class LocalElephantManager {
 
     private void clearStaleFlags(List<String> tmpDirs) {
         //delete any flags more than an hour old
-        for(String tmp: tmpDirs) {
+        for (String tmp : tmpDirs) {
             File flagDir = new File(flagDir(tmp));
             flagDir.mkdirs();
-            for(File flag: flagDir.listFiles()) {
-                if(flag.lastModified() < System.currentTimeMillis() - 1000*60*60) {
+            for (File flag : flagDir.listFiles()) {
+                if (flag.lastModified() < System.currentTimeMillis() - 1000 * 60 * 60) {
                     flag.delete();
                 }
             }
@@ -107,15 +101,15 @@ public class LocalElephantManager {
     private String selectAndFlagRoot(List<String> tmpDirs) throws IOException {
         clearStaleFlags(tmpDirs);
         Map<String, Integer> flagCounts = new HashMap<String, Integer>();
-        for(String tmp: tmpDirs) {
+        for (String tmp : tmpDirs) {
             File flagDir = new File(flagDir(tmp));
             flagDir.mkdirs();
             flagCounts.put(tmp, flagDir.list().length);
         }
         String best = null;
         Integer bestCount = null;
-        for(Entry<String, Integer> e: flagCounts.entrySet()) {
-            if(best==null || e.getValue() < bestCount) {
+        for (Entry<String, Integer> e : flagCounts.entrySet()) {
+            if (best == null || e.getValue() < bestCount) {
                 best = e.getKey();
                 bestCount = e.getValue();
             }

@@ -20,20 +20,25 @@ import org.apache.hadoop.io.WritableUtils;
 import org.jvyaml.YAML;
 
 
+// Can we make an interface out of this?
+
 public class DomainSpec implements Writable, Serializable {
     private int _numShards;
     private LocalPersistenceFactory _localFact;
 
-    public static final String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
-
+    public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
     private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
     private static final String NUM_SHARDS_CONF = "num_shards";
-
 
     public DomainSpec() {
 
     }
 
+    /**
+     * Here's the big daddy.
+     * @param factClass String name of the class we'll use to instantiate new persistences.
+     * @param numShards
+     */
     public DomainSpec(String factClass, int numShards) {
         this(Utils.classForName(factClass), numShards);
     }

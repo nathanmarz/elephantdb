@@ -40,7 +40,10 @@
   (DomainSpec. (:persistence-factory spec-map)
                (:num-shards spec-map)))
 
-(defn read-domain-spec [fs path]
+(defn read-domain-spec
+  "A domain spec is stored with shards in the VersionedStore. Look to
+  s3 for an example here."
+  [fs path]
   (when-let [spec (DomainSpec/readFromFileSystem fs path)]
     (convert-java-domain-spec spec)))
 

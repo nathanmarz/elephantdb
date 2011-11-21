@@ -1,4 +1,7 @@
 (ns elephantdb.common.hadoop
+  "Namespace responsible for recursively transferring directories from
+   a distributed filestore (or other local filestore) to the local
+   filesystem on the current machine."
   (:use hadoop-util.core)
   (:require [elephantdb.common.util :as u])
   (:import [java.io File FileNotFoundException
@@ -41,8 +44,7 @@
   (let [downloaded-kb (:downloaded-kb state)
         sleep-interval (:sleep-interval state)]
     (with-open [is (.open fs path)
-                os (BufferedOutputStream.
-                    (FileOutputStream. target-local-path))]
+                os (BufferedOutputStream. (FileOutputStream. target-local-path))]
       (loop [sleep-time @sleep-interval]
         (u/sleep sleep-time)
         (if (pos? @sleep-interval)
@@ -54,7 +56,7 @@
               (recur @sleep-interval))))))))
 
 (defn copy-dir-local
-  [^FileSystem fs ^Path path ^String target-local-path ^bytes buffer ^ShardState state]
+  [^FileSystem fs ^Path path ^String target-local-path ^bytes buffer state]
   (.mkdir (File. target-local-path))
   (doseq [c (seq (.listStatus fs path))]
     (let [subpath (.getPath c)]
@@ -65,14 +67,16 @@
                    state))))
 
 (defn- copy-local*
+  "Copies from path to target-local-path, deciding between directory or file."
   [^FileSystem fs ^Path path target-local-path buffer state]
-  (let [status (.getFileStatus fs path)]
-    (if (.isDir status)
-      (copy-dir-local fs path target-local-path buffer state)
-      (copy-file-local fs path target-local-path buffer state))))
+  (let [status (.getFileStatus fs path)
+        copier (if (.isDir status) copy-dir-local copy-file-local)]
+    (copier fs path target-local-path buffer state)))
 
 (defn copy-local
-  [^FileSystem fs ^String spath ^String local-path ^ShardState state]
+  "Filesystem, remote shard path, target local path, and a ShardState
+  record for communicating results back up the call chain."
+  [^FileSystem fs ^String spath ^String local-path state]
   (let [target-file (File. local-path)
         source-name (.getName (Path. spath))
         buffer (byte-array (* 1024 15))
