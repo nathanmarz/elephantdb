@@ -116,6 +116,8 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             this.conf = conf;
         }
 
+        // TODO: Store this result in a variable and use it to update the
+        // percentage complete.
         public long getLength() throws IOException {
             FileSystem fs = Utils.getFS(shardPath, conf);
             return fs.getContentSummary(new Path(shardPath)).getLength();

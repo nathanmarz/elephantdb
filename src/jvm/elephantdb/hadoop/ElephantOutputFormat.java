@@ -23,12 +23,20 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
 
     public static final String ARGS_CONF = "elephant.output.args";
 
+    // This gets serialized in via the conf.
     public static class Args implements Serializable {
         public DomainSpec spec;
+
+        // Path to a version inside of a versioned store, perhaps?
         public String outputDirHdfs;
 
+        // Implements the ElephantUpdater interface.
         public ElephantUpdater updater = new ReplaceUpdater();
+
+        // If this is set, the output format will go download it!
         public String updateDirHdfs = null;
+
+        // ends up going to LocalPersistenceFactory, which passes it on.
         public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
 
         public Args(DomainSpec spec, String outputDirHdfs) {
@@ -53,9 +61,8 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
             _fs = Utils.getFS(args.outputDirHdfs, conf);
             _args = args;
             _progressable = progressable;
-            _localManager =
-                new LocalElephantManager(_fs, args.spec, args.persistenceOptions, LocalElephantManager
-                    .getTmpDirs(conf));
+            _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions,
+                LocalElephantManager.getTmpDirs(conf));
         }
 
         private String remoteUpdateDirForShard(int shard) {

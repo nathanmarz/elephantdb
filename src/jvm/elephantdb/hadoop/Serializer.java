@@ -4,7 +4,6 @@ import org.apache.hadoop.io.BytesWritable;
 
 import java.io.Serializable;
 
-public interface Deserializer extends Serializable {
-    public Object deserialize(BytesWritable bw);
+public interface Serializer extends Serializable {
+    public byte[] serialize(Object k);
 }
-

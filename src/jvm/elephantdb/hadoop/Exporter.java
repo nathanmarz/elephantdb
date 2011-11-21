@@ -13,6 +13,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 
+/**
+ * Not really sure what this class is here for.
+ */
 public class Exporter {
     public static class CompoundKey implements Writable {
         int shard;

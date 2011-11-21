@@ -117,17 +117,23 @@ The `local_persistence` is a string version of LocalPersistenceFactory. This Loc
 * NOTE CURRENTLY that if you don't pass in null, you'll get a replace updater. If the passed-in updater is set to nil, the updateDirHdfs never gets set and you wont' load remote shards for updating! This magic happens in ElephantDBTap; the real sauce is in the elephantdb output format.
 ** Instead, should we have a `:do-update` flag?
 
+interface KeySharder {
+    // Useful in Shardize class!
+    int shardIndex(Object key, Object val); // both unserialized
+
+    byte[] serializeKey(Object key);
+    byte[] deserializeKey(Object key);
+
+    byte[] serializeVal(Object val);
+    byte[] deserializeVal(Object val);
+}
+
+// OR should we just put out writable objects? We might not need straight byte arrays;
+
 // Pushed into interfaces:
-int shardIndex(key, val)       // both unserialized
-int shardIndex(key, val, opts) // both unserialized, again
 
-byte[] serializeKey(Object key);
-byte[] deserializeKey(Object key);
-
-byte[] serializeVal(Object val);
-byte[] deserializeVal(Object val);
-
-void updateElephant(LocalPersistence lp, byte[] newKey, byte[] newVal);
+called on the ElephantUpdater.
+    void updateElephant(LocalPersistence lp, byte[] newKey, byte[] newVal);
 
 We need to extend the INPUT FORMAT and override:
 
@@ -135,13 +141,17 @@ We need to extend the INPUT FORMAT and override:
     createVal
    next(Object k, Object v)
 
+HMM, or, right now we create BytesWritable objects and do everything that way.
+So the lucene index would be responsible for gt 
+
 So that we can interact properly with a custom iterator. That or farm out the work inside of "next" to an interfaced method:
 
     processNext(k, v, nextVal);
 
 On the output format side, we have:
-
+   
     _args.updater.updateElephant(lp, record.key, record.val);
 
+## InputFormat and OutputFormat
 
-## Local persistence formatt
+initializeArgs
