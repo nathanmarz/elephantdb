@@ -128,6 +128,8 @@ interface KeySharder {
     byte[] deserializeVal(Object val);
 }
 
+Really, though, this can happen on the client side OR at the shard itself.
+
 // OR should we just put out writable objects? We might not need straight byte arrays;
 
 // Pushed into interfaces:
@@ -155,3 +157,4 @@ On the output format side, we have:
 ## InputFormat and OutputFormat
 
 initializeArgs
+        

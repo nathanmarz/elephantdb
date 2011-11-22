@@ -120,8 +120,16 @@ service ElephantDBList extends ElephantDBShared {
   list<Value> range(1: string domain, 2: string key, 3: i32 startIdx, 4: i32 endIdx);
   list<Value> take(1: string domain, 2: string key, 3: i32 elems); // redundant with range.
   list<Value> takeAll(1: string domain, 2: string key); // redundant? we can use range(0, length + 1);
+}
 
-  list<Value> multiIndex(1: string domain, 2: string setKey, 3: list<i32> indices);
+service ElephantDBDoc extends ElephantDBShared {
+  // Required kv pairs:
+  // key -> Document
+  
+  // go from Value to Document or something.
+  Value get(1: string domain, 2: string key);
+  Value getField(1: string domain, 2: string key, 3: string field);
+  Value getFields(1: string domain, 2: string key, 3: list<string> fields);
 }
 
 service ElephantDBSearch extends ElephantDBShared {

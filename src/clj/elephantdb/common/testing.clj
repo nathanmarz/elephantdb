@@ -24,6 +24,7 @@
                                 (apply barr= vals)))
                       arrs))))
 
+;; TODO: Move to hadoop-util.
 (defn delete-all [fs paths]
   (dorun
    (for [t paths]
