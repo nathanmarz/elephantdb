@@ -23,6 +23,7 @@ public interface LocalPersistence extends Iterable {
     }
 
     // Perhaps the interface here needs to be more flexible about key representation.
+    // TODO: Remove GET from this interface.
     public byte[] get(byte[] key) throws IOException;
     public void add(byte[] key, byte[] value) throws IOException;
     public void close() throws IOException;

@@ -12,6 +12,8 @@ import org.apache.log4j.Logger;
 public class KyotoCabinet extends LocalPersistenceFactory {
     public static Logger LOG = Logger.getLogger(KyotoCabinet.class);
 
+    public KyotoCabinet() {super();}
+
     @Override public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
         return null;
     }
@@ -21,6 +23,14 @@ public class KyotoCabinet extends LocalPersistenceFactory {
     }
 
     @Override public LocalPersistence createPersistence(String root, Map options) throws IOException {
+        return null;
+    }
+
+    @Override public Transmitter getTransmitter() {
+        return null;
+    }
+
+    @Override public Sharder getSharder() {
         return null;
     }
 

@@ -154,6 +154,11 @@ On the output format side, we have:
    
     _args.updater.updateElephant(lp, record.key, record.val);
 
+## LocalPersistenceFactory
+
+* Returns a LocalPersistence
+** Split the get method out of here! That should 
+
 ## InputFormat and OutputFormat
 
 initializeArgs

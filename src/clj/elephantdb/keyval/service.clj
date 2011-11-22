@@ -409,5 +409,3 @@
         (Thread/sleep interval-ms)
         (log/info "Updater process: Checking if update is possible...")
         (.updateAll service-handler)))))
-
-

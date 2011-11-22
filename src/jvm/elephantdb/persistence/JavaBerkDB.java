@@ -9,7 +9,11 @@ import java.util.Map;
 
 // subclass get() and add() to provide key->set etc functionality with BerkeleyDB.
 public class JavaBerkDB extends LocalPersistenceFactory {
+
+
     public static Logger LOG = Logger.getLogger(File.class);
+
+    public JavaBerkDB() {super();}
 
     @Override
     public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
@@ -24,6 +28,14 @@ public class JavaBerkDB extends LocalPersistenceFactory {
     @Override
     public LocalPersistence createPersistence(String root, Map options) throws IOException {
         return new JavaBerkDBPersistence(root, options, false);
+    }
+
+    @Override public Transmitter getTransmitter() {
+        return new KeyValTransmitter();
+    }
+
+    @Override public Sharder getSharder() {
+        return new KeyValSharder();
     }
 
     public static class JavaBerkDBPersistence implements LocalPersistence {

@@ -17,6 +17,8 @@ public class Lucene extends LocalPersistenceFactory {
 
     public static Logger LOG = Logger.getLogger(File.class);
 
+    public Lucene() {super();}
+
     @Override public LocalPersistence openPersistenceForRead(String root, Map options)
         throws IOException {
         return new LucenePersistence(root, options);
@@ -30,6 +32,14 @@ public class Lucene extends LocalPersistenceFactory {
     @Override public LocalPersistence createPersistence(String root, Map options)
         throws IOException {
         return new LucenePersistence(root, options);
+    }
+
+    @Override public Transmitter getTransmitter() {
+        return null;
+    }
+
+    @Override public Sharder getSharder() {
+        return null;
     }
 
     public static class LucenePersistence implements LocalPersistence {
