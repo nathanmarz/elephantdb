@@ -38,7 +38,7 @@ public class JavaBerkDB extends LocalPersistenceFactory {
         return new KeyValSharder();
     }
 
-    public static class JavaBerkDBPersistence implements LocalPersistence {
+    public static class JavaBerkDBPersistence implements LocalPersistence<KeyValuePair> {
         Environment _env;
         Database _db;
 

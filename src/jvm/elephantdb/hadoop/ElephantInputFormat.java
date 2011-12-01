@@ -3,8 +3,8 @@ package elephantdb.hadoop;
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.persistence.CloseableIterator;
+import elephantdb.persistence.KeyValuePair;
 import elephantdb.persistence.LocalPersistence;
-import elephantdb.persistence.LocalPersistence.KeyValuePair;
 import elephantdb.store.DomainStore;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -61,6 +61,7 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
 
         public boolean next(BytesWritable k, BytesWritable v) throws IOException {
             if (_iterator.hasNext()) {
+                // Accept just a RECORD here.
                 KeyValuePair pair = _iterator.next();
                 k.set(pair.key, 0, pair.key.length);
                 v.set(pair.value, 0, pair.value.length);
@@ -73,10 +74,12 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
             }
         }
 
+        // TODO: Convert over to nullwritable
         public BytesWritable createKey() {
             return new BytesWritable();
         }
 
+        // TODO: Convert to take a serializable record with kryo
         public BytesWritable createValue() {
             return new BytesWritable();
         }
@@ -101,13 +104,17 @@ public class ElephantInputFormat implements InputFormat<BytesWritable, BytesWrit
         }
     }
 
+    /**
+     * PROBLEMS HERE: We have to have some way of generating more than one split for every
+     * shard.
+     */
+
     public static class ElephantInputSplit implements InputSplit {
         private String shardPath;
         private DomainSpec spec;
         private JobConf conf;
 
         public ElephantInputSplit() {
-
         }
 
         public ElephantInputSplit(String shardPath, DomainSpec spec, JobConf conf) {

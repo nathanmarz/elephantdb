@@ -28,7 +28,7 @@
 
 (defn open-domain
   "Returns a sequence of LocalPersistence objects on success."
-  [db-conf local-domain-root shards]
+   [db-conf local-domain-root shards]
   (let [lfs (h/local-filesystem)
         local-store (DomainStore. lfs local-domain-root)
         domain-spec (conf/read-domain-spec lfs local-domain-root)

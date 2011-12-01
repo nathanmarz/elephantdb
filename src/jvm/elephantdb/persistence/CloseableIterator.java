@@ -5,9 +5,9 @@ import java.util.Iterator;
 
 /**
  * Need this for iterating through all keys and values on a specific shard.
- * @param <T>
+ * @param <D>
  */
 
-public interface CloseableIterator<T> extends Iterator<T>, Closeable {
+public interface CloseableIterator<D> extends Iterator<D>, Closeable {
 
 }
