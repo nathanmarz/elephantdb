@@ -9,6 +9,7 @@
                  [backtype/thriftjava "1.0.0"]
                  [log4j/log4j "1.2.16"]
                  [hadoop-util "0.2.3"]
+                 [cascading.kryo "0.1.1"]
                  [com.sleepycat/je "4.1.10"]
                  [org.apache.lucene/lucene-core "3.0.3"]
                  [org.apache.lucene/lucene-queries "3.0.3"]]
@@ -17,5 +18,7 @@
                      [lein-marginalia "0.6.1"]
                      [midje "1.3-alpha4"]
                      [lein-midje "1.0.4"]]
+  ;; Turn this and clean up before release.
+  ;; :warn-on-reflection true
   :aot [elephantdb.keyval.main]
   :main elephantdb.keyval.main)
