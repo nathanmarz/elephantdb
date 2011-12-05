@@ -174,129 +174,90 @@ updater -> Updater.index(LocalPersistence, Record)
 
 modeled after clutch.
 
-# Pseudocode for new Interfaces
+* Pseudocode for new Interfaces: https://gist.github.com/76f6ea67a874bc7c0f45
 
-## Cascading -> Persistence
 
-The implementer uses Cascading to generate "Document" objects; these are kryo-serializable packets that contain the entire database record. For example:
 
-* `KeyValDocument(byte[] k, byte[]v)`
-* `SearchDocument(LuceneDoc d)`
-* KeySet:
-  * `KeySetDocument(byte[] setKey, byte[] setVal)`
-  * `KeySetDocument(byte[] setKey, int size)`
-  * Using `KeySet` as an example, An Updater (see below) will convert the `KeySetDocument` into the proper key and value byte arrays for BerkeleyDB.
+### NOTES:
 
-The user sinks generates documents and sinks them into the ElephantTap. The "tail assembly" can be sugar over this process; the key-value tail assembly might accept key-value pairs and do the document conversion implicitly.
+* Serialize keys with Kryo, for the various sharding schemes
+  * Tap accepts [shard-key, Document] pairs and a ShardScheme for config
 
-### ElephantTap:
+a sharding scheme includes: 1) a mapreduce workflow to compute the state for the shards 2) state that's kept in the domain spec 3) a function to compute the shard given a shard key and the state
 
-Constructor: `ElephantTap(Args args)a
 
-User sinks Documents into this tap, EDB takes care of the rest.
+### Cascading -> Persistence
 
-Args specify:
-* `PersistenceCoordinator<S implements ShardScheme>` (required)
-* Number of Shards (required)
-* List of Kryo Serializations  (optional) // register all with kryo
-* Target Filesystem Credentials (optional)
-* Cleanup parameters for versioned sto
-* `Updater<P implements LocalPersistence, D implements Document>` (optional)
-  * Defaults to nil, with no shard loading. If updater's supplied, 
+ElephantTap:
+* Sink (key, value) pairs
 
-#### Kryo Serializations
+Behind the scenes, ElephantTap serializes your key with Kryo to get a shard:
+    
+    int shardIndex(int numShards, Object k, Object shardState) // from DomainSpec
 
-Take the ArrayList of serializations from Args, register them with Kryo (in addition to the defaults; clojure, etc)
+And generates a KeyValDocument (implements Document):
 
-#### PersistenceCoordinator<S implements ShardScheme, D implements Document>
+    KeyValueDocument makeDoc(k, v)
 
-* `openPersistenceForRead`
-* `openPersistenceForWrite`
-* `createPersistence`
-- `byte[] shardDocument(D document)` // returns a proper key.
+This will have an accompanying Kryo serialization.
 
-TODO: This class also needs to be able to shard NON-document objects, so that the client can implement 
+The HashMod implementation will group on the resulting shard AND do a secondary sort by the sharding key.
 
-`int getShard(D document)`
-`int getShard(...anything that con build a document internally...)`
+EDB then sinks the shard and KeyValueDocument:
 
-#### ShardScheme
+    BytesWritable b = new BytesWritable(..kryo-serialized KeyValueDocument..);
+    outputCollector.collect(new IntWritable(shard), b);
 
-* Can be either HashMod or Range.
-  * HashMod keys just have to be serializable.
-  * Range keys have to be serializable AND comparable.
+The OutputFormat deserializes the shard and KeyValueDocument using an identical Kryo serialization instance. Next step:
 
-Nathan, I want to go over the interface here one more time. Does the above shardDocument method work? The user is responsible for the conversion from document to byte array for sharding and sorting, or should the user return some kryo-serializable thing?
+    keyValueUpdater.index(LocalPersistence lp, KeyValueDocument d );
 
-### Updater<P implements LocalPersistence, D implements Document>
+The key value updater will unpack the key and value and call
 
-Only required method is
+    bdbPersistence.add(k, v);
 
-* `index(P persistence, D document) // is this the right name?`
+Then from here, we've got the same implementation as before.
 
-This is enough; the persistence and document logic are application-specific, and the EDB library need not be involved.
+#### QUESTIONS: 
 
-## Persistence -> Cascading
+For this particular implementation, how do we handle key and value serialization? Right now we automatically handle byte, string, int and long keys. Do we automatically serialize these with a bare instance of Kryo now? And what do with non-byte-array values? It's beautiful except for the long-term persistence characteristics of Kryo.
 
-A cascading tap should be able to source all records from a given DomainStore. Not much else is required here. The customizations above configure serialization properly; the only required task here is iteration over all Documents in a given LocalPersistence.
+### Persistence -> Cascading
 
-### ElephantTap:
+Iterator returns KeyValueDocument objects; these are serialized over the wire with Kryo and appear at the tap. We should deserialize keys and values with Kryo, I think, since byte arrays stay the same.
 
-Same tap as above. When sourcing, this tap produces Documents (Type determined by the PersistenceCoordinator's iterator). Again, the user can provide sugar over this to return key-value pairs directly.
+ISSUE:
+For our particular key-value database, I think we should just serialize everything that comes in using Kryo. This would require the Updater to have access to the DomainSpec, so that it could have access to the serialization information. The idea is sound because byte arrays can pass in and out, so thrift objects won't be affected.
 
-Additional args necessary for sourcing:
-* `domainVersion`: either the version number, some offset (LATEST~1) or LATEST. (defaults to LATEST).
+### Persistence -> Thrift
 
-### ClosableIterator<D> extends Iterator<D>
+When a key comes in, we serialize it with Kryo (instance booted up from information inside of the DomainSpec) and look up the corresponding value (deserialized with kryo).
 
-ElephantTap depends on this iterator to retrieve all documents. One problem with this approach is that it requires a single split for every shard. This is noted below under PROBLEMS.
+Single point of contact for various DomainStore questions. PersistenceCoordinator returns a 
 
-## Persistence -> Thrift
 
-This section concerns the interaction between a given thrift service (or any other front-end) and the domain store. Once the user configures a given `ClientService`, she should be able to expect to hold on to an atomic reference to a given collection of shards (LocalPersistence instances).
+### More Notes on Client interface
 
-The domain store needs to allow a bit more control than it currently does over HOW updating actually happens, and how file syncing between various domains occurs.
+This is a good interface:
 
-### ClientService
-
-Accepts a configuration map, configures the local DomainStore and the Updater.
-
-* Configure updater.
-  * How often to check for new versions?
-  * accepts pre- and post- update hooks.
-
-### DomainStore Extensions
-
-Some of these functions would benefit from accepting callbacks. This would make it easy to hook in a given web interface, or email updates. Callbacks would make swapping persistences more intuitive; pull-version, with a callback to swap the domains.
-
-    (defprotocol IDomainStore
-      (remote-versions [_] "Returns a sequence of available remote versions.")
-      (local-versions [_] "Returns a sequence of available local version strings.")
-      (pull-version [_ other-store other-version] "Transfers other version on other-store to this domain store.")
-      (push-version [_ other-store this-version] "Transfers the supplied version to the remote domain store.")
-      (sync [_ other-store & opts] "Sync versions; Opts can specify whether to sync two-ways or one-way (which way?)")
-      (compact [_ keep-fn] keep-fn receives a sequence of versions and returns a sequence of versions-to-keep.")
-      (cleanup [_ keep-n] "destroy all versions but the last keep-n.")
-      (domain-spec [_] "Returns instanced of DomainSpec.")
-      )
-           
-### DomainSpec
-
-A given service will instantiate a DomainSpec with domain-spec.yaml, downloaded from the distributed filesystem (information's in the global and local configurations). DomainSpec allows access to 
-
-* The persistence coordinator
-* Sharding Scheme
-* shard count
-
-The PersistenceCoordinator is discussed above, and exposes
-
-```java
-openPersistenceForRead`
-close
----app-specific methods; search, multiGet, etc---
-int getShard(numShards, D document)
+```clojure
+(defprotocol IDomainStore
+  (remote-versions [_] "Returns a sequence of available remote versions.")
+  (local-versions [_] "Returns a sequence of available local version strings.")
+  (pull-version [_ other-store other-version] "Transfers other version on other-store to this domain store.")
+  (push-version [_ other-store this-version] "Transfers the supplied version to the remote domain store.")
+  (sync [_ other-store & opts] "Sync versions; Opts can specify whether to sync two-ways or one-way (which way?)")
+  (compact [_ keep-fn] keep-fn receives a sequence of versions and returns a sequence of versions-to-keep.")
+  (cleanup [_ keep-n] "destroy all versions but the last keep-n.")
+  (domain-spec [_] "Returns instanced of DomainSpec."))
 ```
 
-## PROBLEMS
+Beyond that, we need some way for a DomainStore to give us access to its PersistenceCoordinator. the database really IS a persistencecoordinator; or really a set of the local persistences on the machine.
 
-- Sourcing shards is really expensive in cascading, since we can't provide extra splits. How to mitigate this?
+Does the user need to know about current replication?
+
+### Notes
+
+getString, etc, all of that is for the particular USER to figure out.
+
+The actual "Domain Data" is a collection of LocalPersistence objects.

@@ -154,7 +154,7 @@
         (do (.close lp)
             (log/info "Closed LP for " domain "/" shard))
         (log/info "LP not loaded for " domain "/" shard)))))
- 
+
 (defn- get-readable-domain-info [domains-info domain]
   (let [info (domains-info domain)]
     (when-not info
@@ -286,7 +286,7 @@
         (log/info "ElephantDB received shutdown notice...")
         (u/with-write-lock rw-lock
           (u/dofor [[_ info] domains-info]
-                 (domain/set-domain-status! info (thrift/shutdown-status))))
+                   (domain/set-domain-status! info (thrift/shutdown-status))))
         (close-lps domains-info))
 
       ElephantDB$Iface
@@ -308,7 +308,7 @@
             (u/dofor [key keys
                       :let [shard (domain/key-shard domain info key)
                             ^LocalPersistence lp (domain/domain-data info shard)]]
-                     (log/debug "Direct get key " (seq key) "at shard " shard)
+                     (log/debug "Direct get keys " (seq key) "at shard " shard)
                      (if lp
                        (thrift/mk-value (.get lp key))
                        (throw (thrift/wrong-host-ex)))))))
@@ -323,13 +323,12 @@
             (let [host-map (group-by ffirst keys-to-get)
                   rets (u/parallel-exec
                         (for [[host host-indexed-keys] host-map]
-                          (constantly
-                           [host (multi-get* this
-                                             localhost
-                                             port
-                                             domain
-                                             host
-                                             host-indexed-keys)])))
+                          #(vector host (multi-get* this
+                                                    localhost
+                                                    port
+                                                    domain
+                                                    host
+                                                    host-indexed-keys))))
                   succeeded       (filter second rets)
                   succeeded-hosts (map first succeeded)
                   results (->> (map second succeeded)
@@ -352,7 +351,7 @@
 
       (multiGetString [this domain keys]
         (.multiGet this domain (map serialize keys)))
-         
+      
       (getDomainStatus [_ domain]
         (let [info (domains-info domain)]
           (when-not info
