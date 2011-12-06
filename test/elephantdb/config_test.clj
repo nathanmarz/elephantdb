@@ -21,7 +21,7 @@
     (is (specs= spec (conf/read-domain-spec fs tmp))))
   (let [jspec (DomainSpec/readFromFileSystem fs tmp)]
     (is (= 20 (.getNumShards jspec)))
-    (is (= "elephantdb.persistence.JavaBerkDB" (-> (.getLPFactory jspec)
+    (is (= "elephantdb.persistence.JavaBerkDB" (-> (.getCoordinator jspec)
                                                    (.getClass)
                                                    (.getName))))))
 

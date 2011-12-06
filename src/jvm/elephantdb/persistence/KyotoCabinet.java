@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
  *  This might help: http://maven.cloudhopper.com/repos/third-party/kyotocabinet/kyotocabinet/1.21/
  * */
 
-public class KyotoCabinet extends LocalPersistenceFactory {
+public class KyotoCabinet extends PersistenceCoordinator {
     public static Logger LOG = Logger.getLogger(KyotoCabinet.class);
 
     public KyotoCabinet() {super();}
@@ -23,10 +23,6 @@ public class KyotoCabinet extends LocalPersistenceFactory {
     }
 
     @Override public LocalPersistence createPersistence(String root, Map options) throws IOException {
-        return null;
-    }
-
-    @Override public Sharder getSharder() {
         return null;
     }
 

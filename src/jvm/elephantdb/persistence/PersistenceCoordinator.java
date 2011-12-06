@@ -1,6 +1,5 @@
 package elephantdb.persistence;
 
-import javax.sound.midi.Transmitter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
@@ -9,22 +8,16 @@ import java.util.Map;
  * "Shard Creators" inherit from this class.
  * On the client side, openPersistenceForRead is called like this:
  *
- *  (.getLPFactory (DomainSpec/readFromFileSystem fs path))
+ *  (.getCoordinator (DomainSpec/readFromFileSystem fs path))
  *
- *  .getLPFactory returns a new instance of the class inside that string. SO! This   
+ *  .getCoordinator returns a new instance of the class referenced by that string.
  */
-public abstract class LocalPersistenceFactory implements Serializable {
+public abstract class PersistenceCoordinator implements Serializable {
     public abstract LocalPersistence openPersistenceForRead(String root, Map options) throws IOException;
     public abstract LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException;
     public abstract LocalPersistence createPersistence(String root, Map options) throws IOException;
 
-    public abstract Sharder getSharder();
-
-    // what's the deal here?
     public KeySorter getKeySorter() {
         return new IdentityKeySorter();
     }
-
-    // Need methods for key and value serialization here, or some way of specifying how to do this.
-    // Something that interfaces a serialization interface.
 }

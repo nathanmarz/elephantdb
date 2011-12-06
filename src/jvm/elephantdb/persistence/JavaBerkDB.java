@@ -8,8 +8,7 @@ import java.io.IOException;
 import java.util.Map;
 
 // subclass get() and add() to provide key->set etc functionality with BerkeleyDB.
-public class JavaBerkDB extends LocalPersistenceFactory {
-
+public class JavaBerkDB extends PersistenceCoordinator {
 
     public static Logger LOG = Logger.getLogger(File.class);
 
@@ -28,10 +27,6 @@ public class JavaBerkDB extends LocalPersistenceFactory {
     @Override
     public LocalPersistence createPersistence(String root, Map options) throws IOException {
         return new JavaBerkDBPersistence(root, options, false);
-    }
-
-    @Override public Sharder getSharder() {
-        return new KeyValSharder();
     }
 
     public static class JavaBerkDBPersistence implements LocalPersistence<KeyValDocument> {

@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /** User: sritchie Date: 11/21/11 Time: 5:43 PM */
-public class Lucene extends LocalPersistenceFactory {
+public class Lucene extends PersistenceCoordinator {
 
     public static Logger LOG = Logger.getLogger(File.class);
 
@@ -32,10 +32,6 @@ public class Lucene extends LocalPersistenceFactory {
     @Override public LocalPersistence createPersistence(String root, Map options)
         throws IOException {
         return new LucenePersistence(root, options);
-    }
-
-    @Override public Sharder getSharder() {
-        return null;
     }
 
     public static class LucenePersistence implements LocalPersistence {

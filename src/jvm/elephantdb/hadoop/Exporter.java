@@ -65,7 +65,7 @@ public class Exporter {
             ElephantOutputFormat.Args args =
                 (ElephantOutputFormat.Args) Utils.getObject(jc, ElephantOutputFormat.ARGS_CONF);
             _numShards = args.spec.getNumShards();
-            sorter = args.spec.getLPFactory().getKeySorter();
+            sorter = args.spec.getCoordinator().getKeySorter();
         }
 
         public void close() throws IOException {

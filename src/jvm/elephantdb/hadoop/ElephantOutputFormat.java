@@ -3,7 +3,7 @@ package elephantdb.hadoop;
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.persistence.LocalPersistence;
-import elephantdb.persistence.LocalPersistenceFactory;
+import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -35,7 +35,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         // If this is set, the output format will go download it!
         public String updateDirHdfs = null;
 
-        // ends up going to LocalPersistenceFactory, which passes it on.
+        // ends up going to PersistenceCoordinator, which passes it on.
         public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
 
         public Args(DomainSpec spec, String outputDirHdfs) {
@@ -76,7 +76,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         // For Lucene, we need to create "documents", which can be serialized via java
         public void write(IntWritable shard, ElephantRecordWritable record) throws IOException {
             LocalPersistence lp = null;
-            LocalPersistenceFactory fact = _args.spec.getLPFactory();
+            PersistenceCoordinator fact = _args.spec.getCoordinator();
             Map<String, Object> options = _args.persistenceOptions;
             if (_lps.containsKey(shard.get())) {
                 lp = _lps.get(shard.get());

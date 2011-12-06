@@ -1,6 +1,6 @@
 package elephantdb;
 
-import elephantdb.persistence.LocalPersistenceFactory;
+import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -204,7 +204,7 @@ public class Utils {
     }
 
     public static Map<String, Object> getPersistenceOptions(Map<String, Map<String, Object>> opts,
-        LocalPersistenceFactory fact) {
+        PersistenceCoordinator fact) {
         return opts.get(fact.getClass().getName());
     }
 
