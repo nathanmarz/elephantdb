@@ -1,7 +1,12 @@
-package elephantdb.persistence;
+package elephantdb.future;
 
 import java.io.IOException;
 import java.util.Map;
+
+import elephantdb.persistence.CloseableIterator;
+import elephantdb.persistence.KeyValDocument;
+import elephantdb.persistence.LocalPersistence;
+import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.log4j.Logger;
 
 /** User: sritchie Date: 11/20/11 Time: 8:20 PM

@@ -1,6 +1,10 @@
-package elephantdb.persistence;
+package elephantdb.future;
 
 import elephantdb.Utils;
+import elephantdb.persistence.CloseableIterator;
+import elephantdb.persistence.KeyValDocument;
+import elephantdb.persistence.LocalPersistence;
+import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;

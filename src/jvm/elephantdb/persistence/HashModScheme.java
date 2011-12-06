@@ -1,12 +1,6 @@
 package elephantdb.persistence;
 
-import com.esotericsoftware.kryo.ObjectBuffer;
-import elephantdb.DomainSpec;
-import elephantdb.hadoop.Common;
-
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
 
 import elephantdb.Utils;
 
