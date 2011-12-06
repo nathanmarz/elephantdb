@@ -30,15 +30,11 @@ public class JavaBerkDB extends LocalPersistenceFactory {
         return new JavaBerkDBPersistence(root, options, false);
     }
 
-    @Override public Transmitter getTransmitter() {
-        return new KeyValTransmitter();
-    }
-
     @Override public Sharder getSharder() {
         return new KeyValSharder();
     }
 
-    public static class JavaBerkDBPersistence implements LocalPersistence<KeyValuePair> {
+    public static class JavaBerkDBPersistence implements LocalPersistence<KeyValDocument> {
         Environment _env;
         Database _db;
 
@@ -106,10 +102,10 @@ public class JavaBerkDB extends LocalPersistenceFactory {
             _env.close();
         }
 
-        public CloseableIterator<KeyValuePair> iterator() {
-            return new CloseableIterator<KeyValuePair>() {
+        public CloseableIterator<KeyValDocument> iterator() {
+            return new CloseableIterator<KeyValDocument>() {
                 Cursor cursor = null;
-                KeyValuePair next = null;
+                KeyValDocument next = null;
 
                 private void cacheNext() {
                     DatabaseEntry key = new DatabaseEntry();
@@ -118,7 +114,7 @@ public class JavaBerkDB extends LocalPersistenceFactory {
                     // cursor stores the next key and value in the above mutable objects.
                     OperationStatus stat = cursor.getNext(key, val, LockMode.READ_UNCOMMITTED);
                     if (stat == OperationStatus.SUCCESS) {
-                        next = new KeyValuePair(key.getData(), val.getData());
+                        next = new KeyValDocument(key.getData(), val.getData());
                     } else {
                         next = null;
                         close();
@@ -137,10 +133,10 @@ public class JavaBerkDB extends LocalPersistenceFactory {
                     return next != null;
                 }
 
-                public KeyValuePair next() {
+                public KeyValDocument next() {
                     initCursor();
                     if (next == null) { throw new RuntimeException("No key/value pair available"); }
-                    KeyValuePair ret = next; // not pointers, so we actually store the value?
+                    KeyValDocument ret = next; // not pointers, so we actually store the value?
                     cacheNext(); // caches up n + 1,
                     return ret;  // return the old.
                 }

@@ -18,7 +18,6 @@ public abstract class LocalPersistenceFactory implements Serializable {
     public abstract LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException;
     public abstract LocalPersistence createPersistence(String root, Map options) throws IOException;
 
-    public abstract elephantdb.persistence.Transmitter getTransmitter();
     public abstract Sharder getSharder();
 
     // what's the deal here?

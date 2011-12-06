@@ -1,5 +1,8 @@
 package elephantdb;
 
+import cascading.kryo.KryoFactory;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.ObjectBuffer;
 import elephantdb.persistence.LocalPersistenceFactory;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -10,6 +13,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -18,6 +22,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.jvyaml.YAML;
+import sun.awt.image.ImageWatched;
 
 
 // Can we make an interface out of this?
@@ -25,13 +30,14 @@ import org.jvyaml.YAML;
 public class DomainSpec implements Writable, Serializable {
     private int _numShards;
     private LocalPersistenceFactory _localFact;
+    private LinkedHashMap<String, String> _kryoPairs;
 
     public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
     private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
     private static final String NUM_SHARDS_CONF = "num_shards";
+    private static final String SERIALIZER_CONF = "kryo_pairs";
 
     public DomainSpec() {
-
     }
 
     /**
@@ -40,16 +46,29 @@ public class DomainSpec implements Writable, Serializable {
      * @param numShards
      */
     public DomainSpec(String factClass, int numShards) {
-        this(Utils.classForName(factClass), numShards);
+        this(factClass, numShards, new LinkedHashMap<String, String>());
+    }
+
+    public DomainSpec(String factClass, int numShards, LinkedHashMap<String, String> kryoPairs) {
+        this(Utils.classForName(factClass), numShards, kryoPairs);
     }
 
     public DomainSpec(Class factClass, int numShards) {
-        this((LocalPersistenceFactory)Utils.newInstance(factClass), numShards);
+        this(factClass, numShards, new LinkedHashMap<String, String>());
+    }
+
+    public DomainSpec(Class factClass, int numShards, LinkedHashMap<String, String> kryoPairs) {
+        this((LocalPersistenceFactory)Utils.newInstance(factClass), numShards, kryoPairs);
     }
 
     public DomainSpec(LocalPersistenceFactory localFact, int numShards) {
+        this(localFact, numShards, new LinkedHashMap<String, String>());
+    }
+
+    public DomainSpec(LocalPersistenceFactory localFact, int numShards,  LinkedHashMap<String, String> kryoPairs) {
         this._localFact = localFact;
         this._numShards = numShards;
+        this._kryoPairs = kryoPairs;
     }
 
     @Override
@@ -76,6 +95,16 @@ public class DomainSpec implements Writable, Serializable {
         return _localFact;
     }
 
+    public LinkedHashMap<String, String> getKryoPairs() {
+        return _kryoPairs;
+    }
+
+    public ObjectBuffer getObjectBuffer() {
+        Kryo k = new Kryo();
+        KryoFactory.populateKryo(k, getKryoPairs(), false, false);
+        return KryoFactory.newBuffer(k);
+    }
+
     public static DomainSpec readFromFileSystem(FileSystem fs, String dirpath) throws IOException {
         Path filePath = new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME);
         if(!fs.exists(filePath)) {
@@ -97,9 +126,13 @@ public class DomainSpec implements Writable, Serializable {
         return parseFromMap(format);
     }
 
+    @SuppressWarnings("unchecked")
     protected static DomainSpec parseFromMap(Map<String, Object> specmap) {
-        return new DomainSpec((String)specmap.get(LOCAL_PERSISTENCE_CONF),
-            ((Long)specmap.get(NUM_SHARDS_CONF)).intValue());
+        String persistenceConf = (String)specmap.get(LOCAL_PERSISTENCE_CONF);
+        int numShards = ((Long)specmap.get(NUM_SHARDS_CONF)).intValue();
+        LinkedHashMap<String, String> kryoMap = (LinkedHashMap<String, String>) specmap.get(SERIALIZER_CONF);
+
+        return new DomainSpec(persistenceConf, numShards, kryoMap);
     }
 
     public void writeToStream(OutputStream os) {
@@ -110,6 +143,7 @@ public class DomainSpec implements Writable, Serializable {
         Map<String, Object> spec = new HashMap<String, Object>();
         spec.put(LOCAL_PERSISTENCE_CONF, _localFact.getClass().getName());
         spec.put(NUM_SHARDS_CONF, _numShards);
+        spec.put(SERIALIZER_CONF, _kryoPairs);
         return spec;
     }
 

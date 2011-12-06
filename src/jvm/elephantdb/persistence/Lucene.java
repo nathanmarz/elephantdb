@@ -34,10 +34,6 @@ public class Lucene extends LocalPersistenceFactory {
         return new LucenePersistence(root, options);
     }
 
-    @Override public Transmitter getTransmitter() {
-        return null;
-    }
-
     @Override public Sharder getSharder() {
         return null;
     }
@@ -70,11 +66,11 @@ public class Lucene extends LocalPersistenceFactory {
             _reader.close();
         }
 
-        public CloseableIterator<KeyValuePair> iterator() {
-            return new CloseableIterator<KeyValuePair>() {
+        public CloseableIterator<KeyValDocument> iterator() {
+            return new CloseableIterator<KeyValDocument>() {
                 int idx = 0;
                 Integer docCount = null;
-                KeyValuePair nextDoc = null;
+                KeyValDocument nextDoc = null;
 
                 private void cacheNext() {
 
@@ -90,7 +86,7 @@ public class Lucene extends LocalPersistenceFactory {
                             Document doc = _reader.document(idx);
                             byte[] docVal = Utils.serializeObject(doc);
                             byte[] docKey = new byte[0];
-                            nextDoc = new KeyValuePair(docKey, docVal);
+                            nextDoc = new KeyValDocument(docKey, docVal);
                         } catch (CorruptIndexException ci) {
                             throw new RuntimeException(ci);
                         } catch (IOException io) {
@@ -111,12 +107,12 @@ public class Lucene extends LocalPersistenceFactory {
                     return nextDoc != null;
                 }
 
-                public KeyValuePair next() {
+                public KeyValDocument next() {
                     initCursor();
                     if (nextDoc == null) {
                         throw new RuntimeException("No key/value pair available");
                     }
-                    KeyValuePair ret = nextDoc; // not pointers, so we actually store the value?
+                    KeyValDocument ret = nextDoc; // not pointers, so we actually store the value?
                     cacheNext(); // caches up n + 1,
                     return ret;  // return the old.
                 }

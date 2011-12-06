@@ -15,6 +15,7 @@ public interface LocalPersistence<D> extends Iterable {
     public void add(byte[] key, byte[] value) throws IOException;
 
     // Closing the iterator is different than closing the actual persistence.
+    // TODO: how do we pass in D implements Document?
     public CloseableIterator<D> iterator();
     public void close() throws IOException;
 }

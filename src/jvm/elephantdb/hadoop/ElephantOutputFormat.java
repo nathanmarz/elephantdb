@@ -17,7 +17,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantRecordWritable> {
     public static Logger LOG = Logger.getLogger(ElephantOutputFormat.class);
 

@@ -26,15 +26,11 @@ public class KyotoCabinet extends LocalPersistenceFactory {
         return null;
     }
 
-    @Override public Transmitter getTransmitter() {
-        return null;
-    }
-
     @Override public Sharder getSharder() {
         return null;
     }
 
-    public static class KyotoCabinetPersistence implements LocalPersistence {
+    public static class KyotoCabinetPersistence implements LocalPersistence<KeyValDocument> {
         public byte[] get(byte[] key) throws IOException {
             return new byte[0];
         }
@@ -45,7 +41,7 @@ public class KyotoCabinet extends LocalPersistenceFactory {
         public void close() throws IOException {
         }
 
-        public CloseableIterator<KeyValuePair> iterator() {
+        public CloseableIterator<KeyValDocument> iterator() {
             return null;
         }
     }
