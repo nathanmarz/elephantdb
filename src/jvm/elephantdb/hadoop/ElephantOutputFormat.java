@@ -2,11 +2,13 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
+import elephantdb.persistence.Document;
 import elephantdb.persistence.LocalPersistence;
 import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.util.Progressable;
@@ -17,7 +19,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantRecordWritable> {
+public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWritable> {
     public static Logger LOG = Logger.getLogger(ElephantOutputFormat.class);
 
     public static final String ARGS_CONF = "elephant.output.args";
@@ -30,7 +32,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         public String outputDirHdfs;
 
         // Implements the ElephantUpdater interface.
-        public ElephantUpdater updater = new ReplaceUpdater();
+        public ElephantUpdater updater = new IdentityUpdater();
 
         // If this is set, the output format will go download it!
         public String updateDirHdfs = null;
@@ -44,7 +46,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         }
     }
 
-    public class ElephantRecordWriter implements RecordWriter<IntWritable, ElephantRecordWritable> {
+    public class ElephantRecordWriter implements RecordWriter<IntWritable, BytesWritable> {
 
         FileSystem _fs;
         Args _args;
@@ -69,28 +71,34 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
                 return _args.updateDirHdfs + "/" + shard;
             }
         }
-
-        // TODO: Convert ElephantRecordWritable to just be "writable", perhaps, then pass that on to
-        // the updater. Or require serialization for every value?
-        //
-        // For Lucene, we need to create "documents", which can be serialized via java
-        public void write(IntWritable shard, ElephantRecordWritable record) throws IOException {
+        
+        private LocalPersistence retrieveShard(int shardIdx) throws IOException {
             LocalPersistence lp = null;
             PersistenceCoordinator fact = _args.spec.getCoordinator();
             Map<String, Object> options = _args.persistenceOptions;
-            if (_lps.containsKey(shard.get())) {
-                lp = _lps.get(shard.get());
+            if (_lps.containsKey(shardIdx)) {
+                lp = _lps.get(shardIdx);
             } else {
-                String updateDir = remoteUpdateDirForShard(shard.get());
-                String localShard = _localManager.downloadRemoteShard("" + shard.get(), updateDir);
+                String updateDir = remoteUpdateDirForShard(shardIdx);
+                String localShard = _localManager.downloadRemoteShard("" + shardIdx, updateDir);
                 lp = fact.openPersistenceForAppend(localShard, options);
-                _lps.put(shard.get(), lp);
+                _lps.put(shardIdx, lp);
                 progress();
             }
+            return lp;
+        }
 
-            _args.updater.updateElephant(lp, record.key, record.val);
+        public void write(IntWritable shard, BytesWritable carrier) throws IOException {
+            LocalPersistence lp = retrieveShard(shard.get());
 
-            //TODO: Break this out into a markProgress method.
+            // deserialize the document and pass it into the updater.
+            Document doc = (Document) _args.spec.deserialize(Utils.getBytes(carrier));
+            _args.updater.update(lp, doc);
+
+            bumpProgress();
+        }
+
+        public void bumpProgress() {
             _numWritten++;
             if (_numWritten % 25000 == 0) {
                 long now = System.currentTimeMillis();
@@ -127,7 +135,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         }
     }
 
-    public RecordWriter<IntWritable, ElephantRecordWritable> getRecordWriter(FileSystem fs,
+    public RecordWriter<IntWritable, BytesWritable> getRecordWriter(FileSystem fs,
         JobConf conf, String string, Progressable progressable) throws IOException {
         return new ElephantRecordWriter(conf, (Args) Utils.getObject(conf, ARGS_CONF), progressable);
     }

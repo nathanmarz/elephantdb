@@ -14,13 +14,12 @@ import java.util.Map;
 
 
 /**
- * Not really sure what this class is here for.
+ * TODO: Overhaul this baby to use Kryo serialization between steps.
  */
 public class Exporter {
     public static class CompoundKey implements Writable {
         int shard;
         byte[] shardKey;
-
 
         public CompoundKey() {
 
@@ -111,7 +110,7 @@ public class Exporter {
 
         // set updater to null to disable any incremental updates. This will force new version to only contain the
         // K/V pairs you give it
-        public ElephantUpdater updater = new ReplaceUpdater();
+        public ElephantUpdater updater = new IdentityUpdater();
         public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
 
         public Args(DomainSpec spec) {

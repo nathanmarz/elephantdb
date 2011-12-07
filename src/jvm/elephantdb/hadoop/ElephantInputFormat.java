@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class ElephantInputFormat implements InputFormat<NullWritable, BytesWritable> {
     public static final String ARGS_CONF = "elephant.output.args";
 
@@ -42,7 +41,6 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         Reporter _reporter;
         Args _args;
         LocalElephantManager _manager;
-        ObjectBuffer _kryoBuf;
         LocalPersistence _lp;
         CloseableIterator _iterator;
         boolean finished = false;
@@ -58,7 +56,6 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
                 LocalElephantManager.getTmpDirs(_split.conf));
             String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
             _lp = _split.spec.getCoordinator().openPersistenceForRead(localpath, _args.persistenceOptions);
-            _kryoBuf = _split.spec.getObjectBuffer();
             _iterator = _lp.iterator();
         }
 
@@ -66,10 +63,12 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         // shard index as an IntWritable key.
         public boolean next(NullWritable k, BytesWritable v) throws IOException {
             if (_iterator.hasNext()) {
-                
+
                 Document pair = (Document) _iterator.next();
 
-                byte[] crushed = _kryoBuf.writeClassAndObject(pair);
+                //TODO: At this point we need to run this through some sort of "fetcher" that can
+                //build the key-val document back up from what pops out of berkeleyDB.
+                byte[] crushed = _split.spec.serialize(pair);
                 v.set(new BytesWritable(crushed));
 
                 numRead++;
@@ -81,12 +80,10 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             }
         }
 
-        // TODO: Convert over to nullwritable
         public NullWritable createKey() {
             return NullWritable.get();
         }
 
-        // TODO: Convert to take a serializable record with kryo
         public BytesWritable createValue() {
             return new BytesWritable();
         }

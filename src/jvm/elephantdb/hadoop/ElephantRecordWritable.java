@@ -7,13 +7,14 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+/**
+ * TODO: Destroy this class. No more need for it!
+ */
 public class ElephantRecordWritable implements Writable {
     byte[] key;
     byte[] val;
 
-
     public ElephantRecordWritable() {
-
     }
 
     public ElephantRecordWritable(byte[] key, byte[] val) {

@@ -28,7 +28,6 @@ import org.jvyaml.YAML;
 
 
 // Can we make an interface out of this?
-
 public class DomainSpec implements Writable, Serializable {
     private int _numShards;
     private PersistenceCoordinator _coordinator;
@@ -74,10 +73,12 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards,  LinkedHashMap<String, String> kryoPairs) {
-        this._coordinator = coordinator;
         this._numShards = numShards;
         this._kryoPairs = kryoPairs;
         this._kryoBuf = getObjectBuffer();
+
+        coordinator.setSpec(this);
+        this._coordinator = coordinator;
 
         shardScheme.setSpec(this);
         this._shardScheme = shardScheme;

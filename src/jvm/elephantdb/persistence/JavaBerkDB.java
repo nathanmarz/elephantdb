@@ -1,5 +1,6 @@
 package elephantdb.persistence;
 
+import com.esotericsoftware.kryo.ObjectBuffer;
 import com.sleepycat.je.*;
 import org.apache.log4j.Logger;
 
@@ -9,33 +10,39 @@ import java.util.Map;
 
 // subclass get() and add() to provide key->set etc functionality with BerkeleyDB.
 public class JavaBerkDB extends PersistenceCoordinator {
-
     public static Logger LOG = Logger.getLogger(File.class);
 
-    public JavaBerkDB() {super();}
+    public JavaBerkDB() {
+        super();
+    }
 
     @Override
     public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
-        return new JavaBerkDBPersistence(root, options, true);
+        ObjectBuffer kryoBuf = getSpec().getObjectBuffer();
+        return new JavaBerkDBPersistence(root, kryoBuf, options, true);
     }
 
     @Override
     public LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException {
-        return new JavaBerkDBPersistence(root, options, false);
+        ObjectBuffer kryoBuf = getSpec().getObjectBuffer();
+        return new JavaBerkDBPersistence(root, kryoBuf, options, false);
     }
 
     @Override
     public LocalPersistence createPersistence(String root, Map options) throws IOException {
-        return new JavaBerkDBPersistence(root, options, false);
+        ObjectBuffer kryoBuf = getSpec().getObjectBuffer();
+        return new JavaBerkDBPersistence(root, kryoBuf, options, false);
     }
 
     public static class JavaBerkDBPersistence implements LocalPersistence<KeyValDocument> {
+        private static final String DATABASE_NAME = "elephant";
         Environment _env;
         Database _db;
+        ObjectBuffer _kryoBuf;
 
-        private static final String DATABASE_NAME = "elephant";
+        public JavaBerkDBPersistence(String root, ObjectBuffer kryoBuf, Map options, boolean readOnly) {
+            _kryoBuf = kryoBuf;
 
-        public JavaBerkDBPersistence(String root, Map options, boolean readOnly) {
             new File(root).mkdirs();
             EnvironmentConfig envConf = new EnvironmentConfig();
             envConf.setAllowCreate(true);
@@ -46,7 +53,7 @@ public class JavaBerkDB extends PersistenceCoordinator {
             // TODO: Loop through options, setConfigParam for each one.
             envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "80");
             envConf.setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
-            
+
             _env = new Environment(new File(root), envConf);
 
             DatabaseConfig dbConf = new DatabaseConfig();
@@ -57,19 +64,27 @@ public class JavaBerkDB extends PersistenceCoordinator {
             _db = _env.openDatabase(null, DATABASE_NAME, dbConf);
         }
 
-        public byte[] get(byte[] key) throws IOException {
-            DatabaseEntry val = new DatabaseEntry();
-            OperationStatus stat =
-                _db.get(null, new DatabaseEntry(key), val, LockMode.READ_UNCOMMITTED);
+        public <K, V> V get(K key) throws IOException {
+            DatabaseEntry chrysalis = new DatabaseEntry();
+            byte[] k = _kryoBuf.writeClassAndObject(key);
+
+            OperationStatus stat = _db.get(null, new DatabaseEntry(k), chrysalis, LockMode.READ_UNCOMMITTED);
             if (stat == OperationStatus.SUCCESS) {
-                return val.getData();
+                byte[] valBytes = chrysalis.getData();
+                return (V) _kryoBuf.readClassAndObject(valBytes);
             } else {
                 return null;
             }
         }
 
-        public void add(byte[] key, byte[] value) throws IOException {
+        private void add(byte[] key, byte[] value) throws IOException {
             _db.put(null, new DatabaseEntry(key), new DatabaseEntry(value));
+        }
+
+        public void index(KeyValDocument document) throws IOException {
+            byte[] k = _kryoBuf.writeClassAndObject(document.key);
+            byte[] v = _kryoBuf.writeClassAndObject(document.value);
+            add(k, v);
         }
 
         public void close() throws IOException {
@@ -109,7 +124,10 @@ public class JavaBerkDB extends PersistenceCoordinator {
                     // cursor stores the next key and value in the above mutable objects.
                     OperationStatus stat = cursor.getNext(key, val, LockMode.READ_UNCOMMITTED);
                     if (stat == OperationStatus.SUCCESS) {
-                        next = new KeyValDocument(key.getData(), val.getData());
+                        Object k = _kryoBuf.readClassAndObject(key.getData());
+                        Object v = _kryoBuf.readClassAndObject(val.getData());
+
+                        next = new KeyValDocument(k, v);
                     } else {
                         next = null;
                         close();
@@ -139,7 +157,7 @@ public class JavaBerkDB extends PersistenceCoordinator {
                 public void remove() {
                     throw new UnsupportedOperationException("Not supported.");
                 }
-                
+
                 public void close() {
                     if (cursor != null) { cursor.close(); }
                 }
