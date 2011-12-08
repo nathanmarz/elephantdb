@@ -3,7 +3,7 @@
    interfaces."
   (:use [hadoop-util.core :only (path)])
   (:import [elephantdb DomainSpec Utils]
-           [elephantdb.persistence LocalPersistenceFactory]))
+           [elephantdb.persistence PersistenceCoordinator]))
 
 (def ^{:doc "Example, meant to be ignored."}
   example-global-conf
@@ -33,11 +33,13 @@
     (spit stream conf)))
 
 (defn convert-java-domain-spec [spec]
-  {:persistence-factory (.getLPFactory spec)
-   :num-shards          (.getNumShards spec)})
+  {:coordinator  (.getCoordinator spec)
+   :shard-scheme (.getShardScheme spec)
+   :num-shards   (.getNumShards spec)})
 
 (defn convert-clj-domain-spec [spec-map]
-  (DomainSpec. (:persistence-factory spec-map)
+  (DomainSpec. (:coordinator spec-map)
+               (:shard-scheme spec-map)
                (:num-shards spec-map)))
 
 (defn read-domain-spec

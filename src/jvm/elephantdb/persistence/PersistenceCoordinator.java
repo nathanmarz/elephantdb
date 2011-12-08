@@ -1,7 +1,5 @@
 package elephantdb.persistence;
 
-import com.esotericsoftware.kryo.ObjectBuffer;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;

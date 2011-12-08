@@ -1,6 +1,5 @@
 package elephantdb.hadoop;
 
-import com.esotericsoftware.kryo.ObjectBuffer;
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.persistence.CloseableIterator;
@@ -47,13 +46,13 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         int numRead = 0;
 
         public ElephantRecordReader(ElephantInputSplit split, Reporter reporter)
-            throws IOException {
+                throws IOException {
             _split = split;
             _reporter = reporter;
             _args = (Args) Utils.getObject(_split.conf, ARGS_CONF);
             _manager = new LocalElephantManager(
-                Utils.getFS(_split.shardPath, split.conf), _split.spec, _args.persistenceOptions,
-                LocalElephantManager.getTmpDirs(_split.conf));
+                    Utils.getFS(_split.shardPath, split.conf), _split.spec, _args.persistenceOptions,
+                    LocalElephantManager.getTmpDirs(_split.conf));
             String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
             _lp = _split.spec.getCoordinator().openPersistenceForRead(localpath, _args.persistenceOptions);
             _iterator = _lp.iterator();
@@ -177,7 +176,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
 
 
     public RecordReader<NullWritable, BytesWritable> getRecordReader(InputSplit is, JobConf jc,
-        Reporter reporter) throws IOException {
+                                                                     Reporter reporter) throws IOException {
         return new ElephantRecordReader((ElephantInputSplit) is, reporter);
     }
 }

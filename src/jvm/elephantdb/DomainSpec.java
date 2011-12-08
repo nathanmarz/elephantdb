@@ -4,16 +4,10 @@ import cascading.kryo.KryoFactory;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.ObjectBuffer;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Serializable;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import elephantdb.persistence.PersistenceCoordinator;
@@ -32,7 +26,7 @@ public class DomainSpec implements Writable, Serializable {
     private int _numShards;
     private PersistenceCoordinator _coordinator;
     private ShardScheme _shardScheme;
-    private LinkedHashMap<String, String> _kryoPairs;
+    private List<List<String>> _kryoPairs;
     private ObjectBuffer _kryoBuf;
 
     public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
@@ -51,36 +45,32 @@ public class DomainSpec implements Writable, Serializable {
      * @param numShards
      */
     public DomainSpec(String factClass, String shardSchemeClass, int numShards) {
-        this(factClass, shardSchemeClass, numShards, new LinkedHashMap<String, String>());
+        this(factClass, shardSchemeClass, numShards, new ArrayList<List<String>>());
     }
 
-    public DomainSpec(String factClass, String shardSchemeClass, int numShards, LinkedHashMap<String, String> kryoPairs) {
+    public DomainSpec(String factClass, String shardSchemeClass, int numShards, List<List<String>> kryoPairs) {
         this(Utils.classForName(factClass), Utils.classForName(shardSchemeClass), numShards, kryoPairs);
     }
 
     public DomainSpec(Class factClass, Class shardSchemeClass, int numShards) {
-        this(factClass, shardSchemeClass, numShards, new LinkedHashMap<String, String>());
+        this(factClass, shardSchemeClass, numShards, new ArrayList<List<String>>());
     }
 
-    public DomainSpec(Class factClass, Class shardSchemeClass, int numShards, LinkedHashMap<String, String> kryoPairs) {
+    public DomainSpec(Class factClass, Class shardSchemeClass, int numShards, List<List<String>> kryoPairs) {
         this((PersistenceCoordinator)Utils.newInstance(factClass),
             (ShardScheme)Utils.newInstance(shardSchemeClass),
             numShards, kryoPairs);
     }
 
     public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards) {
-        this(coordinator, shardScheme, numShards, new LinkedHashMap<String, String>());
+        this(coordinator, shardScheme, numShards, new ArrayList<List<String>>());
     }
 
-    public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards,  LinkedHashMap<String, String> kryoPairs) {
+    public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards, List<List<String>> kryoPairs) {
         this._numShards = numShards;
         this._kryoPairs = kryoPairs;
         this._kryoBuf = getObjectBuffer();
-
-        coordinator.setSpec(this);
         this._coordinator = coordinator;
-
-        shardScheme.setSpec(this);
         this._shardScheme = shardScheme;
     }
 
@@ -105,20 +95,27 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public PersistenceCoordinator getCoordinator() {
+        if (_coordinator.getSpec() != this) {
+            _coordinator.setSpec(this);
+        }
+
         return _coordinator;
     }
 
     public ShardScheme getShardScheme() {
+        if (_shardScheme.getSpec() != this) {
+            _shardScheme.setSpec(this);
+        }
         return _shardScheme;
     }
 
-    public LinkedHashMap<String, String> getKryoPairs() {
+    public List<List<String>> getKryoPairs() {
         return _kryoPairs;
     }
 
     public ObjectBuffer getObjectBuffer() {
         Kryo k = new Kryo();
-        KryoFactory.populateKryo(k, getKryoPairs(), false, false);
+        KryoFactory.populateKryo(k, getKryoPairs(), false, true);
         return KryoFactory.newBuffer(k);
     }
 
@@ -160,7 +157,7 @@ public class DomainSpec implements Writable, Serializable {
         String persistenceConf = (String)specmap.get(LOCAL_PERSISTENCE_CONF);
         String shardSchemeConf = (String)specmap.get(SHARD_SCHEME_CONF);
         int numShards = ((Long)specmap.get(NUM_SHARDS_CONF)).intValue();
-        LinkedHashMap<String, String> kryoMap = (LinkedHashMap<String, String>) specmap.get(SERIALIZER_CONF);
+        List<List<String>> kryoMap = (List<List<String>>) specmap.get(SERIALIZER_CONF);
 
         return new DomainSpec(persistenceConf, shardSchemeConf, numShards, kryoMap);
     }
@@ -172,6 +169,7 @@ public class DomainSpec implements Writable, Serializable {
     private Map<String, Object> mapify() {
         Map<String, Object> spec = new HashMap<String, Object>();
         spec.put(LOCAL_PERSISTENCE_CONF, _coordinator.getClass().getName());
+        spec.put(SHARD_SCHEME_CONF, _shardScheme.getClass().getName());
         spec.put(NUM_SHARDS_CONF, _numShards);
         spec.put(SERIALIZER_CONF, _kryoPairs);
         return spec;
@@ -190,9 +188,25 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public void readFields(DataInput di) throws IOException {
-        DomainSpec spec = parseFromMap((Map<String, Object>)YAML.load(WritableUtils.readString(di)));
+        DomainSpec spec = parseFromMap((Map<String, Object>) YAML.load(WritableUtils.readString(di)));
         this._numShards = spec._numShards;
         this._coordinator = spec._coordinator;
         this._shardScheme = spec._shardScheme;
+    }
+
+    /**
+     * Reload the ObjectBuffer after deserialization.
+     */
+    private void readObject(ObjectInputStream aInputStream) throws ClassNotFoundException, IOException {
+        aInputStream.defaultReadObject();
+        _kryoBuf = getObjectBuffer();
+    }
+
+    /**
+     * The ObjectBuffer can't be serialized, so it's set to null before serialization.
+     */
+    private void writeObject(ObjectOutputStream aOutputStream) throws IOException {
+        _kryoBuf = null;
+        aOutputStream.defaultWriteObject();
     }
 }

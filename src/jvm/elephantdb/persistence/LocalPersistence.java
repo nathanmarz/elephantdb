@@ -7,11 +7,10 @@ import java.io.IOException;
  * records to the persistence.
  * @param <D>
  */
-public interface LocalPersistence<D> extends Iterable {
+public interface LocalPersistence<D extends Document> extends Iterable {
 
     public void index(D document) throws IOException;
 
-    // TODO: how do we pass in D implements Document?
     // Note: closing the iterator is different than closing the actual persistence.
     public CloseableIterator<D> iterator();
     public void close() throws IOException;

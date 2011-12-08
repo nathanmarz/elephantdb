@@ -43,15 +43,16 @@
 (defprotocol ISerialize
   (serialize [x]))
 
+;; TODO: Get rid of this! We don't need it anymore with new Kryo serialization.
 (extend-protocol ISerialize
   Integer
-  (serialize [x] (Utils/serializeInt x))
+  (serialize [x] x)
 
   Long
-  (serialize [x] (Utils/serializeLong x))
+  (serialize [x] x)
 
   String
-  (serialize [x]  (Utils/serializeString x)))
+  (serialize [x]  x))
 
 (extend (Class/forName "[B") 
   ISerialize

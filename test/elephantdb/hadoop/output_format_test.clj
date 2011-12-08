@@ -24,12 +24,12 @@
                     (.getBytes k)
                     (.getBytes v)))))
 
-(defn check-shards [fs lfs output-dir local-tmp factory expected]
+(defn check-shards [fs lfs output-dir local-tmp coordinator expected]
   (.mkdirs lfs (h/path local-tmp))
   (u/dofor [[s records] expected]
            (let [local-shard-path (h/str-path local-tmp s)
                  _                (.copyToLocalFile fs (h/path output-dir (str s)) (h/path local-shard-path))
-                 persistence      (.openPersistenceForRead factory local-shard-path {})]
+                 persistence      (.openPersistenceForRead coordinator local-shard-path {})]
              (u/dofor [[k v] records]
                       (is (= v (String. (.get persistence (.getBytes k))))))
              (u/dofor [[_ non-records] (dissoc expected s)

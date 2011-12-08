@@ -41,14 +41,14 @@
   (for [[k v] (get-kvpairs db)]
     [(String. k) (String. v)]))
 
-(defn append-string-pairs [factory t pairs]
-  (let [db (.openPersistenceForAppend factory t {})]
+(defn append-string-pairs [coordinator t pairs]
+  (let [db (.openPersistenceForAppend coordinator t {})]
     (doseq [[k v] pairs]
       (add-string db k v))
     (.close db)))
 
-(defn create-string-pairs [factory t pairs]
-  (let [db (.createPersistence factory t {})]
+(defn create-string-pairs [coordinator t pairs]
+  (let [db (.createPersistence coordinator t {})]
     (doseq [[k v] pairs]
       (add-string db k v))
     (.close db)))
@@ -59,12 +59,12 @@
   (partial shard/key-shard "testdomain"))
 
 (defn mk-elephant-writer
-  [shards factory output-dir tmpdir & kargs]
+  [shards coordinator output-dir tmpdir & kargs]
   (let [kargs (apply hash-map kargs)
         args (ElephantOutputFormat$Args.
               (conf/convert-clj-domain-spec
                {:num-shards shards
-                :persistence-factory factory})
+                :coordinator coordinator})
               output-dir)]
     (when-let [upd (:updater kargs)]
       (set! (. args updater) upd))
@@ -98,7 +98,7 @@
                           keyvals)
           writer (mk-elephant-writer
                   (:num-shards domain-spec)
-                  (:persistence-factory domain-spec)
+                  (:coordinator domain-spec)
                   dpath
                   localtmp)]
       (doseq [[s k v] shardedkeyvals]
@@ -115,11 +115,11 @@
        (u/reverse-multimap)
        (u/val-map first)))
 
-(defn mk-presharded-domain [fs path factory shardmap]
+(defn mk-presharded-domain [fs path coordinator shardmap]
   (let [keyvals (apply concat (vals shardmap))
         shards (reverse-pre-sharded shardmap)
         domain-spec {:num-shards (count shardmap)
-                     :persistence-factory factory}]
+                     :coordinator coordinator}]
     (binding [test-key->shard (fn [k _] (shards (ByteArray. k)))]
       (mk-sharded-domain fs path domain-spec keyvals))))
 
@@ -147,11 +147,11 @@
      ~@body))
 
 (defmacro with-presharded-domain
-  [[dname pathsym factory shardmap] & body]
+  [[dname pathsym coordinator shardmap] & body]
   `(with-fs-tmp [fs# ~pathsym]
      (mk-presharded-domain fs#
                            ~pathsym
-                           ~factory
+                           ~coordinator
                            ~shardmap)
      (binding [shard/key-shard (let [rev# (reverse-pre-sharded ~shardmap)]
                                  (fn [d# k# a#]

@@ -5,9 +5,10 @@
   (:import [elephantdb.persistence JavaBerkDB]
            [elephantdb DomainSpec]))
 
+;; update-in w/ #(.getName (.getClass %))
 (defn- norm-spec [s]
-  (assoc s :persistence-factory
-         (-> (:persistence-factory s)
+  (assoc s :coordinator
+         (-> (:coordinator s)
              (.getClass)
              (.getName))))
 
@@ -16,7 +17,7 @@
      (norm-spec s2)))
 
 (def-fs-test test-rw-domain-spec [fs tmp]
-  (let [spec {:num-shards 20 :persistence-factory (JavaBerkDB.)}]
+  (let [spec {:num-shards 20 :coordinator (JavaBerkDB.)}]
     (conf/write-domain-spec! spec fs tmp)
     (is (specs= spec (conf/read-domain-spec fs tmp))))
   (let [jspec (DomainSpec/readFromFileSystem fs tmp)]

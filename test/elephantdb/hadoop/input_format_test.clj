@@ -48,7 +48,7 @@
                ]]
     (with-sharded-domain [dpath
                           {:num-shards 6
-                           :persistence-factory (JavaBerkDB.)}
+                           :coordinator (JavaBerkDB.)}
                           pairs]
       (is (kv-pairs= pairs (read-domain dpath))))))
 

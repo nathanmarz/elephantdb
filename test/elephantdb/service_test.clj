@@ -30,7 +30,7 @@
 
 (deftest test-basic
   (with-sharded-domain [dpath
-                        {:num-shards 4 :persistence-factory (JavaBerkDB.)}
+                        {:num-shards 4, :coordinator (JavaBerkDB.)}
                         [[(barr 0) (barr 0 0)]
                          [(barr 1) (barr 1 1)]
                          [(barr 2) (barr 2 2)]]]
@@ -52,10 +52,10 @@
                            15 [15 15]
                            105 [110])]
     (with-sharded-domain [dpath1
-                          {:num-shards 2 :persistence-factory (JavaBerkDB.)}
+                          {:num-shards 2 :coordinator (JavaBerkDB.)}
                           data1]
       (with-sharded-domain [dpath2
-                            {:num-shards 3 :persistence-factory (JavaBerkDB.)}
+                            {:num-shards 3 :coordinator (JavaBerkDB.)}
                             data2]
         (with-single-service-handler [handler {"d1" dpath1 "d2" dpath2}]
           (check-domain "d1" handler data1)
@@ -87,7 +87,7 @@
 (deftest test-update-synched
   (with-local-tmp [lfs local-dir]
     (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
-      (let [domain-spec {:num-shards 4 :persistence-factory (JavaBerkDB.)}
+      (let [domain-spec {:num-shards 4 :coordinator (JavaBerkDB.)}
             local-config (mk-local-config local-dir)]
         (conf/write-clj-config! {:replication 1
                                  :hosts [(u/local-hostname)]
@@ -150,7 +150,7 @@
           (.shutdown handler))
 
         ;; now test with new version but different domain-spec
-        (let [domain-spec-new {:num-shards 6 :persistence-factory (JavaBerkDB.)}]
+        (let [domain-spec-new {:num-shards 6 :coordinator (JavaBerkDB.)}]
           (h/delete fs dtmp2 true)
           (mk-sharded-domain fs dtmp2 domain-spec-new
                              (domain-data 0 [55 55]
@@ -223,7 +223,7 @@
 (deftest test-live-updating
   (with-local-tmp [lfs local-dir]
     (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
-      (let [domain-spec {:num-shards 4 :persistence-factory (JavaBerkDB.)}
+      (let [domain-spec {:num-shards 4 :coordinator (JavaBerkDB.)}
             local-config (mk-local-config local-dir)]
         (conf/write-clj-config! {:replication 1
                                  :hosts [(u/local-hostname)]

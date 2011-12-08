@@ -5,7 +5,7 @@
   (:use [hadoop-util.core :only (filesystem local-filesystem)])
   (:require [elephantdb.common.config :as conf])
   (:import [elephantdb DomainSpec Utils]
-           [elephantdb.persistence LocalPersistenceFactory]))
+           [elephantdb.persistence PersistenceCoordinator]))
 
 ;; ## Local and Global Configs
 ;;
@@ -37,7 +37,7 @@
 (defmethod persistence-str Class
   [persistence] (.getName persistence))
 
-(defmethod persistence-str LocalPersistenceFactory
+(defmethod persistence-str PersistenceCoordinator
   [persistence] (.getName (class persistence)))
 
 (defn persistence-options

@@ -18,12 +18,12 @@
 (defn open-domain-shard
   "Opens and returns a LocalPersistence object standing in for the
   shard at the supplied path."
-  [persistence-factory db-conf local-shard-path]
+  [coordinator db-conf local-shard-path]
   (log/info "Opening LP " local-shard-path)
   (u/with-ret (.openPersistenceForRead
-               persistence-factory
+               coordinator
                local-shard-path
-               (persistence-options db-conf persistence-factory))
+               (persistence-options db-conf coordinator))
     (log/info "Opened LP " local-shard-path)))
 
 (defn open-domain
@@ -35,7 +35,7 @@
         local-version-path (.mostRecentVersionPath local-store)
         future-lps (u/dofor [s shards]
                             [s (future (open-domain-shard
-                                        (:persistence-factory domain-spec)
+                                        (:coordinator domain-spec)
                                         db-conf
                                         (shard-path local-version-path s)))])]
     (u/with-ret (u/val-map (memfn get) future-lps)
@@ -67,13 +67,13 @@
 ;; TODO: do a streaming recursive copy that can be rate limited (rate
 ;; limited with the other shards...)
 (defn load-domain-shard!
-  [fs persistence-factory persistence-opts local-shard-path remote-shard-path state]
+  [fs coordinator persistence-opts local-shard-path remote-shard-path state]
   (if (.exists fs (h/path remote-shard-path))
     (do (log/info "Copying " remote-shard-path " to " local-shard-path)
         (hadoop/copy-local fs remote-shard-path local-shard-path state)
         (log/info "Copied " remote-shard-path " to " local-shard-path))
     (do (log/info "Shard " remote-shard-path " did not exist. Creating empty LP")
-        (.close (.createPersistence persistence-factory
+        (.close (.createPersistence coordinator
                                     local-shard-path
                                     persistence-opts)))))
 
@@ -83,9 +83,9 @@
   (log/info "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs           (h/local-filesystem)
         remote-vs     (DomainStore. fs remote-path)
-        factory       (-> (.getSpec remote-vs)
+        coordinator   (-> (.getSpec remote-vs)
                           (conf/convert-java-domain-spec)
-                          (:persistence-factory))
+                          :coordinator)
         local-vs       (DomainStore. lfs local-domain-root (.getSpec remote-vs))
         remote-version (.mostRecentVersion remote-vs)
         local-v-path   (.createVersion local-vs remote-version)
@@ -98,9 +98,9 @@
                                   [f (future
                                        (load-domain-shard!
                                         fs
-                                        factory
+                                        coordinator
                                         (persistence-options local-db-conf
-                                                             factory)
+                                                             coordinator)
                                         (shard-path local-v-path s)
                                         (shard-path remote-v-path s)
                                         (domain-state s)))]

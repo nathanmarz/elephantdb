@@ -38,7 +38,7 @@ public class Lucene extends PersistenceCoordinator {
         return new LucenePersistence(root, options);
     }
 
-    public static class LucenePersistence implements LocalPersistence {
+    public static class LucenePersistence implements LocalPersistence<KeyValDocument> {
         Directory _rootDir;
         IndexReader _reader;
 
@@ -58,12 +58,12 @@ public class Lucene extends PersistenceCoordinator {
             return new byte[0];
         }
 
-        public void add(byte[] key, byte[] value) throws IOException {
-            // Are key and value really good enough here?
-        }
-
         public void close() throws IOException {
             _reader.close();
+        }
+
+        public void index(KeyValDocument document) throws IOException {
+            // should be easy to implement. Lucene is going to get LuceneDocuments, and that's IT!
         }
 
         public CloseableIterator<KeyValDocument> iterator() {

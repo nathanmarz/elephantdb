@@ -1,16 +1,23 @@
 package elephantdb.test;
 
 import elephantdb.hadoop.ElephantUpdater;
-import elephantdb.persistence.LocalPersistence;
+import elephantdb.persistence.JavaBerkDB;
+import elephantdb.persistence.KeyValDocument;
 
 import java.io.IOException;
 
-public class StringAppendUpdater implements ElephantUpdater {
-    public void updateElephant(LocalPersistence lp, byte[] newKey, byte[] newVal)
-        throws IOException {
-        byte[] oldval = lp.get(newKey);
-        String olds = "";
-        if (oldval != null) { olds = new String(oldval); }
-        lp.add(newKey, (olds + new String(newVal)).getBytes());
+public class StringAppendUpdater implements ElephantUpdater<JavaBerkDB.JavaBerkDBPersistence, KeyValDocument> {
+
+    public void update(JavaBerkDB.JavaBerkDBPersistence lp, KeyValDocument doc) throws IOException {
+        Object oldVal = lp.get(doc.key);
+        String newVal = (String) doc.value;
+
+        String oldString = "";
+        if (oldVal != null) {
+            oldString = (String) oldVal;
+        }
+
+        doc.value = oldString + newVal;
+        lp.index(doc);
     }
 }

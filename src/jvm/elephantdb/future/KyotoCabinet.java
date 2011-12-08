@@ -36,7 +36,7 @@ public class KyotoCabinet extends PersistenceCoordinator {
             return new byte[0];
         }
 
-        public void add(byte[] key, byte[] value) throws IOException {
+        public void index(KeyValDocument document) throws IOException {
         }
 
         public void close() throws IOException {

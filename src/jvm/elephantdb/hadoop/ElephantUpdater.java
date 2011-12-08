@@ -1,9 +1,5 @@
 package elephantdb.hadoop;
 
-import elephantdb.DomainSpec;
-import elephantdb.persistence.Document;
-import elephantdb.persistence.LocalPersistence;
-
 import java.io.IOException;
 import java.io.Serializable;
 
@@ -17,6 +13,6 @@ import java.io.Serializable;
  * }
  * Record here needs a kryo serializer registered.
  */
-public interface ElephantUpdater<D> extends Serializable {
-    public void update(LocalPersistence lp, D doc) throws IOException;
+public interface ElephantUpdater<P, D> extends Serializable {
+    public void update(P localPersistence, D doc) throws IOException;
 }
