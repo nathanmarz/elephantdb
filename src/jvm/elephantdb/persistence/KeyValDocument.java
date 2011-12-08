@@ -5,6 +5,9 @@ public class KeyValDocument<K, V> implements Document {
     public K key;
     public V value;
 
+    public KeyValDocument() {
+    }
+
     public KeyValDocument(K key, V value) {
         this.key = key;
         this.value = value;

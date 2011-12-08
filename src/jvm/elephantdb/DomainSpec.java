@@ -18,11 +18,13 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.log4j.Logger;
 import org.jvyaml.YAML;
-
 
 // Can we make an interface out of this?
 public class DomainSpec implements Writable, Serializable {
+    public static final Logger LOG = Logger.getLogger(DomainSpec.class);
+
     private int _numShards;
     private PersistenceCoordinator _coordinator;
     private ShardScheme _shardScheme;
@@ -119,15 +121,25 @@ public class DomainSpec implements Writable, Serializable {
         return KryoFactory.newBuffer(k);
     }
 
+    private void ensureKryoBuf() {
+        if (_kryoBuf == null) {
+            _kryoBuf = getObjectBuffer();
+        }
+    }
+
     public byte[] serialize(Object o) {
+        ensureKryoBuf();
+        LOG.info("Serializing object: " + o);
         return _kryoBuf.writeClassAndObject(o);
     }
 
     public Object deserialize(byte[] bytes) {
+        ensureKryoBuf();
         return _kryoBuf.readClassAndObject(bytes);
     }
 
     public <T> T deserialize(byte[] bytes, Class<T> klass) {
+        ensureKryoBuf();
         return _kryoBuf.readObject(bytes, klass);
     }
 
@@ -192,14 +204,6 @@ public class DomainSpec implements Writable, Serializable {
         this._numShards = spec._numShards;
         this._coordinator = spec._coordinator;
         this._shardScheme = spec._shardScheme;
-    }
-
-    /**
-     * Reload the ObjectBuffer after deserialization.
-     */
-    private void readObject(ObjectInputStream aInputStream) throws ClassNotFoundException, IOException {
-        aInputStream.defaultReadObject();
-        _kryoBuf = getObjectBuffer();
     }
 
     /**

@@ -16,13 +16,10 @@ public abstract class SpecifiedObject {
     }
 
     public void setSpec(DomainSpec spec) {
-        LOG.info("setting spec to: " + spec);
         _spec = spec;
-        LOG.info("spec successfully set to: " + _spec);
     }
 
     public DomainSpec getSpec() {
-        LOG.info("retrieving spec: " + _spec);
         return _spec;
     }
 }
