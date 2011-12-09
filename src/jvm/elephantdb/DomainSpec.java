@@ -129,13 +129,14 @@ public class DomainSpec implements Writable, Serializable {
 
     public byte[] serialize(Object o) {
         ensureKryoBuf();
-        LOG.info("Serializing object: " + o);
+        LOG.debug("Serializing object: " + o);
         return _kryoBuf.writeClassAndObject(o);
     }
 
     public Object deserialize(byte[] bytes) {
         ensureKryoBuf();
         return _kryoBuf.readClassAndObject(bytes);
+
     }
 
     public <T> T deserialize(byte[] bytes, Class<T> klass) {
@@ -204,6 +205,7 @@ public class DomainSpec implements Writable, Serializable {
         this._numShards = spec._numShards;
         this._coordinator = spec._coordinator;
         this._shardScheme = spec._shardScheme;
+        this._kryoPairs = spec._kryoPairs;
     }
 
     /**
