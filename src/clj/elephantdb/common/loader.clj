@@ -8,7 +8,8 @@
             [elephantdb.common.logging :as log]
             [elephantdb.common.config :as conf]
             [elephantdb.common.util :as u])
-  (:import [elephantdb.store DomainStore]
+  (:import elephantdb.DomainSpec
+           [elephantdb.store DomainStore]
            [elephantdb.common.hadoop ShardState DownloadState]))
 
 (defn- shard-path
@@ -18,24 +19,25 @@
 (defn open-domain-shard
   "Opens and returns a LocalPersistence object standing in for the
   shard at the supplied path."
-  [coordinator db-conf local-shard-path]
+  [domain-spec db-conf local-shard-path]
   (log/info "Opening LP " local-shard-path)
-  (u/with-ret (.openPersistenceForRead
-               coordinator
-               local-shard-path
-               (persistence-options db-conf coordinator))
-    (log/info "Opened LP " local-shard-path)))
+  (let [coord (.getCoordinator domain-spec)]
+    (u/with-ret (.openPersistenceForRead coord
+                                         local-shard-path
+                                         domain-spec
+                                         (persistence-options db-conf coord))
+      (log/info "Opened LP " local-shard-path))))
 
 (defn open-domain
   "Returns a sequence of LocalPersistence objects on success."
-   [db-conf local-domain-root shards]
+  [db-conf local-domain-root shards]
   (let [lfs (h/local-filesystem)
         local-store (DomainStore. lfs local-domain-root)
-        domain-spec (conf/read-domain-spec lfs local-domain-root)
+        domain-spec (DomainSpec/readFromFileSystem lfs local-domain-root)
         local-version-path (.mostRecentVersionPath local-store)
         future-lps (u/dofor [s shards]
                             [s (future (open-domain-shard
-                                        (:coordinator domain-spec)
+                                        domain-spec
                                         db-conf
                                         (shard-path local-version-path s)))])]
     (u/with-ret (u/val-map (memfn get) future-lps)
@@ -67,14 +69,15 @@
 ;; TODO: do a streaming recursive copy that can be rate limited (rate
 ;; limited with the other shards...)
 (defn load-domain-shard!
-  [fs coordinator persistence-opts local-shard-path remote-shard-path state]
+  [fs spec persistence-opts local-shard-path remote-shard-path state]
   (if (.exists fs (h/path remote-shard-path))
     (do (log/info "Copying " remote-shard-path " to " local-shard-path)
         (hadoop/copy-local fs remote-shard-path local-shard-path state)
         (log/info "Copied " remote-shard-path " to " local-shard-path))
     (do (log/info "Shard " remote-shard-path " did not exist. Creating empty LP")
-        (.close (.createPersistence coordinator
+        (.close (.createPersistence (.getCoordinator spec)
                                     local-shard-path
+                                    spec
                                     persistence-opts)))))
 
 (defn load-domain
@@ -83,10 +86,9 @@
   (log/info "Loading domain at " remote-path " to " local-domain-root)
   (let [lfs           (h/local-filesystem)
         remote-vs     (DomainStore. fs remote-path)
-        coordinator   (-> (.getSpec remote-vs)
-                          (conf/convert-java-domain-spec)
-                          :coordinator)
-        local-vs       (DomainStore. lfs local-domain-root (.getSpec remote-vs))
+        spec          (.getSpec remote-vs)
+        coordinator   (.getCoordinator spec)
+        local-vs       (DomainStore. lfs local-domain-root spec)
         remote-version (.mostRecentVersion remote-vs)
         local-v-path   (.createVersion local-vs remote-version)
         remote-v-path  (.versionPath remote-vs remote-version)
@@ -98,7 +100,7 @@
                                   [f (future
                                        (load-domain-shard!
                                         fs
-                                        coordinator
+                                        spec
                                         (persistence-options local-db-conf
                                                              coordinator)
                                         (shard-path local-v-path s)
