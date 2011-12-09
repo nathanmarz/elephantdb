@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-// subclass get() and add() to provide key->set etc functionality with BerkeleyDB.
 public class JavaBerkDB extends PersistenceCoordinator {
     public static Logger LOG = Logger.getLogger(File.class);
 
