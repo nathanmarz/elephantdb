@@ -3,6 +3,7 @@ package elephantdb.future;
 import java.io.IOException;
 import java.util.Map;
 
+import elephantdb.DomainSpec;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.KeyValDocument;
 import elephantdb.persistence.LocalPersistence;
@@ -19,15 +20,18 @@ public class KyotoCabinet extends PersistenceCoordinator {
 
     public KyotoCabinet() {super();}
 
-    @Override public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
+    @Override public LocalPersistence openPersistenceForRead(String root, DomainSpec spec, Map options)
+            throws IOException {
         return null;
     }
 
-    @Override public LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException {
+    @Override public LocalPersistence openPersistenceForAppend(String root, DomainSpec spec, Map options)
+            throws IOException {
         return null;
     }
 
-    @Override public LocalPersistence createPersistence(String root, Map options) throws IOException {
+    @Override public LocalPersistence createPersistence(String root, DomainSpec spec, Map options)
+            throws IOException {
         return null;
     }
 

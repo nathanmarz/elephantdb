@@ -97,10 +97,6 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public PersistenceCoordinator getCoordinator() {
-        if (_coordinator.getSpec() != this) {
-            _coordinator.setSpec(this);
-        }
-
         return _coordinator;
     }
 
@@ -136,7 +132,6 @@ public class DomainSpec implements Writable, Serializable {
     public Object deserialize(byte[] bytes) {
         ensureKryoBuf();
         return _kryoBuf.readClassAndObject(bytes);
-
     }
 
     public <T> T deserialize(byte[] bytes, Class<T> klass) {

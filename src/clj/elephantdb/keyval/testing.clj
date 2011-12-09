@@ -14,44 +14,37 @@
            [elephantdb.store DomainStore]
            [org.apache.hadoop.io IntWritable]
            [org.apache.hadoop.mapred JobConf]
-           [org.apache.thrift TException]))
+           [org.apache.thrift TException]
+           [elephantdb.persistence KeyValDocument]))
 
-(defn domain-data [& key-val-pairs]
-  (map (fn [x]
-         [(barr (first x))
-          (if-not (nil? (second x))
-            (apply barr (second x)))])
+(defn domain-data
+  "TODO: Destroy. This doesn't make sense anymore with the new
+  handling for objects."
+  [& key-val-pairs]
+  (map (fn [[k v]]
+         [(barr k) (when v (apply barr v))])
        (partition 2 key-val-pairs)))
 
-(defn add-string [db key value]
-  (.add db
-        (.getBytes key)
-        (.getBytes value)))
+(defn index [db key value]
+  (.index db (KeyValDocument. key value)))
 
-(defn get-string [db key]
-  (when-let [r (.get db (.getBytes key))]
-    (String. r)))
+(defn edb-get [db key]
+  (.get db key))
 
-(defn get-kvpairs [db]
+(defn get-all [db]
   (doall
    (for [kvp (seq db)]
-     [(. kvp key) (. kvp value)])))
+     [(.key kvp) (.value kvp)])))
 
-(defn get-string-kvpairs [db]
-  (for [[k v] (get-kvpairs db)]
-    [(String. k) (String. v)]))
+(defn append-pairs [coordinator t spec & kv-pairs]
+  (with-open [db (.openPersistenceForAppend coordinator t spec {})]
+    (doseq [[k v] kv-pairs]
+      (index db k v))))
 
-(defn append-string-pairs [coordinator t pairs]
-  (let [db (.openPersistenceForAppend coordinator t {})]
-    (doseq [[k v] pairs]
-      (add-string db k v))
-    (.close db)))
-
-(defn create-string-pairs [coordinator t pairs]
-  (let [db (.createPersistence coordinator t {})]
-    (doseq [[k v] pairs]
-      (add-string db k v))
-    (.close db)))
+(defn create-pairs [coordinator t spec & kv-pairs]
+  (with-open [db (.createPersistence coordinator t spec {})]
+    (doseq [[k v] kv-pairs]
+      (index db k v))))
 
 ;; bind this to get different behavior when making sharded domains.
 ;; TODO: Remove first arg from key-shard.

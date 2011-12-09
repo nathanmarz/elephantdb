@@ -81,7 +81,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             } else {
                 String updateDir = remoteUpdateDirForShard(shardIdx);
                 String localShard = _localManager.downloadRemoteShard("" + shardIdx, updateDir);
-                lp = fact.openPersistenceForAppend(localShard, options);
+                lp = fact.openPersistenceForAppend(localShard, _args.spec, options);
                 _lps.put(shardIdx, lp);
                 progress();
             }

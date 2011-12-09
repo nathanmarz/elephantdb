@@ -54,7 +54,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
                     Utils.getFS(_split.shardPath, split.conf), _split.spec, _args.persistenceOptions,
                     LocalElephantManager.getTmpDirs(_split.conf));
             String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
-            _lp = _split.spec.getCoordinator().openPersistenceForRead(localpath, _args.persistenceOptions);
+            _lp = _split.spec.getCoordinator().openPersistenceForRead(localpath, _split.spec, _args.persistenceOptions);
             _iterator = _lp.iterator();
         }
 
