@@ -9,7 +9,7 @@
                  [backtype/thriftjava "1.0.0"]
                  [log4j/log4j "1.2.16"]
                  [hadoop-util "0.2.3"]
-                 [cascading.kryo "0.1.2"]
+                 [cascading.kryo "0.1.3"]
                  [com.sleepycat/je "4.1.10"]
                  [org.apache.lucene/lucene-core "3.0.3"]
                  [org.apache.lucene/lucene-queries "3.0.3"]]
