@@ -67,9 +67,7 @@
 
 (defn key-hosts
   "For the supplied domain, shard index and key, returns a set of all
-  hosts containing the supplied key.
-
-  TODO: Call serialize here, to push it down as far as possible?"
+  hosts containing the supplied key."
   [domain index ^bytes key]
   (->> (num-shards index)
        (key-shard domain key)

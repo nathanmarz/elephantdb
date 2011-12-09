@@ -40,24 +40,6 @@
 (defprotocol IShutdownable
   (shutdown [_]))
 
-(defprotocol ISerialize
-  (serialize [x]))
-
-;; TODO: Get rid of this! We don't need it anymore with new Kryo serialization.
-(extend-protocol ISerialize
-  Integer
-  (serialize [x] x)
-
-  Long
-  (serialize [x] x)
-
-  String
-  (serialize [x]  x))
-
-(extend (Class/forName "[B") 
-  ISerialize
-  {:serialize identity})
-
 (comment
   "Examples of records and protocols:"
   (defprotocol Cake

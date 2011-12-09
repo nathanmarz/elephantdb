@@ -1,6 +1,5 @@
 (ns elephantdb.keyval.service
-  (:use [elephantdb.keyval.thrift :only (with-elephant-connection)]
-        [elephantdb.common.iface :only (serialize)])
+  (:use [elephantdb.keyval.thrift :only (with-elephant-connection)])
   (:require [clojure.string :as s]
             [hadoop-util.core :as h]
             [elephantdb.common.util :as u]
@@ -294,13 +293,13 @@
         (first (.multiGet this domain [key])))
 
       (getInt [this domain key]
-        (.get this domain (serialize key)))
+        (.get this domain key))
 
       (getLong [this domain key]
-        (.get this domain (serialize key)))
+        (.get this domain key))
 
       (getString [this domain key]
-        (.get this domain (serialize key)))
+        (.get this domain key))
 
       (directMultiGet [_ domain keys]
         (u/with-read-lock rw-lock
@@ -344,20 +343,20 @@
                        results))))))
 
       (multiGetInt [this domain keys]
-        (.multiGet this domain (map serialize keys)))
+        (.multiGet this domain keys))
 
       (multiGetLong [this domain keys]
-        (.multiGet this domain (map serialize keys)))
+        (.multiGet this domain keys))
 
       (multiGetString [this domain keys]
-        (.multiGet this domain (map serialize keys)))
+        (.multiGet this domain keys))
       
       (getDomainStatus [_ domain]
         (let [info (domains-info domain)]
           (when-not info
             (throw (thrift/domain-not-found-ex domain)))
           (domain/domain-status info)))
-
+      
       (getDomains [_]
         (keys domains-info))
       
