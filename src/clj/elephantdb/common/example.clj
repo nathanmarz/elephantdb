@@ -33,9 +33,9 @@
                   :status <status-atom>
                   :domain-data <data-atom>
                   :current-version 12356456324
-                  :all-versions #{{:id 12356456324, :status :open
-                                   :id 123235324,    :status :downloading
-                                   :id 1234534123,   :status :ready}}}
+                  :all-versions #{{:id 12356456324, :status :open}
+                                  {:id 123235324,    :status :downloading}
+                                  {:id 1234534123,   :status :ready}}}
    ;; or this, for all-versions
    "other-domain" {:shard-index {:hosts-to-shards <map>
                                  :shards-to-hosts <map>}
@@ -44,8 +44,6 @@
                    :current-version 12356456324
                    :all-versions {123235324 {:status :downloading}
                                   1234534123 {:status :ready}}}}
-
-  
   
   (load-version! example-db "domain" 123235324)
   ;; returns domain status on completion; triggers swaps on remote
@@ -88,9 +86,9 @@
                               :remote-handle "remote-fs-handle"
                               :domain-data <data-atom>
                               :current-version 12356456324
-                              :all-versions #{{:id 12356456324, :status :open
-                                               :id 123235324,    :status :downloading
-                                               :id 1234534123,   :status :ready}}}
+                              :all-versions #{{:id 12356456324, :status :open}
+                                              {:id 123235324,   :status :downloading}
+                                              {:id 1234534123,  :status :ready}}}
                ;; or this, for all-versions
                "other-domain" {:shard-index {:hosts-to-shards <map>
                                              :shards-to-hosts <map>}
