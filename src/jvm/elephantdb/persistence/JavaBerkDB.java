@@ -34,7 +34,7 @@ public class JavaBerkDB extends PersistenceCoordinator {
         return new JavaBerkDBPersistence(root, spec, options, false);
     }
 
-    public static class JavaBerkDBPersistence implements LocalPersistence<KeyValDocument> {
+    public static class JavaBerkDBPersistence extends UpdateablePersistence<KeyValDocument> {
         private static final String DATABASE_NAME = "elephant";
         Environment _env;
         Database _db;

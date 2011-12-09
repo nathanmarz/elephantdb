@@ -97,16 +97,25 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public PersistenceCoordinator getCoordinator() {
+        _coordinator.setKryoPairs(this.getKryoPairs());
         return _coordinator;
     }
 
+    /*
+    The following functions deal with the shard scheme; when you access a shard scheme through the domain it becomes possible to wrap certain functionality.
+     */
     public ShardScheme getShardScheme() {
-        if (_shardScheme.getSpec() != this) {
-            _shardScheme.setSpec(this);
-        }
+        _shardScheme.setKryoPairs(this.getKryoPairs());
         return _shardScheme;
     }
+    
+    public int shardIndex(Object doc) {
+        return getShardScheme().shardIndex(doc, getNumShards());
+    }
 
+    /*
+    TODO: Remove this serialization functionality, no need for it now that we're squirrelling it away inside of the shardscheme and the persistencecoordinator (through their extension of KryoWrapper).
+     */
     public List<List<String>> getKryoPairs() {
         return _kryoPairs;
     }
@@ -139,6 +148,10 @@ public class DomainSpec implements Writable, Serializable {
         return _kryoBuf.readObject(bytes, klass);
     }
 
+
+    /*
+    Back to the good stuff.
+     */
     public static DomainSpec readFromFileSystem(FileSystem fs, String dirpath) throws IOException {
         Path filePath = new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME);
         if(!fs.exists(filePath)) {
@@ -201,13 +214,5 @@ public class DomainSpec implements Writable, Serializable {
         this._coordinator = spec._coordinator;
         this._shardScheme = spec._shardScheme;
         this._kryoPairs = spec._kryoPairs;
-    }
-
-    /**
-     * The ObjectBuffer can't be serialized, so it's set to null before serialization.
-     */
-    private void writeObject(ObjectOutputStream aOutputStream) throws IOException {
-        _kryoBuf = null;
-        aOutputStream.defaultWriteObject();
     }
 }

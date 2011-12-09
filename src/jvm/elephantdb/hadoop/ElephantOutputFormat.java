@@ -5,6 +5,7 @@ import elephantdb.Utils;
 import elephantdb.persistence.Document;
 import elephantdb.persistence.LocalPersistence;
 import elephantdb.persistence.PersistenceCoordinator;
+import elephantdb.persistence.UpdateablePersistence;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -93,7 +94,12 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
 
             // deserialize the document and pass it into the updater.
             Document doc = (Document) _args.spec.deserialize(Utils.getBytes(carrier));
-            _args.updater.update(lp, doc);
+            if (lp instanceof UpdateablePersistence) {
+                // Generify this with the proper document type!
+                ((UpdateablePersistence) lp).index(doc, _args.updater);
+            } else {
+                lp.index(doc);
+            }
 
             bumpProgress();
         }

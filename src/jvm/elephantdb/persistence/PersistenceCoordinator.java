@@ -14,7 +14,8 @@ import java.util.Map;
  *
  *  .getCoordinator returns a new instance of the class referenced by that string.
  */
-public abstract class PersistenceCoordinator implements Serializable {
+public abstract class PersistenceCoordinator extends KryoWrapper implements Serializable {
+    // Add a static Arguments class here with good defaults.
     public abstract LocalPersistence openPersistenceForRead(String root, DomainSpec spec, Map options)
             throws IOException;
     public abstract LocalPersistence openPersistenceForAppend(String root, DomainSpec spec, Map options)
