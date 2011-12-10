@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import elephantdb.persistence.KryoWrapper;
 import elephantdb.persistence.LocalPersistence;
 import elephantdb.persistence.PersistenceCoordinator;
 import elephantdb.persistence.ShardScheme;
@@ -80,10 +81,19 @@ public class DomainSpec implements Writable, Serializable {
         return _kryoPairs;
     }
 
+    public void ensureMatchingPairs(KryoWrapper wrapper) {
+        if (wrapper.getKryoPairs() != this.getKryoPairs())
+            wrapper.setKryoPairs(this.getKryoPairs());
+    }
+
     public PersistenceCoordinator getCoordinator() {
-        if (_coordinator.getKryoPairs() != this.getKryoPairs())
-            _coordinator.setKryoPairs(this.getKryoPairs());
+        ensureMatchingPairs(_coordinator);
         return _coordinator;
+    }
+
+    public ShardScheme getShardScheme() {
+        ensureMatchingPairs(_shardScheme);
+        return _shardScheme;
     }
 
     /*
@@ -109,10 +119,6 @@ public class DomainSpec implements Writable, Serializable {
     /*
     The following functions deal with the shard scheme; when you access a shard scheme through the domain it becomes possible to wrap certain functionality.
      */
-    public ShardScheme getShardScheme() {
-        _shardScheme.setKryoPairs(this.getKryoPairs());
-        return _shardScheme;
-    }
     
     public int shardIndex(Object shardKey) {
         return getShardScheme().shardIndex(shardKey, getNumShards());
