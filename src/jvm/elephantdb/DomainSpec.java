@@ -22,18 +22,26 @@ import org.jvyaml.YAML;
 // Can we make an interface out of this?
 public class DomainSpec implements Writable, Serializable {
     public static final Logger LOG = Logger.getLogger(DomainSpec.class);
+    public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
+
+    private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
+    private static final String SHARD_SCHEME_CONF = "shard_scheme";
+    private static final String NUM_SHARDS_CONF = "num_shards";
+    private static final String KRYO_PAIRS = "kryo_pairs";
+    private static final String PERSISTENCE_OPTS = "persistence_opts";
+
+
+    // This gets serialized in via the conf.
+    public static class Args implements Serializable {
+        private List<List<String>> kryoPairs = new ArrayList<List<String>>();
+        private Map persistenceOptions = new HashMap();
+    }
+
+    Args _optionalArgs;
 
     private int _numShards;
     private PersistenceCoordinator _coordinator;
     private ShardScheme _shardScheme;
-    private List<List<String>> _kryoPairs;
-
-    public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
-    private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
-    private static final String SHARD_SCHEME_CONF = "shard_scheme";
-
-    private static final String NUM_SHARDS_CONF = "num_shards";
-    private static final String SERIALIZER_CONF = "kryo_pairs";
 
     public DomainSpec() {
     }
@@ -44,33 +52,32 @@ public class DomainSpec implements Writable, Serializable {
      * @param numShards
      */
     public DomainSpec(String factClass, String shardSchemeClass, int numShards) {
-        this(factClass, shardSchemeClass, numShards, new ArrayList<List<String>>());
+        this(factClass, shardSchemeClass, numShards, new Args());
     }
 
-    public DomainSpec(String factClass, String shardSchemeClass, int numShards, List<List<String>> kryoPairs) {
-        this(Utils.classForName(factClass), Utils.classForName(shardSchemeClass), numShards, kryoPairs);
+    public DomainSpec(String factClass, String shardSchemeClass, int numShards, Args args) {
+        this(Utils.classForName(factClass), Utils.classForName(shardSchemeClass), numShards, args);
     }
 
     public DomainSpec(Class factClass, Class shardSchemeClass, int numShards) {
-        this(factClass, shardSchemeClass, numShards, new ArrayList<List<String>>());
+        this(factClass, shardSchemeClass, numShards, new Args());
     }
 
-    public DomainSpec(Class factClass, Class shardSchemeClass, int numShards, List<List<String>> kryoPairs) {
+    public DomainSpec(Class factClass, Class shardSchemeClass, int numShards, Args args) {
         this((PersistenceCoordinator)Utils.newInstance(factClass),
-            (ShardScheme)Utils.newInstance(shardSchemeClass),
-            numShards, kryoPairs);
+                (ShardScheme)Utils.newInstance(shardSchemeClass),
+                numShards, args);
     }
 
     public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards) {
-        this(coordinator, shardScheme, numShards, new ArrayList<List<String>>());
+        this(coordinator, shardScheme, numShards, new Args());
     }
 
-    public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards,
-                      List<List<String>> kryoPairs) {
+    public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards, Args args) {
         this._numShards = numShards;
-        this._kryoPairs = kryoPairs;
         this._coordinator = coordinator;
         this._shardScheme = shardScheme;
+        this._optionalArgs = args;
     }
 
     public int getNumShards() {
@@ -78,7 +85,11 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public List<List<String>> getKryoPairs() {
-        return _kryoPairs;
+        return _optionalArgs.kryoPairs;
+    }
+
+    public Map getPersistenceOptions() {
+        return _optionalArgs.persistenceOptions;
     }
 
     public void ensureMatchingPairs(KryoWrapper wrapper) {
@@ -105,15 +116,15 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public LocalPersistence openShardForAppend(String root, int shardIdx) throws IOException {
-        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), new HashMap());
+        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
     }
 
     public LocalPersistence openShardForRead(String root, int shardIdx) throws IOException {
-        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), new HashMap());
+        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
     }
 
     public LocalPersistence createShard(String root, int shardIdx) throws IOException {
-        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), new HashMap());
+        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
     }
 
     /*
@@ -167,9 +178,12 @@ public class DomainSpec implements Writable, Serializable {
         String persistenceConf = (String)specmap.get(LOCAL_PERSISTENCE_CONF);
         String shardSchemeConf = (String)specmap.get(SHARD_SCHEME_CONF);
         int numShards = ((Long)specmap.get(NUM_SHARDS_CONF)).intValue();
-        List<List<String>> kryoMap = (List<List<String>>) specmap.get(SERIALIZER_CONF);
 
-        return new DomainSpec(persistenceConf, shardSchemeConf, numShards, kryoMap);
+        Args args = new Args();
+        args.persistenceOptions = (Map) specmap.get(PERSISTENCE_OPTS);
+        args.kryoPairs = (List<List<String>>) specmap.get(KRYO_PAIRS);
+
+        return new DomainSpec(persistenceConf, shardSchemeConf, numShards, args);
     }
 
     public void writeToStream(OutputStream os) {
@@ -181,7 +195,8 @@ public class DomainSpec implements Writable, Serializable {
         spec.put(LOCAL_PERSISTENCE_CONF, _coordinator.getClass().getName());
         spec.put(SHARD_SCHEME_CONF, _shardScheme.getClass().getName());
         spec.put(NUM_SHARDS_CONF, _numShards);
-        spec.put(SERIALIZER_CONF, _kryoPairs);
+        spec.put(KRYO_PAIRS, getKryoPairs());
+        spec.put(PERSISTENCE_OPTS, getPersistenceOptions());
         return spec;
     }
 
@@ -202,6 +217,6 @@ public class DomainSpec implements Writable, Serializable {
         this._numShards = spec._numShards;
         this._coordinator = spec._coordinator;
         this._shardScheme = spec._shardScheme;
-        this._kryoPairs = spec._kryoPairs;
+        this._optionalArgs = spec._optionalArgs;
     }
 }

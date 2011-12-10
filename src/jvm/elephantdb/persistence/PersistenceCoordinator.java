@@ -3,7 +3,6 @@ package elephantdb.persistence;
 import elephantdb.DomainSpec;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Map;
 
 /**
