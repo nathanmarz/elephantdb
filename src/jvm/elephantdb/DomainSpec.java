@@ -1,9 +1,5 @@
 package elephantdb;
 
-import cascading.kryo.KryoFactory;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.ObjectBuffer;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +25,6 @@ public class DomainSpec implements Writable, Serializable {
     private PersistenceCoordinator _coordinator;
     private ShardScheme _shardScheme;
     private List<List<String>> _kryoPairs;
-    private ObjectBuffer _kryoBuf;
 
     public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
     private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
@@ -71,7 +66,6 @@ public class DomainSpec implements Writable, Serializable {
     public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards, List<List<String>> kryoPairs) {
         this._numShards = numShards;
         this._kryoPairs = kryoPairs;
-        this._kryoBuf = getObjectBuffer();
         this._coordinator = coordinator;
         this._shardScheme = shardScheme;
     }
@@ -96,6 +90,10 @@ public class DomainSpec implements Writable, Serializable {
         return _numShards;
     }
 
+    public List<List<String>> getKryoPairs() {
+        return _kryoPairs;
+    }
+
     public PersistenceCoordinator getCoordinator() {
         _coordinator.setKryoPairs(this.getKryoPairs());
         return _coordinator;
@@ -112,42 +110,6 @@ public class DomainSpec implements Writable, Serializable {
     public int shardIndex(Object doc) {
         return getShardScheme().shardIndex(doc, getNumShards());
     }
-
-    /*
-    TODO: Remove this serialization functionality, no need for it now that we're squirrelling it away inside of the shardscheme and the persistencecoordinator (through their extension of KryoWrapper).
-     */
-    public List<List<String>> getKryoPairs() {
-        return _kryoPairs;
-    }
-
-    public ObjectBuffer getObjectBuffer() {
-        Kryo k = new Kryo();
-        KryoFactory.populateKryo(k, getKryoPairs(), false, true);
-        return KryoFactory.newBuffer(k);
-    }
-
-    private void ensureKryoBuf() {
-        if (_kryoBuf == null) {
-            _kryoBuf = getObjectBuffer();
-        }
-    }
-
-    public byte[] serialize(Object o) {
-        ensureKryoBuf();
-        LOG.debug("Serializing object: " + o);
-        return _kryoBuf.writeClassAndObject(o);
-    }
-
-    public Object deserialize(byte[] bytes) {
-        ensureKryoBuf();
-        return _kryoBuf.readClassAndObject(bytes);
-    }
-
-    public <T> T deserialize(byte[] bytes, Class<T> klass) {
-        ensureKryoBuf();
-        return _kryoBuf.readObject(bytes, klass);
-    }
-
 
     /*
     Back to the good stuff.

@@ -39,7 +39,6 @@
                                       (h/path local-shard-path))
                  persistence (.openPersistenceForRead (.getCoordinator test-spec)
                                                       local-shard-path
-                                                      test-spec
                                                       {})]
              (u/dofor [[k v] records]
                       (is (= v (.get persistence k))))

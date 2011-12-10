@@ -4,6 +4,7 @@ import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.Document;
+import elephantdb.persistence.KryoWrapper;
 import elephantdb.persistence.LocalPersistence;
 import elephantdb.store.DomainStore;
 import org.apache.hadoop.fs.FileSystem;
@@ -54,7 +55,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
                     Utils.getFS(_split.shardPath, split.conf), _split.spec, _args.persistenceOptions,
                     LocalElephantManager.getTmpDirs(_split.conf));
             String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
-            _lp = _split.spec.getCoordinator().openPersistenceForRead(localpath, _split.spec, _args.persistenceOptions);
+            _lp = _split.spec.getCoordinator().openPersistenceForRead(localpath, _args.persistenceOptions);
             _iterator = _lp.iterator();
         }
 
@@ -67,7 +68,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
 
                 //TODO: At this point we need to run this through some sort of "fetcher" that can
                 //build the key-val document back up from what pops out of berkeleyDB.
-                byte[] crushed = _split.spec.serialize(pair);
+                byte[] crushed = _split.kryoBuf.serialize(pair);
                 v.set(new BytesWritable(crushed));
 
                 numRead++;
@@ -114,6 +115,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
     public static class ElephantInputSplit implements InputSplit {
         private String shardPath;
         private DomainSpec spec;
+        private KryoWrapper.KryoBuffer kryoBuf;
         private JobConf conf;
 
         public ElephantInputSplit() {
@@ -123,6 +125,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             this.shardPath = shardPath;
             this.spec = spec;
             this.conf = conf;
+            this.kryoBuf = this.spec.getCoordinator().getKryoBuffer();
         }
 
         // TODO: Store this result in a variable and use it to update the

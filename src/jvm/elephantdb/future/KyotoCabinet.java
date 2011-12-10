@@ -20,18 +20,15 @@ public class KyotoCabinet extends PersistenceCoordinator {
 
     public KyotoCabinet() {super();}
 
-    @Override public LocalPersistence openPersistenceForRead(String root, DomainSpec spec, Map options)
-            throws IOException {
+    @Override public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
         return null;
     }
 
-    @Override public LocalPersistence openPersistenceForAppend(String root, DomainSpec spec, Map options)
-            throws IOException {
+    @Override public LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException {
         return null;
     }
 
-    @Override public LocalPersistence createPersistence(String root, DomainSpec spec, Map options)
-            throws IOException {
+    @Override public LocalPersistence createPersistence(String root, Map options) throws IOException {
         return null;
     }
 

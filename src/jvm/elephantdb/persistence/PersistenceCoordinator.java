@@ -14,14 +14,11 @@ import java.util.Map;
  *
  *  .getCoordinator returns a new instance of the class referenced by that string.
  */
-public abstract class PersistenceCoordinator extends KryoWrapper implements Serializable {
+public abstract class PersistenceCoordinator extends KryoWrapper {
     // Add a static Arguments class here with good defaults.
-    public abstract LocalPersistence openPersistenceForRead(String root, DomainSpec spec, Map options)
-            throws IOException;
-    public abstract LocalPersistence openPersistenceForAppend(String root, DomainSpec spec, Map options)
-            throws IOException;
-    public abstract LocalPersistence createPersistence(String root, DomainSpec spec, Map options)
-            throws IOException;
+    public abstract LocalPersistence openPersistenceForRead(String root, Map options) throws IOException;
+    public abstract LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException;
+    public abstract LocalPersistence createPersistence(String root, Map options) throws IOException;
 
     public KeySorter getKeySorter() {
         return new IdentityKeySorter();

@@ -24,18 +24,15 @@ public class Lucene extends PersistenceCoordinator {
 
     public Lucene() {super();}
 
-    @Override public LocalPersistence openPersistenceForRead(String root, DomainSpec spec, Map options)
-        throws IOException {
+    @Override public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
         return new LucenePersistence(root, options);
     }
 
-    @Override public LocalPersistence openPersistenceForAppend(String root, DomainSpec spec, Map options)
-        throws IOException {
+    @Override public LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException {
         return new LucenePersistence(root, options);
     }
 
-    @Override public LocalPersistence createPersistence(String root, DomainSpec spec, Map options)
-        throws IOException {
+    @Override public LocalPersistence createPersistence(String root, Map options) throws IOException {
         return new LucenePersistence(root, options);
     }
 

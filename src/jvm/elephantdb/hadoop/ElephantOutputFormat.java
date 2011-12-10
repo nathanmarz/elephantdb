@@ -2,10 +2,7 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
-import elephantdb.persistence.Document;
-import elephantdb.persistence.LocalPersistence;
-import elephantdb.persistence.PersistenceCoordinator;
-import elephantdb.persistence.UpdateablePersistence;
+import elephantdb.persistence.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -54,6 +51,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         Map<Integer, LocalPersistence> _lps = new HashMap<Integer, LocalPersistence>();
         Progressable _progressable;
         LocalElephantManager _localManager;
+        KryoWrapper.KryoBuffer _kryoBuf;
 
         int _numWritten = 0;
         long _lastCheckpoint = System.currentTimeMillis();
@@ -62,6 +60,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             throws IOException {
             _fs = Utils.getFS(args.outputDirHdfs, conf);
             _args = args;
+            _kryoBuf = _args.spec.getCoordinator().getKryoBuffer();
             _progressable = progressable;
             _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions,
                 LocalElephantManager.getTmpDirs(conf));
@@ -82,7 +81,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             } else {
                 String updateDir = remoteUpdateDirForShard(shardIdx);
                 String localShard = _localManager.downloadRemoteShard("" + shardIdx, updateDir);
-                lp = fact.openPersistenceForAppend(localShard, _args.spec, options);
+                lp = fact.openPersistenceForAppend(localShard, options);
                 _lps.put(shardIdx, lp);
                 progress();
             }
@@ -92,8 +91,8 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         public void write(IntWritable shard, BytesWritable carrier) throws IOException {
             LocalPersistence lp = retrieveShard(shard.get());
 
-            // deserialize the document and pass it into the updater.
-            Document doc = (Document) _args.spec.deserialize(Utils.getBytes(carrier));
+            // TODO: Change this behavior and get Cascading to serialize object.
+            Document doc = (Document) _kryoBuf.deserialize(Utils.getBytes(carrier));
             if (lp instanceof UpdateablePersistence) {
                 // Generify this with the proper document type!
                 ((UpdateablePersistence) lp).index(doc, _args.updater);

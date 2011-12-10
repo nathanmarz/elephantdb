@@ -55,7 +55,7 @@ public class LocalElephantManager {
         PersistenceCoordinator fact = _spec.getCoordinator();
         String returnDir = localTmpDir(id);
         if (remotePath == null || !_fs.exists(new Path(remotePath))) {
-            fact.createPersistence(returnDir, _spec, _persistenceOptions).close();
+            fact.createPersistence(returnDir, _persistenceOptions).close();
         } else {
             _fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
             Collection<File> crcs =

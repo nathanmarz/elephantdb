@@ -18,4 +18,5 @@
                      [lein-marginalia "0.6.1"]
                      [midje "1.3-alpha4"]
                      [lein-midje "1.0.4"]]
+  :aot [elephantdb.common.iface]
   :main elephantdb.keyval.main)
