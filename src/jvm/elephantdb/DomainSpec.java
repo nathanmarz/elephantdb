@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import elephantdb.persistence.LocalPersistence;
 import elephantdb.persistence.PersistenceCoordinator;
 import elephantdb.persistence.ShardScheme;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -63,27 +64,12 @@ public class DomainSpec implements Writable, Serializable {
         this(coordinator, shardScheme, numShards, new ArrayList<List<String>>());
     }
 
-    public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards, List<List<String>> kryoPairs) {
+    public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards,
+                      List<List<String>> kryoPairs) {
         this._numShards = numShards;
         this._kryoPairs = kryoPairs;
         this._coordinator = coordinator;
         this._shardScheme = shardScheme;
-    }
-
-    @Override
-    public String toString() {
-        return mapify().toString();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        DomainSpec o = (DomainSpec) other;
-        return mapify().equals(o.mapify());
-    }
-
-    @Override
-    public int hashCode() {
-        return mapify().hashCode();
     }
 
     public int getNumShards() {
@@ -95,8 +81,29 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public PersistenceCoordinator getCoordinator() {
-        _coordinator.setKryoPairs(this.getKryoPairs());
+        if (_coordinator.getKryoPairs() != this.getKryoPairs())
+            _coordinator.setKryoPairs(this.getKryoPairs());
         return _coordinator;
+    }
+
+    /*
+    Wrappers for Persistence Coordinator functions.
+     */
+    
+    private String shardPath(String root, int shardIdx) {
+        return root + "/" + shardIdx;
+    }
+
+    public LocalPersistence openShardForAppend(String root, int shardIdx) throws IOException {
+        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), new HashMap());
+    }
+
+    public LocalPersistence openShardForRead(String root, int shardIdx) throws IOException {
+        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), new HashMap());
+    }
+
+    public LocalPersistence createShard(String root, int shardIdx) throws IOException {
+        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), new HashMap());
     }
 
     /*
@@ -107,13 +114,27 @@ public class DomainSpec implements Writable, Serializable {
         return _shardScheme;
     }
     
-    public int shardIndex(Object doc) {
-        return getShardScheme().shardIndex(doc, getNumShards());
+    public int shardIndex(Object shardKey) {
+        return getShardScheme().shardIndex(shardKey, getNumShards());
     }
 
     /*
-    Back to the good stuff.
+    Back to the good old DomainSpec business.
      */
+
+    @Override public String toString() {
+        return mapify().toString();
+    }
+
+    @Override public boolean equals(Object other) {
+        DomainSpec o = (DomainSpec) other;
+        return mapify().equals(o.mapify());
+    }
+
+    @Override public int hashCode() {
+        return mapify().hashCode();
+    }
+
     public static DomainSpec readFromFileSystem(FileSystem fs, String dirpath) throws IOException {
         Path filePath = new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME);
         if(!fs.exists(filePath)) {
