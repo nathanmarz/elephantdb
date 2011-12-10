@@ -19,7 +19,6 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 import org.jvyaml.YAML;
 
-// Can we make an interface out of this?
 public class DomainSpec implements Writable, Serializable {
     public static final Logger LOG = Logger.getLogger(DomainSpec.class);
     public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
@@ -110,8 +109,16 @@ public class DomainSpec implements Writable, Serializable {
     /*
     Wrappers for Persistence Coordinator functions.
      */
-    
+
+    public void assertValidShard(int shardIdx) {
+        if ( !(shardIdx >= 0 && shardIdx < getNumShards()) ) {
+            String errorStr = shardIdx +
+                    " is not a valid shard index. Index must be between 0 and " + (getNumShards() - 1);
+            throw new RuntimeException(errorStr);
+        }
+    }
     private String shardPath(String root, int shardIdx) {
+        assertValidShard(shardIdx);
         return root + "/" + shardIdx;
     }
 
