@@ -63,16 +63,19 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         // shard index as an IntWritable key.
         public boolean next(NullWritable k, BytesWritable v) throws IOException {
             if (_iterator.hasNext()) {
-
                 Document pair = (Document) _iterator.next();
 
                 //TODO: At this point we need to run this through some sort of "fetcher" that can
                 //build the key-val document back up from what pops out of berkeleyDB.
-                byte[] crushed = _split.kryoBuf.serialize(pair);
+
+                byte[] crushed = _split.getKryoBuffer().serialize(pair);
                 v.set(new BytesWritable(crushed));
 
                 numRead++;
-                if (_reporter != null) { _reporter.progress(); }
+                if (_reporter != null) {
+                    _reporter.progress();
+                }
+
                 return true;
             } else {
                 if (_reporter != null) { _reporter.progress(); }
@@ -125,7 +128,13 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             this.shardPath = shardPath;
             this.spec = spec;
             this.conf = conf;
-            this.kryoBuf = this.spec.getCoordinator().getKryoBuffer();
+        }
+        
+        public KryoWrapper.KryoBuffer getKryoBuffer() {
+            if (kryoBuf == null)
+                kryoBuf = spec.getCoordinator().getKryoBuffer();
+
+            return kryoBuf;
         }
 
         // TODO: Store this result in a variable and use it to update the

@@ -1,8 +1,6 @@
 package elephantdb.persistence;
 
-import com.esotericsoftware.kryo.ObjectBuffer;
 import com.sleepycat.je.*;
-import elephantdb.DomainSpec;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -31,7 +29,7 @@ public class JavaBerkDB extends PersistenceCoordinator {
         return new JavaBerkDBPersistence(root, getKryoBuffer(), options, false);
     }
 
-    public static class JavaBerkDBPersistence extends UpdateablePersistence<KeyValDocument> {
+    public static class JavaBerkDBPersistence implements LocalPersistence<KeyValDocument> {
         private static final String DATABASE_NAME = "elephant";
         Environment _env;
         Database _db;
