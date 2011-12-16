@@ -33,6 +33,7 @@
   [db-conf local-domain-root shards]
   (let [lfs (h/local-filesystem)
         local-store (DomainStore. lfs local-domain-root)
+        ;; TODO: switch to (.getSpec local-store)
         domain-spec (DomainSpec/readFromFileSystem lfs local-domain-root)
         local-version-path (.mostRecentVersionPath local-store)
         future-lps (u/dofor [s shards]

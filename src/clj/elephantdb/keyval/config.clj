@@ -11,7 +11,6 @@
 ;;
 ;; TODO: Discuss what's included in the local and global
 ;; configurations.
-
 (def example-global-config
   {:replication 2
    :hosts ["elephant1.server" "elephant2.server" "elephant3.server"]
@@ -40,6 +39,8 @@
 (defmethod persistence-str PersistenceCoordinator
   [persistence] (.getName (class persistence)))
 
+;; TODO: REMOVE THIS, since it's captured inside of the
+;; domain-spec.
 (defn persistence-options
   [db-conf persistence]
   (get db-conf (persistence-str persistence) {}))

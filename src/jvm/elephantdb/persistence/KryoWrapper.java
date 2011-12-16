@@ -34,8 +34,8 @@ public abstract class KryoWrapper implements Serializable {
         return _kryoBuf;
     }
 
-    public class KryoBuffer {
-        private ObjectBuffer _objectBuffer;
+    public class KryoBuffer implements Serializable {
+        private transient ObjectBuffer _objectBuffer;
         private List<List<String>> _kryoPairs = new ArrayList<List<String>>();
         private List<List<String>> _embeddedPairs = new ArrayList<List<String>>();
 

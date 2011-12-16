@@ -93,6 +93,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
 
             // TODO: Change this behavior and get Cascading to serialize object.
             Document doc = (Document) _kryoBuf.deserialize(Utils.getBytes(carrier));
+
             if (lp instanceof UpdateablePersistence) {
                 // Generify this with the proper document type!
                 ((UpdateablePersistence) lp).index(doc, _args.updater);
