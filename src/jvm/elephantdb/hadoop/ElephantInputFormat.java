@@ -5,7 +5,7 @@ import elephantdb.Utils;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.Document;
 import elephantdb.persistence.KryoWrapper;
-import elephantdb.persistence.LocalPersistence;
+import elephantdb.persistence.Persistence;
 import elephantdb.store.DomainStore;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -41,7 +41,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         Reporter _reporter;
         Args _args;
         LocalElephantManager _manager;
-        LocalPersistence _lp;
+        Persistence _lp;
         CloseableIterator _iterator;
         boolean finished = false;
         int numRead = 0;
@@ -131,8 +131,9 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         }
         
         public KryoWrapper.KryoBuffer getKryoBuffer() {
+            // TODO: Remove the cast and make this work with interfaces.
             if (kryoBuf == null)
-                kryoBuf = spec.getCoordinator().getKryoBuffer();
+                kryoBuf = ((KryoWrapper) spec.getCoordinator()).getKryoBuffer();
 
             return kryoBuf;
         }

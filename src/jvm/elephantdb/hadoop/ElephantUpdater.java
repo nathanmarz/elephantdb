@@ -1,18 +1,16 @@
 package elephantdb.hadoop;
 
+import elephantdb.persistence.Document;
+import elephantdb.persistence.Persistence;
+
 import java.io.IOException;
 import java.io.Serializable;
 
-//
-//
-
 /**
  *
- * interface Updater<P implements LocalPersistence, R implements Record>  {
- *     void index(P persistence, R record);
- * }
- * Record here needs a kryo serializer registered.
+ * Document here needs a kryo serializer registered.
  */
-public interface ElephantUpdater<P, D> extends Serializable {
-    public void update(P localPersistence, D doc) throws IOException;
+
+public interface ElephantUpdater<P extends Persistence, D extends Document> extends Serializable {
+    public void update(P persistence, D doc) throws IOException;
 }

@@ -1,7 +1,5 @@
 package elephantdb.persistence;
 
-import elephantdb.DomainSpec;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -13,11 +11,11 @@ import java.util.Map;
  *
  *  .getCoordinator returns a new instance of the class referenced by that string.
  */
-public abstract class PersistenceCoordinator extends KryoWrapper {
-    // Add a static Arguments class here with good defaults.
-    public abstract LocalPersistence openPersistenceForRead(String root, Map options) throws IOException;
-    public abstract LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException;
-    public abstract LocalPersistence createPersistence(String root, Map options) throws IOException;
+public abstract class PersistenceCoordinator extends KryoWrapper implements Coordinator {
+
+    public abstract Persistence openPersistenceForRead(String root, Map options) throws IOException;
+    public abstract Persistence openPersistenceForAppend(String root, Map options) throws IOException;
+    public abstract Persistence createPersistence(String root, Map options) throws IOException;
 
     public KeySorter getKeySorter() {
         return new IdentityKeySorter();

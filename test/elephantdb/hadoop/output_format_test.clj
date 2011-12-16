@@ -6,8 +6,7 @@
             [elephantdb.common.util :as u])
   (:import elephantdb.DomainSpec
            [elephantdb.hadoop ElephantOutputFormat
-            ElephantOutputFormat$Args
-            ElephantRecordWritable ElephantUpdater]
+            ElephantOutputFormat$Args ElephantUpdater]
            [org.apache.hadoop.io IntWritable BytesWritable]
            [elephantdb.persistence JavaBerkDB KeyValDocument]
            [elephantdb Utils]

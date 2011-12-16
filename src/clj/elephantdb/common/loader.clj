@@ -17,7 +17,7 @@
   (h/str-path domain-version shard))
 
 (defn open-domain-shard
-  "Opens and returns a LocalPersistence object standing in for the
+  "Opens and returns a Persistence object standing in for the
   shard at the supplied path."
   [domain-spec db-conf local-shard-path]
   (log/info "Opening LP " local-shard-path)
@@ -29,7 +29,7 @@
       (log/info "Opened LP " local-shard-path))))
 
 (defn open-domain
-  "Returns a sequence of LocalPersistence objects on success."
+  "Returns a sequence of Persistence objects on success."
   [db-conf local-domain-root shards]
   (let [lfs (h/local-filesystem)
         local-store (DomainStore. lfs local-domain-root)

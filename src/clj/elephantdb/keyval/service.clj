@@ -17,7 +17,7 @@
            [java.util.concurrent.locks ReentrantReadWriteLock]
            [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor
             WrongHostException DomainNotFoundException DomainNotLoadedException]
-           [elephantdb.persistence LocalPersistence]
+           [elephantdb.persistence Persistence]
            [elephantdb.store DomainStore]
            [org.apache.thrift TException]))
 
@@ -306,7 +306,7 @@
           (let [info (get-readable-domain-info domains-info domain)]
             (u/dofor [key keys
                       :let [shard (domain/key-shard domain info key)
-                            ^LocalPersistence lp (domain/domain-data info shard)]]
+                            ^Persistence lp (domain/domain-data info shard)]]
                      (log/debug "Direct get keys " (seq key) "at shard " shard)
                      (if lp
                        (thrift/mk-value (.get lp key))

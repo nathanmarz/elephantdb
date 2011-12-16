@@ -74,7 +74,7 @@
   (def full-db
     ;; We can get rid of some of these atoms if we maintain functions
     ;; for querying status, for the less common operations.
-    {:coordinator <instance of persistenceCoordinator>
+    {:coordinator <instance of Coordinator>
      :shard-scheme <shardscheme-instance>
      :shard-count <shard-count>
      :serializer <kryo-instance>

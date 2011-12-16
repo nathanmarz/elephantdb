@@ -35,7 +35,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         // If this is set, the output format will go download it!
         public String updateDirHdfs = null;
 
-        // ends up going to PersistenceCoordinator, which passes it on.
+        // ends up going to and Coordinator, which passes it on.
         public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
 
         public Args(DomainSpec spec, String outputDirHdfs) {
@@ -48,7 +48,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
 
         FileSystem _fs;
         Args _args;
-        Map<Integer, LocalPersistence> _lps = new HashMap<Integer, LocalPersistence>();
+        Map<Integer, Persistence> _lps = new HashMap<Integer, Persistence>();
         Progressable _progressable;
         LocalElephantManager _localManager;
         KryoWrapper.KryoBuffer _kryoBuf;
@@ -60,7 +60,9 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             throws IOException {
             _fs = Utils.getFS(args.outputDirHdfs, conf);
             _args = args;
-            _kryoBuf = _args.spec.getCoordinator().getKryoBuffer();
+
+            // TODO: Remove the cast and make this work with interfaces.
+            _kryoBuf = ((KryoWrapper) _args.spec.getCoordinator()).getKryoBuffer();
             _progressable = progressable;
             _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions,
                 LocalElephantManager.getTmpDirs(conf));
@@ -72,9 +74,9 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             }
         }
         
-        private LocalPersistence retrieveShard(int shardIdx) throws IOException {
-            LocalPersistence lp = null;
-            PersistenceCoordinator fact = _args.spec.getCoordinator();
+        private Persistence retrieveShard(int shardIdx) throws IOException {
+            Persistence lp = null;
+            Coordinator fact = _args.spec.getCoordinator();
             Map<String, Object> options = _args.persistenceOptions;
             if (_lps.containsKey(shardIdx)) {
                 lp = _lps.get(shardIdx);
@@ -89,7 +91,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
 
         public void write(IntWritable shard, BytesWritable carrier) throws IOException {
-            LocalPersistence lp = retrieveShard(shard.get());
+            Persistence lp = retrieveShard(shard.get());
 
             // TODO: Change this behavior and get Cascading to serialize object.
             Document doc = (Document) _kryoBuf.deserialize(Utils.getBytes(carrier));

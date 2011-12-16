@@ -1,6 +1,6 @@
 package elephantdb;
 
-import elephantdb.persistence.PersistenceCoordinator;
+import elephantdb.persistence.Coordinator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -123,8 +123,7 @@ public class Utils {
         return new Path(path).getFileSystem(c);
     }
 
-    public static Map<String, Object> getPersistenceOptions(Map<String, Map<String, Object>> opts,
-        PersistenceCoordinator fact) {
+    public static Map<String, Object> getPersistenceOptions(Map<String, Map<String, Object>> opts, Coordinator fact) {
         return opts.get(fact.getClass().getName());
     }
 

@@ -1,10 +1,9 @@
 package elephantdb.future;
 
-import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.persistence.CloseableIterator;
+import elephantdb.persistence.Persistence;
 import elephantdb.persistence.KeyValDocument;
-import elephantdb.persistence.LocalPersistence;
 import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -24,19 +23,19 @@ public class Lucene extends PersistenceCoordinator {
 
     public Lucene() {super();}
 
-    @Override public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
+    @Override public Persistence openPersistenceForRead(String root, Map options) throws IOException {
         return new LucenePersistence(root, options);
     }
 
-    @Override public LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException {
+    @Override public Persistence openPersistenceForAppend(String root, Map options) throws IOException {
         return new LucenePersistence(root, options);
     }
 
-    @Override public LocalPersistence createPersistence(String root, Map options) throws IOException {
+    @Override public Persistence createPersistence(String root, Map options) throws IOException {
         return new LucenePersistence(root, options);
     }
 
-    public static class LucenePersistence implements LocalPersistence<KeyValDocument> {
+    public static class LucenePersistence implements Persistence<KeyValDocument> {
         Directory _rootDir;
         IndexReader _reader;
 

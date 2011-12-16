@@ -1,7 +1,7 @@
 package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
-import elephantdb.persistence.PersistenceCoordinator;
+import elephantdb.persistence.Coordinator;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -52,7 +52,7 @@ public class LocalElephantManager {
      * remotePath is null or doesn't exist, creates an empty local elephant and closes it.
      */
     public String downloadRemoteShard(String id, String remotePath) throws IOException {
-        PersistenceCoordinator fact = _spec.getCoordinator();
+        Coordinator fact = _spec.getCoordinator();
         String returnDir = localTmpDir(id);
         if (remotePath == null || !_fs.exists(new Path(remotePath))) {
             fact.createPersistence(returnDir, _persistenceOptions).close();

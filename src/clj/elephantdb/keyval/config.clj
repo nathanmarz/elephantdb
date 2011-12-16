@@ -5,7 +5,7 @@
   (:use [hadoop-util.core :only (filesystem local-filesystem)])
   (:require [elephantdb.common.config :as conf])
   (:import [elephantdb DomainSpec Utils]
-           [elephantdb.persistence PersistenceCoordinator]))
+           [elephantdb.persistence Coordinator]))
 
 ;; ## Local and Global Configs
 ;;
@@ -36,11 +36,13 @@
 (defmethod persistence-str Class
   [persistence] (.getName persistence))
 
-(defmethod persistence-str PersistenceCoordinator
+(defmethod persistence-str Coordinator
   [persistence] (.getName (class persistence)))
 
 ;; TODO: REMOVE THIS, since it's captured inside of the
 ;; domain-spec.
+;;
+;; TODO: Remove persistence options from pallet deploy too.
 (defn persistence-options
   [db-conf persistence]
   (get db-conf (persistence-str persistence) {}))

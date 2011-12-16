@@ -3,12 +3,11 @@ package elephantdb.store;
 import elephantdb.DomainSpec;
 import java.io.IOException;
 
-import elephantdb.persistence.LocalPersistence;
+import elephantdb.persistence.Persistence;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import java.util.HashMap;
 import java.util.List;
 import org.apache.hadoop.fs.FileUtil;
 
@@ -69,27 +68,27 @@ public class DomainStore {
     Experimental code for accessing domains.
      */
 
-    public LocalPersistence openShardForAppend(int shardIdx) throws IOException {
+    public Persistence openShardForAppend(int shardIdx) throws IOException {
         return openShardForAppend(shardIdx, mostRecentVersion());
     }
 
-    public LocalPersistence openShardForAppend(int shardIdx, long version) throws IOException {
+    public Persistence openShardForAppend(int shardIdx, long version) throws IOException {
         return getSpec().openShardForAppend(versionPath(version), shardIdx);
     }
 
-    public LocalPersistence openShardForRead(int shardIdx) throws IOException {
+    public Persistence openShardForRead(int shardIdx) throws IOException {
         return openShardForRead(shardIdx, mostRecentVersion());
     }
 
-    public LocalPersistence openShardForRead(int shardIdx, long version) throws IOException {
+    public Persistence openShardForRead(int shardIdx, long version) throws IOException {
         return getSpec().openShardForRead(versionPath(version), shardIdx);
     }
 
-    public LocalPersistence createShard(int shardIdx) throws IOException {
+    public Persistence createShard(int shardIdx) throws IOException {
         return createShard(shardIdx, mostRecentVersion());
     }
 
-    public LocalPersistence createShard(int shardIdx, long version) throws IOException {
+    public Persistence createShard(int shardIdx, long version) throws IOException {
         return getSpec().createShard(versionPath(version), shardIdx);
     }
 

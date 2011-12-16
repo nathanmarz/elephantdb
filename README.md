@@ -233,7 +233,7 @@ For our particular key-value database, I think we should just serialize everythi
 
 When a key comes in, we serialize it with Kryo (instance booted up from information inside of the DomainSpec) and look up the corresponding value (deserialized with kryo).
 
-Single point of contact for various DomainStore questions. PersistenceCoordinator returns a 
+Single point of contact for various DomainStore questions. ICoordinator returns a
 
 
 ### More Notes on Client interface
@@ -252,7 +252,7 @@ This is a good interface:
   (domain-spec [_] "Returns instanced of DomainSpec."))
 ```
 
-Beyond that, we need some way for a DomainStore to give us access to its PersistenceCoordinator. the database really IS a persistencecoordinator; or really a set of the local persistences on the machine.
+Beyond that, we need some way for a DomainStore to give us access to its ICoordinator. the database really IS an ICoordinator; or really a set of the local persistences on the machine.
 
 Does the user need to know about current replication?
 

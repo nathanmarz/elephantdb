@@ -3,10 +3,9 @@ package elephantdb.future;
 import java.io.IOException;
 import java.util.Map;
 
-import elephantdb.DomainSpec;
 import elephantdb.persistence.CloseableIterator;
+import elephantdb.persistence.Persistence;
 import elephantdb.persistence.KeyValDocument;
-import elephantdb.persistence.LocalPersistence;
 import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.log4j.Logger;
 
@@ -20,19 +19,19 @@ public class KyotoCabinet extends PersistenceCoordinator {
 
     public KyotoCabinet() {super();}
 
-    @Override public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
+    @Override public Persistence openPersistenceForRead(String root, Map options) throws IOException {
         return null;
     }
 
-    @Override public LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException {
+    @Override public Persistence openPersistenceForAppend(String root, Map options) throws IOException {
         return null;
     }
 
-    @Override public LocalPersistence createPersistence(String root, Map options) throws IOException {
+    @Override public Persistence createPersistence(String root, Map options) throws IOException {
         return null;
     }
 
-    public static class KyotoCabinetPersistence implements LocalPersistence<KeyValDocument> {
+    public static class KyotoCabinetPersistence implements Persistence<KeyValDocument> {
         public byte[] get(byte[] key) throws IOException {
             return new byte[0];
         }

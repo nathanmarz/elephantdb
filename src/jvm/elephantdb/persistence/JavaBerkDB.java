@@ -15,21 +15,21 @@ public class JavaBerkDB extends PersistenceCoordinator {
     }
 
     @Override
-    public LocalPersistence openPersistenceForRead(String root, Map options) throws IOException {
+    public Persistence openPersistenceForRead(String root, Map options) throws IOException {
         return new JavaBerkDBPersistence(root, getKryoBuffer(), options, true);
     }
 
     @Override
-    public LocalPersistence openPersistenceForAppend(String root, Map options) throws IOException {
+    public Persistence openPersistenceForAppend(String root, Map options) throws IOException {
         return new JavaBerkDBPersistence(root, getKryoBuffer(), options, false);
     }
 
     @Override
-    public LocalPersistence createPersistence(String root, Map options) throws IOException {
+    public Persistence createPersistence(String root, Map options) throws IOException {
         return new JavaBerkDBPersistence(root, getKryoBuffer(), options, false);
     }
 
-    public static class JavaBerkDBPersistence implements LocalPersistence<KeyValDocument> {
+    public static class JavaBerkDBPersistence implements Persistence<KeyValDocument> {
         private static final String DATABASE_NAME = "elephant";
         Environment _env;
         Database _db;

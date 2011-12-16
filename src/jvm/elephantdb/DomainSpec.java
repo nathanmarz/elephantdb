@@ -6,10 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import elephantdb.persistence.KryoWrapper;
-import elephantdb.persistence.LocalPersistence;
-import elephantdb.persistence.PersistenceCoordinator;
-import elephantdb.persistence.ShardScheme;
+import elephantdb.persistence.*;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -39,7 +36,7 @@ public class DomainSpec implements Writable, Serializable {
     Args _optionalArgs;
 
     private int _numShards;
-    private PersistenceCoordinator _coordinator;
+    private Coordinator _coordinator;
     private ShardScheme _shardScheme;
 
     public DomainSpec() {
@@ -63,16 +60,16 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public DomainSpec(Class factClass, Class shardSchemeClass, int numShards, Args args) {
-        this((PersistenceCoordinator)Utils.newInstance(factClass),
+        this((Coordinator)Utils.newInstance(factClass),
                 (ShardScheme)Utils.newInstance(shardSchemeClass),
                 numShards, args);
     }
 
-    public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards) {
+    public DomainSpec(Coordinator coordinator, ShardScheme shardScheme, int numShards) {
         this(coordinator, shardScheme, numShards, new Args());
     }
 
-    public DomainSpec(PersistenceCoordinator coordinator, ShardScheme shardScheme, int numShards, Args args) {
+    public DomainSpec(Coordinator coordinator, ShardScheme shardScheme, int numShards, Args args) {
         this._numShards = numShards;
         this._coordinator = coordinator;
         this._shardScheme = shardScheme;
@@ -96,18 +93,20 @@ public class DomainSpec implements Writable, Serializable {
             wrapper.setKryoPairs(this.getKryoPairs());
     }
 
-    public PersistenceCoordinator getCoordinator() {
-        ensureMatchingPairs(_coordinator);
+    public Coordinator getCoordinator() {
+        // TODO: Remove this cast, as the Coordinator will be prepared.
+        ensureMatchingPairs((KryoWrapper) _coordinator);
         return _coordinator;
     }
 
     public ShardScheme getShardScheme() {
-        ensureMatchingPairs(_shardScheme);
+        // TODO: Remove this cast, as the IShardScheme will be prepared.
+        ensureMatchingPairs((KryoWrapper) _shardScheme);
         return _shardScheme;
     }
 
     /*
-    Wrappers for Persistence Coordinator functions.
+    Wrappers for Coordinator functions.
      */
 
     public void assertValidShard(int shardIdx) {
@@ -122,15 +121,15 @@ public class DomainSpec implements Writable, Serializable {
         return root + "/" + shardIdx;
     }
 
-    public LocalPersistence openShardForAppend(String root, int shardIdx) throws IOException {
+    public Persistence openShardForAppend(String root, int shardIdx) throws IOException {
         return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
     }
 
-    public LocalPersistence openShardForRead(String root, int shardIdx) throws IOException {
+    public Persistence openShardForRead(String root, int shardIdx) throws IOException {
         return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
     }
 
-    public LocalPersistence createShard(String root, int shardIdx) throws IOException {
+    public Persistence createShard(String root, int shardIdx) throws IOException {
         return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
     }
 

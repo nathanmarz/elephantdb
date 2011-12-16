@@ -3,7 +3,7 @@
    interfaces."
   (:use [hadoop-util.core :only (path)])
   (:import [elephantdb DomainSpec Utils]
-           [elephantdb.persistence PersistenceCoordinator]))
+           [elephantdb.persistence Coordinator]))
 
 (def ^{:doc "Example, meant to be ignored."}
   example-global-conf
