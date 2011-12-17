@@ -13,6 +13,7 @@ pom.xml
 CHILD
 CHILDPY
 .lein-failures
+.lein-deps-sum
 docs/
 .idea
 *.iws
