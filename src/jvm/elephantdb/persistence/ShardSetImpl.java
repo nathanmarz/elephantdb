@@ -14,50 +14,27 @@ import java.util.Map;
 public class ShardSetImpl implements ShardSet {
     
     private String root;
-    private int numShards;
-    private Coordinator coordinator;
-    private ShardingScheme shardingScheme;
-    private DomainSpec.Args optionalArgs;
+    private DomainSpec spec;
 
-    public ShardSetImpl(Coordinator coordinator, ShardingScheme shardingScheme, String root, int numShards) {
-        this(coordinator, shardingScheme, root, numShards, new DomainSpec.Args());
-    }
-    
-    public ShardSetImpl(Coordinator coordinator, ShardingScheme shardingScheme, String root, int numShards, DomainSpec.Args args) {
+    public ShardSetImpl(String root, DomainSpec spec) {
         this.root = root;
-        this.numShards = numShards;
-        this.coordinator = coordinator;
-        this.shardingScheme = shardingScheme;
-        this.optionalArgs = args;
-    }
-
-    public void ensureMatchingPairs(KryoWrapper wrapper) {
-        if (wrapper.getKryoPairs() != this.getKryoPairs())
-            wrapper.setKryoPairs(this.getKryoPairs());
+        this.spec = spec;
     }
 
     public Coordinator getCoordinator() {
-        // TODO: Remove this cast, as the Coordinator will be prepared.
-        ensureMatchingPairs((KryoWrapper) coordinator);
-        return coordinator;
+        return spec.getCoordinator();
     }
 
     public ShardingScheme getShardScheme() {
-        // TODO: Remove this cast, as the IShardScheme will be prepared.
-        ensureMatchingPairs((KryoWrapper) shardingScheme);
-        return shardingScheme;
-    }
-
-    public List<List<String>> getKryoPairs() {
-        return optionalArgs.kryoPairs;
+        return spec.getShardScheme();
     }
 
     public Map getPersistenceOptions() {
-        return optionalArgs.persistenceOptions;
+        return spec.getPersistenceOptions();
     }
 
     public int getNumShards() {
-        return numShards;
+        return spec.getNumShards();
     }
 
     public void assertValidShard(int shardIdx) {
@@ -83,5 +60,12 @@ public class ShardSetImpl implements ShardSet {
 
     public Persistence createShard(int shardIdx) throws IOException {
         return getCoordinator().createPersistence(shardPath(shardIdx), getPersistenceOptions());
+    }
+
+    /*
+   The following functions deal with the shard scheme; when you access a shard scheme through the domain it becomes possible to wrap certain functionality.
+    */
+    public int shardIndex(Object shardKey) {
+        return getShardScheme().shardIndex(shardKey, getNumShards());
     }
 }

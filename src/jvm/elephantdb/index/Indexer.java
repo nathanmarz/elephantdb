@@ -12,5 +12,5 @@ import java.io.Serializable;
  */
 
 public interface Indexer<P extends Persistence, D extends Document> extends Serializable {
-    public void update(P persistence, D doc) throws IOException;
+    public void index(P persistence, D doc) throws IOException;
 }

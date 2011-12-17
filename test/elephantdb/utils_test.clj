@@ -1,5 +1,5 @@
 (ns elephantdb.utils-test
-  (:use clojure.test))
+  (:use midje.sweet))
 
-(deftest foo
-  (is (= true true)))
+(fact "foo!"
+  true => true)

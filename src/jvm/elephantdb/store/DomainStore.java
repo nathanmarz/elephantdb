@@ -4,6 +4,8 @@ import elephantdb.DomainSpec;
 import java.io.IOException;
 
 import elephantdb.persistence.Persistence;
+import elephantdb.persistence.ShardSet;
+import elephantdb.persistence.ShardSetImpl;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -55,6 +57,10 @@ public class DomainStore {
     public DomainSpec getSpec() {
         return _spec;
     }
+    
+    public ShardSet getShardSet(String root) {
+        return new ShardSetImpl(_vs.getRoot(), _spec);
+    }
 
     public FileSystem getFileSystem() {
         return _vs.getFileSystem();
@@ -73,7 +79,7 @@ public class DomainStore {
     }
 
     public Persistence openShardForAppend(int shardIdx, long version) throws IOException {
-        return getSpec().openShardForAppend(versionPath(version), shardIdx);
+        return getShardSet(versionPath(version)).openShardForAppend(shardIdx);
     }
 
     public Persistence openShardForRead(int shardIdx) throws IOException {
@@ -81,7 +87,7 @@ public class DomainStore {
     }
 
     public Persistence openShardForRead(int shardIdx, long version) throws IOException {
-        return getSpec().openShardForRead(versionPath(version), shardIdx);
+        return getShardSet(versionPath(version)).openShardForRead(shardIdx);
     }
 
     public Persistence createShard(int shardIdx) throws IOException {
@@ -89,7 +95,7 @@ public class DomainStore {
     }
 
     public Persistence createShard(int shardIdx, long version) throws IOException {
-        return getSpec().createShard(versionPath(version), shardIdx);
+        return getShardSet(versionPath(version)).createShard(shardIdx);
     }
 
     /*

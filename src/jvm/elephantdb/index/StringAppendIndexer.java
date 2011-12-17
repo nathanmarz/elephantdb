@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class StringAppendIndexer implements Indexer<JavaBerkDB.JavaBerkDBPersistence, KeyValDocument> {
 
-    public void update(JavaBerkDB.JavaBerkDBPersistence lp, KeyValDocument doc) throws IOException {
+    public void index(JavaBerkDB.JavaBerkDBPersistence lp, KeyValDocument doc) throws IOException {
         Object oldVal = lp.get(doc.key);
         String newVal = (String) doc.value;
 

@@ -13,11 +13,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
 import org.jvyaml.YAML;
 
 public class DomainSpec implements Writable, Serializable {
-    public static final Logger LOG = Logger.getLogger(DomainSpec.class);
     public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
 
     private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
@@ -60,7 +58,7 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public DomainSpec(Class factClass, Class shardSchemeClass, int numShards, Args args) {
-        this((Coordinator)Utils.newInstance(factClass),
+        this((Coordinator) Utils.newInstance(factClass),
                 (ShardingScheme)Utils.newInstance(shardSchemeClass),
                 numShards, args);
     }
@@ -104,47 +102,6 @@ public class DomainSpec implements Writable, Serializable {
         ensureMatchingPairs((KryoWrapper) _shardingScheme);
         return _shardingScheme;
     }
-
-    /*
-    Wrappers for Coordinator functions.
-     */
-
-    public void assertValidShard(int shardIdx) {
-        if ( !(shardIdx >= 0 && shardIdx < getNumShards()) ) {
-            String errorStr = shardIdx +
-                    " is not a valid shard index. Index must be between 0 and " + (getNumShards() - 1);
-            throw new RuntimeException(errorStr);
-        }
-    }
-
-    private String shardPath(String root, int shardIdx) {
-        assertValidShard(shardIdx);
-        return root + "/" + shardIdx;
-    }
-
-    public Persistence openShardForAppend(String root, int shardIdx) throws IOException {
-        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
-    }
-
-    public Persistence openShardForRead(String root, int shardIdx) throws IOException {
-        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
-    }
-
-    public Persistence createShard(String root, int shardIdx) throws IOException {
-        return getCoordinator().openPersistenceForAppend(shardPath(root, shardIdx), getPersistenceOptions());
-    }
-
-    /*
-    The following functions deal with the shard scheme; when you access a shard scheme through the domain it becomes possible to wrap certain functionality.
-     */
-
-    public int shardIndex(Object shardKey) {
-        return getShardScheme().shardIndex(shardKey, getNumShards());
-    }
-
-    /*
-    Back to the good old DomainSpec business.
-     */
 
     @Override public String toString() {
         return mapify().toString();

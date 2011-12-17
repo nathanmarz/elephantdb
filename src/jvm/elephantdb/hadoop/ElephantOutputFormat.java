@@ -99,7 +99,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             Document doc = (Document) _kryoBuf.deserialize(Utils.getBytes(carrier));
 
             if (_args.indexer != null) {
-                _args.indexer.update(lp, doc);
+                _args.indexer.index(lp, doc);
             } else {
                 lp.index(doc);
             }

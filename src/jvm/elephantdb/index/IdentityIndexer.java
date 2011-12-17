@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public class IdentityIndexer implements Indexer {
 
-    public void update(Persistence persistence, Document doc) throws IOException {
+    public void index(Persistence persistence, Document doc) throws IOException {
         persistence.index(doc);
     }
 }
