@@ -1,12 +1,12 @@
-package elephantdb.test;
+package elephantdb.index;
 
-import elephantdb.hadoop.ElephantUpdater;
+import elephantdb.index.Indexer;
 import elephantdb.persistence.JavaBerkDB;
 import elephantdb.persistence.KeyValDocument;
 
 import java.io.IOException;
 
-public class StringAppendUpdater implements ElephantUpdater<JavaBerkDB.JavaBerkDBPersistence, KeyValDocument> {
+public class StringAppendIndexer implements Indexer<JavaBerkDB.JavaBerkDBPersistence, KeyValDocument> {
 
     public void update(JavaBerkDB.JavaBerkDBPersistence lp, KeyValDocument doc) throws IOException {
         Object oldVal = lp.get(doc.key);

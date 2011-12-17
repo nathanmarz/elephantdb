@@ -2,6 +2,8 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
+import elephantdb.index.IdentityIndexer;
+import elephantdb.index.Indexer;
 import elephantdb.persistence.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -29,8 +31,8 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         // Path to a version inside of a versioned store, perhaps?
         public String outputDirHdfs;
 
-        // Implements the ElephantUpdater interface.
-        public ElephantUpdater updater = new IdentityUpdater();
+        // Implements the Indexer interface.
+        public Indexer indexer = new IdentityIndexer();
 
         // If this is set, the output format will go download it!
         public String updateDirHdfs = null;
@@ -96,8 +98,8 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             // TODO: Change this behavior and get Cascading to serialize object.
             Document doc = (Document) _kryoBuf.deserialize(Utils.getBytes(carrier));
 
-            if (_args.updater != null) {
-                _args.updater.update(lp, doc);
+            if (_args.indexer != null) {
+                _args.indexer.update(lp, doc);
             } else {
                 lp.index(doc);
             }

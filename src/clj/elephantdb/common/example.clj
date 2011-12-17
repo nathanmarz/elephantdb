@@ -106,3 +106,9 @@
     (let [shard-idx (shard-idx db key)
           shard-map (-> db (get domain) :shard-index :shards-to-hosts)]
       (get shard-map shard))))
+
+
+(comment
+  "Wish list of things that could be pluggable:"
+  ["filesystem representation"]
+  ["Logger -- implement Logger protocol"])

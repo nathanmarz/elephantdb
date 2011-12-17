@@ -1,4 +1,7 @@
 (ns elephantdb.hadoop.output-format-test
+  (:import [elephantdb.store VersionedStore])
+  (:import [elephantdb.hadoop Indexer]
+           [elephantdb.index Indexer StringAppendIndexer])
   (:use clojure.test
         elephantdb.common.testing
         elephantdb.keyval.testing)
@@ -6,12 +9,12 @@
             [elephantdb.common.util :as u])
   (:import elephantdb.DomainSpec
            [elephantdb.hadoop ElephantOutputFormat
-            ElephantOutputFormat$Args ElephantUpdater]
+            ElephantOutputFormat$Args Indexer]
            [org.apache.hadoop.io IntWritable BytesWritable]
            [elephantdb.persistence JavaBerkDB KeyValDocument]
            [elephantdb Utils]
            [elephantdb.store VersionedStore]
-           [elephantdb.test StringAppendUpdater]
+           [elephantdb.test StringAppendIndexer]
            [java.util ArrayList]
            [org.apache.hadoop.mapred JobConf]))
 
@@ -62,7 +65,7 @@
                               ["c" "3"]]})
     (let [data {0 {"a" "2" "d" "4"} 1 {"c" "4" "e" "4"} 2 {"x" "x"}}
           writer (mk-elephant-writer 3 (JavaBerkDB.) dir2 ltmp1
-                                     :updater (StringAppendUpdater.)
+                                     :indexer (StringAppendIndexer.)
                                      :update-dir (.mostRecentVersionPath
                                                   (VersionedStore. dir1)))]
       (write-data writer data)

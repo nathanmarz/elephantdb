@@ -1,9 +1,7 @@
 package elephantdb.future;
 
-import elephantdb.Utils;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.Persistence;
-import elephantdb.persistence.KeyValDocument;
 import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -21,7 +19,9 @@ public class Lucene extends PersistenceCoordinator {
 
     public static Logger LOG = Logger.getLogger(File.class);
 
-    public Lucene() {super();}
+    public Lucene() {
+        super();
+    }
 
     @Override public Persistence openPersistenceForRead(String root, Map options) throws IOException {
         return new LucenePersistence(root, options);
@@ -35,7 +35,7 @@ public class Lucene extends PersistenceCoordinator {
         return new LucenePersistence(root, options);
     }
 
-    public static class LucenePersistence implements Persistence<KeyValDocument> {
+    public static class LucenePersistence implements Persistence<LuceneDocument> {
         Directory _rootDir;
         IndexReader _reader;
 
@@ -59,15 +59,16 @@ public class Lucene extends PersistenceCoordinator {
             _reader.close();
         }
 
-        public void index(KeyValDocument document) throws IOException {
+        public void index(LuceneDocument wrapper) throws IOException {
+            Document doc = wrapper.document;
             // should be easy to implement. Lucene is going to get LuceneDocuments, and that's IT!
         }
 
-        public CloseableIterator<KeyValDocument> iterator() {
-            return new CloseableIterator<KeyValDocument>() {
+        public CloseableIterator<LuceneDocument> iterator() {
+            return new CloseableIterator<LuceneDocument>() {
                 int idx = 0;
                 Integer docCount = null;
-                KeyValDocument nextDoc = null;
+                LuceneDocument nextDoc = null;
 
                 private void cacheNext() {
 
@@ -80,10 +81,7 @@ public class Lucene extends PersistenceCoordinator {
                         close();
                     } else {
                         try {
-                            Document doc = _reader.document(idx);
-                            byte[] docVal = Utils.serializeObject(doc);
-                            byte[] docKey = new byte[0];
-                            nextDoc = new KeyValDocument(docKey, docVal);
+                            nextDoc = new LuceneDocument(_reader.document(idx));
                         } catch (CorruptIndexException ci) {
                             throw new RuntimeException(ci);
                         } catch (IOException io) {
@@ -104,12 +102,12 @@ public class Lucene extends PersistenceCoordinator {
                     return nextDoc != null;
                 }
 
-                public KeyValDocument next() {
+                public LuceneDocument next() {
                     initCursor();
                     if (nextDoc == null) {
                         throw new RuntimeException("No key/value pair available");
                     }
-                    KeyValDocument ret = nextDoc; // not pointers, so we actually store the value?
+                    LuceneDocument ret = nextDoc; // not pointers, so we actually store the value?
                     cacheNext(); // caches up n + 1,
                     return ret;  // return the old.
                 }

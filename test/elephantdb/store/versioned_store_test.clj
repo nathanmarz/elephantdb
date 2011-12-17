@@ -1,4 +1,5 @@
 (ns elephantdb.store.versioned-store-test
+  (:import [elephantdb.store VersionedStore])
   (:use elephantdb.common.testing
         clojure.test)
   (:import [elephantdb.store VersionedStore]))

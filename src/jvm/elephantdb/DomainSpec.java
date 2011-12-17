@@ -29,15 +29,15 @@ public class DomainSpec implements Writable, Serializable {
 
     // This gets serialized in via the conf.
     public static class Args implements Serializable {
-        private List<List<String>> kryoPairs = new ArrayList<List<String>>();
-        private Map persistenceOptions = new HashMap();
+        public List<List<String>> kryoPairs = new ArrayList<List<String>>();
+        public Map persistenceOptions = new HashMap();
     }
 
     Args _optionalArgs;
 
     private int _numShards;
     private Coordinator _coordinator;
-    private ShardScheme _shardScheme;
+    private ShardingScheme _shardingScheme;
 
     public DomainSpec() {
     }
@@ -61,18 +61,18 @@ public class DomainSpec implements Writable, Serializable {
 
     public DomainSpec(Class factClass, Class shardSchemeClass, int numShards, Args args) {
         this((Coordinator)Utils.newInstance(factClass),
-                (ShardScheme)Utils.newInstance(shardSchemeClass),
+                (ShardingScheme)Utils.newInstance(shardSchemeClass),
                 numShards, args);
     }
 
-    public DomainSpec(Coordinator coordinator, ShardScheme shardScheme, int numShards) {
-        this(coordinator, shardScheme, numShards, new Args());
+    public DomainSpec(Coordinator coordinator, ShardingScheme shardingScheme, int numShards) {
+        this(coordinator, shardingScheme, numShards, new Args());
     }
 
-    public DomainSpec(Coordinator coordinator, ShardScheme shardScheme, int numShards, Args args) {
+    public DomainSpec(Coordinator coordinator, ShardingScheme shardingScheme, int numShards, Args args) {
         this._numShards = numShards;
         this._coordinator = coordinator;
-        this._shardScheme = shardScheme;
+        this._shardingScheme = shardingScheme;
         this._optionalArgs = args;
     }
 
@@ -99,10 +99,10 @@ public class DomainSpec implements Writable, Serializable {
         return _coordinator;
     }
 
-    public ShardScheme getShardScheme() {
+    public ShardingScheme getShardScheme() {
         // TODO: Remove this cast, as the IShardScheme will be prepared.
-        ensureMatchingPairs((KryoWrapper) _shardScheme);
-        return _shardScheme;
+        ensureMatchingPairs((KryoWrapper) _shardingScheme);
+        return _shardingScheme;
     }
 
     /*
@@ -116,6 +116,7 @@ public class DomainSpec implements Writable, Serializable {
             throw new RuntimeException(errorStr);
         }
     }
+
     private String shardPath(String root, int shardIdx) {
         assertValidShard(shardIdx);
         return root + "/" + shardIdx;
@@ -136,7 +137,7 @@ public class DomainSpec implements Writable, Serializable {
     /*
     The following functions deal with the shard scheme; when you access a shard scheme through the domain it becomes possible to wrap certain functionality.
      */
-    
+
     public int shardIndex(Object shardKey) {
         return getShardScheme().shardIndex(shardKey, getNumShards());
     }
@@ -199,7 +200,7 @@ public class DomainSpec implements Writable, Serializable {
     private Map<String, Object> mapify() {
         Map<String, Object> spec = new HashMap<String, Object>();
         spec.put(LOCAL_PERSISTENCE_CONF, _coordinator.getClass().getName());
-        spec.put(SHARD_SCHEME_CONF, _shardScheme.getClass().getName());
+        spec.put(SHARD_SCHEME_CONF, _shardingScheme.getClass().getName());
         spec.put(NUM_SHARDS_CONF, _numShards);
         spec.put(KRYO_PAIRS, getKryoPairs());
         spec.put(PERSISTENCE_OPTS, getPersistenceOptions());
@@ -222,7 +223,7 @@ public class DomainSpec implements Writable, Serializable {
         DomainSpec spec = parseFromMap((Map<String, Object>) YAML.load(WritableUtils.readString(di)));
         this._numShards = spec._numShards;
         this._coordinator = spec._coordinator;
-        this._shardScheme = spec._shardScheme;
+        this._shardingScheme = spec._shardingScheme;
         this._optionalArgs = spec._optionalArgs;
     }
 }

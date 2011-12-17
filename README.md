@@ -114,7 +114,7 @@ The `local_persistence` is a string version of LocalPersistenceFactory. This Loc
 ## Interface notes
 
 * Tap needs to take as an option some object that will allow for proper serialization of keys and values. Right 
-* NOTE CURRENTLY that if you don't pass in null, you'll get a replace updater. If the passed-in updater is set to nil, the updateDirHdfs never gets set and you wont' load remote shards for updating! This magic happens in ElephantDBTap; the real sauce is in the elephantdb output format.
+* NOTE CURRENTLY that if you don't pass in null, you'll get a replace indexer. If the passed-in indexer is set to nil, the updateDirHdfs never gets set and you wont' load remote shards for updating! This magic happens in ElephantDBTap; the real sauce is in the elephantdb output format.
 ** Instead, should we have a `:do-update` flag?
 
 interface KeySharder {
@@ -134,8 +134,8 @@ Really, though, this can happen on the client side OR at the shard itself.
 
 // Pushed into interfaces:
 
-called on the ElephantUpdater.
-    void updateElephant(LocalPersistence lp, byte[] newKey, byte[] newVal);
+called on the Indexer.
+    void updateElephant(Persistence lp, byte[] newKey, byte[] newVal);
 
 We need to extend the INPUT FORMAT and override:
 
@@ -152,7 +152,7 @@ So that we can interact properly with a custom iterator. That or farm out the wo
 
 On the output format side, we have:
    
-    _args.updater.updateElephant(lp, record.key, record.val);
+    _args.indexer.updateElephant(lp, record.key, record.val);
 
 ## LocalPersistenceFactory
 
@@ -165,7 +165,7 @@ initializeArgs
 
 create local persistence -> LocalPersistenceFactory.create, openForAppend
 
-updater -> Updater.index(LocalPersistence, Record)
+indexer -> Indexer.index(LocalPersistence, Record)
 
 ## API Ideas
 
@@ -210,9 +210,9 @@ EDB then sinks the shard and KeyValueDocument:
 
 The OutputFormat deserializes the shard and KeyValueDocument using an identical Kryo serialization instance. Next step:
 
-    keyValueUpdater.index(LocalPersistence lp, KeyValueDocument d );
+    keyValueIndexer.index(LocalPersistence lp, KeyValueDocument d );
 
-The key value updater will unpack the key and value and call
+The key value indexer will unpack the key and value and call
 
     bdbPersistence.add(k, v);
 
@@ -227,7 +227,7 @@ For this particular implementation, how do we handle key and value serialization
 Iterator returns KeyValueDocument objects; these are serialized over the wire with Kryo and appear at the tap. We should deserialize keys and values with Kryo, I think, since byte arrays stay the same.
 
 ISSUE:
-For our particular key-value database, I think we should just serialize everything that comes in using Kryo. This would require the Updater to have access to the DomainSpec, so that it could have access to the serialization information. The idea is sound because byte arrays can pass in and out, so thrift objects won't be affected.
+For our particular key-value database, I think we should just serialize everything that comes in using Kryo. This would require the Indexer to have access to the DomainSpec, so that it could have access to the serialization information. The idea is sound because byte arrays can pass in and out, so thrift objects won't be affected.
 
 ### Persistence -> Thrift
 

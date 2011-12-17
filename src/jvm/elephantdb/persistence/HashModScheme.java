@@ -5,7 +5,7 @@ import java.math.BigInteger;
 import elephantdb.Utils;
 
 /** User: sritchie Date: 11/22/11 Time: 5:32 PM */
-public class HashModScheme extends ShardScheme {
+public class HashModScheme extends ShardingSchemeImpl {
 
     public int shardIndex(Object shardKey, int shardCount) {
         byte[] serkey = getKryoBuffer().serialize(shardKey);
