@@ -2,39 +2,43 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
-import elephantdb.persistence.LocalPersistence;
-import elephantdb.persistence.LocalPersistenceFactory;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import elephantdb.index.IdentityIndexer;
+import elephantdb.index.Indexer;
+import elephantdb.persistence.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.mapred.InvalidJobConfException;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputFormat;
-import org.apache.hadoop.mapred.RecordWriter;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.util.Progressable;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
-public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantRecordWritable> {
+public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWritable> {
     public static Logger LOG = Logger.getLogger(ElephantOutputFormat.class);
 
     public static final String ARGS_CONF = "elephant.output.args";
 
+    // This gets serialized in via the conf.
     public static class Args implements Serializable {
         public DomainSpec spec;
+
+        // Path to a version inside of a versioned store, perhaps?
         public String outputDirHdfs;
 
-        public ElephantUpdater updater = new ReplaceUpdater();
+        // Implements the Indexer interface.
+        public Indexer indexer = new IdentityIndexer();
+
+        // If this is set, the output format will go download it!
         public String updateDirHdfs = null;
-        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();    
+
+        // ends up going to and Coordinator, which passes it on.
+        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
 
         public Args(DomainSpec spec, String outputDirHdfs) {
             this.spec = spec;
@@ -42,47 +46,70 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         }
     }
 
-    public class ElephantRecordWriter implements RecordWriter<IntWritable, ElephantRecordWritable> {
+    public class ElephantRecordWriter implements RecordWriter<IntWritable, BytesWritable> {
 
         FileSystem _fs;
         Args _args;
-        Map<Integer, LocalPersistence> _lps = new HashMap<Integer, LocalPersistence>();
+        Map<Integer, Persistence> _lps = new HashMap<Integer, Persistence>();
         Progressable _progressable;
         LocalElephantManager _localManager;
+        KryoWrapper.KryoBuffer _kryoBuf;
 
         int _numWritten = 0;
         long _lastCheckpoint = System.currentTimeMillis();
 
-        public ElephantRecordWriter(Configuration conf, Args args, Progressable progressable) throws IOException {
+        public ElephantRecordWriter(Configuration conf, Args args, Progressable progressable)
+            throws IOException {
             _fs = Utils.getFS(args.outputDirHdfs, conf);
             _args = args;
+
+            // TODO: Remove the cast and make this work with interfaces.
+            _kryoBuf = ((KryoWrapper) _args.spec.getCoordinator()).getKryoBuffer();
             _progressable = progressable;
-            _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions, LocalElephantManager.getTmpDirs(conf));
+            _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions,
+                LocalElephantManager.getTmpDirs(conf));
         }
 
         private String remoteUpdateDirForShard(int shard) {
-            if(_args.updateDirHdfs==null) return null;
-            else return _args.updateDirHdfs + "/" + shard;
+            if (_args.updateDirHdfs == null) { return null; } else {
+                return _args.updateDirHdfs + "/" + shard;
+            }
         }
-
-        public void write(IntWritable shard, ElephantRecordWritable record) throws IOException {
-            LocalPersistence lp = null;
-            LocalPersistenceFactory fact = _args.spec.getLPFactory();
+        
+        private Persistence retrieveShard(int shardIdx) throws IOException {
+            Persistence lp = null;
+            Coordinator fact = _args.spec.getCoordinator();
             Map<String, Object> options = _args.persistenceOptions;
-            if(_lps.containsKey(shard.get())) {
-                lp = _lps.get(shard.get());
+            if (_lps.containsKey(shardIdx)) {
+                lp = _lps.get(shardIdx);
             } else {
-                String updateDir = remoteUpdateDirForShard(shard.get());
-                String localShard = _localManager.downloadRemoteShard("" + shard.get(), updateDir);
+                String updateDir = remoteUpdateDirForShard(shardIdx);
+                String localShard = _localManager.downloadRemoteShard("" + shardIdx, updateDir);
                 lp = fact.openPersistenceForAppend(localShard, options);
-                _lps.put(shard.get(), lp);
+                _lps.put(shardIdx, lp);
                 progress();
             }
+            return lp;
+        }
 
-            _args.updater.updateElephant(lp, record.key, record.val);
+        public void write(IntWritable shard, BytesWritable carrier) throws IOException {
+            Persistence lp = retrieveShard(shard.get());
 
+            // TODO: Change this behavior and get Cascading to serialize object.
+            Document doc = (Document) _kryoBuf.deserialize(Utils.getBytes(carrier));
+
+            if (_args.indexer != null) {
+                _args.indexer.update(lp, doc);
+            } else {
+                lp.index(doc);
+            }
+
+            bumpProgress();
+        }
+
+        public void bumpProgress() {
             _numWritten++;
-            if(_numWritten % 25000 == 0) {
+            if (_numWritten % 25000 == 0) {
                 long now = System.currentTimeMillis();
                 long delta = now - _lastCheckpoint;
                 _lastCheckpoint = now;
@@ -92,14 +119,14 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         }
 
         public void close(Reporter reporter) throws IOException {
-            for(Integer shard: _lps.keySet()) {
+            for (Integer shard : _lps.keySet()) {
                 String lpDir = _localManager.localTmpDir("" + shard);
                 LOG.info("Closing LP for shard " + shard + " at " + lpDir);
                 _lps.get(shard).close();
                 LOG.info("Closed LP for shard " + shard + " at " + lpDir);
                 progress();
                 String remoteDir = _args.outputDirHdfs + "/" + shard;
-                if(_fs.exists(new Path(remoteDir))) {
+                if (_fs.exists(new Path(remoteDir))) {
                     LOG.info("Deleting existing shard " + shard + " at " + remoteDir);
                     _fs.delete(new Path(remoteDir), true);
                     LOG.info("Deleted existing shard " + shard + " at " + remoteDir);
@@ -113,25 +140,28 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         }
 
         private void progress() {
-            if(_progressable!=null) _progressable.progress();
+            if (_progressable != null) { _progressable.progress(); }
         }
     }
 
-    public RecordWriter<IntWritable, ElephantRecordWritable> getRecordWriter(FileSystem fs, JobConf conf, String string, Progressable progressable) throws IOException {
+    public RecordWriter<IntWritable, BytesWritable> getRecordWriter(FileSystem fs,
+        JobConf conf, String string, Progressable progressable) throws IOException {
         return new ElephantRecordWriter(conf, (Args) Utils.getObject(conf, ARGS_CONF), progressable);
     }
 
     public void checkOutputSpecs(FileSystem fs, JobConf conf) throws IOException {
         Args args = (Args) Utils.getObject(conf, ARGS_CONF);
         fs = Utils.getFS(args.outputDirHdfs, conf);
-        if(conf.getBoolean("mapred.reduce.tasks.speculative.execution", true)) {
+        if (conf.getBoolean("mapred.reduce.tasks.speculative.execution", true)) {
+            // Because we don't want to write a bunch of extra times.
             throw new InvalidJobConfException("Speculative execution should be false");
         }
-        if(fs.exists(new Path(args.outputDirHdfs))) {
+        if (fs.exists(new Path(args.outputDirHdfs))) {
             throw new InvalidJobConfException("Output dir already exists " + args.outputDirHdfs);
         }
-        if(args.updateDirHdfs!=null && !fs.exists(new Path(args.updateDirHdfs))) {
-            throw new InvalidJobConfException("Shards to update does not exist " + args.updateDirHdfs);
+        if (args.updateDirHdfs != null && !fs.exists(new Path(args.updateDirHdfs))) {
+            throw new InvalidJobConfException(
+                "Shards to update does not exist " + args.updateDirHdfs);
         }
     }
 }

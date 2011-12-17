@@ -6,8 +6,7 @@ struct Value {
   1: optional binary data;
 }
 
-struct LoadingStatus {
-  
+struct LoadingStatus {  
 }
 
 struct ReadyStatus {
@@ -19,7 +18,6 @@ struct FailedStatus {
 }
 
 struct ShutdownStatus {
-
 }
 
 union DomainStatus {
@@ -52,10 +50,23 @@ exception InvalidConfigurationException {
 }
 
 exception WrongHostException {
-
 }
 
-service ElephantDB {
+service ElephantDBShared {
+  DomainStatus getDomainStatus(1: string domain);
+  list<string> getDomains();
+  Status getStatus();
+  bool isFullyLoaded();
+  bool isUpdating();
+  
+/*
+   This method will re-download the global configuration file and add any new domains
+   */
+  void updateAll() throws (1: InvalidConfigurationException ice);
+  bool update(1: string domain); // is the supplied domain updating?
+}
+
+service ElephantDB extends ElephantDBShared {
   Value get(1: string domain, 2: binary key)
     throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
   Value getString(1: string domain, 2: string key)
@@ -76,17 +87,51 @@ service ElephantDB {
 
   list<Value> directMultiGet(1: string domain, 2: list<binary> key)
     throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
+}
 
-  DomainStatus getDomainStatus(1: string domain);
-  list<string> getDomains();
-  Status getStatus();
-  bool isFullyLoaded();
-  bool isUpdating();
 
-  /*
-    This method will re-download the global configuration file and add any new domains
-  */
-  void updateAll() throws (1: InvalidConfigurationException ice);
-  //returns whether it's updating or not
-  bool update(1: string domain);
+service ElephantDBSet extends ElephantDBShared {
+  // Required kv pairs:
+  // kv == (setKey, member) -> null
+  // (setKey + "SIZE") -> i64
+  // (setKey) -> list<string>
+
+  bool member(1: string domain, 2: string setKey, 3: string member); // member?
+  bool members(1: string domain, 2: string setKey); // returns all members
+  list<string> diff(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
+  list<string> union(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
+  list<string> intersection(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
+  i64 size(1: string domain, 2: string key);
+
+  list<Value> multiMember(1: string domain, 2: string setKey, 3: list<string> setVals);
+}
+
+service ElephantDBList extends ElephantDBShared {
+  // Required kv pairs:
+  
+  // kv == (setKey + "TOTALSIZE") -> i64
+  // kv == (setKey + "CHUNKS") -> i32
+  // (setKey, chunkIdx) -> list<Value>  
+
+  i32 length(1: string domain, 2: string key);
+  i32 numChunks(1: string domain, 2: string key)  
+  list<Value> getChunk(1: string domain, 2: string key, i32 chunkIdx);
+  Value index(1: string domain, 2: string key, 3: i32 idx); // get item at index
+  list<Value> range(1: string domain, 2: string key, 3: i32 startIdx, 4: i32 endIdx);
+  list<Value> take(1: string domain, 2: string key, 3: i32 elems); // redundant with range.
+  list<Value> takeAll(1: string domain, 2: string key); // redundant? we can use range(0, length + 1);
+}
+
+service ElephantDBDoc extends ElephantDBShared {
+  // Required kv pairs:
+  // key -> Document
+  
+  // go from Value to Document or something.
+  Value get(1: string domain, 2: string key);
+  Value getField(1: string domain, 2: string key, 3: string field);
+  Value getFields(1: string domain, 2: string key, 3: list<string> fields);
+}
+
+service ElephantDBSearch extends ElephantDBShared {
+  // Thinking a bit more on this one. Lucene on the back end!
 }

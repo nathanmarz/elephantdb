@@ -13,7 +13,6 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import java.io.File;
 
-
 public class VersionedStore {
     private static final String FINISHED_VERSION_SUFFIX = ".version";
 

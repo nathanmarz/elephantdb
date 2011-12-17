@@ -2,6 +2,9 @@ package elephantdb;
 
 import java.util.Arrays;
 
+/**
+ * Really used only for testing inside of Clojure.
+ */
 public class ByteArray {
     byte[] arr;
 
@@ -13,13 +16,11 @@ public class ByteArray {
         return arr;
     }
 
-    @Override
-    public boolean equals(Object other) {
+    @Override public boolean equals(Object other) {
         return Arrays.equals(arr, ((ByteArray) other).arr);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         return Arrays.hashCode(arr);
     }
 }
