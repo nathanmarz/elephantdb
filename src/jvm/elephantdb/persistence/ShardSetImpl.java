@@ -45,11 +45,6 @@ public class ShardSetImpl implements ShardSet {
         }
     }
 
-    private String shardPath(int shardIdx) {
-        assertValidShard(shardIdx);
-        return root + "/" + shardIdx;
-    }
-
     public Persistence openShardForAppend(int shardIdx) throws IOException {
         return getCoordinator().openPersistenceForAppend(shardPath(shardIdx), getPersistenceOptions());
     }
@@ -60,6 +55,11 @@ public class ShardSetImpl implements ShardSet {
 
     public Persistence createShard(int shardIdx) throws IOException {
         return getCoordinator().createPersistence(shardPath(shardIdx), getPersistenceOptions());
+    }
+
+    public String shardPath(int shardIdx) {
+        assertValidShard(shardIdx);
+        return root + "/" + shardIdx;
     }
 
     /*

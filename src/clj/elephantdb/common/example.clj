@@ -69,36 +69,30 @@
 
   ;; :shard-scheme should expose
   (defn shard-idx [db key]
-    (-> db :shard-scheme (.shardIdx key)))
+    (-> db :shard-scheme (.shardIndex key)))
 
   (def full-db
     ;; We can get rid of some of these atoms if we maintain functions
     ;; for querying status, for the less common operations.
-    {:coordinator <instance of Coordinator>
-     :shard-scheme <shardscheme-instance>
-     :shard-count <shard-count>
-     :serializer <kryo-instance>
-     :domain-config {:k1 "val1"} ;; user defined
-     :domains {"some-domain" {:shard-index {:hosts-to-shards <map>
-                                            :shards-to-hosts <map>}
+    {:port 3578
+     :local-root <local-path>
+     :download-cap 1024
+     :hdfs-conf {"fs.default.name" "hdfs://hadoop-devel-nn.local.twitter.com:8020"}
+     :blob-conf {"fs.default.name" "hdfs://hadoop-devel-nn.local.twitter.com:8020"}
+     :domains {"some-domain" {:coordinator <instance of Coordinator>
+                              :shard-scheme <shardscheme-instance>
                               :status <status-atom>
+                              :shard-count <shard-count>
+                              :serializer <kryo-instance>
                               :local-handle "local-fs-handle"
                               :remote-handle "remote-fs-handle"
                               :domain-data <data-atom>
+                              :shard-index {:hosts-to-shards <map>
+                                            :shards-to-hosts <map>}
                               :current-version 12356456324
-                              :all-versions #{{:id 12356456324, :status :open}
-                                              {:id 123235324,   :status :downloading}
-                                              {:id 1234534123,  :status :ready}}}
-               ;; or this, for all-versions
-               "other-domain" {:shard-index {:hosts-to-shards <map>
-                                             :shards-to-hosts <map>}
-                               :status <status-atom>
-                               :local-handle "local-fs-handle"
-                               :remote-handle "remote-fs-handle"
-                               :domain-data <data-atom>
-                               :current-version 12356456324
-                               :all-versions {123235324 {:status :downloading}
-                                              1234534123 {:status :ready}}}}})
+                              :version-map #{{:id 12356456324, :status :open}
+                                             {:id 123235324,   :status :downloading}
+                                             {:id 1234534123,  :status :ready}}}}})
   
   (defn locations
     "Returns a sequence of locations for the supplied key."

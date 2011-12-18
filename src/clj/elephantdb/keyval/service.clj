@@ -7,6 +7,7 @@
             [elephantdb.common.hadoop :as hadoop]
             [elephantdb.common.domain :as domain]
             [elephantdb.common.thrift :as thrift]
+            [elephantdb.common.status :as status]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.logging :as log])
   (:import [java.io File]
@@ -20,18 +21,6 @@
            [elephantdb.persistence Persistence]
            [elephantdb.store DomainStore]
            [org.apache.thrift TException]))
-
-(defn- init-domain-info-map
-  " Generates a map with kv pairs of the following form:
-    {\"domain-name\" {:shard-index {:hosts-to-shards <map>
-                                    :shards-to-hosts <map>}
-                      :domain-status <status-atom>
-                      :domain-data <data-atom>}}"
-  [fs {:keys [domains hosts replication]}]
-  (let [domain-shards (shard/shard-domains fs domains hosts replication)]
-    (u/update-vals (fn [k _]
-                     (-> k domain-shards domain/init-domain-info))
-                   domains)))
 
 (defn try-thrift
   "Applies each kv pair to the supplied `func` in parallel, farming
@@ -61,14 +50,14 @@
   `domains-info`. Once these complete, atomically swaps them into for
   the current data and registers success."
   [edb-config rw-lock domains-info loader-state]
-  (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
+  (let [{:keys [hdfs-conf local-dir]} edb-config
         remote-path-map (:domains edb-config)
         remote-fs (h/filesystem hdfs-conf)
         
         ;; Do we throttle? TODO: Use this arg.
         throttle? (->> (vals domains-info)
                        (map domain/domain-status)
-                       (some thrift/status-ready?))]
+                       (some status/ready?))]
     (try-thrift domains-info
                 local-dir
                 (thrift/ready-status :loading? true)
@@ -77,24 +66,21 @@
                         remote-vs (domain/try-domain-store remote-fs remote-path)]
                     (when remote-vs
                       (let [local-domain-root (str (h/path local-dir domain))
-                            local-vs (domain/mk-local-vs remote-vs local-domain-root)]
-                        (if (domain/domain-needs-update? local-vs remote-vs)
-                          (->> (loader/load-domain domain
-                                                   remote-fs
-                                                   local-db-conf
-                                                   local-domain-root
-                                                   remote-path
-                                                   loader-state)
-                               (domain/set-domain-data! rw-lock domain info)
-                               (log/info
-                                "Finished loading all updated domains from remote."))
-                          (let [{:keys [finished-loaders shard-states]} loader-state]
+                            local-vs (domain/local-store local-domain-root remote-vs)]
+                        (if (domain/needs-update? local-vs remote-vs)
+                          (let [state (get (:download-states state) domain)
+                                new-data (loader/load-domain local-vs remote-vs state)]
+                            (domain/set-domain-data! rw-lock domain info new-data)
+                            (log/info
+                             "Finished loading all updated domains from remote."))
+                          (let [{:keys [finished-loaders download-states]}
+                                loader-state]
                             (swap! finished-loaders +
-                                   (count (shard-states domain))))))))))))
+                                   (count (download-states domain))))))))))))
 
 (defn load-cached-domains!
   [edb-config rw-lock domains-info]
-  (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
+  (let [{:keys [hdfs-conf local-dir]} edb-config
         remote-path-map (:domains edb-config)
         remote-fs (h/filesystem hdfs-conf)]
     (try-thrift domains-info
@@ -104,12 +90,11 @@
                   (let [remote-path  (clojure.core/get remote-path-map domain)
                         remote-vs (DomainStore. remote-fs remote-path)
                         local-path (str (h/path local-dir domain))
-                        local-vs (domain/mk-local-vs remote-vs local-path)]  
-                    (when-let [new-data (and (domain/domain-has-data? local-vs)
-                                             (loader/open-domain
-                                              local-db-conf
-                                              local-path
-                                              (domain/host-shards info)))]
+                        local-vs (domain/local-store local-path remote-vs)]
+                    (when-let [new-data (and (domain/has-data? local-vs)
+                                             (loader/open-domain local-vs
+                                                                 (domain/host-shards
+                                                                  info)))]
                       (domain/set-domain-data! rw-lock domain info new-data)))))))
 
 (defn purge-unused-domains!
@@ -158,14 +143,14 @@
   (let [info (domains-info domain)]
     (when-not info
       (throw (thrift/domain-not-found-ex domain)))
-    (when-not (thrift/status-ready? (domain/domain-status info))
+    (when-not (status/ready? (domain/domain-status info))
       (throw (thrift/domain-not-loaded-ex domain)))
     info))
 
 (defn service-updating?
   [service-handler download-supervisor]
   (boolean
-   (or (some thrift/status-loading?
+   (or (some status/loading?
              (-> service-handler .getStatus .get_domain_statuses vals))
        (and @download-supervisor
             (not (.isDone @download-supervisor))))))
@@ -177,7 +162,7 @@
          download-state (-> domains-info
                             (domain/all-shards)
                             (hadoop/mk-loader-state))
-         shard-amount (u/flattened-count (vals (:shard-states download-state)))]
+         shard-amount (u/flattened-count (vals (:download-states download-state)))]
     (log/info "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (loader/start-download-supervisor
                                  shard-amount max-kbs download-state))
@@ -273,7 +258,7 @@
         download-supervisor (atom nil)
         localhost   (u/local-hostname)
         filesystem  (h/filesystem hdfs-conf)
-        domains-info (init-domain-info-map filesystem edb-config)
+        domains-info (domain/init-domain-info-map filesystem edb-config)
         domain-shard-indexes (shard/shard-domains filesystem
                                                   domains
                                                   hosts
@@ -366,8 +351,8 @@
 
       (isFullyLoaded [this]
         (let [stat (.get_domain_statuses (.getStatus this))]
-          (every? #(or (thrift/status-ready? %)
-                       (thrift/status-failed? %))
+          (every? #(or (status/ready? %)
+                       (status/failed? %))
                   (vals stat))))
 
       (isUpdating [this]

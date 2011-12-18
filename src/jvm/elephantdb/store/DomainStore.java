@@ -59,7 +59,7 @@ public class DomainStore {
     }
     
     public ShardSet getShardSet(String root) {
-        return new ShardSetImpl(_vs.getRoot(), _spec);
+        return new ShardSetImpl(_vs.getRoot() + "/" + root, _spec);
     }
 
     public FileSystem getFileSystem() {
@@ -96,6 +96,14 @@ public class DomainStore {
 
     public Persistence createShard(int shardIdx, long version) throws IOException {
         return getShardSet(versionPath(version)).createShard(shardIdx);
+    }
+    
+    public String shardPath(int shardIdx) throws IOException {
+        return shardPath(shardIdx, mostRecentVersion());
+    }
+
+    public String shardPath(int shardIdx, long version) throws IOException {
+        return getShardSet(versionPath(version)).shardPath(shardIdx);
     }
 
     /*

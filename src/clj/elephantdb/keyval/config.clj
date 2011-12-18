@@ -25,7 +25,6 @@
 (def DEFAULT-LOCAL-CONFIG
   {:max-online-download-rate-kb-s 128
    :update-interval-s 60
-   :local-db-conf {}
    :hdfs-conf {}})
 
 (defmulti persistence-str class)
@@ -38,14 +37,6 @@
 
 (defmethod persistence-str Coordinator
   [persistence] (.getName (class persistence)))
-
-;; TODO: REMOVE THIS, since it's captured inside of the
-;; domain-spec.
-;;
-;; TODO: Remove persistence options from pallet deploy too.
-(defn persistence-options
-  [db-conf persistence]
-  (get db-conf (persistence-str persistence) {}))
 
 (defn read-local-config
   [local-config-path]

@@ -37,6 +37,9 @@
   (spec [_]
     "Returns a clojure datastructure containing the DomainStore's spec."))
 
+(defprotocol IDomainStatus
+  (ready? [_]))
+
 (defprotocol IShutdownable
   (shutdown [_]))
 

@@ -7,7 +7,7 @@
             [elephantdb.common.util :as u]
             [elephantdb.common.config :as conf]
             [elephantdb.common.logging :as log]
-            [elephantdb.common.thrift :as thrift]
+            [elephantdb.common.status :as status]
             [elephantdb.keyval.service :as service])
   (:import [elephantdb.persistence JavaBerkDB]))
 
@@ -160,8 +160,8 @@
 
         (let [handler (-> (read-global-config gtmp local-config)
                           (mk-service-handler local-dir nil))]
-          (is (thrift/status-failed? (.getDomainStatus handler "do-update")))
-          (is (thrift/status-ready? (.getDomainStatus handler "no-update")))
+          (is (status/failed? (.getDomainStatus handler "do-update")))
+          (is (status/ready? (.getDomainStatus handler "no-update")))
           (.shutdown handler))
         
         ;; if we delete a domain from the global conf, it should
@@ -318,11 +318,11 @@
           ;; force update of all domains
           (.updateAll handler)
 
-          (is (thrift/status-loading? (.getDomainStatus handler "domain1")))
-          (is (thrift/status-loading? (.getDomainStatus handler "domain2")))
+          (is (status/loading? (.getDomainStatus handler "domain1")))
+          (is (status/loading? (.getDomainStatus handler "domain2")))
 
-          (is (thrift/status-ready? (.getDomainStatus handler "domain1")))
-          (is (thrift/status-ready? (.getDomainStatus handler "domain2")))
+          (is (status/ready? (.getDomainStatus handler "domain1")))
+          (is (status/ready? (.getDomainStatus handler "domain2")))
 
           ;; wait a bit
           (while (.isUpdating handler)
@@ -341,8 +341,8 @@
                                 2 [34 34]
                                 3 [45 45])
 
-          (is (thrift/status-ready? (.getDomainStatus handler "domain1")))
-          (is (thrift/status-ready? (.getDomainStatus handler "domain2")))
+          (is (status/ready? (.getDomainStatus handler "domain1")))
+          (is (status/ready? (.getDomainStatus handler "domain2")))
 
           ;; make sure the old versions have been deleted locally
           (let [domain1-old-path1 (.pathToFile lfs (h/path (h/str-path local-dir "domain1" "1")))

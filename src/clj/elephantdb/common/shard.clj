@@ -28,14 +28,24 @@
        (reduce host-shard-assigner [(cycle hosts) {}])
        (second)))
 
+(defn generate-index
+  "Shard a single domain."
+  [hosts shard-count replication]
+  (let [hosts-to-shards (compute-host-to-shards hosts
+                                                shard-count
+                                                replication)]
+    {:hosts-to-shards hosts-to-shards
+     :shards-to-hosts (->> (u/reverse-multimap hosts-to-shards)
+                           (u/val-map set))}))
+
 (defn- shard-domain
   "Shard a single domain."
   [hosts shard-count replication]
   (let [hosts-to-shards (compute-host-to-shards hosts
                                                 shard-count
                                                 replication)]
-    {::hosts-to-shards hosts-to-shards
-     ::shards-to-hosts (->> (u/reverse-multimap hosts-to-shards)
+    {:hosts-to-shards hosts-to-shards
+     :shards-to-hosts (->> (u/reverse-multimap hosts-to-shards)
                             (u/val-map set))}))
 
 (defn shard-domains
@@ -47,17 +57,17 @@
                    (let [{:keys [num-shards]}
                          (read-domain-spec fs remote-location)]
                      (log/info "Sharding domain " domain)
-                     (shard-domain hosts num-shards replication)))
+                     (generate-index hosts num-shards replication)))
                  domain-map))
 
 (defn host-shards [index host]
-  (get (::hosts-to-shards index) host))
+  (get (:hosts-to-shards index) host))
 
 (defn shard-hosts [index shard]
-  (get (::shards-to-hosts index) shard))
+  (get (:shards-to-hosts index) shard))
 
 (defn num-shards [index]
-  (count (keys (::shards-to-hosts index))))
+  (count (keys (:shards-to-hosts index))))
 
 (defn key-shard
   "TODO: Remove domain."

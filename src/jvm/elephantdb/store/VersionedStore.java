@@ -92,7 +92,10 @@ public class VersionedStore {
     }
 
     public void succeedVersion(String path) throws IOException {
-        long version = validateAndGetVersion(path);
+        succeedVersion(validateAndGetVersion(path));
+    }
+
+    public void succeedVersion(long version) throws IOException {
         createNewFile(tokenPath(version));
     }
 

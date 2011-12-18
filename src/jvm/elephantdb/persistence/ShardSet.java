@@ -11,4 +11,6 @@ public interface ShardSet {
     Persistence openShardForAppend(int shardIdx) throws IOException;
     Persistence openShardForRead(int shardIdx) throws IOException;
     Persistence createShard(int shardIdx) throws IOException;
+    int getNumShards();
+    String shardPath(int shardIdx);
 }

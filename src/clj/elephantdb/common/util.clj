@@ -53,6 +53,9 @@
                          (future ~@body))]
      (future-values futures#)))
 
+(defn do-pmap [fn & colls]
+  (doall (apply pmap fn colls)))
+
 (defn update-vals [f m]
   (into {} (for [[k v] m]
              [k (f k v)])))
