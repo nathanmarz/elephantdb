@@ -1,12 +1,12 @@
 (ns elephantdb.common.database
   (:require [hadoop-util.core :as h]
+            [jackknife.logging :as log]
             [elephantdb.common.util :as u]
-            [elephantdb.common.thrift :as thrift]
-            [elephantdb.common.logging :as log]))
+            [elephantdb.common.thrift :as thrift]))
 
 ;; ## Database Manipulation Functions
 
-(defn domain-path
+(defn- domain-path
   "Returns the root path that should be used for a domain with the
   supplied name located within the supplied elephantdb root
   directory."
@@ -38,9 +38,10 @@
 
 ;; ## Database Creation
 ;;
-;; A database ends up being the initial configuration map with much
-;; more detail about the individual domains. The build-database
-;; function merges in the proper domain-maps for each listed domain.
+;; A "database" is the supplied configuration map initial
+;; configuration map with much more detail about each individual
+;; domain. The build-database function merges in the proper
+;; domain-maps for each listed domain.
 
 (defn build-database
   [{:keys [domains hosts replication local-root hdfs-conf] :as conf-map}]
@@ -64,7 +65,6 @@
    :download-cap 1024
    :local-root "/Users/sritchie/Desktop/domainroot"
    :hosts ["localhost"]
-   
    :hdfs-conf {"fs.default.name"
                "hdfs://hadoop-devel-nn.local.twitter.com:8020"}
    :blob-conf {"fs.default.name"
@@ -73,7 +73,8 @@
                       :local-store <local-domain-store>
                       :serializer <serializer>
                       :status <status-atom>
-                      :shard-index 'shard-index
+                      :shard-index {:hosts->shards {}
+                                    :shard->host {}}
                       :domain-data (atom {:version 123534534
                                           :shards {1 <persistence>
                                                    3 <persistence>}})}
@@ -82,7 +83,8 @@
                      :local-store <local-domain-store>
                      :serializer <serializer>
                      :status <status-atom>
-                     :shard-index 'shard-index
+                     :shard-index {:hosts->shards {}
+                                   :shard->host {}}
                      :domain-data (atom {:version 123534534
                                          :shards {1 <persistence>
                                                   3 <persistence>}})}}})

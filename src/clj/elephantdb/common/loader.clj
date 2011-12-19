@@ -3,8 +3,8 @@
   mechanics are inside of elephantdb.common.hadoop; this namespace
   triggers downloads and opens and closes domains and shards."
   (:require [hadoop-util.core :as h]
+            [jackknife.logging :as log]
             [elephantdb.common.hadoop :as hadoop]
-            [elephantdb.common.logging :as log]
             [elephantdb.common.config :as conf]
             [elephantdb.common.util :as u])
   (:import [elephantdb.store DomainStore]

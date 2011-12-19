@@ -30,10 +30,6 @@
   [amt aseq]
   (apply concat (repeat amt aseq)))
 
-;; TODO: Remove.
-(defn flattened-count [xs]
-  (reduce + (map count xs)))
-
 (defmacro dofor [bindings & body]
   `(doall (for ~bindings (do ~@body))))
 

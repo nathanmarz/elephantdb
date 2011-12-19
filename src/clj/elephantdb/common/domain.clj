@@ -1,12 +1,12 @@
 (ns elephantdb.common.domain
   (:use [hadoop-util.core :only (local-filesystem path)])
   (:require [hadoop-util.core :as h]
+            [jackknife.logging :as log]
             [elephantdb.common.util :as u]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.status :as status]
             [elephantdb.common.loader :as loader]
-            [elephantdb.common.thrift :as thrift]
-            [elephantdb.common.logging :as log])
+            [elephantdb.common.thrift :as thrift])
   (:import [elephantdb Utils]
            [elephantdb.store DomainStore]
            [elephantdb.common.status IStateful]

@@ -1,11 +1,11 @@
 (ns elephantdb.keyval.service
   (:use [elephantdb.keyval.thrift :only (with-elephant-connection)])
   (:require [hadoop-util.core :as h]
+            [jackknife.logging :as log]
             [elephantdb.common.util :as u]
             [elephantdb.common.domain :as dom]
             [elephantdb.common.thrift :as thrift]
-            [elephantdb.common.status :as status]
-            [elephantdb.common.logging :as log])
+            [elephantdb.common.status :as status])
   (:import [org.apache.thrift TException]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol$Factory]

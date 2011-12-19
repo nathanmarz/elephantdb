@@ -2,11 +2,11 @@
   (:use clojure.test
         elephantdb.common.testing)
   (:require [hadoop-util.core :as h]
+            [jackknife.logging :as log]
             [elephantdb.keyval.service :as service]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf]
-            [elephantdb.common.logging :as log]
             [elephantdb.common.util :as u])
   (:import [elephantdb Utils ByteArray]
            [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat

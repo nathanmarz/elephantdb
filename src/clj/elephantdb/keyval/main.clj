@@ -1,8 +1,8 @@
 (ns elephantdb.keyval.main
   (:use elephantdb.common.config)
-  (:require [elephantdb.keyval.service :as service]
-            [elephantdb.common.util :as util]
-            [elephantdb.common.logging :as log])
+  (:require [jackknife.logging :as log]
+            [elephantdb.keyval.service :as service]
+            [elephantdb.common.util :as util])
   (:gen-class))
 
 ;; # Main Access

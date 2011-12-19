@@ -4,12 +4,12 @@
 (ns elephantdb.common.updater
   (:require [clojure.string :as s]
             [hadoop-util.core :as h]
+            [jackknife.logging :as log]
             [elephantdb.common.util :as u]
             [elephantdb.common.status :as status]
             [elephantdb.common.domain :as dom]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.loader :as loader]
-            [elephantdb.common.logging :as log]
             [elephantdb.common.hadoop :as hadoop]))
 
 
@@ -92,6 +92,9 @@
        (and @download-supervisor
             (not (.isDone @download-supervisor))))))
 
+(defn flattened-count [xs]
+  (reduce + (map count xs)))
+
 (defn update-domains
   [download-supervisor domains-info edb-config rw-lock]
   (let [{max-kbs :max-online-download-rate-kb-s
@@ -101,7 +104,7 @@
                             ;; this was a map of domain-name->shard-set
                             (dom/all-shards)
                             (hadoop/mk-loader-state))
-         shard-amount (u/flattened-count (vals (:download-states download-state)))]
+         shard-amount (flattened-count (vals (:download-states download-state)))]
     (log/info "UPDATER - Updating domains: " (s/join ", " (keys domains-info)))
     (reset! download-supervisor (loader/start-download-supervisor
                                  shard-amount max-kbs download-state))

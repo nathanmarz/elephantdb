@@ -1,7 +1,7 @@
 (ns elephantdb.common.testing
   (:use clojure.test)
   (:require [hadoop-util.core :as h]
-            [elephantdb.common.logging :as log])
+            [jackknife.logging :as log])
   (:import [java.util UUID]
            [elephantdb ByteArray]))
 

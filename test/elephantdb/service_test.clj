@@ -4,9 +4,9 @@
         elephantdb.common.testing
         [elephantdb.common.config :only (read-global-config)])
   (:require [hadoop-util.core :as h]
+            [jackknife.logging :as log]
             [elephantdb.common.util :as u]
             [elephantdb.common.config :as conf]
-            [elephantdb.common.logging :as log]
             [elephantdb.common.status :as status]
             [elephantdb.keyval.service :as service])
   (:import [elephantdb.persistence JavaBerkDB]))
