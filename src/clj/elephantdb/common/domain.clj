@@ -29,8 +29,7 @@
 (defn domain-data
   ([domain-info] @(:domain-data domain-info))
   ([domain-info shard]
-     (when-let [domain-data @(:domain-data domain-info)]
-       (domain-data shard))))
+     (get @(:domain-data domain-info) shard)))
 
 (defn set-domain-data!
   [rw-lock domain domain-info new-data]

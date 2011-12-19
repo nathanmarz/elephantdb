@@ -1,11 +1,12 @@
 (ns elephantdb.common.fresh
+  (:use [elephantdb.common.iface :only (shutdown)])
   (:require [hadoop-util.core :as h]
             [elephantdb.common.util :as u]
             [elephantdb.common.status :as stat]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.logging :as log])
   (:import [elephantdb.store DomainStore]
-           [elephantdb.common.status KeywordStatus]
+           [elephantdb.common.status KeywordStatus IStateful]
            [elephantdb.common.iface IShutdownable]))
 
 ;; Domain Interaction functions
@@ -41,30 +42,54 @@
          (log/error t error-msg)
          (throw t))))
 
-(defn close-shards! [shard-seq]
-  (doseq [shard shard-seq]
-    (close-shard! shard)))
+;; TODO: Think about some sort of data structure logging here, or a
+;; better way of reporting what's happened.
+(defn close-shards! [shard-map]
+  (doseq [[idx shard] shard-map]
+    (log/info "Closing shard #: " idx)
+    (close-shard! shard)
+    (log/info "Closed shard #: " idx)))
 
 (defprotocol IVersioned
   (current-version [_] "Returns a long timestamp of the current version.")
   (version-map [_] "Returns a map of version number -> version info."))
+
+(defn swap-status!
+  "Accepts a domain and a transition function (from the
+  elephantdb.common.status.IStateful interface) and returns the new
+  status."
+  [{:keys [status] :as domain} transition-fn & args]
+  (apply swap! status transition-fn args))
 
 (defrecord Domain
     [local-store remote-store serializer status domain-data shard-index]
   IShutdownable
   (shutdown [this]
     ;; status needs a better interface.
-    (reset! (:status this) (DomainStatus. :shutting-down))
-    (close-shards! (vals (:domain-data this))))
+    (stat/to-shutdown this)
+    (close-shards! @(:domain-data this)))
   
   IVersioned
   (current-version [this]
-    (-> this :domain-data :version))
+    (get @(:domain-data this) :version))
 
   ;; I'm not sure what we should put in the version-map yet.
   (version-map [this]
     (zipmap (version-seq (:local-store this))
-            (repeat {}))))
+            (repeat {})))
+
+  IStateful
+  ;; Allows for more elegant state transitions.
+  (status [this]
+    @(:status this))
+  (to-ready [this]
+    (swap-status! this stat/to-ready))
+  (to-loading [this]
+    (swap-status! this stat/to-loading))
+  (to-failed [this msg]
+    (swap-status! this stat/to-failed msg))
+  (to-shutdown [this]
+    (swap-status! this stat/to-shutdown)))
 
 (defn build-domain
   [local-root hdfs-conf remote-path hosts replication]
@@ -234,6 +259,7 @@
         (getString [this domain key]
           (.get this domain key))
 
+        ;; IN PROGRESS
         (directMultiGet [_ domain keys]
           (u/with-read-lock rw-lock
             (let [info (get-readable-domain-info domains-info domain)]
@@ -245,6 +271,7 @@
                          (thrift/mk-value (.get lp key))
                          (throw (thrift/wrong-host-ex)))))))
 
+        ;; IN PROGRESS
         (multiGet [this domain keys]
           (let [host-indexed-keys (host-indexed-keys localhost
                                                      domain-shard-indexes
@@ -283,39 +310,38 @@
 
         (multiGetString [this domain keys]
           (.multiGet this domain keys))
-      
-        (getDomainStatus [_ domain]
-          (let [info (domains-info domain)]
-            (when-not info
-              (throw (thrift/domain-not-found-ex domain)))
-            (domain/domain-status info)))
-      
+
+        ;; IN PROGRESS
+        (update [this domain]
+          "Trigger an update on a single domain -- this means that the
+          domain should look to its remote store and sync the latest
+          version to itself, then update when complete.
+
+         TODO: check what this currently returns.")
+
+        ;; IN PROGRESS
+        (updateAll [this]
+          "Trigger updates on all domains.")
+        
+        (getDomainStatus [_ domain-name]
+          (if-let [domain (-> database :domains (get domain-name))]
+            (stat/status domain)
+            (throw (thrift/domain-not-found-ex domain))))
+
         (getDomains [_]
-          (keys domains-info))
-      
+          (keys (:domains database)))
+
         (getStatus [_]
           (thrift/elephant-status
-           (u/val-map domain/domain-status domains-info)))
+           (u/val-map stat/status (:domains database))))
 
         (isFullyLoaded [this]
-          (let [stat (.get_domain_statuses (.getStatus this))]
-            (every? #(or (status/ready? %)
-                         (status/failed? %))
-                    (vals stat))))
+          "Are all domains loaded properly?"
+          (every? (some-fn stat/ready? stat/failed?)
+                  (vals (:domains database))))
 
         (isUpdating [this]
-          (service-updating? this download-supervisor))
-      
-        (updateAll [this]
-          (trigger-update this
-                          download-supervisor
-                          domains-info
-                          edb-config
-                          rw-lock))
-      
-        (update [this domain]
-          (trigger-update this
-                          download-supervisor
-                          (select-keys domains-info [domain])
-                          edb-config
-                          rw-lock))))))
+          "Is some domain currently updating?"
+          (let [domains (vals (:domains database))]
+            (some stat/loading?
+                  (map stat/status domains))))))))
