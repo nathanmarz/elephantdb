@@ -1,7 +1,6 @@
 (ns elephantdb.keyval.main
-  (:use elephantdb.keyval.config)
-  (:require [hadoop-util.core :as h]
-            [elephantdb.keyval.service :as service]
+  (:use elephantdb.common.config)
+  (:require [elephantdb.keyval.service :as service]
             [elephantdb.common.util :as util]
             [elephantdb.common.logging :as log])
   (:gen-class))
@@ -24,6 +23,7 @@
     (log/info "Starting updater process...")
     (service/launch-updater! interval handler)
     (log/info "Starting ElephantDB server...")
+    (service/prepare handler)
     (.serve server)))
 
 (defn -main

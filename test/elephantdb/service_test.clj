@@ -2,7 +2,7 @@
   (:use clojure.test
         elephantdb.keyval.testing
         elephantdb.common.testing
-        [elephantdb.keyval.config :only (read-global-config)])
+        [elephantdb.common.config :only (read-global-config)])
   (:require [hadoop-util.core :as h]
             [elephantdb.common.util :as u]
             [elephantdb.common.config :as conf]
