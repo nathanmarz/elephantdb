@@ -281,7 +281,7 @@
       ElephantDB$Iface
       (get [this domain key]
         (first (.multiGet this domain [key])))
-
+      
       (getInt [this domain key]
         (.get this domain key))
 

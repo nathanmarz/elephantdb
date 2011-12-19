@@ -45,4 +45,8 @@
 (defprotocol IShutdownable
   (shutdown [_]))
 
+(defprotocol IVersioned
+  (current-version [_] "Returns a long timestamp of the current version.")
+  (version-seq [_] "Returns a sequence of all available versions."))
+
 
