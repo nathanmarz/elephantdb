@@ -97,11 +97,12 @@
                                                                   info)))]
                       (domain/set-domain-data! rw-lock domain info new-data)))))))
 
+;; TODO
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
   all directories with names that aren't present in the supplied
   `domains`."
-  [domain-seq local-dir]
+  [local-dir domain-seq]
   (let [lfs (h/local-filesystem)
         domain-set (set domain-seq)]
     (u/dofor [domain-path (-> local-dir h/mk-local-path .listFiles)
@@ -119,7 +120,7 @@
         domain-seq (keys domains-info)]
     (u/with-ret domains-info
       (future        
-        (purge-unused-domains! domain-seq local-dir)
+        (purge-unused-domains! local-root domain-seq)
         (load-cached-domains! edb-config rw-lock domains-info)
         (update-and-sync-status! edb-config
                                  rw-lock

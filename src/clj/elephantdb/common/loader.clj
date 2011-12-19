@@ -27,10 +27,7 @@
   [[shard lp] domain]
   (try (.close lp)
        (catch Throwable t
-         (log/error t
-                    domain
-                    " and shard: "
-                    shard)
+         (log/error t domain " and shard: " shard)
          (throw t))))
 
 (defn open-domain
@@ -91,7 +88,7 @@
                                               shard-idx
                                               remote-version
                                               download-state))]
-                            (swap! (:shard-loaders state) conj f))))]
+                            (swap! (:shard-loaders download-state) conj f))))]
     (u/future-values shard-loaders)
     (.succeedVersion local-vs remote-version)
     (log/info (format "Successfully loaded domain at %s to %s with version %s."
