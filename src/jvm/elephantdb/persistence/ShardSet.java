@@ -1,6 +1,7 @@
 package elephantdb.persistence;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * User: sritchie
@@ -8,9 +9,10 @@ import java.io.IOException;
  * Time: 3:09 PM
  */
 public interface ShardSet {
+    int getNumShards();
+    int shardIndex(Object shardKey);
+    String shardPath(int shardIdx);
     Persistence openShardForAppend(int shardIdx) throws IOException;
     Persistence openShardForRead(int shardIdx) throws IOException;
     Persistence createShard(int shardIdx) throws IOException;
-    int getNumShards();
-    String shardPath(int shardIdx);
 }

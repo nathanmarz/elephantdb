@@ -4,12 +4,14 @@
             [elephantdb.common.util :as u]
             [elephantdb.common.status :as stat]
             [elephantdb.common.shard :as shard]
-            [elephantdb.common.logging :as log])
+            [elephantdb.common.logging :as log]
+            [elephantdb.common.thrift :as thrift])
   (:import [elephantdb.store DomainStore]
+           [elephantdb.persistence ShardSet]
            [elephantdb.common.status KeywordStatus IStateful]
            [elephantdb.common.iface IShutdownable]))
 
-;; Domain Interaction functions
+;; ## Testing functions
 
 (defn specs-match?
   "Returns true of the specs of all supplied DomainStores match, false
@@ -18,12 +20,30 @@
   (apply = (map (fn [^DomainStore x] (.getSpec x))
                 stores)))
 
+(defn existing-shard-seq
+  "Returns a sequence of all shards present on the fileystem for the
+  supplied store and version. Useful for testing."
+  [store version]
+  (let [num-shards (.. store getSpec getNumShards)
+        filesystem (.getFileSystem store)]
+    (filter (fn [idx]
+              (->> (.shardPath store idx version)
+                   (.exists filesystem)))
+            (range num-shards))))
+
+;; ## Domain Interaction functions
+
 (defn mk-local-store
   [local-path remote-vs]
   (DomainStore. local-path (.getSpec remote-vs)))
 
 (defn version-seq [store]
   (into [] (.getAllVersions store)))
+
+;; `existing-shard-seq` is good for testing, but we don't really need
+;; it in a working production system (since the domain knows what
+;; shards should be holding.)
+
 
 ;; TODO: In the future, `close-shard` should make use of
 ;; [slingshot](https://github.com/scgilardi/slingshot) to actually
@@ -50,6 +70,35 @@
     (close-shard! shard)
     (log/info "Closed shard #: " idx)))
 
+(defn open-shard!
+  "Opens and returns a Persistence object standing in for the shard
+  with the supplied index."
+  [domain-store shard-idx version]
+  (log/info "Opening shard #: " shard-idx)
+  (u/with-ret (.openShardForRead domain-store shard-idx)
+    (log/info "Opened shard #: " shard-idx)))
+
+;; TODO: How do we get the sequence of shards?
+(defn retrieve-shards!
+  "Accepts a domain object and returns a sequence of opened
+  Persistence objects on success."
+  [{:keys [local-store]} version]
+  (let [shards (shard-seq local-store version)]
+    (u/with-ret (->> (u/do-pmap (fn [idx]
+                                  (open-shard! local-store idx version))
+                                shards)
+                     (zipmap shards))
+      (log/info "Finished opening domain at " (.getRoot local-store)))))
+
+(defn close-domain
+  "Closes all shards in the supplied domain. TODO: If a shard throws
+  an error, is this behavior predictable?"
+  [domain domain-data]
+  (log/info (format "Closing domain: %s with data: %s" domain domain-data))
+  (doseq [shard-data domain-data]
+    (close-shard shard-data domain))
+  (log/info "Finished closing domain: " domain))
+
 (defprotocol IVersioned
   (current-version [_] "Returns a long timestamp of the current version.")
   (version-map [_] "Returns a map of version number -> version info."))
@@ -61,8 +110,11 @@
   [{:keys [status] :as domain} transition-fn & args]
   (apply swap! status transition-fn args))
 
+;; ## Record Definition
+
 (defrecord Domain
-    [local-store remote-store serializer status domain-data shard-index]
+    [local-store remote-store serializer
+     hostname status domain-data shard-index]
   IShutdownable
   (shutdown [this]
     ;; status needs a better interface.
@@ -100,9 +152,10 @@
     (Domain. local-store
              remote-store
              (-> local-store .getSpec .getCoordinator .getKryoBuffer)
-             (atom (KeywordStatus. :loading))
+             (u/local-hostname)
+             (atom (thrift/loading-status))
              (atom {})
-             (atom index))))
+             index)))
 
 ;; ## Domain Manipulation Functions
 
@@ -119,6 +172,28 @@
         (when (and local-version remote-version)
           (< local-version remote-version)))))
 
+;; ### Sharding Logic
+;;
+;; These functions provide hints to a given domain about where to look
+;;for some key.
+
+(defn key->shard
+  "Accepts a local store and a key (any object will do); returns the
+  approprate shard number for the given key."
+  [local-store key]
+  (let [^ShardSet shard-set (.getShardSet local-store)]
+    (.shardIndex shard-set key)))
+
+(defn prioritize-hosts
+  "Accepts a domain and a sharding-key and returns a sequence of hosts
+  to try when attempting to process some value."
+  [{:keys [local-store shard-index hostname]} key]
+  (shard/prioritize-hosts shard-index
+                          (key->shard local-store key)
+                          #{hostname}))
+
+;; BREAK!
+;; 
 ;; ## Examples
 ;;
 ;; The configuration was traditionally split up into global and
@@ -141,6 +216,8 @@
                "hdfs://hadoop-devel-nn.local.twitter.com:8020"}
    :blob-conf {"fs.default.name"
                "hdfs://hadoop-devel-nn.local.twitter.com:8020"}})
+
+;; ## Database Creation
 
 (defn domain-path
   "Returns the root path that should be used for a domain with the
@@ -168,6 +245,12 @@
 ;; update all databases at once. With Clojure's concurrency mechanisms
 ;; we can treat each domain as its own thing and dispatch futures to
 ;; take care of each in turn.
+
+;; ## Database Manipulation Functions
+
+(defn domain-get [database domain]
+  (or (-> database :domains (get domain))
+      (thrift/domain-not-found-ex domain)))
 
 (comment
   {:replication 1
@@ -260,11 +343,12 @@
           (.get this domain key))
 
         ;; IN PROGRESS
-        (directMultiGet [_ domain keys]
+        (directMultiGet [_ domain-name keys]
           (u/with-read-lock rw-lock
-            (let [info (get-readable-domain-info domains-info domain)]
+            (let [domain (domain-get database domain-name)
+                  info   (get-readable-domain-info domains-info domain)]
               (u/dofor [key keys
-                        :let [shard (domain/key-shard domain info key)
+                        :let [shard (domain/key->shard domain info key)
                               ^Persistence lp (domain/domain-data info shard)]]
                        (log/debug "Direct get keys " (seq key) "at shard " shard)
                        (if lp
@@ -324,9 +408,7 @@
           "Trigger updates on all domains.")
         
         (getDomainStatus [_ domain-name]
-          (if-let [domain (-> database :domains (get domain-name))]
-            (stat/status domain)
-            (throw (thrift/domain-not-found-ex domain))))
+          (stat/status (domain-get database domain-name)))
 
         (getDomains [_]
           (keys (:domains database)))

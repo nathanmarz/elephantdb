@@ -29,7 +29,8 @@
 (defn domain-data
   ([domain-info] @(:domain-data domain-info))
   ([domain-info shard]
-     (get @(:domain-data domain-info) shard)))
+     (when-let [domain-data ]
+       (get @(:domain-data domain-info) shard))))
 
 (defn set-domain-data!
   [rw-lock domain domain-info new-data]
@@ -48,25 +49,25 @@
 (defn shard-index [domain-info]
   (:shard-index domain-info))
 
-(defn host-shards
+(defn shard-set
   ([domain-info]
-     (host-shards domain-info (u/local-hostname)))
+     (shard-set domain-info (u/local-hostname)))
   ([domain-info host]
-     (shard/host-shards (:shard-index domain-info) host)))
+     (shard/shard-set (:shard-index domain-info) host)))
 
 (defn all-shards
   "Returns Map of domain-name to Set of shards for that domain"
   [domains-info]
   (u/val-map host-shards domains-info))
 
-(defn key-hosts [domain domain-info ^bytes key]
-  (shard/key-hosts domain (:shard-index domain-info) key))
+(defn key->hosts [domain domain-info ^bytes key]
+  (shard/key->hosts domain (:shard-index domain-info) key))
 
-(defn key-shard
+(defn key->shard
   "TODO: Remove domain."
   [domain domain-info key]
   (let [index (shard-index domain-info)]
-    (shard/key-shard domain key (shard/num-shards index))))
+    (shard/key->shard domain key (shard/num-shards index))))
 
 (defn has-data? [store]
   (-> store .mostRecentVersion boolean))

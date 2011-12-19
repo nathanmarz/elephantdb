@@ -10,43 +10,6 @@
   (:import [elephantdb.store DomainStore]
            [elephantdb.common.hadoop DownloadState LoaderState]))
 
-(defn- shard-path
-  [domain-version shard]
-  (h/str-path domain-version shard))
-
-(defn open-shard
-  "Opens and returns a Persistence object standing in for the shard
-  with the supplied index."
-  [domain-store shard-idx]
-  (log/info "Opening shard #: " shard-idx)
-  (u/with-ret (.openShardForRead domain-store shard-idx)
-    (log/info "Opened shard #: " shard-idx)))
-
-(defn close-shard
-  "Returns nil on success. throws IOException when some sort of failure occurs."
-  [[shard lp] domain]
-  (try (.close lp)
-       (catch Throwable t
-         (log/error t domain " and shard: " shard)
-         (throw t))))
-
-(defn open-domain
-  "Returns a sequence of Persistence objects on success."
-  [store shards]
-  (u/with-ret (->> shards
-                   (u/do-pmap (partial open-shard store))
-                   (zipmap shards))
-    (log/info "Finished opening domain at " (.getRoot store))))
-
-(defn close-domain
-  "Closes all shards in the supplied domain. TODO: If a shard throws
-  an error, is this behavior predictable?"
-  [domain domain-data]
-  (log/info (format "Closing domain: %s with data: %s" domain domain-data))
-  (doseq [shard-data domain-data]
-    (close-shard shard-data domain))
-  (log/info "Finished closing domain: " domain))
-
 ;; TODO: respect the max copy rate
 
 ;; TODO: do a streaming recursive copy that can be rate limited (rate
@@ -71,11 +34,7 @@
 ;; TODO: What if both stores have the same versions?
 (defn load-domain
   "Transfers data from the latest version at the remote store to the
-  local store. Returns a map of shard index -> opened Persistence
-  object.
-
-  TODO: Make it clear that we're returning a new domain state map,
-  basically."
+  local store. Returns true on success."
   [local-vs remote-vs domain-state]
   (let [shards        (keys domain-state)
         remote-version (.mostRecentVersion remote-vs)
@@ -91,11 +50,11 @@
                             (swap! (:shard-loaders download-state) conj f))))]
     (u/future-values shard-loaders)
     (.succeedVersion local-vs remote-version)
-    (log/info (format "Successfully loaded domain at %s to %s with version %s."
-                      (.getRoot remote-vs)
-                      (.getRoot local-vs)
-                      remote-version))    
-    (open-domain local-vs shards)))
+    (u/with-ret true
+      (log/info (format "Successfully loaded domain at %s to %s with version %s."
+                        (.getRoot remote-vs)
+                        (.getRoot local-vs)
+                        remote-version)))))
 
 (defn start-download-supervisor
   [amount-shards max-kbs ^LoaderState state]

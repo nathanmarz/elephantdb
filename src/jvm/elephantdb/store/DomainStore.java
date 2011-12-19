@@ -58,8 +58,9 @@ public class DomainStore {
         return _spec;
     }
     
-    public ShardSet getShardSet(String root) {
-        return new ShardSetImpl(_vs.getRoot() + "/" + root, _spec);
+    ShardSet getShardSet(long version) {
+        String path = versionPath(version);
+        return new ShardSetImpl(path, _spec);
     }
 
     public FileSystem getFileSystem() {
@@ -79,7 +80,7 @@ public class DomainStore {
     }
 
     public Persistence openShardForAppend(int shardIdx, long version) throws IOException {
-        return getShardSet(versionPath(version)).openShardForAppend(shardIdx);
+        return getShardSet(version).openShardForAppend(shardIdx);
     }
 
     public Persistence openShardForRead(int shardIdx) throws IOException {
@@ -87,7 +88,7 @@ public class DomainStore {
     }
 
     public Persistence openShardForRead(int shardIdx, long version) throws IOException {
-        return getShardSet(versionPath(version)).openShardForRead(shardIdx);
+        return getShardSet(version).openShardForRead(shardIdx);
     }
 
     public Persistence createShard(int shardIdx) throws IOException {
@@ -95,7 +96,7 @@ public class DomainStore {
     }
 
     public Persistence createShard(int shardIdx, long version) throws IOException {
-        return getShardSet(versionPath(version)).createShard(shardIdx);
+        return getShardSet(version).createShard(shardIdx);
     }
     
     public String shardPath(int shardIdx) throws IOException {
@@ -103,7 +104,7 @@ public class DomainStore {
     }
 
     public String shardPath(int shardIdx, long version) throws IOException {
-        return getShardSet(versionPath(version)).shardPath(shardIdx);
+        return getShardSet(version).shardPath(shardIdx);
     }
 
     /*

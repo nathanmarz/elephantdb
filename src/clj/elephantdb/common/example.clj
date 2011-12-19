@@ -88,7 +88,7 @@
                               :remote-handle "remote-fs-handle"
                               :domain-data <data-atom>
                               :shard-index {:hosts-to-shards <map>
-                                            :shards-to-hosts <map>}
+                                            :shards-to-hosts <map>}#
                               :current-version 12356456324
                               :version-map #{{:id 12356456324, :status :open}
                                              {:id 123235324,   :status :downloading}

@@ -69,7 +69,9 @@
                             local-vs (domain/local-store local-domain-root remote-vs)]
                         (if (domain/needs-update? local-vs remote-vs)
                           (let [state (get (:download-states state) domain)
-                                new-data (loader/load-domain local-vs remote-vs state)]
+                                new-data
+                                (do (loader/load-domain local-vs remote-vs state)
+                                    (f/retrieve-shards! local-vs (keys state)))]
                             (domain/set-domain-data! rw-lock domain info new-data)
                             (log/info
                              "Finished loading all updated domains from remote."))
@@ -91,8 +93,11 @@
                         remote-vs (DomainStore. remote-fs remote-path)
                         local-path (str (h/path local-dir domain))
                         local-vs (domain/local-store local-path remote-vs)]
+                    ;; TODO: Give this section an
+                    ;; overhaul. open-shards doesn't make sense
+                    ;; anymore.
                     (when-let [new-data (and (domain/has-data? local-vs)
-                                             (loader/open-domain local-vs
+                                             (fresh/open-shards! local-vs
                                                                  (domain/host-shards
                                                                   info)))]
                       (domain/set-domain-data! rw-lock domain info new-data)))))))
@@ -196,13 +201,12 @@
 (defn- prioritize-hosts
   [localhost domain-shard-indexes domain key]
   (let [index (get-index domain-shard-indexes domain)
-        hosts (shuffle (shard/key-hosts domain index key))]
+        hosts (shuffle (shard/key->hosts domain index key))]
     (if (some #{localhost} hosts)
       (cons localhost (u/remove-val localhost hosts))
       hosts)))
 
 (defn multi-get-remote
-  {:dynamic true}
   [host port domain keys]
   (with-elephant-connection host port service
     (.directMultiGet service domain keys)))
@@ -235,7 +239,7 @@
   [localhost domain-shard-indexes domain keys]
   (for [[gi key] (map-indexed vector keys)
         :let [priority-hosts
-              (prioritize-hosts localhost domain-shard-indexes domain key)]]
+              (shard/prioritize-hosts localhost domain-shard-indexes domain key)]]
     [priority-hosts gi key priority-hosts]))
 
 (defn- multi-get*
@@ -291,7 +295,7 @@
         (u/with-read-lock rw-lock
           (let [info (get-readable-domain-info domains-info domain)]
             (u/dofor [key keys
-                      :let [shard (domain/key-shard domain info key)
+                      :let [shard (domain/key->shard domain info key)
                             ^Persistence lp (domain/domain-data info shard)]]
                      (log/debug "Direct get keys " (seq key) "at shard " shard)
                      (if lp

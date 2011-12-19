@@ -80,6 +80,15 @@
   (dofor [f futures]
          (.get f)))
 
+(def separate
+  "Accepts a predicate and a sequence, and returns:
+
+   [(filter pred xs) (remove pred xs)]"
+  (juxt filter remove))
+
+(defn prioritize [pred coll]
+  (apply concat (separate pred coll)))
+
 (defn remove-val [v aseq]
   (filter (partial not= v)
           aseq))

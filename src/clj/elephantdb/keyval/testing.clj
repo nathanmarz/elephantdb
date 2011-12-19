@@ -47,9 +47,9 @@
       (index db k v))))
 
 ;; bind this to get different behavior when making sharded domains.
-;; TODO: Remove first arg from key-shard.
+;; TODO: Remove first arg from key->shard.
 (def ^:dynamic test-key->shard
-  (partial shard/key-shard "testdomain"))
+  (partial shard/key->shard "testdomain"))
 
 (defn mk-elephant-writer
   [shards coordinator output-dir tmpdir & kargs]
@@ -146,11 +146,11 @@
                            ~pathsym
                            ~coordinator
                            ~shardmap)
-     (binding [shard/key-shard (let [rev# (reverse-pre-sharded ~shardmap)]
-                                 (fn [d# k# a#]
-                                   (if (= d# ~dname)
-                                     (rev# (ByteArray. k#))
-                                     (shard/key-shard d# k# a#))))]
+     (binding [shard/key->shard (let [rev# (reverse-pre-sharded ~shardmap)]
+                                  (fn [d# k# a#]
+                                    (if (= d# ~dname)
+                                      (rev# (ByteArray. k#))
+                                      (shard/key->shard d# k# a#))))]
        ~@body)))
 
 (defmacro with-service-handler
