@@ -86,14 +86,9 @@
     (.cleanup to-keep)))
 
 (defn cleanup-domains!
-  "Destroys every old version for each of the supplied domains.
-
-  If any cleanup operation throws an error, `cleanup-domains!` will
-  try to operate on the rest of the domains, and throw a single error
-  on completion."
+  "Destroys every old version for each of the supplied domains."
   [domain-seq]
-  (u/do-risky [domain domain-seq]
-              (cleanup-domain! domain)))
+  (u/do-pmap cleanup-domain! domain-seq))
 
 ;; ## Shard Manipulation
 ;;
@@ -131,6 +126,7 @@
   (u/with-ret (.openShardForRead domain-store shard-idx)
     (log/info "Opened shard #: " shard-idx)))
 
+;; TODO: This should look inside the host->shard map.
 (defn retrieve-shards!
   "Accepts a domain object and returns a sequence of opened
   Persistence objects on success."

@@ -45,19 +45,6 @@
 (defn do-pmap [fn & colls]
   (doall (apply pmap fn colls)))
 
-(defmacro do-risky
-  "Executes each form in sequence, as with doseq; on completion, if
-  any of the forms has thrown some sort of error, do-risky throws the
-  last one."
-  [bindings & more]
-  `(let [error# (atom nil)]
-     (u/p-dofor ~bindings
-                (try ~@more
-                     (catch Throwable t#
-                       (reset! error# t#))))
-     (when-let [e# @error#]
-       (throw e#))))
-
 (defn update-vals [f m]
   (into {} (for [[k v] m]
              [k (f k v)])))
@@ -90,11 +77,6 @@
 
 (defn prioritize [pred coll]
   (apply concat (separate pred coll)))
-
-;; TODO: Remove
-(defn remove-val [v aseq]
-  (filter (partial not= v)
-          aseq))
 
 (defn mk-rw-lock []
   (ReentrantReadWriteLock.))
