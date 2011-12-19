@@ -8,13 +8,17 @@
   (= s2 (first (sort [s1 s2]))))
 
 (defmacro safe-assert
+  "TODO: Fix my version comparison."
   ([x] `(safe-assert ~x ""))
   ([x msg]
      (if (>=s (clojure-version) "1.3.0")
        `(assert ~x ~msg)
        `(assert ~x))))
 
-(defn sleep [len]
+(defn sleep
+  "Sleeps for the supplied length of time. Negative numbers are
+  treated as zero."
+  [len]
   (when (pos? len)
     (Thread/sleep len)))
 
@@ -22,31 +26,16 @@
   (-> (Runtime/getRuntime)
       (.addShutdownHook (Thread. shutdown-func))))
 
-(defn find-first-next [pred aseq]
-  (loop [[curr & restseq] aseq]
-    (if (pred curr)
-      [curr restseq]
-      (recur restseq))))
-
 (defn repeat-seq
   [amt aseq]
   (apply concat (repeat amt aseq)))
 
+;; TODO: Remove.
 (defn flattened-count [xs]
   (reduce + (map count xs)))
 
 (defmacro dofor [bindings & body]
   `(doall (for ~bindings (do ~@body))))
-
-(defmacro dofor [bindings & body]
-  `(doall (for ~bindings (do ~@body))))
-
-(defmacro as-futures [[a args] & body]
-  (let [parts          (partition-by #{'=>} body)
-        [acts _ [res]] (partition-by #{:as} (first parts))
-        [_ _ task]     parts]
-    `(let [~res (for [~a ~args] (future ~@acts))]
-       ~@task)))
 
 (defmacro p-dofor [bindings & body]
   `(let [futures# (dofor ~bindings
@@ -89,19 +78,10 @@
 (defn prioritize [pred coll]
   (apply concat (separate pred coll)))
 
+;; TODO: Remove
 (defn remove-val [v aseq]
   (filter (partial not= v)
           aseq))
-
-(defn third [aseq]
-  (nth aseq 2))
-
-(defn parallel-exec [funcs]
-  (if (empty? funcs)
-    []
-    (let [[thisfn & restfns] funcs
-          future-rest (dofor [f restfns] (future-call f))]
-      (cons (thisfn) (map deref future-rest)))))
 
 (defn mk-rw-lock []
   (ReentrantReadWriteLock.))
