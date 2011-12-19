@@ -22,6 +22,8 @@
 ;; interface like this it becomes possible to create varying records
 ;; and types; if they fulfill this interface, and the interface
 ;; required for transfer, that should be enough.
+;;
+;; Protocol examples: https://gist.github.com/1495818
 
 (defprotocol IDomainStore
   (allVersions [_]
@@ -37,43 +39,10 @@
   (spec [_]
     "Returns a clojure datastructure containing the DomainStore's spec."))
 
-(defprotocol IDomainStatus
-  (ready? [_]))
+(defprotocol IPreparable
+  (prepare [_] "Perform preparatory steps."))
 
 (defprotocol IShutdownable
   (shutdown [_]))
 
-(comment
-  "Examples of records and protocols:"
-  (defprotocol Cake
-    (face [_] "Docstring for face."))
 
-  (defrecord Icing [color]
-    Cake
-    (face [this] "hi."))
-  
-  "after arg vector, defrecord implement combinations of
-   protocol/interface and methods."
-  (defrecord ElephantClient [arg1]
-    
-    Shutdownable
-    (shutdown [this]
-      ...))
-
-  (extend-type ElephantClient
-    SomeInterface
-    (wiggle [this x y] ,,,)
-
-    OtherInterface
-    (stretch [this] ,,,))
-
-  "OR!"
-
-  (extend ElephantClient
-    SomeInterface
-    {:wiggle (fn [this x y]
-               ,,,)})
-
-  "The nice thing here is that we can define a map of functions common
-  to both the elephantdb client and the service and share them without
-  worrying about calls between the two.")

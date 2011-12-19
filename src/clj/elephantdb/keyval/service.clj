@@ -6,6 +6,7 @@
             [elephantdb.common.loader :as loader]
             [elephantdb.common.hadoop :as hadoop]
             [elephantdb.common.domain :as domain]
+            [elephantdb.common.fresh :as fresh]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.status :as status]
             [elephantdb.common.shard :as shard]
@@ -234,26 +235,25 @@
            (log/error e "Domain not loaded when executing read on " suffix)
            (throw e)))))
 
-(defn- host-indexed-keys
+(defn index-keys
   "returns [hosts-to-try global-index key all-hosts] seq"
-  [localhost domain-shard-indexes domain keys]
-  (for [[gi key] (map-indexed vector keys)
-        :let [priority-hosts
-              (shard/prioritize-hosts localhost domain-shard-indexes domain key)]]
-    [priority-hosts gi key priority-hosts]))
+  [domain keys]
+  (for [[idx key] (map-indexed vector keys)
+        :let [hosts (fresh/prioritize-hosts domain key)]]
+    {:index idx, :key key,:hosts hosts}))
 
 (defn- multi-get*
   "executes multi-get, returns seq of [global-index val]"
-  [service localhost port domain host host-indexed-keys]
+  [service localhost port domain host indexed-keys]
   (when-let [vals (try-multi-get service
                                  localhost
                                  port
                                  domain
-                                 (map u/third host-indexed-keys)
+                                 (map #(nth % 2) indexed-keys)
                                  host)]
     (map (fn [v [hosts gi key all-hosts]] [gi v])
          vals
-         host-indexed-keys)))
+         indexed-keys)))
 
 (defn service-handler
   "Entry point to edb. `service-handler` returns a proxied
@@ -303,21 +303,21 @@
                        (throw (thrift/wrong-host-ex)))))))
 
       (multiGet [this domain keys]
-        (let [host-indexed-keys (host-indexed-keys localhost
-                                                   domain-shard-indexes
-                                                   domain
-                                                   keys)]
-          (loop [keys-to-get host-indexed-keys
+        (let [indexed-keys (index-keys localhost
+                                       domain-shard-indexes
+                                       domain
+                                       keys)]
+          (loop [keys-to-get indexed-keys
                  results []]
             (let [host-map (group-by ffirst keys-to-get)
-                  rets (u/parallel-exec
-                        (for [[host host-indexed-keys] host-map]
-                          #(vector host (multi-get* this
-                                                    localhost
-                                                    port
-                                                    domain
-                                                    host
-                                                    host-indexed-keys))))
+                  rets (apply pcalls
+                              (for [[host indexed-keys] host-map]
+                                #(vector host (multi-get* this
+                                                          localhost
+                                                          port
+                                                          domain
+                                                          host
+                                                          indexed-keys))))
                   succeeded       (filter second rets)
                   succeeded-hosts (map first succeeded)
                   results (->> (map second succeeded)

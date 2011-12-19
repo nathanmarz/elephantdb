@@ -8,89 +8,15 @@
   (:import [elephantdb Utils]
            [elephantdb.store DomainStore]))
 
-(defn init-domain-info
-  [domain-shard-index]
-  {:shard-index    domain-shard-index
-   :domain-status (atom (thrift/loading-status))
-   :domain-data   (atom nil)})
-
-(defn init-domain-info-map
-  " Generates a map with kv pairs of the following form:
-    {\"domain-name\" {:shard-index {:hosts-to-shards <map>
-                                    :shards-to-hosts <map>}
-                      :domain-status <status-atom>
-                      :domain-data <data-atom>}}"
-  [fs {:keys [domains hosts replication]}]
-  (let [domain-shards (shard/shard-domains fs domains hosts replication)]
-    (u/update-vals (fn [k _]
-                     (-> k domain-shards init-domain-info))
-                   domains)))
-
-(defn domain-data
-  ([domain-info] @(:domain-data domain-info))
-  ([domain-info shard]
-     (when-let [domain-data ]
-       (get @(:domain-data domain-info) shard))))
-
-(defn set-domain-data!
-  [rw-lock domain domain-info new-data]
-  (let [old-data (domain-data domain-info)]
-    (u/with-write-lock rw-lock
-      (reset! (:domain-data domain-info) new-data))
-    (when old-data
-      (loader/close-domain domain old-data))))
-
-(defn domain-status [domain-info]
-  @(:domain-status domain-info))
-
-(defn set-domain-status! [domain-info status]
-  (reset! (:domain-status domain-info) status))
-
-(defn shard-index [domain-info]
-  (:shard-index domain-info))
-
-(defn shard-set
-  ([domain-info]
-     (shard-set domain-info (u/local-hostname)))
-  ([domain-info host]
-     (shard/shard-set (:shard-index domain-info) host)))
-
 (defn all-shards
   "Returns Map of domain-name to Set of shards for that domain"
   [domains-info]
   (u/val-map host-shards domains-info))
 
-(defn key->hosts [domain domain-info ^bytes key]
-  (shard/key->hosts domain (:shard-index domain-info) key))
-
-(defn key->shard
-  "TODO: Remove domain."
-  [domain domain-info key]
-  (let [index (shard-index domain-info)]
-    (shard/key->shard domain key (shard/num-shards index))))
-
-(defn has-data? [store]
-  (-> store .mostRecentVersion boolean))
-
-(defn needs-update?
-  "Returns true if the remote VersionedStore contains newer data than
-  its local copy, false otherwise."
-  [local-vs remote-vs]
-  (or (not (has-data? local-vs))
-      (let [local-version  (.mostRecentVersion local-vs)
-            remote-version (.mostRecentVersion remote-vs)]
-        (when (and local-version remote-version)
-          (< local-version remote-version)))))
-
-(defn local-store
-  [local-path remote-vs]
-  (DomainStore. (local-filesystem)
-                local-path
-                (.getSpec remote-vs)))
-
 (defn try-domain-store
   "Attempts to return a DomainStore object from the current path and
-  filesystem; if this doesn't exist, returns nil."  [fs domain-path]
+  filesystem; if this doesn't exist, returns nil."
+  [fs domain-path]
   (try (DomainStore. fs domain-path)
        (catch IllegalArgumentException _)))
 
