@@ -213,5 +213,5 @@
 (defn check-domain [domain-name handler pairs]
   (check-domain-pred domain-name handler pairs barr=))
 
-(defn check-domain-not [domain-name handler pairs]
-  (check-domain-pred domain-name handler pairs (complement barr=)))
+(def check-domain-not
+  (complement check-domain))
