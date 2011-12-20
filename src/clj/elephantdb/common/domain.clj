@@ -1,6 +1,6 @@
 (ns elephantdb.common.domain
-  (:use [hadoop-util.core :only (filesystem)])
-  (:require [jackknife.logging :as log]
+  (:require [hadoop-util.core :as h]
+            [jackknife.logging :as log]
             [jackknife.core :as u]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.status :as status]

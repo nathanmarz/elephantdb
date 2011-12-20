@@ -42,16 +42,15 @@
 (extend-type DomainStatus
   IStatus
   (loading? [status]
-    (let [field (.getSetField status)]
-      (or (= field DomainStatus$_Fields/LOADING)
-          (and (= field DomainStatus$_Fields/READY)
-               (.get_update_status (.get_ready status))))))
+    (= (.getSetField status) DomainStatus$_Fields/LOADING))
   
   (ready? [status]
     (= (.getSetField status) DomainStatus$_Fields/READY))
 
   (updating? [status]
-    (= (.getSetField status) DomainStatus$_Fields/READY))
+    (boolean
+     (and (ready? status)
+          (.get_update_status (.get_ready status)))))
  
   (failed? [status]
     (= (.getSetField status) DomainStatus$_Fields/FAILED))
