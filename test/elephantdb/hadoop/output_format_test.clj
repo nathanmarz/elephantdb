@@ -6,7 +6,7 @@
         elephantdb.common.testing
         elephantdb.keyval.testing)
   (:require [hadoop-util.core :as h]
-            [elephantdb.common.util :as u])
+            [jackknife.core :as u])
   (:import elephantdb.DomainSpec
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args Indexer]

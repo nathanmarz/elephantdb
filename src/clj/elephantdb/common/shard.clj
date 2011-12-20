@@ -2,7 +2,8 @@
   "Functions for dealing with sharding; the goal of this namespace is
    to generate the host->shard and shard->host map and provide various
    lookup functions inside of it."
-  (:require [elephantdb.common.util :as u]))
+  (:require [jackknife.core :as u]
+            [jackknife.seq :as  seq]))
 
 (defn- host->shard-assigner
   [[hosts hosts-to-shards] shard]
@@ -16,12 +17,12 @@
 (defn compute-host->shards
   "Returns a map of host-> shard set. For example:
 
-  (compute-host-to-shards 5 [\"a\" \"b\"] 1)
+  (compute-host->shards 5 [\"a\" \"b\"] 1)
   ;=> {\"b\" #{1 3}, \"a\" #{0 2 4}}"
   [hosts shard-count replication]
   (u/safe-assert (>= (count hosts) replication)
                  "Replication greater than number of servers")
-  (->> (u/repeat-seq replication (range shard-count))
+  (->> (seq/repeat-seq replication (range shard-count))
        (reduce host->shard-assigner [(cycle hosts) {}])
        (second)))
 
@@ -31,12 +32,12 @@
 (defn generate-index
   "Generates a shard-index for use by a single domain."
   [hosts shard-count replication]
-  (let [hosts-to-shards (compute-host-to-shards hosts
-                                                shard-count
-                                                replication)]
-    {::hosts->shards hosts-to-shards
-     ::shards->hosts (->> (u/reverse-multimap hosts-to-shards)
-                            (u/val-map set))}))
+  (let [hosts->shards (compute-host->shards hosts
+                                            shard-count
+                                            replication)]
+    {::hosts->shards hosts->shards
+     ::shards->hosts (->> (u/reverse-multimap hosts->shards)
+                          (u/val-map set))}))
 
 (defn shard-set
   "Returns the set of shards located on the supplied host."
@@ -56,4 +57,4 @@
   [shard-index shard pred]
   (->> (host-set shard-index shard)
        (shuffle)
-       (u/prioritize pred)))
+       (seq/prioritize pred)))

@@ -3,7 +3,7 @@
    a distributed filestore (or another local filestore) to the local
    filesystem on the current machine."
   (:use hadoop-util.core)
-  (:require [elephantdb.common.util :as u])
+  (:require [jackknife.core :as u])
   (:import [java.io File FileNotFoundException
             FileOutputStream BufferedOutputStream]
            [org.apache.hadoop.fs FileSystem Path]

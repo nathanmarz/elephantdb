@@ -11,6 +11,7 @@
 (defprotocol IStatus
   (ready?   [_] "Is the current status ready?")
   (loading? [_] "Is the current status loading?")
+  (updating? [_] "Is the current status updating?")
   (failed?  [_] "Is the current status failed?")
   (shutdown? [_] "Is the current status shutdown?"))
 
@@ -18,6 +19,7 @@
   (status [this] "Returns the current state object.")
   (to-ready [this] "Returns a new ready state.")
   (to-loading [this] "Returns a new loading-state.")
+  (to-updating [this] "Returns a new updating-state.")
   (to-failed [this msg] "Returns a new failed state.")
   (to-shutdown [this] "Returns a new shutting-down state."))
 
@@ -39,15 +41,18 @@
 
 (extend-type DomainStatus
   IStatus
-  (ready? [status]
-    (= (.getSetField status) DomainStatus$_Fields/READY))
-  
   (loading? [status]
     (let [field (.getSetField status)]
       (or (= field DomainStatus$_Fields/LOADING)
           (and (= field DomainStatus$_Fields/READY)
                (.get_update_status (.get_ready status))))))
+  
+  (ready? [status]
+    (= (.getSetField status) DomainStatus$_Fields/READY))
 
+  (updating? [status]
+    (= (.getSetField status) DomainStatus$_Fields/READY))
+ 
   (failed? [status]
     (= (.getSetField status) DomainStatus$_Fields/FAILED))
 
@@ -56,7 +61,8 @@
 
   IStateful
   (status [state] state)
-  (to-ready [state] (t/ready-status))
   (to-loading [state] (t/loading-status))
+  (to-ready [state] (t/ready-status))
+  (to-updating [state] (t/ready-status :updating? true))
   (to-failed [state msg] (t/failed-status msg))
   (to-shutdown [state] (t/shutdown-status)))

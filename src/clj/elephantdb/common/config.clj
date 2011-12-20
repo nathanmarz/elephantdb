@@ -68,8 +68,8 @@
 (defn read-global-config
   [global-config-path local-config]
   (merge DEFAULT-GLOBAL-CONFIG
-         (conf/read-clj-config (h/filesystem (:blob-conf local-config))
-                               global-config-path)))
+         (read-clj-config (h/filesystem (:blob-conf local-config))
+                          global-config-path)))
 
 ;; ## TODO: Move to deployer or testing namespace.
 

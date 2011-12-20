@@ -1,16 +1,13 @@
 (ns elephantdb.common.domain
-  (:use [hadoop-util.core :only (local-filesystem path)])
-  (:require [hadoop-util.core :as h]
-            [jackknife.logging :as log]
-            [elephantdb.common.util :as u]
+  (:use [hadoop-util.core :only (filesystem)])
+  (:require [jackknife.logging :as log]
+            [jackknife.core :as u]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.status :as status]
-            [elephantdb.common.loader :as loader]
             [elephantdb.common.thrift :as thrift])
-  (:import [elephantdb Utils]
-           [elephantdb.store DomainStore]
+  (:import [elephantdb.store DomainStore]
            [elephantdb.common.status IStateful]
-           [elephantdb.persistence Shutdownable]))
+           [elephantdb.persistence ShardSet Shutdownable]))
 
 ;; ## Testing functions
 

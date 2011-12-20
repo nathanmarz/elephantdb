@@ -1,9 +1,10 @@
 (ns elephantdb.keyval.service
   (:use [elephantdb.keyval.thrift :only (with-elephant-connection)])
   (:require [hadoop-util.core :as h]
+            [jackknife.core :as u]
             [jackknife.logging :as log]
-            [elephantdb.common.util :as u]
             [elephantdb.common.domain :as dom]
+            [elephantdb.common.database :as db]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.status :as status])
   (:import [org.apache.thrift TException]
@@ -41,15 +42,15 @@
   (let []
     (try (.directMultiGet service domain-name key-seq)
          (catch TException e
-           (log/error e "Thrift exception on " suffix)) ;; try next host
+           (log/error e "Thrift exception on " error-suffix)) ;; try next host
          (catch WrongHostException e
-           (log/error e "Fatal exception on " suffix)
+           (log/error e "Fatal exception on " error-suffix)
            (throw (TException. "Fatal exception when performing get" e)))
          (catch DomainNotFoundException e
-           (log/error e "Could not find domain when executing read on " suffix)
+           (log/error e "Could not find domain when executing read on " error-suffix)
            (throw e))
          (catch DomainNotLoadedException e
-           (log/error e "Domain not loaded when executing read on " suffix)
+           (log/error e "Domain not loaded when executing read on " error-suffix)
            (throw e)))))
 
 ;; Into this function comes a sequence of indexed-keys. Each

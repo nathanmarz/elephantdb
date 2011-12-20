@@ -5,13 +5,12 @@
   (:require [clojure.string :as s]
             [hadoop-util.core :as h]
             [jackknife.logging :as log]
-            [elephantdb.common.util :as u]
+            [jackknife.core :as u]
             [elephantdb.common.status :as status]
             [elephantdb.common.domain :as dom]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.loader :as loader]
             [elephantdb.common.hadoop :as hadoop]))
-
 
 ;; When we first start up the service, we trigger an unthrottled
 ;; download. It'd be good if we had access to the download supervisor

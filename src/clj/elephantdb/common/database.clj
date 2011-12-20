@@ -1,7 +1,8 @@
 (ns elephantdb.common.database
   (:require [hadoop-util.core :as h]
+            [jackknife.core :as u]
             [jackknife.logging :as log]
-            [elephantdb.common.util :as u]
+            [elephantdb.common.domain :as domain]
             [elephantdb.common.thrift :as thrift]))
 
 ;; ## Database Manipulation Functions
@@ -24,7 +25,7 @@
   "Walks through the supplied local directory, recursively deleting
    all directories with names that aren't present in the supplied
    `domains`."
-  [{:keys [local-dir domains]}]
+  [{:keys [local-root domains]}]
   (letfn [(domain? [path]
             (and (.isDirectory path)
                  (not (contains? (into #{} (keys domains))
@@ -50,7 +51,7 @@
               domains
               (fn [domain-name remote-path]
                 (let [local-path (domain-path local-root domain-name)]
-                  (build-domain
+                  (domain/build-domain
                    local-root hdfs-conf remote-path hosts replication))))))
 
 ;; A full database ends up looking something like the commented out

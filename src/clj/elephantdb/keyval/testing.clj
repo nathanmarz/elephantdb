@@ -2,12 +2,12 @@
   (:use clojure.test
         elephantdb.common.testing)
   (:require [hadoop-util.core :as h]
+            [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.keyval.service :as service]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.shard :as shard]
-            [elephantdb.common.config :as conf]
-            [elephantdb.common.util :as u])
+            [elephantdb.common.config :as conf])
   (:import [elephantdb Utils ByteArray]
            [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
@@ -122,10 +122,10 @@
    :update-interval-s 60})
 
 (defn mk-service-handler
-  [global-config localdir host-to-shards]
-  (binding [shard/compute-host-to-shards (if host-to-shards
-                                           (constantly host-to-shards)
-                                           shard/compute-host-to-shards)]
+  [global-config localdir host->shards]
+  (binding [shard/compute-host->shards (if host-to-shards
+                                         (constantly host->shards)
+                                         shard/compute-host->shards)]
     (let [handler (service/service-handler
                    (merge global-config (mk-local-config localdir)))]
       (while (not (.isFullyLoaded handler))
