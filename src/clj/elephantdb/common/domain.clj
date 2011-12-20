@@ -1,4 +1,5 @@
 (ns elephantdb.common.domain
+  (:use [jackknife.def :only (defalias)])
   (:require [hadoop-util.core :as h]
             [jackknife.logging :as log]
             [jackknife.core :as u]
@@ -231,6 +232,8 @@
 
 ;; ## Updater Logic
 
+(defalias throttle hadoop/throttle)
+
 (def updating?
   "TODO: Check that this is correct."
   (every-pred status/loading? status/ready?))
@@ -247,7 +250,8 @@
     (if (.exists remote-fs remote-shard-path)
       (do (log/info
            (format "Copied %s to %s." remote-path local-path))
-          (hadoop/rcopy remote-fs remote-path local-path :throttle throttle)
+          (hadoop/rcopy remote-fs remote-path local-path
+                        :throttle throttle)
           (log/info
            (format "Copied %s to %s." remote-path local-path)))
       (do (log/info

@@ -3,7 +3,6 @@
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom]
-            [elephantdb.common.hadoop :as hadoop]
             [elephantdb.common.database :as db]
             [elephantdb.common.thrift :as thrift])
   (:import [org.apache.thrift TException]
@@ -12,8 +11,9 @@
            [org.apache.thrift.transport TNonblockingServerSocket]
            [java.util.concurrent.locks ReentrantReadWriteLock]
            [elephantdb.persistence Shutdownable]
-           [elephantdb.generated ElephantDB ElephantDB$Iface ElephantDB$Processor
-            WrongHostException DomainNotFoundException DomainNotLoadedException]))
+           [elephantdb.generated ElephantDB ElephantDB$Iface
+            ElephantDB$Processor WrongHostException
+            DomainNotFoundException DomainNotLoadedException]))
 
 ;; ## Service Handler
 ;;
@@ -83,7 +83,7 @@
         download-supervisor (atom nil)
         localhost (u/local-hostname)
         {domain-map :domains :as database} (db/build-database edb-config)
-        throttle (hadoop/throttle (:download-cap database))]
+        throttle (dom/throttle (:download-cap database))]
     (reify
       IPreparable
       (prepare [this]

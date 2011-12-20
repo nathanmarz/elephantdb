@@ -1,6 +1,7 @@
 (ns elephantdb.keyval.thrift
   (:import [org.apache.thrift.protocol TBinaryProtocol]
-           [org.apache.thrift.transport TTransport TFramedTransport TSocket]
+           [org.apache.thrift.transport TTransport
+            TFramedTransport TSocket]
            [elephantdb.generated ElephantDB$Client]))
 
 (defn thrift-transport [host port]

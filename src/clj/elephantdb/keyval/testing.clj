@@ -67,9 +67,8 @@
                       nil
                       (doto
                           (JobConf.)
-                        (Utils/setObject
-                         ElephantOutputFormat/ARGS_CONF
-                         args )
+                        (Utils/setObject ElephantOutputFormat/ARGS_CONF
+                                         args)
                         (LocalElephantManager/setTmpDirs [tmpdir]))
                       nil
                       nil)))
