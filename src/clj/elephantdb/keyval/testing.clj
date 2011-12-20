@@ -160,7 +160,7 @@
        (let [~handler-sym (mk-service-handler ~global-conf
                                               localtmp#
                                               ~host-to-shards)
-             updater# (service/launch-updater! 100 ~handler-sym)]
+             updater# (service/launch-updater! ~handler-sym 100)]
          (try ~@body
               (finally (.shutdown ~handler-sym)
                        (future-cancel updater#)))))))

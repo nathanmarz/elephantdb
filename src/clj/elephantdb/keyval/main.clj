@@ -21,7 +21,7 @@
     (util/register-shutdown-hook #(do (.shutdown handler)
                                       (.stop server)))
     (log/info "Starting updater process...")
-    (service/launch-updater! interval handler)
+    (service/launch-updater! handler interval)
     (log/info "Starting ElephantDB server...")
     (service/prepare handler)
     (.serve server)))

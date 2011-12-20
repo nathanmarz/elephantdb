@@ -1,12 +1,11 @@
 (ns elephantdb.keyval.service
   (:use [elephantdb.keyval.thrift :only (with-elephant-connection)])
-  (:require [hadoop-util.core :as h]
-            [jackknife.core :as u]
+  (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom]
+            [elephantdb.common.hadoop :as hadoop]
             [elephantdb.common.database :as db]
-            [elephantdb.common.thrift :as thrift]
-            [elephantdb.common.status :as status])
+            [elephantdb.common.thrift :as thrift])
   (:import [org.apache.thrift TException]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
@@ -80,9 +79,11 @@
   implementation of EDB's interface."
   [edb-config]
   (let [^ReentrantReadWriteLock rw-lock (u/mk-rw-lock)
+        
         download-supervisor (atom nil)
         localhost (u/local-hostname)
-        {domain-map :domains :as database} (db/build-database edb-config)]      
+        {domain-map :domains :as database} (db/build-database edb-config)
+        throttle (hadoop/throttle (:download-cap database))]
     (reify
       IPreparable
       (prepare [this]
@@ -117,7 +118,7 @@
       (directMultiGet [_ domain-name keys]
         (u/with-read-lock rw-lock
           (let [domain (db/domain-get database domain-name)]
-            (u/dofor [key keys, :let [shard (retrieve-shard domain key)]]
+            (u/dofor [key keys, :let [shard (dom/retrieve-shard domain key)]]
                      (log/debug
                       (format "Direct get: key %s at shard %s" key shard))
                      (if shard
@@ -176,7 +177,8 @@
         (.multiGet this domain keys))
         
       (getDomainStatus [_ domain-name]
-        (stat/status (db/domain-get database domain-name)))
+        (stat/status
+         (db/domain-get database domain-name)))
 
       (getDomains [_] (keys domain-map))
 
@@ -192,32 +194,19 @@
       (isUpdating [this]
         "Is some domain currently updating?"
         (let [domains (vals domain-map)]
-          (some stat/loading?
-                (map stat/status domains))))
+          (some stat/loading? (map stat/status domains))))
 
       (update [this domain-name]
-        "IN PROGRESS!"
-        "Trigger an update on a single domain -- this means that the
-          domain should look to its remote store and sync the latest
-          version to itself, then update when complete."
-        (comment
-          "Old implementation."
-          (trigger-update this
-                          download-supervisor
-                          (select-keys domains-info [domain])
-                          edb-config
-                          rw-lock)))
+        (with-ret true
+          (future
+            (-> (db/domain-get domain-name)
+                (dom/attempt-update! rw-lock :throttle throttle)))))
 
       (updateAll [this]
-        "IN PROGRESS!"
-        "Trigger updates on all domains."
-        (comment
-          "Old implementation."
-          (trigger-update this
-                          download-supervisor
-                          domains-info
-                          edb-config
-                          rw-lock))))))
+        (with-ret true
+          (future
+            (do-pmap #(dom/attempt-update! % rw-lock :throttle throttle)
+                     (vals domains))))))))
 
 (defn thrift-server
   [service-handler port]
@@ -230,7 +219,7 @@
 
 (defn launch-updater!
   "Returns a future."
-  [interval-secs ^ElephantDB$Iface service-handler]
+  [^ElephantDB$Iface service-handler interval-ms]
   (let [interval-ms (* 1000 interval-secs)]
     (future
       (log/info (format "Starting updater process with an interval of: %s seconds..."

@@ -10,7 +10,7 @@
                `(def ~'coordinator (new ~lp-classname))
                '(do
                   ;; technically should do sorting and stuff here too
-                  (deflocalfstest test-get-put [lfs t]
+                  (def-local-fs-test test-get-put [lfs t]
                     (with-open [db (.createPersistence coordinator t {})]
                       (is (= nil (edb-get db "a")))
                       (index db "a" "1")
@@ -34,7 +34,7 @@
                       (is (= (set pairs)
                              (set (get-all db))))))
 
-                  (deflocalfstest test-iterate [lfs t]
+                  (def-local-fs-test test-iterate [lfs t]
                     (create-pairs coordinator t ["a" "1"])
                     (is-db-pairs? t ["a" "1"])
                     (append-pairs coordinator t ["c" "3"] ["b" "4"])

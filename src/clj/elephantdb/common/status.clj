@@ -39,12 +39,6 @@
 
 (extend-type DomainStatus
   IStatus
-  (loading? [status]
-    (boolean
-     (or (= (.getSetField status) DomainStatus$_Fields/LOADING)
-         (and (ready? status)
-              (.get_update_status (.get_ready status))))))
-  
   (ready? [status]
     (= (.getSetField status) DomainStatus$_Fields/READY))
  
@@ -54,9 +48,17 @@
   (shutdown? [status]
     (= (.getSetField status) DomainStatus$_Fields/SHUTDOWN))
 
+  (loading? [status]
+    (boolean
+     (or (= (.getSetField status) DomainStatus$_Fields/LOADING)
+         (and (ready? status)
+              (.get_update_status (.get_ready status))))))
+
   IStateful
   (status [state] state)
-  (to-loading [state] (t/loading-status))
   (to-ready [state] (t/ready-status))
   (to-failed [state msg] (t/failed-status msg))
-  (to-shutdown [state] (t/shutdown-status)))
+  (to-shutdown [state] (t/shutdown-status))
+  (to-loading [state] (if (ready? state)
+                        (t/ready-status :loading? true)
+                        (t/loading-status))))

@@ -56,15 +56,17 @@
   (let [[log-lev body] (if (keyword? kw)
                          [kw more]
                          [:warn body])
-        tmp-paths (mapcat (fn [t] [t `(local-temp-path)]) tmp-syms)]
+        tmp-paths (mapcat (fn [t]
+                            [t `(local-temp-path)])
+                          tmp-syms)]
     `(log/with-log-level ~log-lev
        (let [~fs-sym (h/local-filesystem)
              ~@tmp-paths]
          (try ~@body
               (finally
-               (delete-all ~fs-sym ~(vec tmp-syms))))))))
+               (delete-all ~fs-sym [~@tmp-syms])))))))
 
-(defmacro deflocalfstest [name local-args & body]
+(defmacro def-local-fs-test [name local-args & body]
   `(deftest ~name
      (with-local-tmp ~local-args
        ~@body)))

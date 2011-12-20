@@ -13,10 +13,10 @@
 (defn shutdown-status []
   (DomainStatus/shutdown (ShutdownStatus.)))
 
-(defn ready-status [& {:keys [updating?]}]
+(defn ready-status [& {:keys [loading?]}]
   (DomainStatus/ready
    (doto (ReadyStatus.)
-     (.set_update_status (when updating?
+     (.set_update_status (when loading?
                            (LoadingStatus.))))))
 
 (defn domain-not-found-ex [domain]

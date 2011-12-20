@@ -2,6 +2,7 @@
   (:require [hadoop-util.core :as h]
             [jackknife.logging :as log]
             [jackknife.core :as u]
+            [elephantdb.common.hadoop :as hadoop]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.status :as status]
             [elephantdb.common.thrift :as thrift])
@@ -155,6 +156,11 @@
   (-> (domain-data domain)
       (get :version)))
 
+(defn shard-set
+  "Returns the set of shards the current domain is responsible for."
+  [{:keys [shard-index hostname]}]
+  (shard/shard-set shard-index hostname))
+
 ;; This is wonderful! Hot swapping is taken care of completely.
 (defn load-version!
   "Takes a domain, a version number (a long!), and a read-write lock
@@ -222,6 +228,58 @@
              (atom (thrift/loading-status))
              (atom {})
              index)))
+
+;; ## Updater Logic
+
+(def updating?
+  "TODO: Check that this is correct."
+  (every-pred status/loading? status/ready?))
+
+(defn has-version? [domain version]
+  (some #{version} (version-seq domain)))
+
+(defn transfer-shard!
+  "TODO: Docs!"
+  [{:keys [local-store remote-store]} version idx]
+  (let [remote-fs   (.getFileSystem remote-store)
+        remote-path (.shardPath remote-store idx version)
+        local-path  (.shardPath local-store idx version)]
+    (if (.exists remote-fs remote-shard-path)
+      (do (log/info
+           (format "Copied %s to %s." remote-path local-path))
+          (hadoop/rcopy remote-fs remote-path local-path :throttle throttle)
+          (log/info
+           (format "Copied %s to %s." remote-path local-path)))
+      (do (log/info
+           "Shard %s did not exist. Creating Empty LP." remote-path)
+          (.close (.createShard local-store idx version))))))
+
+(defn transfer-version!
+  "TODO: Docs!"
+  [domain version & {:keys [throttle]}]
+  (let [{:keys [local-store remote-store]} domain]
+    (.createVersion local-store version)
+    (u/do-pmap (partial transfer-shard! domain version)
+               (shard-set domain))
+    (.succeedVersion local-store version)))
+
+;; TODO: Do we have the right semantics here for loading?
+(defn update-domain!
+  [{:keys [remote-store] :as domain} rw-lock
+   & {:keys [throttle version]
+      :or {version (.mostRecentVersion remote-store)}}]
+  (when (and (not (has-version? domain version))
+             (has-version? (:remote-store domain) version))
+    (status/to-loading domain)
+    (transfer-version! domain version :throttle throttle)
+    (load-version! version rw-lock)
+    (status/to-ready domain)))
+
+(defn attempt-update!
+  [domain rw-lock & {:keys [throttle]}]
+  (if (updating? domain)
+    (log/info "UPDATER - Not updating as update's still in progress.")
+    (future (update-domain! rw-lock :throttle throttle))))
 
 ;; ### Sharding Logic
 ;;
