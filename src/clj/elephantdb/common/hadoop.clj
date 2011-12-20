@@ -7,6 +7,10 @@
             FileOutputStream BufferedOutputStream]
            [org.apache.hadoop.fs FileSystem Path]))
 
+;; TODO: Delete and change references?
+;;
+;; This can all go; I've moved it out into `hadoop-util.transfer`.
+
 (defn check-in
   "Report the current downloaded number of kilobytes to the supplied agent."
   [throttle-agent kbs]

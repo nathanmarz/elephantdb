@@ -20,20 +20,51 @@
   (apply = (map (fn [^DomainStore x] (.getSpec x))
                 stores)))
 
-;; `existing-shard-seq` is good for testing, but we don't really need
+;; `existing-shard-set` is good for testing, but we don't really need
 ;; it in a working production system (since the domain knows what
 ;; shards should be holding.)
 
-(defn existing-shard-seq
+(defn existing-shard-set
   "Returns a sequence of all shards present on the fileystem for the
   supplied store and version. Useful for testing."
   [store version]
   (let [num-shards (.. store getSpec getNumShards)
         filesystem (.getFileSystem store)]
-    (filter (fn [idx]
-              (->> (.shardPath store idx version)
-                   (.exists filesystem)))
-            (range num-shards))))
+    (->> (range num-shards)
+         (filter (fn [idx]
+                   (->> (.shardPath store idx version)
+                        (.exists filesystem))))
+         (into #{}))))
+
+(defn shard-set
+  "Returns the set of shards the current domain is responsible for."
+  [{:keys [shard-index hostname]}]
+  (shard/shard-set shard-index hostname))
+
+(defn version-well-formed?
+  [domain version]
+  (= (shard-set domain version)
+     (-> (:local-store domain)
+         (existing-shard-set version))))
+
+(defn domain-data
+  "Returns a data-map w/ :version & :shards."
+  [domain]
+  @(:domain-data domain))
+
+(defn current-version
+  "Returns the unix timestamp (in millis) of the current version being
+  served by the supplied domain."
+  [domain]
+  (-> (domain-data domain)
+      (get :version)))
+
+(def updating?
+  "TODO: Check that this is correct."
+  (every-pred status/loading? status/ready?))
+
+(defn has-version? [store version]
+  (some #{version} (version-seq store)))
 
 ;; Store manipulation
 
@@ -129,9 +160,9 @@
 (defn retrieve-shards!
   "Accepts a domain object and returns a sequence of opened
   Persistence objects on success."
-  [{:keys [local-store]} version]
-  {:pre [(some #{version} (version-seq local-store))]}
-  (let [shards (existing-shard-seq local-store version)]
+  [{:keys [local-store] :as domain} version]
+  {:pre [(has-version? local-store version)]}
+  (let [shards (shard-set domain)]
     (u/with-ret (->> (u/do-pmap (fn [idx]
                                   (open-shard! local-store idx version))
                                 shards)
@@ -144,23 +175,6 @@
   status."
   [{:keys [status] :as domain} transition-fn & args]
   (apply swap! status transition-fn args))
-
-(defn domain-data
-  "Returns a data-map w/ :version & :shards."
-  [domain]
-  @(:domain-data domain))
-
-(defn current-version
-  "Returns the unix timestamp (in millis) of the current version being
-  served by the supplied domain."
-  [domain]
-  (-> (domain-data domain)
-      (get :version)))
-
-(defn shard-set
-  "Returns the set of shards the current domain is responsible for."
-  [{:keys [shard-index hostname]}]
-  (shard/shard-set shard-index hostname))
 
 ;; This is wonderful! Hot swapping is taken care of completely.
 (defn load-version!
@@ -233,13 +247,6 @@
 ;; ## Updater Logic
 
 (defalias throttle hadoop/throttle)
-
-(def updating?
-  "TODO: Check that this is correct."
-  (every-pred status/loading? status/ready?))
-
-(defn has-version? [domain version]
-  (some #{version} (version-seq domain)))
 
 (defn transfer-shard!
   "TODO: Docs!"

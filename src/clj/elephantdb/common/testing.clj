@@ -5,6 +5,9 @@
   (:import [java.util UUID]
            [elephantdb ByteArray]))
 
+;; TODO: Most of this code is now located inside of
+;; `hadoop-util.test`. Move it out for good?
+
 (defn uuid []
   (str (UUID/randomUUID)))
 
