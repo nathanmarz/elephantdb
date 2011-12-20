@@ -274,13 +274,18 @@
                (shard-set domain))
     (.succeedVersion local-store version)))
 
+(defn transfer-possible?
+  [domain version]
+  (and (not (has-version? domain version))
+       (-> (:remote-store domain)
+           (has-version? version))))
+
 ;; TODO: Do we have the right semantics here for loading?
 (defn update-domain!
   [{:keys [remote-store] :as domain} rw-lock
    & {:keys [throttle version]
       :or {version (.mostRecentVersion remote-store)}}]
-  (when (and (not (has-version? domain version))
-             (has-version? (:remote-store domain) version))
+  (when (transfer-possible? domain version)
     (status/to-loading domain)
     (transfer-version! domain version :throttle throttle)
     (load-version! version rw-lock)
