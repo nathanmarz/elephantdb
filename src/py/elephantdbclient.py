@@ -43,7 +43,7 @@ class ElephantDBClient:
 
     def multiGetInt(self, domain, keys):
         return self._exec(lambda client: client.multiGetInt(domain, keys))
-
+    
     def multiGetLong(self, domain, keys):
         return self._exec(lambda client: client.multiGetLong(domain, keys))
 

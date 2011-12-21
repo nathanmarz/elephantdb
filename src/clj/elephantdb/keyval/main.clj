@@ -7,10 +7,10 @@
 
 ;; # Main Access
 ;;
-;; This namespace is the main access point to the edb code. Running
-;; elephantdb.main Boots up the server, and an updater process that
-;; watches all domains and trigger an atomic update in the background
-;; when some new version appears in domains.
+;; This namespace is the main access point to the edb
+;; code. elephantdb.keyval/-main Boots up the ElephantDB service and
+;; an updater process that watches all domains and trigger an atomic
+;; update in the background when some new version appears.
 
 (defn launch-server!
   [global-config local-config]
@@ -26,16 +26,18 @@
     (service/prepare handler)
     (.serve server)))
 
+;; TODO: Booting needs a little work; I'll do this along with the
+;; deploy.
+
 (defn -main
   "Main booting function for all of EDB. Pass in:
 
-  `global-config-hdfs-path`: the path of `global-config.clj`, located
-    on ec2
+  `global-config-hdfs-path`: the hdfs path of `global-config.clj`
 
   `local-config-path`: the path to `local-config.clj` on this machine."
   [global-config-hdfs-path local-config-path]
   (log/configure-logging "log4j/log4j.properties")
   (let [local-config   (read-local-config local-config-path)
-        global-config (read-global-config global-config-hdfs-path
-                                          local-config)]
+        global-config  (read-global-config global-config-hdfs-path
+                                           local-config)]
     (launch-server! global-config local-config)))

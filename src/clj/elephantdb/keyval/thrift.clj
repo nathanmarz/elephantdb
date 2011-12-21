@@ -1,4 +1,6 @@
 (ns elephantdb.keyval.thrift
+  "Functions for connecting the an ElephantDB (key-value) service via
+  Thrift."
   (:import [org.apache.thrift.protocol TBinaryProtocol]
            [org.apache.thrift.transport TTransport
             TFramedTransport TSocket]

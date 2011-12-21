@@ -17,6 +17,10 @@
            [org.apache.thrift TException]
            [elephantdb.persistence KeyValDocument]))
 
+;; ## Key Value Testing
+;;
+;; I haven't fixed this (or any of the tests) up yet.
+
 (defn domain-data
   "TODO: Destroy. This doesn't make sense anymore with the new
   handling for objects."

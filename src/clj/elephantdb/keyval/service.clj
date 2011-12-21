@@ -16,10 +16,6 @@
             DomainNotFoundException DomainNotLoadedException]))
 
 ;; ## Service Handler
-;;
-;; This logic is not really even particular to key value -- the only
-;;thing we need to know is how to access a given persistence, which we
-;;can pass around in Clojure with a function!
 
 (defn trim-hosts
     "Used within a multi-get's loop. Accepts a sequence of hosts + a
@@ -30,27 +26,36 @@
             (rest host-seq)))
 
 (defn index-keys
-  "returns {:index}[hosts-to-try global-index key all-hosts] seq"
-  [domain keys]
-  (for [[idx key] (map-indexed vector keys)
+  "For the supplied domain and sequence of keys, returns a sequence of
+  maps with the following keys:
+
+  :key   - the key.
+  :index - the index in the original key sequence.
+  :hosts - A sequence of hosts at which the key can be found.
+  :all-hosts - the same list as hosts, at first. As gets are attempted
+  on each key, the recursion will drop names from `hosts` and keep
+  them around in `:all-hosts` for error reporting."
+  [domain key-seq]
+  (for [[idx key] (map-indexed vector key-seq)
         :let [hosts (dom/prioritize-hosts domain key)]]
     {:index idx, :key key, :hosts hosts, :all-hosts hosts}))
 
 (defn try-multi-get
+  "Attempts a direct multi-get to the supplied service for each of the
+  keys in the supplied `key-seq`."
   [service domain-name error-suffix key-seq]
-  (let []
-    (try (.directMultiGet service domain-name key-seq)
-         (catch TException e
-           (log/error e "Thrift exception on " error-suffix)) ;; try next host
-         (catch WrongHostException e
-           (log/error e "Fatal exception on " error-suffix)
-           (throw (TException. "Fatal exception when performing get" e)))
-         (catch DomainNotFoundException e
-           (log/error e "Could not find domain when executing read on " error-suffix)
-           (throw e))
-         (catch DomainNotLoadedException e
-           (log/error e "Domain not loaded when executing read on " error-suffix)
-           (throw e)))))
+  (try (.directMultiGet service domain-name key-seq)
+       (catch TException e
+         (log/error e "Thrift exception on " error-suffix)) ;; try next host
+       (catch WrongHostException e
+         (log/error e "Fatal exception on " error-suffix)
+         (throw (TException. "Fatal exception when performing get" e)))
+       (catch DomainNotFoundException e
+         (log/error e "Could not find domain when executing read on " error-suffix)
+         (throw e))
+       (catch DomainNotLoadedException e
+         (log/error e "Domain not loaded when executing read on " error-suffix)
+         (throw e))))
 
 ;; Into this function comes a sequence of indexed-keys. Each
 ;; of these is a map with :index, :key and :host keys. On
@@ -71,7 +76,7 @@
            indexed-keys
            vals))))
 
-(defprotocol IPreparable
+(defprotocol Preparable
   (prepare [_] "Perform preparatory steps."))
 
 (defn service-handler
@@ -79,18 +84,16 @@
   implementation of EDB's interface."
   [edb-config]
   (let [^ReentrantReadWriteLock rw-lock (u/mk-rw-lock)
-        
-        download-supervisor (atom nil)
         localhost (u/local-hostname)
         {domain-map :domains :as database} (db/build-database edb-config)
         throttle (dom/throttle (:download-cap database))]
     (reify
-      IPreparable
+      Preparable
       (prepare [this]
         (with-ret true
           (future
             (db/purge-unused-domains! database)
-            (doseq [domain (vals domains)]
+            (doseq [domain (vals domain-map)]
               (dom/boot-domain! domain rw-lock)))))
         
       Shutdownable
@@ -101,20 +104,6 @@
             (shutdown domain))))
 
       ElephantDB$Iface
-      (get [this domain key]
-        (first (.multiGet this domain [key])))
-
-      (getInt [this domain key]
-        (.get this domain key))
-
-      (getLong [this domain key]
-        (.get this domain key))
-
-      (getString [this domain key]
-        (.get this domain key))
-
-      ;; TODO: We need to handle the interface between thrift and the
-      ;; rest of the system.
       (directMultiGet [_ domain-name keys]
         (u/with-read-lock rw-lock
           (let [domain (db/domain-get database domain-name)]
@@ -128,20 +117,20 @@
       ;; Start out by indexing each key; this requires indexing each
       ;; key into a map (see `index-keys` above). The loop first
       ;; checks that every key has at least one host associated with
-      ;; it. If any key is lacking hosts, multiGet throws an
-      ;; exception for the entire multiGet.
+      ;; it. If any key is lacking hosts, the multiGet throws an
+      ;; exception.
       ;;
-      ;; Assuming that doesn't happen, the system groups keys by the
-      ;; first host in the list (localhost, if any keys are located
-      ;; on the machine executing the call) and performs a
-      ;; directMultiGet.
+      ;; If no exception is thrown, the system groups keys by the
+      ;; first host in the list (localhost, if any keys are located on
+      ;; the machine executing the call) and performs a directMultiGet
+      ;; on each for its keys.
       ;;
-      ;; If any host had unsuccessful results (didn't return
-      ;; anything, basically), it's removed from the host lists of
-      ;; every key for the subsequent loops.
+      ;; If any host has unsuccessful results (didn't return
+      ;; anything), the host is removed from the host lists of every
+      ;; key, and multiGet recurses.
       ;;
       ;; Once the multi-get loop completes without any failures the
-      ;; entire sequence of keys is returned.
+      ;; entire sequence of values is returned in order.
       (multiGet [this domain-name key-seq]
         (loop [indexed-keys (-> (db/domain-get database domain-name)
                                 (index-keys key-seq))
@@ -150,9 +139,9 @@
             (throw (thrift/hosts-down-ex (:all-hosts bad-key)))
             (let [host-map   (group-by (comp first :hosts) indexed-keys)
                   get-fn     (fn [host indexed-keys]
-                               (multi-get* this domain-name
-                                           localhost host
-                                           port indexed-keys))
+                               (multi-get* this domain-name localhost
+                                           host port
+                                           indexed-keys))
                   rets       (u/do-pmap (fn [[host indexed-keys]]
                                           [host (get-fn host indexed-keys)])
                                         host-map)
@@ -175,38 +164,59 @@
 
       (multiGetString [this domain keys]
         (.multiGet this domain keys))
+
+      (get [this domain key]
+        (first (.multiGet this domain [key])))
+
+      (getInt [this domain key]
+        (.get this domain key))
+
+      (getLong [this domain key]
+        (.get this domain key))
+
+      (getString [this domain key]
+        (.get this domain key))
         
       (getDomainStatus [_ domain-name]
+        "Returns the thrift status of the supplied domain-name."
         (stat/status
          (db/domain-get database domain-name)))
 
-      (getDomains [_] (keys domain-map))
+      (getDomains [_]
+        "Returns a sequence of all domain names being served."
+        (keys domain-map))
 
       (getStatus [_]
+        "Returns a map of domain-name->status for each domain."
         (thrift/elephant-status
          (u/val-map stat/status domain-map)))
 
-      (isFullyLoaded [this]
+      (isFullyLoaded [_]
         "Are all domains loaded properly?"
         (every? (some-fn stat/ready? stat/failed?)
                 (vals domain-map)))
 
-      (isUpdating [this]
+      (isUpdating [_]
         "Is some domain currently updating?"
         (let [domains (vals domain-map)]
           (some stat/loading? (map stat/status domains))))
 
-      (update [this domain-name]
+      (update [_ domain-name]
+        "If an update is available, updates the named domain and
+         hotswaps the new version."
         (with-ret true
           (future
-            (-> (db/domain-get domain-name)
+            (-> database
+                (db/domain-get domain-name)
                 (dom/attempt-update! rw-lock :throttle throttle)))))
 
-      (updateAll [this]
+      (updateAll [_]
+        "If an update is available on any domain, updates the domain's
+         shards from its remote store and hotswaps in the new versions."
         (with-ret true
           (future
             (do-pmap #(dom/attempt-update! % rw-lock :throttle throttle)
-                     (vals domains))))))))
+                     (vals domain-map))))))))
 
 (defn thrift-server
   [service-handler port]
@@ -218,13 +228,12 @@
                   options)))
 
 (defn launch-updater!
-  "Returns a future."
   [^ElephantDB$Iface service-handler interval-ms]
   (let [interval-ms (* 1000 interval-secs)]
     (future
-      (log/info (format "Starting updater process with an interval of: %s seconds..."
+      (log/info (format "Starting updater process with an interval of: %s seconds."
                         interval-secs))
       (while true
         (Thread/sleep interval-ms)
-        (log/info "Updater process: Checking if update is possible...")
+        (log/info "Updater process: firing update on all domains.")
         (.updateAll service-handler)))))
