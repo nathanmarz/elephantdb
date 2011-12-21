@@ -2,8 +2,7 @@
   (:require [hadoop-util.core :as h]
             [jackknife.core :as u]
             [jackknife.logging :as log]
-            [elephantdb.common.domain :as domain]
-            [elephantdb.common.thrift :as thrift]))
+            [elephantdb.common.domain :as domain]))
 
 ;; ## Database Manipulation Functions
 
@@ -18,8 +17,7 @@
   "Retrieves the requested domain (by name) from the supplied
   database."
   [{:keys [domains]} domain-name]
-  (or (get domains domain-name)
-      (thrift/domain-not-found-ex domain-name)))
+  (get domains domain-name))
 
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
@@ -39,10 +37,10 @@
 
 ;; ## Database Creation
 ;;
-;; A "database" is the supplied configuration map initial
-;; configuration map with much more detail about each individual
-;; domain. The build-database function merges in the proper
-;; domain-maps for each listed domain.
+;; A "database" is the initial configuration map with much more detail
+;; about each individual domain. The `build-database` function swaps
+;; out each domain's remote path for a populated `Domain` record with
+;; all 
 
 (defn build-database
   [{:keys [domains hosts replication local-root hdfs-conf] :as conf-map}]
@@ -63,7 +61,7 @@
 (comment
   {:replication 1
    :port 3578
-   :download-cap 1024
+   :download-rate-limit 1024
    :local-root "/Users/sritchie/Desktop/domainroot"
    :hosts ["localhost"]
    :hdfs-conf {"fs.default.name"

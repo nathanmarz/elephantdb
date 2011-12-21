@@ -26,8 +26,9 @@
        (reduce host->shard-assigner [(cycle hosts) {}])
        (second)))
 
-;; `generate-index` is important; every domain will have one of these
-;; maps, and will use it to discover where keys are located.
+;; `generate-index` is important; every domain will have use one of
+;; these maps to determine the host to which a particular shard key
+;; has been sent.
 
 (defn generate-index
   "Generates a shard-index for use by a single domain."
@@ -53,7 +54,8 @@
 
 (defn prioritize-hosts
   "Accepts a domain, a key and some predicate by which to prioritize
-  the keys. #{localhost} would be a nice example."
+  the hosts. For example, setting `pred` to `#{localhost}` would force
+  the hostname bound to `localhost` to the front of the sequence."
   [shard-index shard pred]
   (->> (host-set shard-index shard)
        (shuffle)

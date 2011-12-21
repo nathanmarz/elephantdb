@@ -4,7 +4,7 @@
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom]
             [elephantdb.common.database :as db]
-            [elephantdb.common.thrift :as thrift])
+            [elephantdb.keyval.thrift :as thrift])
   (:import [org.apache.thrift TException]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
@@ -24,6 +24,13 @@
     [host-seq bad-hosts]
     (remove (set bad-hosts)
             (rest host-seq)))
+
+(defn domain-get
+  "Retrieves the requested domain (by name) from the supplied
+  database. Throws a thrift exception if the domain doesn't exist."
+  [database domain-name]
+  (or (db/domain-get database domain-name)
+      (thrift/domain-not-found-ex domain-name)))
 
 (defn index-keys
   "For the supplied domain and sequence of keys, returns a sequence of
@@ -84,9 +91,9 @@
   implementation of EDB's interface."
   [edb-config]
   (let [^ReentrantReadWriteLock rw-lock (u/mk-rw-lock)
-        localhost (u/local-hostname)
         {domain-map :domains :as database} (db/build-database edb-config)
-        throttle (dom/throttle (:download-cap database))]
+        throttle  (dom/throttle (:download-rate-limit database))
+        localhost (u/local-hostname)]
     (reify
       Preparable
       (prepare [this]

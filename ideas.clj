@@ -110,7 +110,7 @@
   ;; for querying status, for the less common operations.
   {:port 3578
    :local-root <local-path>
-   :download-cap 1024
+   :download-rate-limit 1024
    :hdfs-conf {"fs.default.name" "hdfs://hadoop-devel-nn.local.twitter.com:8020"}
    :blob-conf {"fs.default.name" "hdfs://hadoop-devel-nn.local.twitter.com:8020"}
    :domains {"some-domain" {:coordinator <instance of Coordinator>

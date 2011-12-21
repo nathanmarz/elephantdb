@@ -7,30 +7,32 @@
             FileOutputStream BufferedOutputStream]
            [org.apache.hadoop.fs FileSystem Path]))
 
-;; TODO: Delete and change references?
-;;
 ;; This can all go; I've moved it out into `hadoop-util.transfer`.
 
 (defn check-in
-  "Report the current downloaded number of kilobytes to the supplied agent."
+  "Report the current downloaded number of kilobytes to the supplied
+  agent."
   [throttle-agent kbs]
-  (letfn [(bump-kbs [m kbs]
-            (let [m (update-in m [:kb-pool] + kbs)
-                  {:keys [sleep-ms last-check max-kbs kb-pool]} m
-                  current-time (System/currentTimeMillis)
-                  secs         (-> current-time (- last-check) (/ 1000))
-                  rate         (/ kb-pool secs)]
-              (cond
-               (> rate max-kbs) (assoc m
-                                  :sleep-ms (rand 1000)
-                                  :last-check current-time
-                                  :kb-pool 0)
-               (pos? sleep-ms) (assoc m
-                                 :sleep-ms 0)
-               :else m)))]
+  (letfn [(bump-kbs [{:keys [sleep-ms last-check
+                             max-kbs kb-pool]:as m} kbs]
+            (when (pos? max-kbs)
+              (let [m (update-in m [:kb-pool] + kbs)
+                    current-time (System/currentTimeMillis)
+                    secs         (-> current-time (- last-check) (/ 1000))
+                    rate         (/ kb-pool secs)]
+                (cond
+                 (> rate max-kbs) (assoc m
+                                    :sleep-ms (rand 1000)
+                                    :last-check current-time
+                                    :kb-pool 0)
+                 (pos? sleep-ms)  (assoc m
+                                    :sleep-ms 0)
+                 :else m))))]
     (send throttle-agent bump-kbs kbs)))
 
 (defn sleep-interval
+  "Returns the current sleep interval specified by the supplied
+  throttling agent."
   [throttle-agent]
   (if throttle-agent
     (:sleep-ms @throttle-agent)
@@ -45,13 +47,14 @@
     (send throttle-agent bump new-limit)))
 
 (defn throttle
-  "Returns a throttling agent!"
+  "Returns a throttling agent. Any positive kb-per-second rate will
+  cause throttling; if the rate is zero or negative, downloads will
+  proceed without a throttle."
   [kb-per-second]
-  {:pre [(pos? kb-per-second)]}
   (agent {:last-check (System/currentTimeMillis)
           :max-kbs kb-per-second
-          :kb-pool    0
-          :sleep-ms   0}))
+          :kb-pool  0
+          :sleep-ms 0}))
 
 (defn file-type
   "Accepts a hadoop filesystem object and some path and returns a
@@ -60,8 +63,12 @@
   (cond (.isDirectory fs path) ::directory
         (.isFile fs path)      ::file))
 
-(defmulti copy (fn [& [fs path]]
-                 (file-type fs path)))
+;; Using a multimethod for the file transfer recursion removed the
+;; need for a conditional check within the directory copy.
+
+(defmulti copy
+  (fn [& [fs path]]
+    (file-type fs path)))
 
 (defmethod copy ::file
   [^FileSystem fs ^Path remote-path local-path ^bytes buffer throttle]
@@ -86,12 +93,14 @@
           local-subpath (h/str-path local-path (.getName remote-subpath))]
       (copy fs remote-subpath local-subpath buffer throttle))))
 
-;; TODO: Transfer between filesystems, don't assume local.
-(defn rcopy
-  "Copies information at the supplied remote-path over to the supplied local-path.
+;; TODO: Support transfers between filesystems rather than assuming a
+;; local target. This will allow ElephantDB to transfer domains back
+;; up to the remote host.
 
-  Arguments are Filesystem, remote shard path, target local path, and
-  an optional throttling agent."
+(defn rcopy
+  "Copies information at the supplied remote-path over to the supplied
+  local-path. `rcopy` takes an optional throttling agent; see
+  `elephantdb.common.hadoop/throttle` for more details."
   [remote-fs remote-path target-path & {:keys [throttle]}]
   (let [buffer      (byte-array (* 1024 15))
         remote-path (h/path remote-path)

@@ -6,51 +6,22 @@
             [elephantdb.common.hadoop :as hadoop]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.status :as status]
-            [elephantdb.common.thrift :as thrift])
+            [elephantdb.keyval.thrift :as thrift])
   (:import [elephantdb.store DomainStore]
            [elephantdb.common.status IStateful]
            [elephantdb.persistence ShardSet Shutdownable]))
 
-;; ## Testing functions
-
-(defn specs-match?
-  "Returns true of the specs of all supplied DomainStores match, false
-  otherwise."
-  [& stores]
-  (apply = (map (fn [^DomainStore x] (.getSpec x))
-                stores)))
-
-;; `existing-shard-set` is good for testing, but we don't really need
-;; it in a working production system (since the domain knows what
-;; shards should be holding.)
-
-(defn existing-shard-set
-  "Returns a sequence of all shards present on the fileystem for the
-  supplied store and version. Useful for testing."
-  [store version]
-  (let [num-shards (.. store getSpec getNumShards)
-        filesystem (.getFileSystem store)]
-    (->> (range num-shards)
-         (filter (fn [idx]
-                   (->> (.shardPath store idx version)
-                        (.exists filesystem))))
-         (into #{}))))
-
-(defn shard-set
-  "Returns the set of shards the current domain is responsible for."
-  [{:keys [shard-index hostname]}]
-  (shard/shard-set shard-index hostname))
-
-(defn version-well-formed?
-  [domain version]
-  (= (shard-set domain version)
-     (-> (:local-store domain)
-         (existing-shard-set version))))
+;; ## Domain Getters
 
 (defn domain-data
   "Returns a data-map w/ :version & :shards."
   [domain]
   @(:domain-data domain))
+
+(defn shard-set
+  "Returns the set of shards the current domain is responsible for."
+  [{:keys [shard-index hostname]}]
+  (shard/shard-set shard-index hostname))
 
 (defn current-version
   "Returns the unix timestamp (in millis) of the current version being
@@ -60,39 +31,11 @@
       (get :version)))
 
 (def updating?
-  "TODO: Check that this is correct."
+  "Returns true if the domain is currently serving data and updating
+  from the remote store, false otherwise."
   (every-pred status/loading? status/ready?))
 
-(defn has-version? [store version]
-  (some #{version} (version-seq store)))
-
 ;; Store manipulation
-
-(defmulti version-seq type)
-
-(defmethod version-seq DomainStore
-  [store]
-  (into [] (.getAllVersions store)))
-
-(def newest-version
-  "Returns the newest version for the supplied object, nil if it
-   doesn't exist."
-  (comp first version-seq))
-
-(def has-data?
-  "Returns true if the supplied object has some available version to
-  load, false otherwise."
-  (comp boolean newest-version))
-
-(defn needs-update?
-  "Returns true if the remote VersionedStore contains newer data than
-  its local copy, false otherwise."
-  [local-vs remote-vs]
-  (or (not (has-data? local-vs))
-      (let [local-version  (.mostRecentVersion local-vs)
-            remote-version (.mostRecentVersion remote-vs)]
-        (when (and local-version remote-version)
-          (< local-version remote-version)))))
 
 (defn try-domain-store
   "Attempts to return a DomainStore object from the current path and
@@ -105,20 +48,54 @@
   [local-path remote-vs]
   (DomainStore. local-path (.getSpec remote-vs)))
 
-;; ## Domain Manipulation Functions
+(defmulti version-seq type)
+
+(defmethod version-seq DomainStore
+  [store]
+  (into [] (.getAllVersions store)))
+
+(def newest-version
+  "Returns the newest version for the supplied object, nil if it
+   doesn't exist."
+  (comp first version-seq))
+
+(defn has-version?
+  "Returns true if the supplied Domain or DomainStore has the supplied
+  version available, false otherwise."
+  [store version]
+  (some #{version} (version-seq store)))
+
+(def has-data?
+  "Returns true if the supplied object has some available version to
+  load, false otherwise."
+  (comp boolean newest-version))
+
+(defn needs-update?
+  "Returns true if the remote VersionedStore contains newer data than
+  the local store,, false otherwise."
+  [local-store remote-store]
+  (or (not (has-data? local-store))
+      (let [local-version  (.mostRecentVersion local-store)
+            remote-version (.mostRecentVersion remote-store)]
+        (when (and local-version remote-version)
+          (< local-version remote-version)))))
+
+;; ## Domain Tidying
 
 (defn cleanup-domain!
-  "Destroys all but the most recent version in the local versioned
-   store located at `domain-path`."
+  "Destroys all but the most recent version in the supplied domain's
+  local store. Optionally, takes a `:to-keep` keyword option that
+  keeps multiple versions."
   [domain & {:keys [to-keep]
              :or {to-keep 1}}]
   (doto (:local-store domain)
     (.cleanup to-keep)))
 
 (defn cleanup-domains!
-  "Destroys every old version for each of the supplied domains."
-  [domain-seq]
-  (u/do-pmap cleanup-domain! domain-seq))
+  "Destroys every old version (in parallel) for each of the supplied domains."
+  [domain-seq & {:keys [to-keep]}]
+  (u/do-pmap #(cleanup-domain! % :to-keep to-keep)
+             domain-seq))
 
 ;; ## Shard Manipulation
 ;;
@@ -131,17 +108,17 @@
 ;; ElephantDB UI.
 
 (defn close-shard!
-  "Returns nil on success. throws IOException when some sort of
-   failure occurs."
+  "Closes the supplied Persistence. Returns nil on success. throws
+   IOException when some sort of failure occurs."
   [lp & {:keys [error-msg]}]
   (try (.close lp)
-       (catch Throwable t
+       (catch IOException t
          (log/error t error-msg)
          (throw t))))
 
-;; TODO: Think about some sort of data structure logging here, or a
-;; better way of reporting what's happened.
 (defn close-shards!
+  "Closes all shards in the supplied shard-map. (A shard map is a map
+  of index->Persistence instance.)"
   [shard-map]
   (doseq [[idx shard] shard-map]
     (log/info "Closing shard #: " idx)
@@ -156,10 +133,10 @@
   (u/with-ret (.openShardForRead domain-store shard-idx)
     (log/info "Opened shard #: " shard-idx)))
 
-;; TODO: This should look inside the host->shard map.
 (defn retrieve-shards!
-  "Accepts a domain object and returns a sequence of opened
-  Persistence objects on success."
+  "Accepts a domain object. On success, returns a sequence of opened
+  Persistence objects for the supplied version. (Version must exist in
+  local domain store!)"
   [{:keys [local-store] :as domain} version]
   {:pre [(has-version? local-store version)]}
   (let [shards (shard-set domain)]
@@ -169,18 +146,13 @@
                      (zipmap shards))
       (log/info "Finished opening domain at " (.getRoot local-store)))))
 
-(defn swap-status!
-  "Accepts a domain and a transition function (from the
-  elephantdb.common.status.IStateful interface) and returns the new
-  status."
-  [{:keys [status] :as domain} transition-fn & args]
-  (apply swap! status transition-fn args))
-
-;; This is wonderful! Hot swapping is taken care of completely.
 (defn load-version!
-  "Takes a domain, a version number (a long!), and a read-write lock
-  and performs data swappage."
+  "Takes a domain, a version number (a long!), and a read-write lock,
+  and hot-swaps in the new version for the old, closing all old shards
+  on completion."
   [domain new-version rw-lock]
+  {:pre [(-> (:local-store domain)
+             (has-version? new-version))]}
   (let [{:keys [shards version] :as data} (domain-data domain)]
     (if (= version new-version)
       (log/info new-version " is already loaded.")
@@ -193,25 +165,32 @@
         (close-shards! shards)))))
 
 (defn boot-domain!
-  "if a version of data exists, go ahead and start serving
-  it. Otherwise do nothing."
+  "if a version of data exists in the local store, go ahead and start
+  serving it. Otherwise do nothing."
   [domain rw-lock]
   (when-let [latest (newest-version domain)]
     (load-version! domain latest rw-lock)))
 
-;; ## Record Definition
+;; ## Domain Record Definition
+
+(defn swap-status!
+  "Accepts a domain and a transition function (from the
+  elephantdb.common.status.IStateful interface) and returns the new
+  status."
+  [{:keys [status] :as domain} transition-fn & args]
+  (apply swap! status transition-fn args))
 
 (defrecord Domain
     [local-store remote-store serializer
      hostname status domain-data shard-index]  
   Shutdownable
   (shutdown [this]
+    "Shutting down a domain requires closing all of its shards."
     (status/to-shutdown this)
     (close-shards! (-> (domain-data this)
                        (get :shards))))
  
   IStateful
-  ;; Allows for more elegant state transitions.
   (status [this]
     @(:status this))
   (to-ready [this]
@@ -224,10 +203,12 @@
     (swap-status! this status/to-shutdown)))
 
 (defmethod version-seq Domain
-  [{store :local-store}]
-  (version-seq store))
+  [domain]
+  (version-seq (:local-store domain)))
 
-;; ## The Big Guns
+;; ## Domain Builder
+;;
+;; This is the main function used by a database to build its domain objects.
 
 (defn build-domain
   "Constructs a domain record."
@@ -244,17 +225,20 @@
              (atom {})
              index)))
 
-;; ## Updater Logic
+;; ## Domain Updater Logic
 
-(defalias throttle hadoop/throttle)
+(defalias throttle hadoop/throttle
+  "Returns a throttling agent for use in throttling domain updates.")
 
 (defn transfer-shard!
-  "TODO: Docs!"
+  "Transfers the supplied shard (specified by `idx`) from the supplied
+  remote version's remote store to the appropriate path on the local
+  store."
   [{:keys [local-store remote-store]} version idx]
   (let [remote-fs   (.getFileSystem remote-store)
         remote-path (.shardPath remote-store idx version)
         local-path  (.shardPath local-store idx version)]
-    (if (.exists remote-fs remote-shard-path)
+    (if (.exists remote-fs remote-path)
       (do (log/info
            (format "Copied %s to %s." remote-path local-path))
           (hadoop/rcopy remote-fs remote-path local-path
@@ -266,7 +250,9 @@
           (.close (.createShard local-store idx version))))))
 
 (defn transfer-version!
-  "TODO: Docs!"
+  "Transfers the supplied version from the domain's remote store to
+  its local store. To throttle the download, provide a throttling
+  agent with the optional `:throttle` keyword argument."
   [domain version & {:keys [throttle]}]
   (let [{:keys [local-store remote-store]} domain]
     (.createVersion local-store version)
@@ -275,13 +261,24 @@
     (.succeedVersion local-store version)))
 
 (defn transfer-possible?
+  "Returns true if the remote store has the supplied version (and the
+  local store doesn't), false otherwise."
   [domain version]
   (and (not (has-version? domain version))
        (-> (:remote-store domain)
            (has-version? version))))
 
-;; TODO: Do we have the right semantics here for loading?
 (defn update-domain!
+  "When a new version is available on the remote store,
+  `update-domain!` transfers the version to the local store, hotswaps
+  it in and closes the old version's shards. The domain's status is
+  set appropriately at each stage.
+
+  `update-domain!` accepts the following optional keyword arguments:
+
+   :throttle - provide an optional throttling agent.
+   :version - try to update to some version other than the most recent
+  on the remote store."
   [{:keys [remote-store] :as domain} rw-lock
    & {:keys [throttle version]
       :or {version (.mostRecentVersion remote-store)}}]
@@ -292,15 +289,19 @@
     (status/to-ready domain)))
 
 (defn attempt-update!
-  [domain rw-lock & {:keys [throttle]}]
+  "If the supplied domain isn't currently updating, returns a future
+  containing a triggered update computation."
+  [domain rw-lock & {:keys [throttle version]}]
   (if (updating? domain)
     (log/info "UPDATER - Not updating as update's still in progress.")
-    (future (update-domain! rw-lock :throttle throttle))))
+    (future (update-domain! domain rw-lock
+                            :throttle throttle
+                            :version version))))
 
 ;; ### Sharding Logic
 ;;
 ;; These functions provide hints to a given domain about where to look
-;;for some key.
+;;for a given sharding key.
 
 (defn key->shard
   "Accepts a local store and a key (any object will do); returns the
@@ -310,9 +311,9 @@
     (.shardIndex shard-set key)))
 
 (defn retrieve-shard
-  "If the supplied domain contains the given key, returns the
-  Persistence object. Returns nil if the key wasn't sharded to this
-  particular domain."
+  "If the supplied domain contains the given sharding key, returns the
+   Persistence object to which the key has been sharded, else returns
+   nil."
   [domain key]
   (let [shard-idx (key->shard domain key)]
     (get-in (domain-data domain)
@@ -320,7 +321,8 @@
 
 (defn prioritize-hosts
   "Accepts a domain and a sharding-key and returns a sequence of hosts
-  to try when attempting to process some value."
+  to try when attempting to find the Document paired with the sharding
+  key."
   [{:keys [shard-index hostname] :as domain} key]
   (shard/prioritize-hosts shard-index
                           (key->shard domain key)

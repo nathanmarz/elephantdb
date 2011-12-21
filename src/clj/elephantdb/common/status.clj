@@ -5,14 +5,13 @@
             DomainStatus LoadingStatus ReadyStatus
             FailedStatus ShutdownStatus]))
 
-;; Statuses should be like state machines; I want some way to toggle
-;; statuses in a functional manner.
+;; Statuses are little state machines.
 
 (defprotocol IStatus
-  (ready?   [_] "Is the current status ready?")
-  (loading? [_] "Is the current status loading?")
-  (failed?  [_] "Is the current status failed?")
-  (shutdown? [_] "Is the current status shutdown?"))
+  (ready? [_] "Am I ready?")
+  (loading? [_] "Am I loading?")
+  (failed?  [_] "Have I failed?")
+  (shutdown? [_] "Am I shutting down?"))
 
 (defprotocol IStateful
   (status [this] "Returns the current state object.")
@@ -21,44 +20,21 @@
   (to-failed [this msg] "Returns a new failed state.")
   (to-shutdown [this] "Returns a new shutting-down state."))
 
-(defrecord KeywordStatus [status])
-
-(extend-type KeywordStatus
+(defrecord KeywordStatus [status]
   IStatus
-  (ready? [x]   (-> x :status (= :ready)))
-  (loading? [x] (-> x :status (= :loading)))
-  (failed? [x]  (-> x :status (= :failed)))
-  (shutdown? [x]  (-> x :status (= :shutdown)))
+  (ready? [x]    (-> x :status (= :ready)))
+  (failed? [x]   (-> x :status (= :failed)))
+  (shutdown? [x] (-> x :status (= :shutdown)))
+  (loading? [x] (contains? #{:updating :loading}
+                           (:status x)))
   
   IStateful
   (status [state] state)
   (to-ready   [state] (KeywordStatus. :ready))
-  (to-loading [state] (KeywordStatus. :loading))
   (to-failed  [state msg] (KeywordStatus. :failed))
-  (to-shutdown [state] (KeywordStatus. :shutdown)))
+  (to-shutdown [state] (KeywordStatus. :shutdown))
+  (to-loading [state] (KeywordStatus. (if (ready? status)
+                                        :updating
+                                        :loading))))
 
-(extend-type DomainStatus
-  IStatus
-  (ready? [status]
-    (= (.getSetField status) DomainStatus$_Fields/READY))
- 
-  (failed? [status]
-    (= (.getSetField status) DomainStatus$_Fields/FAILED))
 
-  (shutdown? [status]
-    (= (.getSetField status) DomainStatus$_Fields/SHUTDOWN))
-
-  (loading? [status]
-    (boolean
-     (or (= (.getSetField status) DomainStatus$_Fields/LOADING)
-         (and (ready? status)
-              (.get_update_status (.get_ready status))))))
-
-  IStateful
-  (status [state] state)
-  (to-ready [state] (t/ready-status))
-  (to-failed [state msg] (t/failed-status msg))
-  (to-shutdown [state] (t/shutdown-status))
-  (to-loading [state] (if (ready? state)
-                        (t/ready-status :loading? true)
-                        (t/loading-status))))

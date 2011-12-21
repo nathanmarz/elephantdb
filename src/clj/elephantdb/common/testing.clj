@@ -1,18 +1,49 @@
 (ns elephantdb.common.testing
   (:use clojure.test)
   (:require [hadoop-util.core :as h]
-            [jackknife.logging :as log])
+            [jackknife.logging :as log]
+            [elephantdb.common.domain :as dom])
   (:import [java.util UUID]
+           [elephantdb.store DomainStore]
            [elephantdb ByteArray]))
 
-;; TODO: Most of this code is now located inside of
-;; `hadoop-util.test`. Move it out for good?
+;; ## Domain Testing
 
-(defn uuid []
-  (str (UUID/randomUUID)))
+(defn specs-match?
+  "Returns true of the specs of all supplied DomainStores match, false
+  otherwise."
+  [& stores]
+  (apply = (map (fn [^DomainStore x]
+                  (.getSpec x))
+                stores)))
 
-;; TODO: Add (when vals ,,,)
-(defn barr [& vals]
+;; `existing-shard-set` is good for testing, but we don't really need
+;; it in a working production system (since the domain knows what
+;; shards should be holding.)
+
+(defn existing-shard-set
+  "Returns a sequence of all shards present on the fileystem for the
+  supplied store and version. Useful for testing."
+  [store version]
+  (let [num-shards (.. store getSpec getNumShards)
+        filesystem (.getFileSystem store)]
+    (->> (range num-shards)
+         (filter (fn [idx]
+                   (->> (.shardPath store idx version)
+                        (.exists filesystem))))
+         (into #{}))))
+
+(defn version-well-formed?
+  [domain version]
+  (= (dom/shard-set domain version)
+     (-> (:local-store domain)
+         (existing-shard-set version))))
+
+;; ## Byte Array Testing
+
+(defn barr
+  "TODO: Add (when vals ,,,)"
+  [& vals]
   (byte-array (map byte vals)))
 
 (defn barr=
@@ -26,6 +57,14 @@
                             (or (every? nil? vals)
                                 (apply barr= vals)))
                       arrs))))
+
+;; ## Hadoop Testing Utilities
+;;
+;; TODO: Most of this code is now located inside of
+;; `hadoop-util.test`. Move it out for good.
+
+(defn uuid []
+  (str (UUID/randomUUID)))
 
 ;; TODO: Move to hadoop-util.
 (defn delete-all [fs paths]
