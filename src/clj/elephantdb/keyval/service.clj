@@ -113,7 +113,7 @@
       ElephantDB$Iface
       (directMultiGet [_ domain-name keys]
         (u/with-read-lock rw-lock
-          (let [domain (db/domain-get database domain-name)]
+          (let [domain (domain-get database domain-name)]
             (u/dofor [key keys, :let [shard (dom/retrieve-shard domain key)]]
                      (log/debug
                       (format "Direct get: key %s at shard %s" key shard))
@@ -139,7 +139,7 @@
       ;; Once the multi-get loop completes without any failures the
       ;; entire sequence of values is returned in order.
       (multiGet [this domain-name key-seq]
-        (loop [indexed-keys (-> (db/domain-get database domain-name)
+        (loop [indexed-keys (-> (domain-get database domain-name)
                                 (index-keys key-seq))
                results []]
           (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
@@ -160,7 +160,7 @@
                 (map :value (sort-by :index results))
                 (recur (map (fn [m]
                               (update-in m [:hosts] trim-hosts (keys fail-map)))
-                            (apply concat (vals failed-host-map)))
+                            (apply concat (vals fail-map)))
                        results))))))
         
       (multiGetInt [this domain keys]
@@ -187,7 +187,7 @@
       (getDomainStatus [_ domain-name]
         "Returns the thrift status of the supplied domain-name."
         (stat/status
-         (db/domain-get database domain-name)))
+         (domain-get database domain-name)))
 
       (getDomains [_]
         "Returns a sequence of all domain names being served."
@@ -214,7 +214,7 @@
         (with-ret true
           (future
             (-> database
-                (db/domain-get domain-name)
+                (domain-get domain-name)
                 (dom/attempt-update! rw-lock :throttle throttle)))))
 
       (updateAll [_]
