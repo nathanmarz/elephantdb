@@ -13,15 +13,13 @@
 ;; update in the background when some new version appears.
 
 (defn launch-server!
-  [global-config local-config]
-  (let [{interval :update-interval-s} local-config
-        {port :port}                  global-config
-        handler (service/service-handler (merge global-config local-config))
+  [{:keys [port update-interval-s] :as conf-map}]
+  (let [handler (service/service-handler conf-map)
         server  (service/thrift-server handler port)]
     (u/register-shutdown-hook #(do (.shutdown handler)
-                                      (.stop server)))
+                                   (.stop server)))
     (log/info "Starting updater process...")
-    (service/launch-updater! handler interval)
+    (service/launch-updater! handler update-interval-s)
     (log/info "Starting ElephantDB server...")
     (service/prepare handler)
     (.serve server)))
@@ -40,4 +38,4 @@
   (let [local-config   (read-local-config local-config-path)
         global-config  (read-global-config global-config-hdfs-path
                                            local-config)]
-    (launch-server! global-config local-config)))
+    (launch-server! (merge global-config local-config))))
