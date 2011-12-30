@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [jvyaml "1.0.0"]
                  [backtype/thriftjava "1.0.0"]
-                 [jackknife "0.1.0"]
+                 [jackknife "0.1.1"]
                  [hadoop-util "0.2.4"]
                  [cascading.kryo "0.1.5"]
                  [com.sleepycat/je "4.1.10"]

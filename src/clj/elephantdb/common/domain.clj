@@ -1,9 +1,9 @@
 (ns elephantdb.common.domain
   (:use [jackknife.def :only (defalias)])
   (:require [hadoop-util.core :as h]
-            [jackknife.logging :as log]
+            [hadoop-util.transfer as transfer]
             [jackknife.core :as u]
-            [elephantdb.common.hadoop :as hadoop]
+            [jackknife.logging :as log]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.status :as status]
             [elephantdb.keyval.thrift :as thrift])
@@ -227,7 +227,7 @@
 
 ;; ## Domain Updater Logic
 
-(defalias throttle hadoop/throttle
+(defalias throttle transfer/throttle
   "Returns a throttling agent for use in throttling domain updates.")
 
 (defn transfer-shard!
@@ -241,7 +241,7 @@
     (if (.exists remote-fs remote-path)
       (do (log/info
            (format "Copied %s to %s." remote-path local-path))
-          (hadoop/rcopy remote-fs remote-path local-path
+          (transfer/rcopy remote-fs remote-path local-path
                         :throttle throttle)
           (log/info
            (format "Copied %s to %s." remote-path local-path)))
