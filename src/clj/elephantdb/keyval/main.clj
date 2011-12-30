@@ -18,7 +18,7 @@
         {port :port}                  global-config
         handler (service/service-handler (merge global-config local-config))
         server  (service/thrift-server handler port)]
-    (util/register-shutdown-hook #(do (.shutdown handler)
+    (u/register-shutdown-hook #(do (.shutdown handler)
                                       (.stop server)))
     (log/info "Starting updater process...")
     (service/launch-updater! handler interval)

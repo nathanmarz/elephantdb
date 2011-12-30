@@ -112,7 +112,7 @@
    IOException when some sort of failure occurs."
   [lp & {:keys [error-msg]}]
   (try (.close lp)
-       (catch IOException t
+       (catch java.io.IOException t
          (log/error t error-msg)
          (throw t))))
 

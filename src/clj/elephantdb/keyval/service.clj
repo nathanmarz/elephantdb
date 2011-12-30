@@ -1,9 +1,9 @@
 (ns elephantdb.keyval.service
-  (:use [elephantdb.keyval.thrift :only (with-elephant-connection)])
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom]
             [elephantdb.common.database :as db]
+            [elephantdb.common.status :as stat]
             [elephantdb.keyval.thrift :as thrift])
   (:import [org.apache.thrift TException]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
@@ -77,7 +77,7 @@
         multiget #(try-multi-get % domain-name suffix key-seq)]
     (when-let [vals (if (= local-hostname hostname)
                       (multiget service)
-                      (with-elephant-connection hostname port remote-service
+                      (thrift/with-elephant-connection hostname port remote-service
                         (multiget remote-service)))]
       (map (fn [m v] (assoc m :value v))
            indexed-keys
@@ -91,13 +91,13 @@
   implementation of EDB's interface."
   [edb-config]
   (let [^ReentrantReadWriteLock rw-lock (u/mk-rw-lock)
-        {domain-map :domains :as database} (db/build-database edb-config)
+        {domain-map :domains port :port :as database} (db/build-database edb-config)
         throttle  (dom/throttle (:download-rate-limit database))
         localhost (u/local-hostname)]
     (reify
       Preparable
       (prepare [this]
-        (with-ret true
+        (u/with-ret true
           (future
             (db/purge-unused-domains! database)
             (doseq [domain (vals domain-map)]
@@ -108,7 +108,7 @@
         (log/info "ElephantDB received shutdown notice...")
         (u/with-write-lock rw-lock
           (doseq [domain (vals domain-map)]
-            (shutdown domain))))
+            (.shutdown domain))))
 
       ElephantDB$Iface
       (directMultiGet [_ domain-name keys]
@@ -153,10 +153,10 @@
                                           [host (get-fn host indexed-keys)])
                                         host-map)
                   successful (into {} (filter second rets))
-                  results    (->> (vals succeeded)
+                  results    (->> (vals successful)
                                   (apply concat results))
-                  fail-map   (apply dissoc host-map (keys succeeded))]
-              (if (empty? failed-host-map)
+                  fail-map   (apply dissoc host-map (keys successful))]
+              (if (empty? fail-map)
                 (map :value (sort-by :index results))
                 (recur (map (fn [m]
                               (update-in m [:hosts] trim-hosts (keys fail-map)))
@@ -211,7 +211,7 @@
       (update [_ domain-name]
         "If an update is available, updates the named domain and
          hotswaps the new version."
-        (with-ret true
+        (u/with-ret true
           (future
             (-> database
                 (domain-get domain-name)
@@ -220,10 +220,10 @@
       (updateAll [_]
         "If an update is available on any domain, updates the domain's
          shards from its remote store and hotswaps in the new versions."
-        (with-ret true
+        (u/with-ret true
           (future
-            (do-pmap #(dom/attempt-update! % rw-lock :throttle throttle)
-                     (vals domain-map))))))))
+            (u/do-pmap #(dom/attempt-update! % rw-lock :throttle throttle)
+                       (vals domain-map))))))))
 
 (defn thrift-server
   [service-handler port]
@@ -235,7 +235,7 @@
                   options)))
 
 (defn launch-updater!
-  [^ElephantDB$Iface service-handler interval-ms]
+  [^ElephantDB$Iface service-handler interval-secs]
   (let [interval-ms (* 1000 interval-secs)]
     (future
       (log/info (format "Starting updater process with an interval of: %s seconds."

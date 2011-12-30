@@ -1,7 +1,7 @@
 (ns elephantdb.keyval.thrift
   "Functions for connecting the an ElephantDB (key-value) service via
   Thrift."
-  (:require [elephantdb.common.status :as stat])
+  (:require [elephantdb.common.status :as status])
   (:import [org.apache.thrift.protocol TBinaryProtocol]
            [org.apache.thrift.transport TTransport
             TFramedTransport TSocket]
@@ -43,7 +43,7 @@
   (loading? [status]
     (boolean
      (or (= (.getSetField status) DomainStatus$_Fields/LOADING)
-         (and (stat/ready? status)
+         (and (status/ready? status)
               (.get_update_status (.get_ready status))))))
 
   status/IStateful
@@ -51,7 +51,7 @@
   (to-ready [state] (ready-status))
   (to-failed [state msg] (failed-status msg))
   (to-shutdown [state] (shutdown-status))
-  (to-loading [state] (if (stat/ready? state)
+  (to-loading [state] (if (status/ready? state)
                         (ready-status :loading? true)
                         (loading-status))))
 
