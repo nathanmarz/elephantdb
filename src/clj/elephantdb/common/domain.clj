@@ -306,8 +306,9 @@
 (defn key->shard
   "Accepts a local store and a key (any object will do); returns the
   approprate shard number for the given key."
-  [{:keys [local-store]} key]
-  (let [^ShardSet shard-set (.getShardSet local-store)]
+  [{:keys [local-store] :as domain} key]
+  (let [version (current-version domain)
+        ^ShardSet shard-set (.getShardSet local-store version)]
     (.shardIndex shard-set key)))
 
 (defn retrieve-shard
