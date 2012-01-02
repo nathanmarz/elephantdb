@@ -1,5 +1,6 @@
 (ns elephantdb.common.thrift
   (:require [jackknife.core :as u]
+            [jackknife.logging :as log]
             [elephantdb.common.database :as db]
             [elephantdb.common.status :as status])
   (:import [org.apache.thrift.protocol TBinaryProtocol]
@@ -129,4 +130,12 @@
                   (TBinaryProtocol$Factory.)
                   options)))
 
-
+(defn launch-server!
+  [{:keys [port options] :as database}]
+  (let [{interval :update-interval-s} options
+        server (thrift-server database port)]
+    (u/register-shutdown-hook #(.stop server))
+    (log/info "Preparing database...")
+    (db/prepare database)
+    (log/info "Starting ElephantDB server...")
+    (.serve server)))

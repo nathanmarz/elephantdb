@@ -30,16 +30,16 @@
          [(barr k) (when v (apply barr v))])
        (partition 2 key-val-pairs)))
 
-(defn index [db key value]
-  (.index db (KeyValDocument. key value)))
+(defn index [persistence key value]
+  (.index persistence (KeyValDocument. key value)))
 
-(defn edb-get [db key]
-  (.get db key))
+(defn edb-get [persistence key]
+  (.get persistence key))
 
-(defn get-all [db]
+(defn get-all [persistence]
   (doall
-   (for [kvp (seq db)]
-     [(.key kvp) (.value kvp)])))
+   (for [kv-pair (seq persistence)]
+     [(.key kv-pair) (.value kv-pair)])))
 
 (defn append-pairs [coordinator t spec & kv-pairs]
   (with-open [db (.openPersistenceForAppend coordinator t spec {})]

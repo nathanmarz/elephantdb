@@ -1,4 +1,4 @@
-(ns elephantdb.keyval.thrift
+(ns elephantdb.keyval.core
   "Functions for connecting the an ElephantDB (key-value) service via
   Thrift."
   (:require [elephantdb.common.database :as db]
@@ -137,3 +137,29 @@
                                     (update-in m [:hosts] trim-hosts (keys fail-map)))
                                   (apply concat (vals fail-map)))
                              results)))))))}))
+
+;; # Main Access
+;;
+;; This namespace is the main access point to the edb
+;; code. elephantdb.keyval/-main Boots up the ElephantDB service and
+;; an updater process that watches all domains and trigger an atomic
+;; update in the background when some new version appears.
+;;
+;; TODO: Booting needs a little work; I'll do this along with the
+;; deploy.
+
+(defn -main
+  "Main booting function for all of EDB. Pass in:
+
+  `global-config-hdfs-path`: the hdfs path of `global-config.clj`
+
+  `local-config-path`: the path to `local-config.clj` on this machine."
+  [global-config-hdfs-path local-config-path]
+  (log/configure-logging "log4j/log4j.properties")
+  (let [local-config   (read-local-config local-config-path)
+        global-config  (read-global-config global-config-hdfs-path
+                                           local-config)
+        database       (db/build-database
+                        (merge global-config local-config))]
+    
+    (launch-server! database)))
