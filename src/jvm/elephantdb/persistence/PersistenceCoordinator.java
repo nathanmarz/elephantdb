@@ -11,13 +11,8 @@ import java.util.Map;
  *
  *  .getCoordinator returns a new instance of the class referenced by that string.
  */
-public abstract class PersistenceCoordinator extends KryoWrapper implements Coordinator {
-
+public abstract class PersistenceCoordinator implements Coordinator {
     public abstract Persistence openPersistenceForRead(String root, Map options) throws IOException;
     public abstract Persistence openPersistenceForAppend(String root, Map options) throws IOException;
     public abstract Persistence createPersistence(String root, Map options) throws IOException;
-
-    public KeySorter getKeySorter() {
-        return new IdentityKeySorter();
-    }
 }

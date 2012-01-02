@@ -1,6 +1,6 @@
 package elephantdb.index;
 
-import elephantdb.persistence.Document;
+import elephantdb.document.Document;
 import elephantdb.persistence.Persistence;
 
 import java.io.IOException;

@@ -2,10 +2,8 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
-import elephantdb.persistence.CloseableIterator;
-import elephantdb.persistence.Document;
-import elephantdb.persistence.KryoWrapper;
-import elephantdb.persistence.Persistence;
+import elephantdb.document.Document;
+import elephantdb.persistence.*;
 import elephantdb.store.DomainStore;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -118,7 +116,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
     public static class ElephantInputSplit implements InputSplit {
         private String shardPath;
         private DomainSpec spec;
-        private KryoWrapper.KryoBuffer kryoBuf;
+        private KryoBuffer kryoBuf;
         private JobConf conf;
 
         public ElephantInputSplit() {
@@ -130,7 +128,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             this.conf = conf;
         }
         
-        public KryoWrapper.KryoBuffer getKryoBuffer() {
+        public KryoBuffer getKryoBuffer() {
             // TODO: Remove the cast and make this work with interfaces.
             if (kryoBuf == null)
                 kryoBuf = ((KryoWrapper) spec.getCoordinator()).getKryoBuffer();

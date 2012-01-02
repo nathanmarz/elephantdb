@@ -2,6 +2,7 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
+import elephantdb.document.Document;
 import elephantdb.index.IdentityIndexer;
 import elephantdb.index.Indexer;
 import elephantdb.persistence.*;
@@ -53,7 +54,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         Map<Integer, Persistence> _lps = new HashMap<Integer, Persistence>();
         Progressable _progressable;
         LocalElephantManager _localManager;
-        KryoWrapper.KryoBuffer _kryoBuf;
+        KryoBuffer _kryoBuf;
 
         int _numWritten = 0;
         long _lastCheckpoint = System.currentTimeMillis();

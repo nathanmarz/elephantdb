@@ -1,9 +1,9 @@
 package elephantdb.persistence;
 
 import elephantdb.DomainSpec;
+import elephantdb.partition.ShardingScheme;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 /**

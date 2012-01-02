@@ -1,5 +1,6 @@
 package elephantdb.future;
 
+import elephantdb.document.LuceneDocument;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.Persistence;
 import elephantdb.persistence.PersistenceCoordinator;
@@ -60,7 +61,7 @@ public class Lucene extends PersistenceCoordinator {
         }
 
         public void index(LuceneDocument wrapper) throws IOException {
-            Document doc = wrapper.document;
+            Document doc = wrapper.getDocument();
             // should be easy to implement. Lucene is going to get LuceneDocuments, and that's IT!
         }
 

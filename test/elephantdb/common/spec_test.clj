@@ -1,7 +1,7 @@
 (ns elephantdb.common.spec-test
   (:use clojure.test)
   (:import [elephantdb DomainSpec]
-           [elephantdb.persistence KeyValDocument]))
+           [elephantdb.document KeyValDocument]))
 
 (defn domain-spec
   [coord-class shard-scheme shard-count]
@@ -9,7 +9,7 @@
 
 (def test-spec
   (domain-spec "elephantdb.persistence.JavaBerkDB"
-               "elephantdb.persistence.HashModScheme"
+               "elephantdb.partition.HashModScheme"
                2))
 
 (defn kv-doc [k v]

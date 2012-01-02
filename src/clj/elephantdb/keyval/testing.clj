@@ -8,14 +8,14 @@
             [elephantdb.keyval.thrift :as thrift]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf])
-  (:import [elephantdb Utils ByteArray]
+  (:import [elephantdb Utils]
            [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
            [elephantdb.store DomainStore]
            [org.apache.hadoop.io IntWritable]
            [org.apache.hadoop.mapred JobConf]
            [org.apache.thrift TException]
-           [elephantdb.persistence KeyValDocument]))
+           [elephantdb.document KeyValDocument]))
 
 ;; ## Key Value Testing
 ;;
@@ -107,7 +107,7 @@
 
 (defn reverse-pre-sharded [shardmap]
   (->> shardmap
-       (u/val-map #(map (fn [x] (ByteArray. (first x))) %))
+       (u/val-map #(map first %))
        (u/reverse-multimap)
        (u/val-map first)))
 
@@ -116,7 +116,7 @@
         shards (reverse-pre-sharded shardmap)
         domain-spec {:num-shards (count shardmap)
                      :coordinator coordinator}]
-    (binding [test-key->shard (fn [k _] (shards (ByteArray. k)))]
+    (binding [test-key->shard (fn [k _] (shards k))]
       (mk-sharded-domain fs path domain-spec keyvals))))
 
 (defn mk-local-config [local-dir]
@@ -152,7 +152,7 @@
      (binding [shard/key->shard (let [rev# (reverse-pre-sharded ~shardmap)]
                                   (fn [d# k# a#]
                                     (if (= d# ~dname)
-                                      (rev# (ByteArray. k#))
+                                      (rev# k#)
                                       (shard/key->shard d# k# a#))))]
        ~@body)))
 
@@ -204,14 +204,8 @@
         (is (nil? newv))
         (is (pred v newv) (apply str (map seq [k v newv])))))))
 
-(defn- objify-kvpairs [pairs]
-  (for [[k v] pairs]
-    [(ByteArray. k)
-     (ByteArray. v)]))
-
 (defn kv-pairs= [& pairs-seq]
-  (let [pairs-seq (map objify-kvpairs pairs-seq)]
-    (apply = (map set pairs-seq))))
+  (apply = (map set pairs-seq)))
 
 (defn check-domain [domain-name handler pairs]
   (check-domain-pred domain-name handler pairs barr=))

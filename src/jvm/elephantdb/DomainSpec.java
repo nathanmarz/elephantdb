@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import elephantdb.persistence.*;
+import elephantdb.partition.ShardingScheme;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -86,20 +87,11 @@ public class DomainSpec implements Writable, Serializable {
         return _optionalArgs.persistenceOptions;
     }
 
-    public void ensureMatchingPairs(KryoWrapper wrapper) {
-        if (wrapper.getKryoPairs() != this.getKryoPairs())
-            wrapper.setKryoPairs(this.getKryoPairs());
-    }
-
     public Coordinator getCoordinator() {
-        // TODO: Remove this cast, as the Coordinator will be prepared.
-        ensureMatchingPairs((KryoWrapper) _coordinator);
         return _coordinator;
     }
 
     public ShardingScheme getShardScheme() {
-        // TODO: Remove this cast, as the IShardScheme will be prepared.
-        ensureMatchingPairs((KryoWrapper) _shardingScheme);
         return _shardingScheme;
     }
 

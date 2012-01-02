@@ -3,9 +3,9 @@ package elephantdb.future;
 import java.io.IOException;
 import java.util.Map;
 
+import elephantdb.document.KeyValDocument;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.Persistence;
-import elephantdb.persistence.KeyValDocument;
 import elephantdb.persistence.PersistenceCoordinator;
 import org.apache.log4j.Logger;
 

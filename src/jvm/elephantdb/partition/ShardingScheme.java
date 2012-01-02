@@ -1,4 +1,4 @@
-package elephantdb.persistence;
+package elephantdb.partition;
 
 /**
  * User: sritchie

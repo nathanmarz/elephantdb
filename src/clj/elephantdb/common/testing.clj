@@ -3,9 +3,8 @@
   (:require [hadoop-util.core :as h]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom])
-  (:import [java.util UUID]
-           [elephantdb.store DomainStore]
-           [elephantdb ByteArray]))
+  (:import [java.util UUID Arrays]
+           [elephantdb.store DomainStore]))
 
 ;; ## Domain Testing
 
@@ -41,15 +40,19 @@
 
 ;; ## Byte Array Testing
 
-(defn barr
-  "TODO: Add (when vals ,,,)"
-  [& vals]
-  (byte-array (map byte vals)))
+(defn barr [& xs]
+  (when xs
+    (byte-array (map byte xs))))
 
 (defn barr=
-  [& vals]
-  (apply = (map #(ByteArray. %) vals)))
-
+  ([x] true)
+  ([^bytes x ^bytes y] (java.util.Arrays/equals x y))
+  ([x y & more]
+     (if (barr= x y)
+       (if (next more)
+         (recur y (first more) (next more))
+         (barr= y (first more)))
+       false)))
 (defn barrs= [& arrs]
   (and (apply = (map count arrs))
        (every? identity

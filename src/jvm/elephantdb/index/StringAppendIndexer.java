@@ -1,8 +1,7 @@
 package elephantdb.index;
 
-import elephantdb.index.Indexer;
+import elephantdb.document.KeyValDocument;
 import elephantdb.persistence.JavaBerkDB;
-import elephantdb.persistence.KeyValDocument;
 
 import java.io.IOException;
 

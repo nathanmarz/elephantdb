@@ -1,7 +1,4 @@
 (ns elephantdb.hadoop.output-format-test
-  (:import [elephantdb.store VersionedStore])
-  (:import [elephantdb.hadoop Indexer]
-           [elephantdb.index Indexer StringAppendIndexer])
   (:use clojure.test
         elephantdb.common.testing
         elephantdb.keyval.testing)
@@ -11,16 +8,15 @@
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args Indexer]
            [org.apache.hadoop.io IntWritable BytesWritable]
-           [elephantdb.persistence JavaBerkDB KeyValDocument]
-           [elephantdb Utils]
+           [elephantdb.document KeyValDocument]
+           [elephantdb.index StringAppendIndexer]
+           [elephantdb.persistence JavaBerkDB]
            [elephantdb.store VersionedStore]
-           [elephantdb.test StringAppendIndexer]
-           [java.util ArrayList]
-           [org.apache.hadoop.mapred JobConf]))
+           [elephantdb.test StringAppendIndexer]))
 
 (def test-spec
   (DomainSpec. "elephantdb.persistence.JavaBerkDB"
-               "elephantdb.persistence.HashModScheme"
+               "elephantdb.partition.HashModScheme"
                2))
 
 (defn write-data

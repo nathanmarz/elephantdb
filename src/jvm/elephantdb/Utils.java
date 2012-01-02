@@ -128,7 +128,7 @@ public class Utils {
     }
 
     public static Object get(Map m, Object key, Object defaultVal) {
-        if (!m.containsKey(key)) { return defaultVal; } else { return m.get(key); }
+        return (!m.containsKey(key)) ? defaultVal : m.get(key);
     }
 
     public static byte[] getBytes(BytesWritable bw) {

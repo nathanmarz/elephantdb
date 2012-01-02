@@ -1,17 +1,27 @@
 package elephantdb.persistence;
 
 import com.sleepycat.je.*;
+import elephantdb.document.KeyValDocument;
 import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-public class JavaBerkDB extends PersistenceCoordinator {
+public class JavaBerkDB extends PersistenceCoordinator implements KryoWrapper {
     public static Logger LOG = Logger.getLogger(File.class);
+    private KryoBuffer kryoBuf;
 
     public JavaBerkDB() {
         super();
+    }
+
+    public void setKryoBuffer(KryoBuffer buffer) {
+        kryoBuf = buffer;
+    }
+
+    public KryoBuffer getKryoBuffer() {
+        return kryoBuf;
     }
 
     @Override

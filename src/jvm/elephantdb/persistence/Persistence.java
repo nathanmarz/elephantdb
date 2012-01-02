@@ -1,5 +1,7 @@
 package elephantdb.persistence;
 
+import elephantdb.document.Document;
+
 import java.io.IOException;
 
 /**
