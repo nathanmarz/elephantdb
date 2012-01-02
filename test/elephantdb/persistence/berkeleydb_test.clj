@@ -1,6 +1,6 @@
-(ns elephantdb.persistence.java-berkdb-test
+(ns elephantdb.persistence.berkeleydb-test
   (:use clojure.test
-        elephantdb.persistence.local-persistence-tester)
+        elephantdb.persistence.lp-tester)
   (:import elephantdb.persistence.JavaBerkDB))
 
 (deftest test-berkeley-db

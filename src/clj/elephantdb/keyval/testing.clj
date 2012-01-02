@@ -9,7 +9,7 @@
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf])
   (:import [elephantdb Utils]
-           [elephantdb.hadoop ElephantRecordWritable ElephantOutputFormat
+           [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
            [elephantdb.store DomainStore]
            [org.apache.hadoop.io IntWritable]
@@ -101,7 +101,7 @@
         (when v
           (.write writer
                   (IntWritable. s)
-                  (ElephantRecordWritable. k v))))
+                  (KeyValDocument. k v))))
       (.close writer nil)
       (.succeedVersion vs dpath))))
 

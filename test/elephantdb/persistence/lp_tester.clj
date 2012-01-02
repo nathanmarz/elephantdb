@@ -1,4 +1,4 @@
-(ns elephantdb.persistence.local-persistence-tester
+(ns elephantdb.persistence.lp-tester
   (:use clojure.test
         elephantdb.common.testing
         elephantdb.keyval.testing)
