@@ -1,6 +1,9 @@
 package elephantdb;
 
 import elephantdb.persistence.Coordinator;
+import elephantdb.serialize.KryoSerializer;
+import elephantdb.serialize.SerializationWrapper;
+import elephantdb.serialize.Serializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -12,6 +15,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
 
 public class Utils {
@@ -131,10 +135,38 @@ public class Utils {
         return (!m.containsKey(key)) ? defaultVal : m.get(key);
     }
 
+    /**
+     * Returns a byte array containing the cargo of the supplied BytesWritable object.
+     * @param bw
+     * @return
+     */
     public static byte[] getBytes(BytesWritable bw) {
         byte[] padded = bw.getBytes();
         byte[] ret = new byte[bw.getLength()];
         System.arraycopy(padded, 0, ret, 0, ret.length);
         return ret;
+    }
+
+    /**
+     * Returns a KryoSerializer object with the same serializations registered as the supplied DomainSpec.
+     * @param spec
+     * @return
+     */
+    public static Serializer makeSerializer(DomainSpec spec) {
+        return new KryoSerializer(spec.getKryoPairs());
+    }
+
+    /**
+     * If the supplied SerializationWrapper has the same kryoPairs, we ignore it. Else we replace the
+     * existing serializer with a new one that contains the serialization pairs in the supplied DomainSpec.
+     * @param wrapper
+     * @param spec
+     */
+    public static void prepSerializationWrapper(SerializationWrapper wrapper, DomainSpec spec) {
+        KryoSerializer buf = (KryoSerializer) wrapper.getSerializer();
+        List<List<String>> pairs = buf.getKryoPairs();
+
+        if (pairs != spec.getKryoPairs())
+            wrapper.setSerializer(makeSerializer(spec));
     }
 }

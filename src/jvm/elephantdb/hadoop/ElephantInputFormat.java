@@ -3,7 +3,9 @@ package elephantdb.hadoop;
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.document.Document;
-import elephantdb.persistence.*;
+import elephantdb.persistence.CloseableIterator;
+import elephantdb.serialize.KryoSerializer;
+import elephantdb.persistence.Persistence;
 import elephantdb.store.DomainStore;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -35,48 +37,48 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
     }
 
     public static class ElephantRecordReader implements RecordReader<NullWritable, BytesWritable> {
-        ElephantInputSplit _split;
-        Reporter _reporter;
-        Args _args;
-        LocalElephantManager _manager;
-        Persistence _lp;
-        CloseableIterator _iterator;
+        ElephantInputSplit split;
+        Reporter reporter;
+        Args args;
+        LocalElephantManager elephantManager;
+        Persistence lp;
+        CloseableIterator iterator;
         boolean finished = false;
         int numRead = 0;
 
         public ElephantRecordReader(ElephantInputSplit split, Reporter reporter)
                 throws IOException {
-            _split = split;
-            _reporter = reporter;
-            _args = (Args) Utils.getObject(_split.conf, ARGS_CONF);
-            _manager = new LocalElephantManager(
-                    Utils.getFS(_split.shardPath, split.conf), _split.spec, _args.persistenceOptions,
-                    LocalElephantManager.getTmpDirs(_split.conf));
-            String localpath = _manager.downloadRemoteShard("shard", _split.shardPath);
-            _lp = _split.spec.getCoordinator().openPersistenceForRead(localpath, _args.persistenceOptions);
-            _iterator = _lp.iterator();
+            this.split = split;
+            this.reporter = reporter;
+            args = (Args) Utils.getObject(this.split.conf, ARGS_CONF);
+            elephantManager = new LocalElephantManager(
+                    Utils.getFS(this.split.shardPath, split.conf), this.split.spec, args.persistenceOptions,
+                    LocalElephantManager.getTmpDirs(this.split.conf));
+            String localpath = elephantManager.downloadRemoteShard("shard", this.split.shardPath);
+            lp = this.split.spec.getCoordinator().openPersistenceForRead(localpath, args.persistenceOptions);
+            iterator = lp.iterator();
         }
 
         // Okay, this now adds the actual Document to the BytesWritable value and the
         // shard index as an IntWritable key.
         public boolean next(NullWritable k, BytesWritable v) throws IOException {
-            if (_iterator.hasNext()) {
-                Document pair = (Document) _iterator.next();
+            if (iterator.hasNext()) {
+                Document pair = (Document) iterator.next();
 
                 //TODO: At this point we need to run this through some sort of "fetcher" that can
                 //build the key-val document back up from what pops out of berkeleyDB.
 
-                byte[] crushed = _split.getKryoBuffer().serialize(pair);
+                byte[] crushed = split.getKryoBuffer().serialize(pair);
                 v.set(new BytesWritable(crushed));
 
                 numRead++;
-                if (_reporter != null) {
-                    _reporter.progress();
+                if (reporter != null) {
+                    reporter.progress();
                 }
 
                 return true;
             } else {
-                if (_reporter != null) { _reporter.progress(); }
+                if (reporter != null) { reporter.progress(); }
                 return false;
             }
         }
@@ -95,9 +97,9 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         }
 
         public void close() throws IOException {
-            _iterator.close();
-            _lp.close();
-            _manager.cleanup();
+            iterator.close();
+            lp.close();
+            elephantManager.cleanup();
         }
 
         public float getProgress() throws IOException {
@@ -116,7 +118,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
     public static class ElephantInputSplit implements InputSplit {
         private String shardPath;
         private DomainSpec spec;
-        private KryoBuffer kryoBuf;
+        private KryoSerializer kryoBuf;
         private JobConf conf;
 
         public ElephantInputSplit() {
@@ -128,10 +130,9 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             this.conf = conf;
         }
         
-        public KryoBuffer getKryoBuffer() {
-            // TODO: Remove the cast and make this work with interfaces.
+        public KryoSerializer getKryoBuffer() {
             if (kryoBuf == null)
-                kryoBuf = ((KryoWrapper) spec.getCoordinator()).getKryoBuffer();
+                kryoBuf = Utils.makeKryoBuffer(spec);
 
             return kryoBuf;
         }

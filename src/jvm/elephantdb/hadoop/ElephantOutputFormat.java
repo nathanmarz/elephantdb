@@ -5,7 +5,9 @@ import elephantdb.Utils;
 import elephantdb.document.Document;
 import elephantdb.index.IdentityIndexer;
 import elephantdb.index.Indexer;
-import elephantdb.persistence.*;
+import elephantdb.persistence.Coordinator;
+import elephantdb.serialize.KryoSerializer;
+import elephantdb.persistence.Persistence;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -21,8 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWritable> {
-    public static Logger LOG = Logger.getLogger(ElephantOutputFormat.class);
 
+    public static Logger LOG = Logger.getLogger(ElephantOutputFormat.class);
     public static final String ARGS_CONF = "elephant.output.args";
 
     // This gets serialized in via the conf.
@@ -49,43 +51,42 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
 
     public class ElephantRecordWriter implements RecordWriter<IntWritable, BytesWritable> {
 
-        FileSystem _fs;
-        Args _args;
+        FileSystem fileSystem;
+        Args args;
         Map<Integer, Persistence> _lps = new HashMap<Integer, Persistence>();
-        Progressable _progressable;
-        LocalElephantManager _localManager;
-        KryoBuffer _kryoBuf;
+        Progressable progressable;
+        LocalElephantManager localManager;
+        KryoSerializer kryoBuf;
 
         int _numWritten = 0;
         long _lastCheckpoint = System.currentTimeMillis();
 
         public ElephantRecordWriter(Configuration conf, Args args, Progressable progressable)
             throws IOException {
-            _fs = Utils.getFS(args.outputDirHdfs, conf);
-            _args = args;
+            fileSystem = Utils.getFS(args.outputDirHdfs, conf);
+            this.args = args;
 
-            // TODO: Remove the cast and make this work with interfaces.
-            _kryoBuf = ((KryoWrapper) _args.spec.getCoordinator()).getKryoBuffer();
-            _progressable = progressable;
-            _localManager = new LocalElephantManager(_fs, args.spec, args.persistenceOptions,
-                LocalElephantManager.getTmpDirs(conf));
+            this.kryoBuf = Utils.makeKryoBuffer(this.args.spec);
+            this.progressable = progressable;
+            localManager = new LocalElephantManager(fileSystem, args.spec,
+                    args.persistenceOptions, LocalElephantManager.getTmpDirs(conf));
         }
 
         private String remoteUpdateDirForShard(int shard) {
-            if (_args.updateDirHdfs == null) { return null; } else {
-                return _args.updateDirHdfs + "/" + shard;
+            if (args.updateDirHdfs == null) { return null; } else {
+                return args.updateDirHdfs + "/" + shard;
             }
         }
         
         private Persistence retrieveShard(int shardIdx) throws IOException {
             Persistence lp = null;
-            Coordinator fact = _args.spec.getCoordinator();
-            Map<String, Object> options = _args.persistenceOptions;
+            Coordinator fact = args.spec.getCoordinator();
+            Map<String, Object> options = args.persistenceOptions;
             if (_lps.containsKey(shardIdx)) {
                 lp = _lps.get(shardIdx);
             } else {
                 String updateDir = remoteUpdateDirForShard(shardIdx);
-                String localShard = _localManager.downloadRemoteShard("" + shardIdx, updateDir);
+                String localShard = localManager.downloadRemoteShard("" + shardIdx, updateDir);
                 lp = fact.openPersistenceForAppend(localShard, options);
                 _lps.put(shardIdx, lp);
                 progress();
@@ -97,10 +98,10 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             Persistence lp = retrieveShard(shard.get());
 
             // TODO: Change this behavior and get Cascading to serialize object.
-            Document doc = (Document) _kryoBuf.deserialize(Utils.getBytes(carrier));
+            Document doc = (Document) kryoBuf.deserialize(Utils.getBytes(carrier));
 
-            if (_args.indexer != null) {
-                _args.indexer.index(lp, doc);
+            if (args.indexer != null) {
+                args.indexer.index(lp, doc);
             } else {
                 lp.index(doc);
             }
@@ -115,33 +116,33 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
                 long delta = now - _lastCheckpoint;
                 _lastCheckpoint = now;
                 LOG.info("Wrote last 25000 records in " + delta + " ms");
-                _localManager.progress();
+                localManager.progress();
             }
         }
 
         public void close(Reporter reporter) throws IOException {
             for (Integer shard : _lps.keySet()) {
-                String lpDir = _localManager.localTmpDir("" + shard);
+                String lpDir = localManager.localTmpDir("" + shard);
                 LOG.info("Closing LP for shard " + shard + " at " + lpDir);
                 _lps.get(shard).close();
                 LOG.info("Closed LP for shard " + shard + " at " + lpDir);
                 progress();
-                String remoteDir = _args.outputDirHdfs + "/" + shard;
-                if (_fs.exists(new Path(remoteDir))) {
+                String remoteDir = args.outputDirHdfs + "/" + shard;
+                if (fileSystem.exists(new Path(remoteDir))) {
                     LOG.info("Deleting existing shard " + shard + " at " + remoteDir);
-                    _fs.delete(new Path(remoteDir), true);
+                    fileSystem.delete(new Path(remoteDir), true);
                     LOG.info("Deleted existing shard " + shard + " at " + remoteDir);
                 }
                 LOG.info("Copying " + lpDir + " to " + remoteDir);
-                _fs.copyFromLocalFile(new Path(lpDir), new Path(remoteDir));
+                fileSystem.copyFromLocalFile(new Path(lpDir), new Path(remoteDir));
                 LOG.info("Copied " + lpDir + " to " + remoteDir);
                 progress();
             }
-            _localManager.cleanup();
+            localManager.cleanup();
         }
 
         private void progress() {
-            if (_progressable != null) { _progressable.progress(); }
+            if (progressable != null) { progressable.progress(); }
         }
     }
 

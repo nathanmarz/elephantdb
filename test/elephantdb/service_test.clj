@@ -210,15 +210,15 @@
                                 0 [0 0]
                                 20 [20 0]
                                 2 nil)
-          (is (barrs= [(barr 0 0) nil (barr 30 0)]
-                      (multi-get-vals elephant "test1" [(barr 0) (barr 22) (barr 30)])))
-          (is (barrs= [(barr 0 0) (barr 1 1) nil (barr 30 0) (barr 10 0)]
-                      (multi-get-vals elephant "test1" [(barr 0) (barr 1) (barr 2) (barr 30) (barr 10)])))
+          (is (barrs= [[0 0] nil [30 0]]
+                      (multi-get-vals elephant "test1" [0 22 30])))
+          (is (barrs= [[0 0] [1 1] nil [30 0] [10 0]]
+                      (multi-get-vals elephant "test1" [0 1 2 30 10])))
           (is (= [] (multi-get-vals elephant "test1" []))))
         (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host3" "host4"]]
-          (is (barrs= [(barr 0 0) (barr 10 0)]
-                      (multi-get-vals elephant "test1" [(barr 0) (barr 10)])))
-          (is (thrown? Exception (multi-get-vals elephant "test1" [(barr 0) (barr 22)]))))))))
+          (is (barrs= [[0 0] [10 0]]
+                      (multi-get-vals elephant "test1" [0 10])))
+          (is (thrown? Exception (multi-get-vals elephant "test1" [0 22]))))))))
 
 (deftest test-live-updating
   (with-local-tmp [lfs local-dir]

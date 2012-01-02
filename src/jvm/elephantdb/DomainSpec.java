@@ -1,13 +1,7 @@
 package elephantdb;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import elephantdb.persistence.*;
 import elephantdb.partition.ShardingScheme;
+import elephantdb.persistence.Coordinator;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -15,6 +9,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.jvyaml.YAML;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DomainSpec implements Writable, Serializable {
     public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
@@ -24,7 +24,6 @@ public class DomainSpec implements Writable, Serializable {
     private static final String NUM_SHARDS_CONF = "num_shards";
     private static final String KRYO_PAIRS = "kryo_pairs";
     private static final String PERSISTENCE_OPTS = "persistence_opts";
-
 
     // This gets serialized in via the conf.
     public static class Args implements Serializable {

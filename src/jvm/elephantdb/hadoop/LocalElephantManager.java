@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
-
 public class LocalElephantManager {
     public static final String TMP_DIRS_CONF = "elephantdb.local.tmp.dirs";
 
@@ -33,18 +32,18 @@ public class LocalElephantManager {
         return ret;
     }
 
-    FileSystem _fs;
-    File _dirFlag;
-    String _localRoot;
-    DomainSpec _spec;
-    Map<String, Object> _persistenceOptions;
+    FileSystem fs;
+    File dirFlag;
+    String localRoot;
+    DomainSpec spec;
+    Map<String, Object> persistenceOptions;
 
     public LocalElephantManager(FileSystem fs, DomainSpec spec,
         Map<String, Object> persistenceOptions, List<String> tmpDirs) throws IOException {
-        _localRoot = selectAndFlagRoot(tmpDirs);
-        _fs = fs;
-        _spec = spec;
-        _persistenceOptions = persistenceOptions;
+        localRoot = selectAndFlagRoot(tmpDirs);
+        this.fs = fs;
+        this.spec = spec;
+        this.persistenceOptions = persistenceOptions;
     }
 
     /**
@@ -52,12 +51,12 @@ public class LocalElephantManager {
      * remotePath is null or doesn't exist, creates an empty local elephant and closes it.
      */
     public String downloadRemoteShard(String id, String remotePath) throws IOException {
-        Coordinator fact = _spec.getCoordinator();
+        Coordinator fact = spec.getCoordinator();
         String returnDir = localTmpDir(id);
-        if (remotePath == null || !_fs.exists(new Path(remotePath))) {
-            fact.createPersistence(returnDir, _persistenceOptions).close();
+        if (remotePath == null || !fs.exists(new Path(remotePath))) {
+            fact.createPersistence(returnDir, persistenceOptions).close();
         } else {
-            _fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
+            fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
             Collection<File> crcs =
                 FileUtils.listFiles(new File(returnDir), new String[]{"crc"}, true);
             for (File crc : crcs) {
@@ -68,17 +67,17 @@ public class LocalElephantManager {
     }
 
     public String localTmpDir(String id) {
-        return _localRoot + "/" + id;
+        return localRoot + "/" + id;
     }
 
     public void progress() {
-        _dirFlag.setLastModified(System.currentTimeMillis());
+        dirFlag.setLastModified(System.currentTimeMillis());
     }
 
 
     public void cleanup() throws IOException {
-        FileSystem.getLocal(new Configuration()).delete(new Path(_localRoot), true);
-        _dirFlag.delete();
+        FileSystem.getLocal(new Configuration()).delete(new Path(localRoot), true);
+        dirFlag.delete();
     }
 
     private void clearStaleFlags(List<String> tmpDirs) {
@@ -115,8 +114,8 @@ public class LocalElephantManager {
             }
         }
         String token = UUID.randomUUID().toString();
-        _dirFlag = new File(flagDir(best) + "/" + token);
-        _dirFlag.createNewFile();
+        dirFlag = new File(flagDir(best) + "/" + token);
+        dirFlag.createNewFile();
         new File(best).mkdirs();
         return best + "/" + token;
     }

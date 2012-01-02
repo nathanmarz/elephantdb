@@ -53,8 +53,12 @@
          (recur y (first more) (next more))
          (barr= y (first more)))
        false)))
+
+(defn count= [& colls]
+  (apply = (map count colls)))
+
 (defn barrs= [& arrs]
-  (and (apply = (map count arrs))
+  (and (count= arrs)
        (every? identity
                (apply map (fn [& vals]
                             (or (every? nil? vals)
