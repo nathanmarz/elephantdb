@@ -36,7 +36,7 @@ public class Lucene implements Coordinator {
         return new LucenePersistence(root, options);
     }
 
-    public static class LucenePersistence implements Persistence<LuceneDocument> {
+    public static class LucenePersistence implements SearchPersistence<LuceneDocument> {
         Directory rootDir;
         IndexReader reader;
 

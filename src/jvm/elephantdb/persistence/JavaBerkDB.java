@@ -38,7 +38,7 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
         return new JavaBerkDBPersistence(root, getSerializer(), options, false);
     }
 
-    public static class JavaBerkDBPersistence implements Persistence<KeyValDocument> {
+    public static class JavaBerkDBPersistence implements KeyValPersistence {
         private static final String DATABASE_NAME = "elephant";
         Environment env;
         Database db;
@@ -168,7 +168,6 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
 
             };
         }
-
     }
 
 }

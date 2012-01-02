@@ -5,12 +5,10 @@
   (:import [elephantdb.persistence JavaBerkDB]
            [elephantdb DomainSpec]))
 
-;; update-in w/ #(.getName (.getClass %))
-(defn- norm-spec [s]
-  (assoc s :coordinator
-         (-> (:coordinator s)
-             (.getClass)
-             (.getName))))
+(defn- norm-spec [spec-map]
+  (update-in spec-map
+             [:coordinator]
+             #(.getName (.getClass %))))
 
 (defn- specs= [s1 s2]
   (= (norm-spec s1)

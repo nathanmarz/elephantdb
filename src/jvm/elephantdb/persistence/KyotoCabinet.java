@@ -39,9 +39,9 @@ public class KyotoCabinet implements SerializationWrapper, Coordinator {
         return serializer;
     }
 
-    public static class KyotoCabinetPersistence implements Persistence<KeyValDocument> {
-        public byte[] get(byte[] key) throws IOException {
-            return new byte[0];
+    public static class KyotoCabinetPersistence implements KeyValPersistence {
+        public <K, V> V get(K key) throws IOException {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public void index(KeyValDocument document) throws IOException {
