@@ -10,7 +10,7 @@
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
            [org.apache.thrift.transport TNonblockingServerSocket]
            [java.util.concurrent.locks ReentrantReadWriteLock]
-           [elephantdb.persistence Shutdownable]
+           [elephantdb.persistence Shutdownable KeyValPersistence]
            [elephantdb.generated ElephantDB ElephantDB$Iface
             ElephantDB$Processor WrongHostException
             DomainNotFoundException DomainNotLoadedException]))
@@ -114,7 +114,8 @@
       (directMultiGet [_ domain-name keys]
         (u/with-read-lock rw-lock
           (let [domain (domain-get database domain-name)]
-            (u/dofor [key keys, :let [shard (dom/retrieve-shard domain key)]]
+            (u/dofor [key keys
+                      :let [^KeyValPersistence shard (dom/retrieve-shard domain key)]]
                      (log/debug
                       (format "Direct get: key %s at shard %s" key shard))
                      (if shard
