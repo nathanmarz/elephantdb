@@ -6,6 +6,8 @@ struct Value {
   1: optional binary data;
 }
 
+// Status Structs
+
 struct LoadingStatus {  
 }
 
@@ -31,6 +33,8 @@ struct Status {
   1: required map<string, DomainStatus> domain_statuses;
 }
 
+// Exceptions
+
 exception DomainNotFoundException {
   1: required string domain;
 }
@@ -43,8 +47,9 @@ exception HostsDownException {
   1: required list<string> hosts;
 }
 
+// can happen if domain location changes or if num shards changes
 exception InvalidConfigurationException {
-  1: required list<string> mismatched_domains; // can happen if domain location changes or if num shards changes
+  1: required list<string> mismatched_domains; 
   2: required bool port_changed;
   3: required bool hosts_changed;
 }
@@ -58,10 +63,6 @@ service ElephantDBShared {
   Status getStatus();
   bool isFullyLoaded();
   bool isUpdating();
-  
-/*
-   This method will re-download the global configuration file and add any new domains
-   */
   void updateAll() throws (1: InvalidConfigurationException ice);
   bool update(1: string domain); // is the supplied domain updating?
 }
