@@ -181,8 +181,8 @@
   (apply swap! status transition-fn args))
 
 (defrecord Domain
-    [local-store remote-store serializer rw-lock hostname
-     status domain-data shard-index]  
+    [local-store remote-store serializer throttle rw-lock
+     hostname status domain-data shard-index]  
   Shutdownable
   (shutdown [this]
     "Shutting down a domain requires closing all of its shards."
@@ -214,7 +214,7 @@
 (defn build-domain
   "Constructs a domain record."
   [local-root hdfs-conf remote-path hosts replication
-   & {:keys [rw-lock]
+   & {:keys [rw-lock throttle]
       :or {rw-lock (u/mk-rw-lock)}}]
   (let [remote-fs     (h/filesystem hdfs-conf)
         remote-store  (DomainStore. remote-fs remote-path)
@@ -223,6 +223,7 @@
     (Domain. local-store
              remote-store
              (-> local-store .getSpec .getCoordinator .getSerializer)
+             throttle
              rw-lock
              (u/local-hostname)
              (atom (thrift/loading-status))

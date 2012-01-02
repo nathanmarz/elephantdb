@@ -77,6 +77,18 @@
                        (.getPath domain-path)
                        true))))
 
+(defn launch-updater!
+  [database]
+  (let [interval-secs (get-in database [:options :update-intervals-s])
+        interval-ms   (* 1000 interval-secs)]
+    (future
+      (log/info (format "Starting updater process with an interval of: %s seconds."
+                        interval-secs))
+      (while true
+        (Thread/sleep interval-ms)
+        (log/info "Updater process: firing update on all domains.")
+        (update-all! database)))))
+
 ;; ## Database Creation
 ;;
 ;; A "database" is the initial configuration map with much more detail
@@ -87,11 +99,13 @@
 (defprotocol Preparable
   (prepare [_] "Perform preparatory steps."))
 
-(defrecord Database [options domains]
+(defrecord Database [local-root port domains options]
   Preparable
-  (prepare [{:keys [options domains]}]
+  (prepare [{:keys [local-root domains] :as database}]
+    (launch-updater! database)
+    (u/register-shutdown-hook #(.shutdown database))
     (future
-      (purge-unused-domains! (:local-root options)
+      (purge-unused-domains! local-root
                              (keys domains))
       (doseq [domain (vals domains)]
         (domain/boot-domain! domain))))
@@ -104,14 +118,19 @@
 
 (defn build-database
   [{:keys [domains hosts replication local-root hdfs-conf] :as conf-map}]
-  (let [rw-lock (u/mk-rw-lock)]
-    (Database. (dissoc conf-map :domains)
+  (let [rw-lock  (u/mk-rw-lock)
+        throttle (domain/throttle (:download-rate-limit database))]
+    (Database. local-root
+               port
                (u/update-vals
                 domains
                 (fn [domain-name remote-path]
                   (let [local-path (domain-path local-root domain-name)]
                     (domain/build-domain
-                     local-root hdfs-conf remote-path hosts replication rw-lock)))))))
+                     local-root hdfs-conf remote-path hosts replication
+                     :throttle throttle
+                     :rw-lock rw-lock))))
+               (dissoc conf-map :domains))))
 
 ;; A full database ends up looking something like the commented out
 ;; block below. Previously, a large number of functions would try and

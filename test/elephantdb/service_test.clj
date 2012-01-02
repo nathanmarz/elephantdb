@@ -7,8 +7,7 @@
             [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.config :as conf]
-            [elephantdb.common.status :as status]
-            [elephantdb.keyval.service :as service])
+            [elephantdb.common.status :as status])
   (:import [elephantdb.persistence JavaBerkDB]))
 
 (defn get-val [elephant d k]

@@ -63,11 +63,11 @@ service ElephantDBShared {
   Status getStatus();
   bool isFullyLoaded();
   bool isUpdating();
-  void updateAll() throws (1: InvalidConfigurationException ice);
   bool update(1: string domain); // is the supplied domain updating?
+  bool updateAll() throws (1: InvalidConfigurationException ice);
 }
 
-service ElephantDB {
+service ElephantDB extends ElephantDBShared {
   Value get(1: string domain, 2: binary key)
     throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
   Value getString(1: string domain, 2: string key)
@@ -91,7 +91,7 @@ service ElephantDB {
 }
 
 
-service ElephantDBSet {
+service ElephantDBSet extends ElephantDBShared {
   // Required kv pairs:
   // kv == (setKey, member) -> null
   // (setKey + "SIZE") -> i64
@@ -107,7 +107,7 @@ service ElephantDBSet {
   list<Value> multiMember(1: string domain, 2: string setKey, 3: list<string> setVals);
 }
 
-service ElephantDBList {
+service ElephantDBList extends ElephantDBShared {
   // Required kv pairs:
   
   // kv == (setKey + "TOTALSIZE") -> i64
@@ -123,7 +123,7 @@ service ElephantDBList {
   list<Value> takeAll(1: string domain, 2: string key); // redundant? we can use range(0, length + 1);
 }
 
-service ElephantDBDoc {
+service ElephantDBDoc extends ElephantDBShared {
   // Required kv pairs:
   // key -> Document
   

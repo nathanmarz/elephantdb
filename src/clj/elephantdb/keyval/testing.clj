@@ -7,6 +7,7 @@
             [elephantdb.keyval.service :as service]
             [elephantdb.keyval.thrift :as thrift]
             [elephantdb.common.shard :as shard]
+            [elephantdb.common.database :as db]
             [elephantdb.common.config :as conf])
   (:import [elephantdb Utils]
            [elephantdb.hadoop ElephantOutputFormat
@@ -121,7 +122,7 @@
 
 (defn mk-local-config [local-dir]
   {:local-dir local-dir
-   :max-online-download-rate-kb-s 1024
+   :download-rate-limit 1024
    :update-interval-s 60})
 
 (defn mk-service-handler
@@ -129,7 +130,7 @@
   (binding [shard/compute-host->shards (if host-to-shards
                                          (constantly host->shards)
                                          shard/compute-host->shards)]
-    (let [handler (service/service-handler
+    (let [handler (db/build-database
                    (merge global-config (mk-local-config localdir)))]
       (while (not (.isFullyLoaded handler))
         (log/info "waiting...")
@@ -163,7 +164,7 @@
        (let [~handler-sym (mk-service-handler ~global-conf
                                               localtmp#
                                               ~host-to-shards)
-             updater# (service/launch-updater! ~handler-sym 100)]
+             updater# (db/launch-updater! ~handler-sym 100)]
          (try ~@body
               (finally (.shutdown ~handler-sym)
                        (future-cancel updater#)))))))
