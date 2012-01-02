@@ -1,7 +1,7 @@
 (ns elephantdb.common.domain
   (:use [jackknife.def :only (defalias)])
   (:require [hadoop-util.core :as h]
-            [hadoop-util.transfer as transfer]
+            [hadoop-util.transfer :as transfer]
             [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.shard :as shard]

@@ -1,9 +1,4 @@
-(ns elephantdb.common.status
-  (:require [elephantdb.common.thrift :as t])
-  (:import [elephantdb.store DomainStore]
-           [elephantdb.generated DomainStatus$_Fields
-            DomainStatus LoadingStatus ReadyStatus
-            FailedStatus ShutdownStatus]))
+(ns elephantdb.common.status)
 
 ;; Statuses are little state machines.
 

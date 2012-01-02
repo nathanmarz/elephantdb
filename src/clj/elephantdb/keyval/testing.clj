@@ -5,7 +5,7 @@
             [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.keyval.service :as service]
-            [elephantdb.common.thrift :as thrift]
+            [elephantdb.keyval.thrift :as thrift]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf])
   (:import [elephantdb Utils ByteArray]

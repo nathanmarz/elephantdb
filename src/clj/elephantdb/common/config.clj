@@ -41,10 +41,6 @@
       (read-string (Utils/convertStreamToString
                     (.open fs p))))))
 
-(def DEFAULT-GLOBAL-CONFIG
-  {:replication 1
-   :port 3578
-   })
 
 (def example-global-config
   {:replication 2
@@ -53,10 +49,13 @@
    :domains {"graph" "s3n://mybucket/elephantdb/graph"
              "docs"  "/data/docdb"}})
 
+(def DEFAULT-GLOBAL-CONFIG
+  {:replication 1
+   :port 3578})
+
 (def DEFAULT-LOCAL-CONFIG
   {:download-rate-limit 128
-   :update-interval     60
-   })
+   :update-interval     60})
 
 (defn read-local-config
   "Reads in the local configuration file from the supplied local
