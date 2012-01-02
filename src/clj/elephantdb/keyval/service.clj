@@ -25,12 +25,12 @@
     (remove (set bad-hosts)
             (rest host-seq)))
 
-(defn domain-get
-  "Retrieves the requested domain (by name) from the supplied
-  database. Throws a thrift exception if the domain doesn't exist."
+(defn assert-domain
+  "If the named domain doesn't exist in the supplied database, throws
+  a DomainNotFoundException."
   [database domain-name]
-  (or (db/domain-get database domain-name)
-      (thrift/domain-not-found-ex domain-name)))
+  (when-not (db/domain-get database domain-name)
+    (thrift/domain-not-found-ex domain-name)))
 
 (defn index-keys
   "For the supplied domain and sequence of keys, returns a sequence of
@@ -83,45 +83,38 @@
            indexed-keys
            vals))))
 
-(defprotocol Preparable
-  (prepare [_] "Perform preparatory steps."))
+(u/dofor [key keys
+          :let [^KeyValPersistence shard (dom/retrieve-shard domain key)]]
+         (log/debug
+          (format "Direct get: key %s at shard %s" key shard))
+         (if shard
+           (thrift/mk-value (.get shard key))
+           (throw (thrift/wrong-host-ex))))
 
 (defn service-handler
   "Entry point to edb. `service-handler` returns a proxied
   implementation of EDB's interface."
   [edb-config]
-  (let [^ReentrantReadWriteLock rw-lock (u/mk-rw-lock)
-        {domain-map :domains port :port :as database} (db/build-database edb-config)
+  (let [{domain-map :domains port :port :as database} (db/build-database edb-config)
         throttle  (dom/throttle (:download-rate-limit database))
         localhost (u/local-hostname)]
     (reify
-      Preparable
-      (prepare [this]
-        (u/with-ret true
-          (future
-            (db/purge-unused-domains! database)
-            (doseq [domain (vals domain-map)]
-              (dom/boot-domain! domain rw-lock)))))
+      dom/Preparable
+      (prepare [_] (.prepare database))
         
       Shutdownable
-      (shutdown [_]
-        (log/info "ElephantDB received shutdown notice...")
-        (u/with-write-lock rw-lock
-          (doseq [domain (vals domain-map)]
-            (.shutdown domain))))
+      (shutdown [_] (.shutdown database))
 
       ElephantDB$Iface
       (directMultiGet [_ domain-name keys]
-        (u/with-read-lock rw-lock
-          (let [domain (domain-get database domain-name)]
-            (u/dofor [key keys
-                      :let [^KeyValPersistence shard (dom/retrieve-shard domain key)]]
-                     (log/debug
-                      (format "Direct get: key %s at shard %s" key shard))
-                     (if shard
-                       (thrift/mk-value (.get shard key))
-                       (throw (thrift/wrong-host-ex)))))))
-
+        (assert-domain database domain-name)
+        (try (let [domain (db/domain-get database domain-name)]
+               (doall
+                (map #(thrift/mk-value (kv-get domain %))
+                     keys))
+               (catch RuntimeException _
+                 (throw (thrift/wrong-host-ex))))))
+      
       ;; Start out by indexing each key; this requires indexing each
       ;; key into a map (see `index-keys` above). The loop first
       ;; checks that every key has at least one host associated with
@@ -140,7 +133,8 @@
       ;; Once the multi-get loop completes without any failures the
       ;; entire sequence of values is returned in order.
       (multiGet [this domain-name key-seq]
-        (loop [indexed-keys (-> (domain-get database domain-name)
+        (assert-domain database domain-name)
+        (loop [indexed-keys (-> (db/domain-get database domain-name)
                                 (index-keys key-seq))
                results []]
           (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
@@ -187,44 +181,41 @@
         
       (getDomainStatus [_ domain-name]
         "Returns the thrift status of the supplied domain-name."
+        (assert-domain database domain)
         (stat/status
-         (domain-get database domain-name)))
+         (db/domain-get database domain-name)))
 
       (getDomains [_]
         "Returns a sequence of all domain names being served."
-        (keys domain-map))
+        (db/domain-names database))
 
       (getStatus [_]
         "Returns a map of domain-name->status for each domain."
         (thrift/elephant-status
-         (u/val-map stat/status domain-map)))
+         (db/domain->status database)))
 
       (isFullyLoaded [_]
         "Are all domains loaded properly?"
-        (every? (some-fn stat/ready? stat/failed?)
-                (vals domain-map)))
+        (db/fully-loaded? database))
 
       (isUpdating [_]
         "Is some domain currently updating?"
-        (let [domains (vals domain-map)]
-          (some stat/loading? (map stat/status domains))))
+        (db/some-updating? database))
 
       (update [_ domain-name]
         "If an update is available, updates the named domain and
          hotswaps the new version."
+        (assert-domain database domain-name)
         (u/with-ret true
-          (future
-            (-> database
-                (domain-get domain-name)
-                (dom/attempt-update! rw-lock :throttle throttle)))))
+          (db/attempt-update! database
+                              domain-name
+                              :throttle throttle)))
 
       (updateAll [_]
         "If an update is available on any domain, updates the domain's
          shards from its remote store and hotswaps in the new versions."
         (u/with-ret true
-          (future
-            (u/do-pmap #(dom/attempt-update! % rw-lock :throttle throttle)
-                       (vals domain-map))))))))
+          (db/update-all! database :throttle throttle))))))
 
 (defn thrift-server
   [service-handler port]
@@ -245,3 +236,5 @@
         (Thread/sleep interval-ms)
         (log/info "Updater process: firing update on all domains.")
         (.updateAll service-handler)))))
+
+

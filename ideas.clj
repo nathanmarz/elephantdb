@@ -117,7 +117,7 @@
                             :shard-scheme <shardscheme-instance>
                             :status <status-atom>
                             :shard-count <shard-count>
-                            :serializer <kryo-instance>
+                            :serializer <serializer-instance>
                             :local-handle "local-fs-handle"
                             :remote-handle "remote-fs-handle"
                             :domain-data <data-atom>

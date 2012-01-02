@@ -150,14 +150,14 @@
   "Takes a domain, a version number (a long!), and a read-write lock,
   and hot-swaps in the new version for the old, closing all old shards
   on completion."
-  [domain new-version rw-lock]
+  [domain new-version]
   {:pre [(-> (:local-store domain)
              (has-version? new-version))]}
   (let [{:keys [shards version] :as data} (domain-data domain)]
     (if (= version new-version)
       (log/info new-version " is already loaded.")
       (let [new-shards (retrieve-shards! domain new-version)]
-        (u/with-write-lock rw-lock
+        (u/with-write-lock (:rw-lock domain)
           (reset! (:domain-data domain)
                   {:shards new-shards
                    :version new-version}))
@@ -167,9 +167,9 @@
 (defn boot-domain!
   "if a version of data exists in the local store, go ahead and start
   serving it. Otherwise do nothing."
-  [domain rw-lock]
+  [domain]
   (when-let [latest (newest-version domain)]
-    (load-version! domain latest rw-lock)))
+    (load-version! domain latest)))
 
 ;; ## Domain Record Definition
 
@@ -181,14 +181,15 @@
   (apply swap! status transition-fn args))
 
 (defrecord Domain
-    [local-store remote-store serializer
-     hostname status domain-data shard-index]  
+    [local-store remote-store serializer rw-lock hostname
+     status domain-data shard-index]  
   Shutdownable
   (shutdown [this]
     "Shutting down a domain requires closing all of its shards."
     (status/to-shutdown this)
-    (close-shards! (-> (domain-data this)
-                       (get :shards))))
+    (u/with-write-lock (:rw-lock this)
+      (close-shards! (-> (domain-data this)
+                         (get :shards)))))
  
   IStateful
   (status [this]
@@ -212,14 +213,17 @@
 
 (defn build-domain
   "Constructs a domain record."
-  [local-root hdfs-conf remote-path hosts replication]
-  (let [rfs (h/filesystem hdfs-conf)
-        remote-store  (DomainStore. rfs remote-path)
+  [local-root hdfs-conf remote-path hosts replication
+   & {:keys [rw-lock]
+      :or {rw-lock (u/mk-rw-lock)}}]
+  (let [remote-fs     (h/filesystem hdfs-conf)
+        remote-store  (DomainStore. remote-fs remote-path)
         local-store   (mk-local-store local-root remote-store)
         index (shard/generate-index hosts (-> local-store .getSpec .getNumShards))]
     (Domain. local-store
              remote-store
-             (-> local-store .getSpec .getCoordinator .getKryoBuffer)
+             (-> local-store .getSpec .getCoordinator .getSerializer)
+             rw-lock
              (u/local-hostname)
              (atom (thrift/loading-status))
              (atom {})
@@ -279,22 +283,22 @@
    :throttle - provide an optional throttling agent.
    :version - try to update to some version other than the most recent
   on the remote store."
-  [{:keys [remote-store] :as domain} rw-lock
+  [{:keys [remote-store] :as domain}
    & {:keys [throttle version]
       :or {version (.mostRecentVersion remote-store)}}]
   (when (transfer-possible? domain version)
     (status/to-loading domain)
     (transfer-version! domain version :throttle throttle)
-    (load-version! version rw-lock)
+    (load-version! version)
     (status/to-ready domain)))
 
 (defn attempt-update!
   "If the supplied domain isn't currently updating, returns a future
   containing a triggered update computation."
-  [domain rw-lock & {:keys [throttle version]}]
+  [domain & {:keys [throttle version]}]
   (if (updating? domain)
     (log/info "UPDATER - Not updating as update's still in progress.")
-    (future (update-domain! domain rw-lock
+    (future (update-domain! domain
                             :throttle throttle
                             :version version))))
 

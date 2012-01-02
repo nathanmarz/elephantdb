@@ -67,7 +67,7 @@ service ElephantDBShared {
   bool update(1: string domain); // is the supplied domain updating?
 }
 
-service ElephantDB extends ElephantDBShared {
+service ElephantDB {
   Value get(1: string domain, 2: binary key)
     throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
   Value getString(1: string domain, 2: string key)
@@ -91,7 +91,7 @@ service ElephantDB extends ElephantDBShared {
 }
 
 
-service ElephantDBSet extends ElephantDBShared {
+service ElephantDBSet {
   // Required kv pairs:
   // kv == (setKey, member) -> null
   // (setKey + "SIZE") -> i64
@@ -107,7 +107,7 @@ service ElephantDBSet extends ElephantDBShared {
   list<Value> multiMember(1: string domain, 2: string setKey, 3: list<string> setVals);
 }
 
-service ElephantDBList extends ElephantDBShared {
+service ElephantDBList {
   // Required kv pairs:
   
   // kv == (setKey + "TOTALSIZE") -> i64
@@ -123,7 +123,7 @@ service ElephantDBList extends ElephantDBShared {
   list<Value> takeAll(1: string domain, 2: string key); // redundant? we can use range(0, length + 1);
 }
 
-service ElephantDBDoc extends ElephantDBShared {
+service ElephantDBDoc {
   // Required kv pairs:
   // key -> Document
   
