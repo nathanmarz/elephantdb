@@ -4,15 +4,14 @@
         elephantdb.keyval.testing)
   (:require [hadoop-util.core :as h]
             [jackknife.core :as u])
-  (:import elephantdb.DomainSpec
+  (:import [elephantdb DomainSpec Utils]
            [elephantdb.hadoop ElephantOutputFormat
-            ElephantOutputFormat$Args Indexer]
+            ElephantOutputFormat$Args]
            [org.apache.hadoop.io IntWritable BytesWritable]
            [elephantdb.document KeyValDocument]
-           [elephantdb.index StringAppendIndexer]
+           [elephantdb.index Indexer StringAppendIndexer]
            [elephantdb.persistence JavaBerkDB]
-           [elephantdb.store VersionedStore]
-           [elephantdb.test StringAppendIndexer]))
+           [elephantdb.store VersionedStore]))
 
 (def test-spec
   (DomainSpec. "elephantdb.persistence.JavaBerkDB"
@@ -21,23 +20,25 @@
 
 (defn write-data
   [writer data]
-  (u/dofor [[s records] data
-            [k v] records]
-           (.write writer
-                   (IntWritable. s)
-                   (BytesWritable.
-                    (.serialize test-spec (KeyValDocument. k v))))))
+  (let [serializer (Utils/makeSerializer test-spec)]
+    (u/dofor [[s records] data
+              [k v]      records]
+             (.write writer
+                     (IntWritable. s)
+                     (BytesWritable.
+                      (.serialize serializer (KeyValDocument. k v)))))))
 
 (defn check-shards
   [fs lfs output-dir local-tmp expected]
   (.mkdirs lfs (h/path local-tmp))
   (u/dofor [[s records] expected]
            (let [local-shard-path (h/str-path local-tmp s)
-                 _  (.copyToLocalFile fs (h/path output-dir (str s))
-                                      (h/path local-shard-path))
-                 persistence (.openPersistenceForRead (.getCoordinator test-spec)
-                                                      local-shard-path
-                                                      {})]
+                 persistence (do (.copyToLocalFile fs
+                                                   (h/path output-dir (str s))
+                                                   (h/path local-shard-path))
+                                 (.openPersistenceForRead (.getCoordinator test-spec)
+                                                          local-shard-path
+                                                          {}))]
              (u/dofor [[k v] records]
                       (is (= v (.get persistence k))))
              (u/dofor [[_ non-records] (dissoc expected s)
@@ -50,26 +51,26 @@
           writer  (mk-elephant-writer 10 (JavaBerkDB.) output-dir etmp)]
       (write-data writer data)
       (.close writer nil)
-      (is (= 2 (count (.listStatus fs (h/path output-dir)))))
+      (fact (count (.listStatus fs (h/path output-dir))) => 2)
       (check-shards fs lfs output-dir tmp2  data))))
 
-(def-fs-test test-incremental [fs dir1 dir2]
-  (with-local-tmp [lfs ltmp1 ltmp2]
-    (mk-presharded-domain fs dir1 (JavaBerkDB.)
-                          {0 [["a" "1"]]
-                           1 [["b" "2"]
-                              ["c" "3"]]})
-    (let [data {0 {"a" "2" "d" "4"} 1 {"c" "4" "e" "4"} 2 {"x" "x"}}
-          writer (mk-elephant-writer 3 (JavaBerkDB.) dir2 ltmp1
-                                     :indexer (StringAppendIndexer.)
-                                     :update-dir (.mostRecentVersionPath
-                                                  (VersionedStore. dir1)))]
-      (write-data writer data)
-      (.close writer nil)
-      (check-shards fs lfs dir2 ltmp2
-                    {0 {"a" "12" "d" "4"}
-                     1 {"b" "2" "c" "34" "e" "4"}
-                     2 {"x" "x"}}))))
+(deftest test-incremental
+  (with-fs-tmp [fs dir1 dir2]
+    (with-local-tmp [lfs ltmp1 ltmp2]
+      (mk-presharded-domain fs dir1 (JavaBerkDB.)
+                            {0 [["a" "1"]]
+                             1 [["b" "2"]
+                                ["c" "3"]]})
+      (let [data {0 {"a" "2" "d" "4"} 1 {"c" "4" "e" "4"} 2 {"x" "x"}}
+            writer (mk-elephant-writer 3 (JavaBerkDB.) dir2 ltmp1
+                                       :indexer (StringAppendIndexer.)
+                                       :update-dir (.mostRecentVersionPath
+                                                    (VersionedStore. dir1)))]
+        (write-data writer data)
+        (.close writer nil)
+        (check-shards fs lfs dir2 ltmp2
+                      {0 {"a" "12" "d" "4"}
+                       1 {"b" "2" "c" "34" "e" "4"}
+                       2 {"x" "x"}})))))
 
-(def-fs-test test-errors [fs dir1]
-  )
+(future-fact "test errors.")
