@@ -6,6 +6,7 @@
   (:import [org.apache.thrift.protocol TBinaryProtocol]
            [org.apache.thrift.transport TTransport
             TFramedTransport TSocket]
+           [elephantdb.common.database Database]
            [elephantdb.generated DomainStatus$_Fields Status
             DomainNotFoundException DomainNotLoadedException
             HostsDownException WrongHostException
@@ -75,9 +76,9 @@
   a DomainNotFoundException."
   [database domain-name]
   (when-not (db/domain-get database domain-name)
-    (thrift/domain-not-found-ex domain-name)))
+    (domain-not-found-ex domain-name)))
 
-(extend-type db/Database
+(extend-type Database
   ElephantDBShared$Iface
   (getDomainStatus [_ domain-name]
     "Returns the thrift status of the supplied domain-name."
@@ -91,7 +92,7 @@
 
   (getStatus [_]
     "Returns a map of domain-name->status for each domain."
-    (thrift/elephant-status
+    (elephant-status
      (db/domain->status database)))
 
   (isFullyLoaded [_]

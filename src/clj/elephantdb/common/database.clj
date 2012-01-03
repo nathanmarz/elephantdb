@@ -24,22 +24,18 @@
 (defn attempt-update!
   "If an update is available, updates the named domain and hotswaps
    the new version. Returns a future."
-  [database domain-name & {:keys [throttle]}]
+  [database domain-name]
   (future
     (when-let [domain (domain-get database domain-name)]
-      (domain/attempt-update! domain :throttle throttle))))
+      (domain/attempt-update! domain))))
 
 (defn update-all!
   "If an update is available on any domain, updates the domain's
   shards from its remote store and hotswaps in the new versions."
-  [database & {:keys [throttle]}]
+  [database]
   (future
-    (u/do-pmap #(domain/attempt-update! % :throttle throttle)
-               (vals (:domains database))))
-  (u/with-ret true
-    (future
-      (u/do-pmap #(dom/attempt-update! % :throttle throttle)
-                 (vals domain-map)))))
+    (u/do-pmap domain/attempt-update!
+               (vals (:domains database)))))
 
 (defn fully-loaded?
   [{:keys [domains]}]
@@ -117,9 +113,10 @@
       (.shutdown domain))))
 
 (defn build-database
-  [{:keys [domains hosts replication local-root hdfs-conf] :as conf-map}]
+  [{:keys [domains hosts replication
+           port local-root hdfs-conf] :as conf-map}]
   (let [rw-lock  (u/mk-rw-lock)
-        throttle (domain/throttle (:download-rate-limit database))]
+        throttle (domain/throttle (:download-rate-limit conf-map))]
     (Database. local-root
                port
                (u/update-vals
@@ -130,7 +127,8 @@
                      local-root hdfs-conf remote-path hosts replication
                      :throttle throttle
                      :rw-lock rw-lock))))
-               (dissoc conf-map :domains))))
+               (dissoc conf-map
+                       :domains :local-root :port))))
 
 ;; A full database ends up looking something like the commented out
 ;; block below. Previously, a large number of functions would try and

@@ -12,6 +12,7 @@
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
            [elephantdb.store DomainStore]
+           [elephantdb.persistence KeyValPersistence Coordinator]
            [org.apache.hadoop.io IntWritable]
            [org.apache.hadoop.mapred JobConf]
            [org.apache.thrift TException]
@@ -212,3 +213,45 @@
 
 (def check-domain-not
   (complement check-domain))
+
+(defn memory-persistence []
+  (let [state (atom {})]
+    (reify elephantdb.persistence.Persistence
+      (index [this doc]
+        (swap! state assoc (.key doc) (.val doc)))
+      (iterator [this]
+        (map (fn [[k v]] (KeyValDocument. k v))
+             @state))
+      (close [_]))))
+
+(defn memory-coordinator []
+  (let [state (atom {})]
+    (reify elephantdb.persistence.Coordinator
+      (openPersistenceForRead [this root opts]
+        (or (get @state root)
+            (let [fresh (memory-persistence)]
+              (swap! state assoc root fresh)
+              fresh))))))
+
+;; ## Type Versions
+;;
+;; TODO -- convert to KeyValPersistence
+
+(defrecord MemoryPersistence [state]
+  elephantdb.persistence.Persistence
+  (index [{:keys [state]} doc]
+    (swap! state assoc (.key doc) (.val doc)))
+  (iterator [{:keys [state]}]
+    (map (fn [[k v]] (KeyValDocument. k v))
+         @state))
+  (close [_]))
+
+(defrecord MemoryCoordinator [state]
+  elephantdb.persistence.Coordinator
+  (openPersistenceForRead
+    [{:keys [state] :as m} root opts]
+    (println (:state m))
+    (or (get @state root)
+        (let [fresh (MemoryPersistence. (atom {}))]
+          (swap! state assoc root fresh)
+          fresh))))

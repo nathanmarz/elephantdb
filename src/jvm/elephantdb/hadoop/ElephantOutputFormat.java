@@ -8,6 +8,7 @@ import elephantdb.index.Indexer;
 import elephantdb.persistence.Coordinator;
 import elephantdb.serialize.KryoSerializer;
 import elephantdb.persistence.Persistence;
+import elephantdb.serialize.Serializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -56,7 +57,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         Map<Integer, Persistence> _lps = new HashMap<Integer, Persistence>();
         Progressable progressable;
         LocalElephantManager localManager;
-        KryoSerializer kryoBuf;
+        Serializer serializer;
 
         int _numWritten = 0;
         long _lastCheckpoint = System.currentTimeMillis();
@@ -66,7 +67,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             fileSystem = Utils.getFS(args.outputDirHdfs, conf);
             this.args = args;
 
-            this.kryoBuf = Utils.makeKryoBuffer(this.args.spec);
+            this.serializer = Utils.makeSerializer(this.args.spec);
             this.progressable = progressable;
             localManager = new LocalElephantManager(fileSystem, args.spec,
                     args.persistenceOptions, LocalElephantManager.getTmpDirs(conf));
@@ -98,7 +99,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             Persistence lp = retrieveShard(shard.get());
 
             // TODO: Change this behavior and get Cascading to serialize object.
-            Document doc = (Document) kryoBuf.deserialize(Utils.getBytes(carrier));
+            Document doc = (Document) serializer.deserialize(Utils.getBytes(carrier));
 
             if (args.indexer != null) {
                 args.indexer.index(lp, doc);

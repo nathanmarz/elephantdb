@@ -6,6 +6,7 @@ import elephantdb.document.Document;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.serialize.KryoSerializer;
 import elephantdb.persistence.Persistence;
+import elephantdb.serialize.Serializer;
 import elephantdb.store.DomainStore;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -65,10 +66,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             if (iterator.hasNext()) {
                 Document pair = (Document) iterator.next();
 
-                //TODO: At this point we need to run this through some sort of "fetcher" that can
-                //build the key-val document back up from what pops out of berkeleyDB.
-
-                byte[] crushed = split.getKryoBuffer().serialize(pair);
+                byte[] crushed = split.getSerializer().serialize(pair);
                 v.set(new BytesWritable(crushed));
 
                 numRead++;
@@ -118,7 +116,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
     public static class ElephantInputSplit implements InputSplit {
         private String shardPath;
         private DomainSpec spec;
-        private KryoSerializer kryoBuf;
+        private Serializer serializer;
         private JobConf conf;
 
         public ElephantInputSplit() {
@@ -130,11 +128,11 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             this.conf = conf;
         }
         
-        public KryoSerializer getKryoBuffer() {
-            if (kryoBuf == null)
-                kryoBuf = Utils.makeKryoBuffer(spec);
+        public Serializer getSerializer() {
+            if (serializer == null)
+                serializer = Utils.makeSerializer(spec);
 
-            return kryoBuf;
+            return serializer;
         }
 
         // TODO: Store this result in a variable and use it to update the
