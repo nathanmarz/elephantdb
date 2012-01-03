@@ -1,7 +1,6 @@
 package elephantdb.partition;
 
 import elephantdb.Utils;
-import elephantdb.serialize.KryoSerializer;
 import elephantdb.serialize.SerializationWrapper;
 import elephantdb.serialize.Serializer;
 

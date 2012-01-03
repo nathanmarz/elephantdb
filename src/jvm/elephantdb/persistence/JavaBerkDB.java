@@ -35,6 +35,8 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
     }
 
     public Persistence createPersistence(String root, Map options) throws IOException {
+        LOG.info("Still good at this point." + root);
+        LOG.info("SERIALIZER: " + getSerializer());
         return new JavaBerkDBPersistence(root, getSerializer(), options, false);
     }
 

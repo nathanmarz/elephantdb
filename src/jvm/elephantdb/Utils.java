@@ -15,7 +15,6 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.Map;
 
 public class Utils {
@@ -164,9 +163,8 @@ public class Utils {
      */
     public static void prepSerializationWrapper(SerializationWrapper wrapper, DomainSpec spec) {
         KryoSerializer buf = (KryoSerializer) wrapper.getSerializer();
-        List<List<String>> pairs = buf.getKryoPairs();
 
-        if (pairs != spec.getKryoPairs())
+        if (buf == null || buf.getKryoPairs() != spec.getKryoPairs())
             wrapper.setSerializer(makeSerializer(spec));
     }
 }

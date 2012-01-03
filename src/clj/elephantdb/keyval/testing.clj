@@ -6,9 +6,11 @@
             [elephantdb.keyval.core :as kv]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.shard :as shard]
+            [elephantdb.common.domain :as dom]
             [elephantdb.common.database :as db]
             [elephantdb.common.config :as conf])
-  (:import [elephantdb Utils]
+  (:import [elephantdb Utils DomainSpec]
+           [elephantdb.partition HashModScheme]
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
            [elephantdb.store DomainStore]
@@ -45,7 +47,7 @@
   "Accepts a sequence of kv-pairs and indexes each into an existing
   persistence at the supplied path."
   [coordinator path & kv-pairs]
-  (with-open [db (.openPersistenceForAppend coordinator t {})]
+  (with-open [db (.openPersistenceForAppend coordinator path {})]
     (doseq [[k v] kv-pairs]
       (index db k v))))
 
@@ -60,7 +62,7 @@
 ;; bind this to get different behavior when making sharded domains.
 ;; TODO: Remove first arg from key->shard.
 (def ^:dynamic test-key->shard
-  (partial shard/key->shard "testdomain"))
+  (partial dom/key->shard "testdomain"))
 
 (defn mk-elephant-writer
   [shards coordinator output-dir tmpdir & {:keys [indexer update-dir]}]
@@ -130,7 +132,7 @@
 
 (defn mk-service-handler
   [global-config localdir host->shards]
-  (binding [shard/compute-host->shards (if host-to-shards
+  (binding [shard/compute-host->shards (if host->shards
                                          (constantly host->shards)
                                          shard/compute-host->shards)]
     (let [handler (db/build-database
@@ -153,11 +155,11 @@
                            ~pathsym
                            ~coordinator
                            ~shardmap)
-     (binding [shard/key->shard (let [rev# (reverse-pre-sharded ~shardmap)]
-                                  (fn [d# k# a#]
-                                    (if (= d# ~dname)
-                                      (rev# k#)
-                                      (shard/key->shard d# k# a#))))]
+     (binding [dom/key->shard (let [rev# (reverse-pre-sharded ~shardmap)]
+                                (fn [d# k# a#]
+                                  (if (= d# ~dname)
+                                    (rev# k#)
+                                    (dom/key->shard d# k# a#))))]
        ~@body)))
 
 (defmacro with-service-handler
@@ -237,8 +239,6 @@
               fresh))))))
 
 ;; ## Type Versions
-;;
-;; TODO -- convert to KeyValPersistence
 
 (deftype MemoryPersistence [state]
   KeyValPersistence
@@ -270,5 +270,10 @@
 
 (defn memory-spec [shard-count]
   (DomainSpec. (MemoryCoordinator. (atom {}))
+               (HashModScheme.)
+               shard-count))
+
+(defn berkeley-spec [shard-count]
+  (DomainSpec. (elephantdb.persistence.JavaBerkDB.)
                (HashModScheme.)
                shard-count))

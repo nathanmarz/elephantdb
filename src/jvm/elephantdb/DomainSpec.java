@@ -2,6 +2,7 @@ package elephantdb;
 
 import elephantdb.partition.ShardingScheme;
 import elephantdb.persistence.Coordinator;
+import elephantdb.serialize.SerializationWrapper;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -31,11 +32,11 @@ public class DomainSpec implements Writable, Serializable {
         public Map persistenceOptions = new HashMap();
     }
 
-    Args _optionalArgs;
+    Args optionalArgs;
 
-    private int _numShards;
-    private Coordinator _coordinator;
-    private ShardingScheme _shardingScheme;
+    private int numShards;
+    private Coordinator coordinator;
+    private ShardingScheme shardingScheme;
 
     public DomainSpec() {
     }
@@ -68,30 +69,37 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public DomainSpec(Coordinator coordinator, ShardingScheme shardingScheme, int numShards, Args args) {
-        this._numShards = numShards;
-        this._coordinator = coordinator;
-        this._shardingScheme = shardingScheme;
-        this._optionalArgs = args;
+        this.numShards = numShards;
+        this.coordinator = coordinator;
+        this.shardingScheme = shardingScheme;
+        this.optionalArgs = args;
     }
 
     public int getNumShards() {
-        return _numShards;
+        return numShards;
     }
 
     public List<List<String>> getKryoPairs() {
-        return _optionalArgs.kryoPairs;
+        return optionalArgs.kryoPairs;
     }
 
     public Map getPersistenceOptions() {
-        return _optionalArgs.persistenceOptions;
+        return optionalArgs.persistenceOptions;
     }
 
     public Coordinator getCoordinator() {
-        return _coordinator;
+        if (coordinator instanceof SerializationWrapper) {
+            Utils.prepSerializationWrapper((SerializationWrapper) coordinator, this);
+        }
+
+        return coordinator;
     }
 
     public ShardingScheme getShardScheme() {
-        return _shardingScheme;
+        if (shardingScheme instanceof SerializationWrapper)
+            Utils.prepSerializationWrapper((SerializationWrapper) shardingScheme, this);
+
+        return shardingScheme;
     }
 
     @Override public String toString() {
@@ -147,9 +155,9 @@ public class DomainSpec implements Writable, Serializable {
 
     private Map<String, Object> mapify() {
         Map<String, Object> spec = new HashMap<String, Object>();
-        spec.put(LOCAL_PERSISTENCE_CONF, _coordinator.getClass().getName());
-        spec.put(SHARD_SCHEME_CONF, _shardingScheme.getClass().getName());
-        spec.put(NUM_SHARDS_CONF, _numShards);
+        spec.put(LOCAL_PERSISTENCE_CONF, coordinator.getClass().getName());
+        spec.put(SHARD_SCHEME_CONF, shardingScheme.getClass().getName());
+        spec.put(NUM_SHARDS_CONF, numShards);
         spec.put(KRYO_PAIRS, getKryoPairs());
         spec.put(PERSISTENCE_OPTS, getPersistenceOptions());
         return spec;
@@ -169,9 +177,9 @@ public class DomainSpec implements Writable, Serializable {
 
     public void readFields(DataInput di) throws IOException {
         DomainSpec spec = parseFromMap((Map<String, Object>) YAML.load(WritableUtils.readString(di)));
-        this._numShards = spec._numShards;
-        this._coordinator = spec._coordinator;
-        this._shardingScheme = spec._shardingScheme;
-        this._optionalArgs = spec._optionalArgs;
+        this.numShards = spec.numShards;
+        this.coordinator = spec.coordinator;
+        this.shardingScheme = spec.shardingScheme;
+        this.optionalArgs = spec.optionalArgs;
     }
 }

@@ -1,9 +1,7 @@
 package elephantdb.persistence;
 
 import elephantdb.DomainSpec;
-import elephantdb.Utils;
 import elephantdb.partition.ShardingScheme;
-import elephantdb.serialize.SerializationWrapper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -24,21 +22,11 @@ public class ShardSetImpl implements ShardSet {
     }
 
     public Coordinator getCoordinator() {
-        Coordinator coord = spec.getCoordinator();
-
-        if (coord instanceof SerializationWrapper)
-            Utils.prepSerializationWrapper((SerializationWrapper) coord, spec);
-
-        return coord;
+        return spec.getCoordinator();
     }
 
     public ShardingScheme getShardScheme() {
-        ShardingScheme shardScheme = spec.getShardScheme();
-
-        if (shardScheme instanceof SerializationWrapper)
-            Utils.prepSerializationWrapper((SerializationWrapper) shardScheme, spec);
-
-        return shardScheme;
+        return spec.getShardScheme();
     }
 
     public Map getPersistenceOptions() {

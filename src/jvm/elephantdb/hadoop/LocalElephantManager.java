@@ -25,9 +25,7 @@ public class LocalElephantManager {
         if (res.length == 0) {
             ret.add("/tmp");
         } else {
-            for (String s : res) {
-                ret.add(s);
-            }
+            Collections.addAll(ret, res);
         }
         return ret;
     }
@@ -49,16 +47,20 @@ public class LocalElephantManager {
     /**
      * Creates a temporary directory, downloads the remotePath (tied to the FS), and returns it. If
      * remotePath is null or doesn't exist, creates an empty local elephant and closes it.
+     * @param id
+     * @param remotePath
+     * @return
+     * @throws java.io.IOException
      */
     public String downloadRemoteShard(String id, String remotePath) throws IOException {
-        Coordinator fact = spec.getCoordinator();
+        Coordinator coord = spec.getCoordinator();
         String returnDir = localTmpDir(id);
         if (remotePath == null || !fs.exists(new Path(remotePath))) {
-            fact.createPersistence(returnDir, persistenceOptions).close();
+            coord.createPersistence(returnDir, persistenceOptions).close();
         } else {
             fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
             Collection<File> crcs =
-                FileUtils.listFiles(new File(returnDir), new String[]{"crc"}, true);
+                    FileUtils.listFiles(new File(returnDir), new String[]{"crc"}, true);
             for (File crc : crcs) {
                 FileUtils.forceDelete(crc);
             }

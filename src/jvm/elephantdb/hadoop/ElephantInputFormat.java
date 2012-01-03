@@ -4,7 +4,6 @@ import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.document.Document;
 import elephantdb.persistence.CloseableIterator;
-import elephantdb.serialize.KryoSerializer;
 import elephantdb.persistence.Persistence;
 import elephantdb.serialize.Serializer;
 import elephantdb.store.DomainStore;

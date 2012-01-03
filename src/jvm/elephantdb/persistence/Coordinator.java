@@ -1,6 +1,7 @@
 package elephantdb.persistence;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -8,7 +9,7 @@ import java.util.Map;
  * Date: 12/16/11
  * Time: 1:37 PM
  */
-public interface Coordinator {
+public interface Coordinator extends Serializable {
     Persistence openPersistenceForRead(String root, Map options) throws IOException;
     Persistence openPersistenceForAppend(String root, Map options) throws IOException;
     Persistence createPersistence(String root, Map options) throws IOException;

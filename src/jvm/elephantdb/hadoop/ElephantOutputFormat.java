@@ -6,7 +6,6 @@ import elephantdb.document.Document;
 import elephantdb.index.IdentityIndexer;
 import elephantdb.index.Indexer;
 import elephantdb.persistence.Coordinator;
-import elephantdb.serialize.KryoSerializer;
 import elephantdb.persistence.Persistence;
 import elephantdb.serialize.Serializer;
 import org.apache.hadoop.conf.Configuration;
@@ -74,9 +73,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
 
         private String remoteUpdateDirForShard(int shard) {
-            if (args.updateDirHdfs == null) { return null; } else {
-                return args.updateDirHdfs + "/" + shard;
-            }
+            return (args.updateDirHdfs == null)? null : args.updateDirHdfs + "/" + shard;
         }
         
         private Persistence retrieveShard(int shardIdx) throws IOException {

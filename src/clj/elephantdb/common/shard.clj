@@ -17,7 +17,7 @@
 (defn compute-host->shards
   "Returns a map of host-> shard set. For example:
 
-  (compute-host->shards 5 [\"a\" \"b\"] 1)
+  (compute-host->shards [\"a\" \"b\"] 5 1)
   ;=> {\"b\" #{1 3}, \"a\" #{0 2 4}}"
   [hosts shard-count replication]
   (u/safe-assert (>= (count hosts) replication)
