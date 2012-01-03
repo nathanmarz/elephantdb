@@ -74,8 +74,7 @@
   (merge (zipmap [:get :getInt :getLong :getString]
                  (repeat get-fn))
          (zipmap [:multiGetInt :multiGetLong :multiGetString]
-                 (repeat get-fn))))
-
+                 (repeat multiget-fn))))
 
 (extend db/Database
   ElephantDB$Iface
