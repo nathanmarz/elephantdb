@@ -239,7 +239,7 @@
   "Transfers the supplied shard (specified by `idx`) from the supplied
   remote version's remote store to the appropriate path on the local
   store."
-  [{:keys [local-store remote-store]} version idx]
+  [{:keys [local-store remote-store throttle]} version idx]
   (let [remote-fs   (.getFileSystem remote-store)
         remote-path (.shardPath remote-store idx version)
         local-path  (.shardPath local-store idx version)]
@@ -247,7 +247,7 @@
       (do (log/info
            (format "Copied %s to %s." remote-path local-path))
           (transfer/rcopy remote-fs remote-path local-path
-                        :throttle throttle)
+                          :throttle throttle)
           (log/info
            (format "Copied %s to %s." remote-path local-path)))
       (do (log/info
@@ -258,8 +258,8 @@
   "Transfers the supplied version from the domain's remote store to
   its local store. To throttle the download, provide a throttling
   agent with the optional `:throttle` keyword argument."
-  [domain version & {:keys [throttle]}]
-  (let [{:keys [local-store remote-store]} domain]
+  [domain version]
+  (let [{:keys [local-store remote-store throttle]} domain]
     (.createVersion local-store version)
     (u/do-pmap (partial transfer-shard! domain version)
                (shard-set domain))
@@ -285,23 +285,21 @@
    :version - try to update to some version other than the most recent
   on the remote store."
   [{:keys [remote-store] :as domain}
-   & {:keys [throttle version]
+   & {:keys [version]
       :or {version (.mostRecentVersion remote-store)}}]
   (when (transfer-possible? domain version)
     (status/to-loading domain)
-    (transfer-version! domain version :throttle throttle)
+    (transfer-version! domain version)
     (load-version! version)
     (status/to-ready domain)))
 
 (defn attempt-update!
   "If the supplied domain isn't currently updating, returns a future
   containing a triggered update computation."
-  [domain & {:keys [throttle version]}]
+  [domain & {:keys [version]}]
   (if (updating? domain)
     (log/info "UPDATER - Not updating as update's still in progress.")
-    (future (update-domain! domain
-                            :throttle throttle
-                            :version version))))
+    (future (update-domain! domain :version version))))
 
 ;; ### Sharding Logic
 ;;
@@ -333,3 +331,47 @@
   (shard/prioritize-hosts shard-index
                           (key->shard domain key)
                           #{hostname}))
+
+
+(defn memory-persistence []
+  (let [state (atom {})]
+    (reify Persistence
+      (index [this doc]
+        (swap! state assoc (.key doc) (.val doc)))
+      (iterator [this]
+        (map (fn [[k v]] (KeyValDocument. k v))
+             @state))
+      (close [_]))))
+
+(defn memory-coordinator []
+  (let [state (atom {})]
+    (reify Coordinator
+      (openPersistenceForRead [this root opts]
+        (or (get @state root)
+            (let [fresh (memory-persistence)]
+              (swap! state assoc root fresh)
+              fresh))))))
+
+;; ## Type Versions
+;;
+;; TODO -- convert to KeyValPersistence
+
+(deftype MemoryPersistence [state]
+  Persistence
+  (index [{:keys [state]} doc]
+    (swap! state assoc (.key doc) (.val doc)))
+  (iterator [{:keys [state]}]
+    (map (fn [[k v]] (KeyValDocument. k v))
+         @state))
+  (close [_]))
+
+(deftype MemoryCoordinator [state]
+  Coordinator
+  (openPersistenceForRead
+    [{:keys [state]} root opts]
+    (or (get @state root)
+        (let [fresh (memory-persistence)]
+          (swap! state assoc root fresh)
+          fresh))))
+
+
