@@ -59,7 +59,7 @@ exception WrongHostException {
 
 struct KryoRegistration {
   1: required string className;
-  1: optional string serializerName;
+  2: optional string serializerName;
 }
 
 // This interface will allow java clients to send kryo-serialized
@@ -67,7 +67,7 @@ struct KryoRegistration {
 
 service KryoDB {
   list<KryoRegistration> getRegistrations();
-  Value kryoGet(1: string domain, 2: binary key)
+  Value kryoGet(1: string domain, 2: binary key);
 }
 
 service ElephantDBShared {
@@ -112,9 +112,9 @@ service ElephantDBSet extends ElephantDBShared {
 
   bool member(1: string domain, 2: string setKey, 3: string member); // member?
   bool members(1: string domain, 2: string setKey); // returns all members
-  list<string> diff(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
-  list<string> union(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
-  list<string> intersection(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
+  list<string> setDiff(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
+  list<string> setUnion(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
+  list<string> setIntersection(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
   i64 size(1: string domain, 2: string key);
 
   list<Value> multiMember(1: string domain, 2: string setKey, 3: list<string> setVals);
@@ -129,7 +129,7 @@ service ElephantDBList extends ElephantDBShared {
 
   i32 length(1: string domain, 2: string key);
   i32 numChunks(1: string domain, 2: string key)  
-  list<Value> getChunk(1: string domain, 2: string key, i32 chunkIdx);
+  list<Value> getChunk(1: string domain, 2: string key, 3: i32 chunkIdx);
   Value index(1: string domain, 2: string key, 3: i32 idx); // get item at index
   list<Value> range(1: string domain, 2: string key, 3: i32 startIdx, 4: i32 endIdx);
   list<Value> take(1: string domain, 2: string key, 3: i32 elems); // redundant with range.

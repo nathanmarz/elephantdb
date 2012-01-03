@@ -1,3 +1,5 @@
+#!/bin/bash
+
 rm -rf gen-javabean
 rm -rf src/py/genpy
 rm -rf gen-py

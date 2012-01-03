@@ -5,7 +5,8 @@
 #
 
 from thrift.Thrift import *
-
+from ttypes import *
+from thrift.Thrift import TProcessor
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
 try:
@@ -14,446 +15,343 @@ except:
   fastbinary = None
 
 
+class Iface:
+  def getDomainStatus(self, domain):
+    """
+    Parameters:
+     - domain
+    """
+    pass
 
-class Value:
-  """
-  Attributes:
-   - data
-  """
+  def getDomains(self, ):
+    pass
 
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'data', None, None, ), # 1
-  )
+  def getStatus(self, ):
+    pass
 
-  def __init__(self, data=None,):
-    self.data = data
+  def isFullyLoaded(self, ):
+    pass
 
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+  def isUpdating(self, ):
+    pass
+
+  def update(self, domain):
+    """
+    Parameters:
+     - domain
+    """
+    pass
+
+  def updateAll(self, ):
+    pass
+
+
+class Client(Iface):
+  def __init__(self, iprot, oprot=None):
+    self._iprot = self._oprot = iprot
+    if oprot is not None:
+      self._oprot = oprot
+    self._seqid = 0
+
+  def getDomainStatus(self, domain):
+    """
+    Parameters:
+     - domain
+    """
+    self.send_getDomainStatus(domain)
+    return self.recv_getDomainStatus()
+
+  def send_getDomainStatus(self, domain):
+    self._oprot.writeMessageBegin('getDomainStatus', TMessageType.CALL, self._seqid)
+    args = getDomainStatus_args()
+    args.domain = domain
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getDomainStatus(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = getDomainStatus_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getDomainStatus failed: unknown result");
+
+  def getDomains(self, ):
+    self.send_getDomains()
+    return self.recv_getDomains()
+
+  def send_getDomains(self, ):
+    self._oprot.writeMessageBegin('getDomains', TMessageType.CALL, self._seqid)
+    args = getDomains_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getDomains(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = getDomains_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getDomains failed: unknown result");
+
+  def getStatus(self, ):
+    self.send_getStatus()
+    return self.recv_getStatus()
+
+  def send_getStatus(self, ):
+    self._oprot.writeMessageBegin('getStatus', TMessageType.CALL, self._seqid)
+    args = getStatus_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getStatus(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = getStatus_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getStatus failed: unknown result");
+
+  def isFullyLoaded(self, ):
+    self.send_isFullyLoaded()
+    return self.recv_isFullyLoaded()
+
+  def send_isFullyLoaded(self, ):
+    self._oprot.writeMessageBegin('isFullyLoaded', TMessageType.CALL, self._seqid)
+    args = isFullyLoaded_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_isFullyLoaded(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = isFullyLoaded_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "isFullyLoaded failed: unknown result");
+
+  def isUpdating(self, ):
+    self.send_isUpdating()
+    return self.recv_isUpdating()
+
+  def send_isUpdating(self, ):
+    self._oprot.writeMessageBegin('isUpdating', TMessageType.CALL, self._seqid)
+    args = isUpdating_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_isUpdating(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = isUpdating_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "isUpdating failed: unknown result");
+
+  def update(self, domain):
+    """
+    Parameters:
+     - domain
+    """
+    self.send_update(domain)
+    return self.recv_update()
+
+  def send_update(self, domain):
+    self._oprot.writeMessageBegin('update', TMessageType.CALL, self._seqid)
+    args = update_args()
+    args.domain = domain
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_update(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = update_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "update failed: unknown result");
+
+  def updateAll(self, ):
+    self.send_updateAll()
+    return self.recv_updateAll()
+
+  def send_updateAll(self, ):
+    self._oprot.writeMessageBegin('updateAll', TMessageType.CALL, self._seqid)
+    args = updateAll_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_updateAll(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = updateAll_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.ice is not None:
+      raise result.ice
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "updateAll failed: unknown result");
+
+
+class Processor(Iface, TProcessor):
+  def __init__(self, handler):
+    self._handler = handler
+    self._processMap = {}
+    self._processMap["getDomainStatus"] = Processor.process_getDomainStatus
+    self._processMap["getDomains"] = Processor.process_getDomains
+    self._processMap["getStatus"] = Processor.process_getStatus
+    self._processMap["isFullyLoaded"] = Processor.process_isFullyLoaded
+    self._processMap["isUpdating"] = Processor.process_isUpdating
+    self._processMap["update"] = Processor.process_update
+    self._processMap["updateAll"] = Processor.process_updateAll
+
+  def process(self, iprot, oprot):
+    (name, type, seqid) = iprot.readMessageBegin()
+    if name not in self._processMap:
+      iprot.skip(TType.STRUCT)
+      iprot.readMessageEnd()
+      x = TApplicationException(TApplicationException.UNKNOWN_METHOD, 'Unknown function %s' % (name))
+      oprot.writeMessageBegin(name, TMessageType.EXCEPTION, seqid)
+      x.write(oprot)
+      oprot.writeMessageEnd()
+      oprot.trans.flush()
       return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRING:
-          self.data = iprot.readString();
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('Value')
-    if self.data is not None:
-      oprot.writeFieldBegin('data', TType.STRING, 1)
-      oprot.writeString(self.data)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class LoadingStatus:
-
-  thrift_spec = (
-  )
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('LoadingStatus')
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class ReadyStatus:
-  """
-  Attributes:
-   - update_status
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRUCT, 'update_status', (LoadingStatus, LoadingStatus.thrift_spec), None, ), # 1
-  )
-
-  def __init__(self, update_status=None,):
-    self.update_status = update_status
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRUCT:
-          self.update_status = LoadingStatus()
-          self.update_status.read(iprot)
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('ReadyStatus')
-    if self.update_status is not None:
-      oprot.writeFieldBegin('update_status', TType.STRUCT, 1)
-      self.update_status.write(oprot)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class FailedStatus:
-  """
-  Attributes:
-   - error_message
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'error_message', None, None, ), # 1
-  )
-
-  def __init__(self, error_message=None,):
-    self.error_message = error_message
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRING:
-          self.error_message = iprot.readString().decode('utf-8')
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('FailedStatus')
-    if self.error_message is not None:
-      oprot.writeFieldBegin('error_message', TType.STRING, 1)
-      oprot.writeString(self.error_message.encode('utf-8'))
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class ShutdownStatus:
-
-  thrift_spec = (
-  )
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('ShutdownStatus')
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class DomainStatus:
-  """
-  Attributes:
-   - ready
-   - loading
-   - failed
-   - shutdown
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRUCT, 'ready', (ReadyStatus, ReadyStatus.thrift_spec), None, ), # 1
-    (2, TType.STRUCT, 'loading', (LoadingStatus, LoadingStatus.thrift_spec), None, ), # 2
-    (3, TType.STRUCT, 'failed', (FailedStatus, FailedStatus.thrift_spec), None, ), # 3
-    (4, TType.STRUCT, 'shutdown', (ShutdownStatus, ShutdownStatus.thrift_spec), None, ), # 4
-  )
-
-  def __init__(self, ready=None, loading=None, failed=None, shutdown=None,):
-    self.ready = ready
-    self.loading = loading
-    self.failed = failed
-    self.shutdown = shutdown
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRUCT:
-          self.ready = ReadyStatus()
-          self.ready.read(iprot)
-        else:
-          iprot.skip(ftype)
-      elif fid == 2:
-        if ftype == TType.STRUCT:
-          self.loading = LoadingStatus()
-          self.loading.read(iprot)
-        else:
-          iprot.skip(ftype)
-      elif fid == 3:
-        if ftype == TType.STRUCT:
-          self.failed = FailedStatus()
-          self.failed.read(iprot)
-        else:
-          iprot.skip(ftype)
-      elif fid == 4:
-        if ftype == TType.STRUCT:
-          self.shutdown = ShutdownStatus()
-          self.shutdown.read(iprot)
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('DomainStatus')
-    if self.ready is not None:
-      oprot.writeFieldBegin('ready', TType.STRUCT, 1)
-      self.ready.write(oprot)
-      oprot.writeFieldEnd()
-    if self.loading is not None:
-      oprot.writeFieldBegin('loading', TType.STRUCT, 2)
-      self.loading.write(oprot)
-      oprot.writeFieldEnd()
-    if self.failed is not None:
-      oprot.writeFieldBegin('failed', TType.STRUCT, 3)
-      self.failed.write(oprot)
-      oprot.writeFieldEnd()
-    if self.shutdown is not None:
-      oprot.writeFieldBegin('shutdown', TType.STRUCT, 4)
-      self.shutdown.write(oprot)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class Status:
-  """
-  Attributes:
-   - domain_statuses
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.MAP, 'domain_statuses', (TType.STRING,None,TType.STRUCT,(DomainStatus, DomainStatus.thrift_spec)), None, ), # 1
-  )
-
-  def __init__(self, domain_statuses=None,):
-    self.domain_statuses = domain_statuses
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.MAP:
-          self.domain_statuses = {}
-          (_ktype1, _vtype2, _size0 ) = iprot.readMapBegin() 
-          for _i4 in xrange(_size0):
-            _key5 = iprot.readString().decode('utf-8')
-            _val6 = DomainStatus()
-            _val6.read(iprot)
-            self.domain_statuses[_key5] = _val6
-          iprot.readMapEnd()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('Status')
-    if self.domain_statuses is not None:
-      oprot.writeFieldBegin('domain_statuses', TType.MAP, 1)
-      oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.domain_statuses))
-      for kiter7,viter8 in self.domain_statuses.items():
-        oprot.writeString(kiter7.encode('utf-8'))
-        viter8.write(oprot)
-      oprot.writeMapEnd()
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.domain_statuses is None:
-      raise TProtocol.TProtocolException(message='Required field domain_statuses is unset!')
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class DomainNotFoundException(Exception):
+    else:
+      self._processMap[name](self, seqid, iprot, oprot)
+    return True
+
+  def process_getDomainStatus(self, seqid, iprot, oprot):
+    args = getDomainStatus_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getDomainStatus_result()
+    result.success = self._handler.getDomainStatus(args.domain)
+    oprot.writeMessageBegin("getDomainStatus", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getDomains(self, seqid, iprot, oprot):
+    args = getDomains_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getDomains_result()
+    result.success = self._handler.getDomains()
+    oprot.writeMessageBegin("getDomains", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getStatus(self, seqid, iprot, oprot):
+    args = getStatus_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getStatus_result()
+    result.success = self._handler.getStatus()
+    oprot.writeMessageBegin("getStatus", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_isFullyLoaded(self, seqid, iprot, oprot):
+    args = isFullyLoaded_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = isFullyLoaded_result()
+    result.success = self._handler.isFullyLoaded()
+    oprot.writeMessageBegin("isFullyLoaded", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_isUpdating(self, seqid, iprot, oprot):
+    args = isUpdating_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = isUpdating_result()
+    result.success = self._handler.isUpdating()
+    oprot.writeMessageBegin("isUpdating", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_update(self, seqid, iprot, oprot):
+    args = update_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = update_result()
+    result.success = self._handler.update(args.domain)
+    oprot.writeMessageBegin("update", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_updateAll(self, seqid, iprot, oprot):
+    args = updateAll_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = updateAll_result()
+    try:
+      result.success = self._handler.updateAll()
+    except InvalidConfigurationException, ice:
+      result.ice = ice
+    oprot.writeMessageBegin("updateAll", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+
+# HELPER FUNCTIONS AND STRUCTURES
+
+class getDomainStatus_args:
   """
   Attributes:
    - domain
@@ -490,7 +388,7 @@ class DomainNotFoundException(Exception):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('DomainNotFoundException')
+    oprot.writeStructBegin('getDomainStatus_args')
     if self.domain is not None:
       oprot.writeFieldBegin('domain', TType.STRING, 1)
       oprot.writeString(self.domain.encode('utf-8'))
@@ -499,13 +397,8 @@ class DomainNotFoundException(Exception):
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.domain is None:
-      raise TProtocol.TProtocolException(message='Required field domain is unset!')
     return
 
-
-  def __str__(self):
-    return repr(self)
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -518,7 +411,480 @@ class DomainNotFoundException(Exception):
   def __ne__(self, other):
     return not (self == other)
 
-class DomainNotLoadedException(Exception):
+class getDomainStatus_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (DomainStatus, DomainStatus.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRUCT:
+          self.success = DomainStatus()
+          self.success.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getDomainStatus_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getDomains_args:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getDomains_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getDomains_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRING,None), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype33, _size30) = iprot.readListBegin()
+          for _i34 in xrange(_size30):
+            _elem35 = iprot.readString().decode('utf-8')
+            self.success.append(_elem35)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getDomains_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRING, len(self.success))
+      for iter36 in self.success:
+        oprot.writeString(iter36.encode('utf-8'))
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getStatus_args:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getStatus_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getStatus_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (Status, Status.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRUCT:
+          self.success = Status()
+          self.success.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getStatus_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class isFullyLoaded_args:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('isFullyLoaded_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class isFullyLoaded_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('isFullyLoaded_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class isUpdating_args:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('isUpdating_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class isUpdating_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('isUpdating_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class update_args:
   """
   Attributes:
    - domain
@@ -555,7 +921,7 @@ class DomainNotLoadedException(Exception):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('DomainNotLoadedException')
+    oprot.writeStructBegin('update_args')
     if self.domain is not None:
       oprot.writeFieldBegin('domain', TType.STRING, 1)
       oprot.writeString(self.domain.encode('utf-8'))
@@ -564,13 +930,8 @@ class DomainNotLoadedException(Exception):
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.domain is None:
-      raise TProtocol.TProtocolException(message='Required field domain is unset!')
     return
 
-
-  def __str__(self):
-    return repr(self)
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -583,19 +944,18 @@ class DomainNotLoadedException(Exception):
   def __ne__(self, other):
     return not (self == other)
 
-class HostsDownException(Exception):
+class update_result:
   """
   Attributes:
-   - hosts
+   - success
   """
 
   thrift_spec = (
-    None, # 0
-    (1, TType.LIST, 'hosts', (TType.STRING,None), None, ), # 1
+    (0, TType.BOOL, 'success', None, None, ), # 0
   )
 
-  def __init__(self, hosts=None,):
-    self.hosts = hosts
+  def __init__(self, success=None,):
+    self.success = success
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -606,103 +966,9 @@ class HostsDownException(Exception):
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
-      if fid == 1:
-        if ftype == TType.LIST:
-          self.hosts = []
-          (_etype12, _size9) = iprot.readListBegin()
-          for _i13 in xrange(_size9):
-            _elem14 = iprot.readString().decode('utf-8')
-            self.hosts.append(_elem14)
-          iprot.readListEnd()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('HostsDownException')
-    if self.hosts is not None:
-      oprot.writeFieldBegin('hosts', TType.LIST, 1)
-      oprot.writeListBegin(TType.STRING, len(self.hosts))
-      for iter15 in self.hosts:
-        oprot.writeString(iter15.encode('utf-8'))
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.hosts is None:
-      raise TProtocol.TProtocolException(message='Required field hosts is unset!')
-    return
-
-
-  def __str__(self):
-    return repr(self)
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class InvalidConfigurationException(Exception):
-  """
-  Attributes:
-   - mismatched_domains
-   - port_changed
-   - hosts_changed
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.LIST, 'mismatched_domains', (TType.STRING,None), None, ), # 1
-    (2, TType.BOOL, 'port_changed', None, None, ), # 2
-    (3, TType.BOOL, 'hosts_changed', None, None, ), # 3
-  )
-
-  def __init__(self, mismatched_domains=None, port_changed=None, hosts_changed=None,):
-    self.mismatched_domains = mismatched_domains
-    self.port_changed = port_changed
-    self.hosts_changed = hosts_changed
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.LIST:
-          self.mismatched_domains = []
-          (_etype19, _size16) = iprot.readListBegin()
-          for _i20 in xrange(_size16):
-            _elem21 = iprot.readString().decode('utf-8')
-            self.mismatched_domains.append(_elem21)
-          iprot.readListEnd()
-        else:
-          iprot.skip(ftype)
-      elif fid == 2:
+      if fid == 0:
         if ftype == TType.BOOL:
-          self.port_changed = iprot.readBool();
-        else:
-          iprot.skip(ftype)
-      elif fid == 3:
-        if ftype == TType.BOOL:
-          self.hosts_changed = iprot.readBool();
+          self.success = iprot.readBool();
         else:
           iprot.skip(ftype)
       else:
@@ -714,37 +980,17 @@ class InvalidConfigurationException(Exception):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('InvalidConfigurationException')
-    if self.mismatched_domains is not None:
-      oprot.writeFieldBegin('mismatched_domains', TType.LIST, 1)
-      oprot.writeListBegin(TType.STRING, len(self.mismatched_domains))
-      for iter22 in self.mismatched_domains:
-        oprot.writeString(iter22.encode('utf-8'))
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
-    if self.port_changed is not None:
-      oprot.writeFieldBegin('port_changed', TType.BOOL, 2)
-      oprot.writeBool(self.port_changed)
-      oprot.writeFieldEnd()
-    if self.hosts_changed is not None:
-      oprot.writeFieldBegin('hosts_changed', TType.BOOL, 3)
-      oprot.writeBool(self.hosts_changed)
+    oprot.writeStructBegin('update_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.mismatched_domains is None:
-      raise TProtocol.TProtocolException(message='Required field mismatched_domains is unset!')
-    if self.port_changed is None:
-      raise TProtocol.TProtocolException(message='Required field port_changed is unset!')
-    if self.hosts_changed is None:
-      raise TProtocol.TProtocolException(message='Required field hosts_changed is unset!')
     return
 
-
-  def __str__(self):
-    return repr(self)
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -757,7 +1003,7 @@ class InvalidConfigurationException(Exception):
   def __ne__(self, other):
     return not (self == other)
 
-class WrongHostException(Exception):
+class updateAll_args:
 
   thrift_spec = (
   )
@@ -780,16 +1026,13 @@ class WrongHostException(Exception):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('WrongHostException')
+    oprot.writeStructBegin('updateAll_args')
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
     return
 
-
-  def __str__(self):
-    return repr(self)
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -802,22 +1045,21 @@ class WrongHostException(Exception):
   def __ne__(self, other):
     return not (self == other)
 
-class KryoRegistration:
+class updateAll_result:
   """
   Attributes:
-   - className
-   - serializerName
+   - success
+   - ice
   """
 
   thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'className', None, None, ), # 1
-    (2, TType.STRING, 'serializerName', None, None, ), # 2
+    (0, TType.BOOL, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'ice', (InvalidConfigurationException, InvalidConfigurationException.thrift_spec), None, ), # 1
   )
 
-  def __init__(self, className=None, serializerName=None,):
-    self.className = className
-    self.serializerName = serializerName
+  def __init__(self, success=None, ice=None,):
+    self.success = success
+    self.ice = ice
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -828,14 +1070,15 @@ class KryoRegistration:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
-      if fid == 1:
-        if ftype == TType.STRING:
-          self.className = iprot.readString().decode('utf-8')
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool();
         else:
           iprot.skip(ftype)
-      elif fid == 2:
-        if ftype == TType.STRING:
-          self.serializerName = iprot.readString().decode('utf-8')
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.ice = InvalidConfigurationException()
+          self.ice.read(iprot)
         else:
           iprot.skip(ftype)
       else:
@@ -847,21 +1090,19 @@ class KryoRegistration:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('KryoRegistration')
-    if self.className is not None:
-      oprot.writeFieldBegin('className', TType.STRING, 1)
-      oprot.writeString(self.className.encode('utf-8'))
+    oprot.writeStructBegin('updateAll_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
       oprot.writeFieldEnd()
-    if self.serializerName is not None:
-      oprot.writeFieldBegin('serializerName', TType.STRING, 2)
-      oprot.writeString(self.serializerName.encode('utf-8'))
+    if self.ice is not None:
+      oprot.writeFieldBegin('ice', TType.STRUCT, 1)
+      self.ice.write(oprot)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.className is None:
-      raise TProtocol.TProtocolException(message='Required field className is unset!')
     return
 
 
