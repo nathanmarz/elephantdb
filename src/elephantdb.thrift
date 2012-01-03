@@ -57,6 +57,16 @@ exception InvalidConfigurationException {
 exception WrongHostException {
 }
 
+struct KryoRegistration {
+  1: required string className;
+  1: optional string serializerName;
+}
+
+service KryoDB {
+  list<KryoRegistration> getRegistrations();
+  Value kryoGet(1: string domain, 2: binary key)
+}
+
 service ElephantDBShared {
   DomainStatus getDomainStatus(1: string domain);
   list<string> getDomains();
