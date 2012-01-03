@@ -4,12 +4,14 @@
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
+            [elephantdb.common.status :as status]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom])
   (:import [org.apache.thrift7.protocol TBinaryProtocol]
            [org.apache.thrift7.transport TTransport]
            [org.apache.thrift7 TException]
+           [elephantdb.persistence Shutdownable]
            [elephantdb.common.database Database]
            [elephantdb.generated ElephantDB$Client Value
             ElephantDBShared$Iface ElephantDB$Iface
@@ -71,30 +73,21 @@
            indexed-keys
            vals))))
 
+;; TODO: Fix this with a macro that lets us specify these behaviours
+;; by default, but replace as necessary.
+
+(defmacro defservice []
+  "Something like this.")
+
 (defn kv-service [conf-map]
   (let [database (db/build-database conf-map)]
-    (reify ElephantDB$Iface
-      (multiGetInt [this domain key-seq]
-        (.multiGet this domain key-seq))
+    (reify db/Preparable
+      (prepare [_] (db/prepare database))
 
-      (multiGetLong [this domain key-seq]
-        (.multiGet this domain key-seq))
+      Shutdownable
+      (shutdown [_] (.shutdown database))
 
-      (multiGetString [this domain key-seq]
-        (.multiGet this domain key-seq))
-      
-      (getInt [this domain key]
-        (.get this domain key))
-
-      (getLong [this domain key]
-        (.get this domain key))
-
-      (getString [this domain key]
-        (.get this domain key))
-
-      (get [this domain key]
-        (first (.multiGet this domain [key])))
-      
+      ElephantDB$Iface      
       (directMultiGet [_ domain-name keys]
         (thrift/assert-domain database domain-name)
         (try (let [domain (db/domain-get database domain-name)]
@@ -150,7 +143,65 @@
                                 (update-in m [:hosts]
                                            dom/trim-hosts (keys fail-map)))
                               (apply concat (vals fail-map)))
-                         results))))))))))
+                         results)))))))
+
+      (multiGetInt [this domain key-seq]
+        (.multiGet this domain key-seq))
+
+      (multiGetLong [this domain key-seq]
+        (.multiGet this domain key-seq))
+
+      (multiGetString [this domain key-seq]
+        (.multiGet this domain key-seq))
+
+      (get [this domain key]
+        (first (.multiGet this domain [key])))
+      
+      (getInt [this domain key]
+        (.get this domain key))
+
+      (getLong [this domain key]
+        (.get this domain key))
+
+      (getString [this domain key]
+        (.get this domain key))
+
+      (getDomainStatus [_ domain-name]
+        "Returns the thrift status of the supplied domain-name."
+        (thrift/assert-domain database domain-name)
+        (status/status
+         (db/domain-get database domain-name)))
+
+      (getDomains [_]
+        "Returns a sequence of all domain names being served."
+        (db/domain-names database))
+
+      (getStatus [_]
+        "Returns a map of domain-name->status for each domain."
+        (thrift/elephant-status
+         (u/update-vals (db/domain->status database)
+                        (fn [_ status] (thrift/to-thrift status)))))
+
+      (isFullyLoaded [_]
+        "Are all domains loaded properly?"
+        (db/fully-loaded? database))
+
+      (isUpdating [_]
+        "Is some domain currently updating?"
+        (db/some-updating? database))
+
+      (update [_ domain-name]
+        "If an update is available, updates the named domain and
+         hotswaps the new version."
+        (thrift/assert-domain database domain-name)
+        (u/with-ret true
+          (db/attempt-update! database domain-name)))
+
+      (updateAll [_]
+        "If an update is available on any domain, updates the domain's
+         shards from its remote store and hotswaps in the new versions."
+        (u/with-ret true
+          (db/update-all! database))))))
 
 ;; # Main Access
 ;;
@@ -172,6 +223,8 @@
   (log/configure-logging "log4j/log4j.properties")
   (let [local-config   (conf/read-local-config  local-config-path)
         global-config  (conf/read-global-config global-config-hdfs-path
-                                                local-config)]
-    (thrift/launch-database!
-     (db/build-database (merge global-config local-config)))))
+                                                local-config)
+        conf-map (merge global-config local-config)]
+    (thrift/launch-server! (kv-service conf-map)
+                           (:port conf-map)
+                           (:update-interval-s conf-map))))
