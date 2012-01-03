@@ -62,6 +62,9 @@ struct KryoRegistration {
   1: optional string serializerName;
 }
 
+// This interface will allow java clients to send kryo-serialized
+// keys over the wire and recieve 
+
 service KryoDB {
   list<KryoRegistration> getRegistrations();
   Value kryoGet(1: string domain, 2: binary key)

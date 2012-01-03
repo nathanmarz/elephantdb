@@ -1,11 +1,10 @@
 (ns elephantdb.keyval.testing
   (:use clojure.test
-        elephantdb.common.testing)
-  (:require [hadoop-util.core :as h]
-            [jackknife.core :as u]
-            [jackknife.logging :as log]
-            [elephantdb.keyval.service :as service]
-            [elephantdb.keyval.thrift :as thrift]
+        elephantdb.common.testing
+        [jackknife.logging :only (info)])
+  (:require [jackknife.core :as u]
+            [elephantdb.keyval.core :as kv]
+            [elephantdb.common.thrift :as thrift]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.database :as db]
             [elephantdb.common.config :as conf])
@@ -133,7 +132,7 @@
     (let [handler (db/build-database
                    (merge global-config (mk-local-config localdir)))]
       (while (not (.isFullyLoaded handler))
-        (log/info "waiting...")
+        (info "waiting...")
         (Thread/sleep 500))
       handler)))
 
@@ -180,7 +179,7 @@
           pairs (apply concat (vals (select-keys shards-to-pairs shards)))]
       (for [key keys]
         (if-let [myval (first (filter #(barr= key (first %)) pairs))]
-          (thrift/mk-value (second myval))
+          (kv/mk-value (second myval))
           (throw (thrift/wrong-host-ex)))))))
 
 (defmacro with-mocked-remote
