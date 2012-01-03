@@ -130,7 +130,7 @@
                   (TBinaryProtocol$Factory.)
                   options)))
 
-(defn launch-server!
+(defn launch-database!
   [{:keys [port options] :as database}]
   (let [{interval :update-interval-s} options
         server (thrift-server database port)]

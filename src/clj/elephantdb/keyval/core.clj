@@ -25,7 +25,6 @@
      (let [^ElephantDB$Client ~client-sym (kv-client conn#)]
        ~@body)))
 
-
 ;; ## Service Handler
 
 (defn try-multi-get
@@ -156,10 +155,8 @@
   `local-config-path`: the path to `local-config.clj` on this machine."
   [global-config-hdfs-path local-config-path]
   (log/configure-logging "log4j/log4j.properties")
-  (let [local-config   (read-local-config local-config-path)
+  (let [local-config   (read-local-config  local-config-path)
         global-config  (read-global-config global-config-hdfs-path
-                                           local-config)
-        database       (db/build-database
-                        (merge global-config local-config))]
-    
-    (launch-server! database)))
+                                           local-config)]
+    (thrift/launch-database!
+     (db/build-database (merge global-config local-config)))))
