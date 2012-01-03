@@ -5,7 +5,7 @@
   (:require [jackknife.core :as u]
             [jackknife.seq :as  seq]))
 
-(defn- host->shard-assigner
+(defn host->shard-assigner
   [[hosts hosts-to-shards] shard]
   (let [[host & hosts] (drop-while #(get-in hosts-to-shards
                                             [% shard])
