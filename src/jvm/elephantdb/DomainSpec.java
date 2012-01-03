@@ -20,9 +20,9 @@ import java.util.Map;
 public class DomainSpec implements Writable, Serializable {
     public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
 
-    private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
+    private static final String COORDINATOR_CONF = "coordinator";
     private static final String SHARD_SCHEME_CONF = "shard_scheme";
-    private static final String NUM_SHARDS_CONF = "num_shards";
+    private static final String SHARD_COUNT_CONF = "shard_count";
     private static final String KRYO_PAIRS = "kryo_pairs";
     private static final String PERSISTENCE_OPTS = "persistence_opts";
 
@@ -138,9 +138,9 @@ public class DomainSpec implements Writable, Serializable {
 
     @SuppressWarnings("unchecked")
     protected static DomainSpec parseFromMap(Map<String, Object> specmap) {
-        String persistenceConf = (String)specmap.get(LOCAL_PERSISTENCE_CONF);
+        String persistenceConf = (String)specmap.get(COORDINATOR_CONF);
         String shardSchemeConf = (String)specmap.get(SHARD_SCHEME_CONF);
-        int numShards = ((Long)specmap.get(NUM_SHARDS_CONF)).intValue();
+        int numShards = ((Long)specmap.get(SHARD_COUNT_CONF)).intValue();
 
         Args args = new Args();
         args.persistenceOptions = (Map) specmap.get(PERSISTENCE_OPTS);
@@ -155,9 +155,9 @@ public class DomainSpec implements Writable, Serializable {
 
     private Map<String, Object> mapify() {
         Map<String, Object> spec = new HashMap<String, Object>();
-        spec.put(LOCAL_PERSISTENCE_CONF, coordinator.getClass().getName());
+        spec.put(COORDINATOR_CONF, coordinator.getClass().getName());
         spec.put(SHARD_SCHEME_CONF, shardingScheme.getClass().getName());
-        spec.put(NUM_SHARDS_CONF, numShards);
+        spec.put(SHARD_COUNT_CONF, numShards);
         spec.put(KRYO_PAIRS, getKryoPairs());
         spec.put(PERSISTENCE_OPTS, getPersistenceOptions());
         return spec;
