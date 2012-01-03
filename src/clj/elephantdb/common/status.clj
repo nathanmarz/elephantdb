@@ -8,6 +8,9 @@
   (failed?  [_] "Have I failed?")
   (shutdown? [_] "Am I shutting down?"))
 
+(def updating?
+  (every-pred loading? ready?))
+
 (defprotocol IStateful
   (status [this] "Returns the current state object.")
   (to-ready [this] "Returns a new ready state.")
