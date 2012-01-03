@@ -23,7 +23,7 @@
   `elephantdb.generated.Value`."
   [val]
   (doto (Value.)
-    (.set_data val)))
+    (.set_data ^Value val)))
 
 ;; ## Thrift Connection
 

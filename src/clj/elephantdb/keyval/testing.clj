@@ -12,42 +12,48 @@
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
            [elephantdb.store DomainStore]
-           [elephantdb.persistence KeyValPersistence Coordinator]
+           [elephantdb.persistence Persistence KeyValPersistence Coordinator]
            [org.apache.hadoop.io IntWritable]
            [org.apache.hadoop.mapred JobConf]
-           [org.apache.thrift TException]
+           [org.apache.thrift7 TException]
            [elephantdb.document KeyValDocument]))
 
 ;; ## Key Value Testing
 ;;
 ;; I haven't fixed this (or any of the tests) up yet.
 
-(defn domain-data
-  "TODO: Destroy. This doesn't make sense anymore with the new
-  handling for objects."
-  [& key-val-pairs]
-  (map (fn [[k v]]
-         [(barr k) (when v (apply barr v))])
-       (partition 2 key-val-pairs)))
-
-(defn index [persistence key value]
+(defn index
+  "Sinks the supplied key-value pair into the supplied persistence."
+  [persistence key value]
   (.index persistence (KeyValDocument. key value)))
 
-(defn edb-get [persistence key]
+(defn edb-get
+  "Retrieves the supplied key from the supplied
+  persistence. Persistence must be open."
+  [persistence key]
   (.get persistence key))
 
-(defn get-all [persistence]
+(defn get-all
+  "Returns a sequence of all key-value pairs in the supplied
+  persistence."
+  [persistence]
   (doall
    (for [kv-pair (seq persistence)]
      [(.key kv-pair) (.value kv-pair)])))
 
-(defn append-pairs [coordinator t spec & kv-pairs]
-  (with-open [db (.openPersistenceForAppend coordinator t spec {})]
+(defn append-pairs
+  "Accepts a sequence of kv-pairs and indexes each into an existing
+  persistence at the supplied path."
+  [coordinator path & kv-pairs]
+  (with-open [db (.openPersistenceForAppend coordinator t {})]
     (doseq [[k v] kv-pairs]
       (index db k v))))
 
-(defn create-pairs [coordinator t spec & kv-pairs]
-  (with-open [db (.createPersistence coordinator t spec {})]
+(defn create-pairs
+  "Creates a persistence at the supplied path by indexing the supplied
+  tuples."
+  [coordinator path & kv-pairs]
+  (with-open [db (.createPersistence coordinator path {})]
     (doseq [[k v] kv-pairs]
       (index db k v))))
 
@@ -57,23 +63,20 @@
   (partial shard/key->shard "testdomain"))
 
 (defn mk-elephant-writer
-  [shards coordinator output-dir tmpdir & kargs]
-  (let [kargs (apply hash-map kargs)
-        args (ElephantOutputFormat$Args.
-              (conf/convert-clj-domain-spec
-               {:num-shards shards
-                :coordinator coordinator})
-              output-dir)]
-    (when-let [upd (:updater kargs)]
-      (set! (. args updater) upd))
-    (when-let [update-dir (:update-dir kargs)]
-      (set! (. args updateDirHdfs) update-dir))
+  [shards coordinator output-dir tmpdir & {:keys [indexer update-dir]}]
+  (let [args  (ElephantOutputFormat$Args.
+               (conf/convert-clj-domain-spec
+                {:num-shards shards
+                 :coordinator coordinator})
+               output-dir)]
+    (when indexer
+      (set! (.indexer args) indexer))
+    (when update-dir
+      (set! (.updateDirHdfs args) update-dir))
     (.getRecordWriter (ElephantOutputFormat.)
                       nil
-                      (doto
-                          (JobConf.)
-                        (Utils/setObject ElephantOutputFormat/ARGS_CONF
-                                         args)
+                      (doto (JobConf.)
+                        (Utils/setObject ElephantOutputFormat/ARGS_CONF args)
                         (LocalElephantManager/setTmpDirs [tmpdir]))
                       nil
                       nil)))
@@ -237,21 +240,35 @@
 ;;
 ;; TODO -- convert to KeyValPersistence
 
-(defrecord MemoryPersistence [state]
-  elephantdb.persistence.Persistence
-  (index [{:keys [state]} doc]
-    (swap! state assoc (.key doc) (.val doc)))
-  (iterator [{:keys [state]}]
+(deftype MemoryPersistence [state]
+  KeyValPersistence
+  (get [this k]
+    (get @(.state this) k))
+
+  (index [this doc]
+    (-> (.state this)
+        (swap! assoc (.key doc) (.value doc))))
+  (iterator [this]
     (map (fn [[k v]] (KeyValDocument. k v))
-         @state))
+         @(.state this)))
   (close [_]))
 
 (defrecord MemoryCoordinator [state]
-  elephantdb.persistence.Coordinator
-  (openPersistenceForRead
+  Coordinator
+  (createPersistence [this root opts]
+    (.openPersistenceForAppend this root opts))
+  
+  (openPersistenceForRead [this root opts]
+    (.openPersistenceForAppend this root opts))
+
+  (openPersistenceForAppend
     [{:keys [state] :as m} root opts]
-    (println (:state m))
     (or (get @state root)
         (let [fresh (MemoryPersistence. (atom {}))]
           (swap! state assoc root fresh)
           fresh))))
+
+(defn memory-spec [shard-count]
+  (DomainSpec. (MemoryCoordinator. (atom {}))
+               (HashModScheme.)
+               shard-count))
