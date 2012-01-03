@@ -13,7 +13,7 @@ from thrift.transport import TSocket
 from thrift.transport import THttpClient
 from thrift.protocol import TBinaryProtocol
 
-import ElephantDB
+import ElephantDBSet
 from ttypes import *
 
 if len(sys.argv) <= 1 or sys.argv[1] == '--help':
@@ -21,15 +21,13 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
-  print '  Value get(string domain, string key)'
-  print '  Value getString(string domain, string key)'
-  print '  Value getInt(string domain, i32 key)'
-  print '  Value getLong(string domain, i64 key)'
-  print '   multiGet(string domain,  key)'
-  print '   multiGetString(string domain,  key)'
-  print '   multiGetInt(string domain,  key)'
-  print '   multiGetLong(string domain,  key)'
-  print '   directMultiGet(string domain,  key)'
+  print '  bool member(string domain, string setKey, string member)'
+  print '  bool members(string domain, string setKey)'
+  print '   setDiff(string domain, string keyOne, string keyTwo)'
+  print '   setUnion(string domain, string keyOne, string keyTwo)'
+  print '   setIntersection(string domain, string keyOne, string keyTwo)'
+  print '  i64 size(string domain, string key)'
+  print '   multiMember(string domain, string setKey,  setVals)'
   print ''
   sys.exit(0)
 
@@ -77,62 +75,50 @@ else:
   else:
     transport = TTransport.TBufferedTransport(socket)
 protocol = TBinaryProtocol.TBinaryProtocol(transport)
-client = ElephantDB.Client(protocol)
+client = ElephantDBSet.Client(protocol)
 transport.open()
 
-if cmd == 'get':
-  if len(args) != 2:
-    print 'get requires 2 args'
+if cmd == 'member':
+  if len(args) != 3:
+    print 'member requires 3 args'
     sys.exit(1)
-  pp.pprint(client.get(args[0],args[1],))
+  pp.pprint(client.member(args[0],args[1],args[2],))
 
-elif cmd == 'getString':
+elif cmd == 'members':
   if len(args) != 2:
-    print 'getString requires 2 args'
+    print 'members requires 2 args'
     sys.exit(1)
-  pp.pprint(client.getString(args[0],args[1],))
+  pp.pprint(client.members(args[0],args[1],))
 
-elif cmd == 'getInt':
-  if len(args) != 2:
-    print 'getInt requires 2 args'
+elif cmd == 'setDiff':
+  if len(args) != 3:
+    print 'setDiff requires 3 args'
     sys.exit(1)
-  pp.pprint(client.getInt(args[0],eval(args[1]),))
+  pp.pprint(client.setDiff(args[0],args[1],args[2],))
 
-elif cmd == 'getLong':
-  if len(args) != 2:
-    print 'getLong requires 2 args'
+elif cmd == 'setUnion':
+  if len(args) != 3:
+    print 'setUnion requires 3 args'
     sys.exit(1)
-  pp.pprint(client.getLong(args[0],eval(args[1]),))
+  pp.pprint(client.setUnion(args[0],args[1],args[2],))
 
-elif cmd == 'multiGet':
-  if len(args) != 2:
-    print 'multiGet requires 2 args'
+elif cmd == 'setIntersection':
+  if len(args) != 3:
+    print 'setIntersection requires 3 args'
     sys.exit(1)
-  pp.pprint(client.multiGet(args[0],eval(args[1]),))
+  pp.pprint(client.setIntersection(args[0],args[1],args[2],))
 
-elif cmd == 'multiGetString':
+elif cmd == 'size':
   if len(args) != 2:
-    print 'multiGetString requires 2 args'
+    print 'size requires 2 args'
     sys.exit(1)
-  pp.pprint(client.multiGetString(args[0],eval(args[1]),))
+  pp.pprint(client.size(args[0],args[1],))
 
-elif cmd == 'multiGetInt':
-  if len(args) != 2:
-    print 'multiGetInt requires 2 args'
+elif cmd == 'multiMember':
+  if len(args) != 3:
+    print 'multiMember requires 3 args'
     sys.exit(1)
-  pp.pprint(client.multiGetInt(args[0],eval(args[1]),))
-
-elif cmd == 'multiGetLong':
-  if len(args) != 2:
-    print 'multiGetLong requires 2 args'
-    sys.exit(1)
-  pp.pprint(client.multiGetLong(args[0],eval(args[1]),))
-
-elif cmd == 'directMultiGet':
-  if len(args) != 2:
-    print 'directMultiGet requires 2 args'
-    sys.exit(1)
-  pp.pprint(client.directMultiGet(args[0],eval(args[1]),))
+  pp.pprint(client.multiMember(args[0],args[1],eval(args[2]),))
 
 else:
   print 'Unrecognized method %s' % cmd

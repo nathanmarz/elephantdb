@@ -3,11 +3,14 @@
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
             [elephantdb.common.status :as status])
-  (:import [org.apache.thrift.protocol TBinaryProtocol]
-           [org.apache.thrift.transport TTransport
-            TFramedTransport TSocket]
+  (:import [org.apache.thrift7.protocol TBinaryProtocol$Factory]
+           [org.apache.thrift7.server THsHaServer THsHaServer$Args]
+           [org.apache.thrift7.transport TTransport
+            TFramedTransport TSocket TNonblockingServerSocket]          
            [elephantdb.common.database Database]
-           [elephantdb.generated DomainStatus$_Fields Status
+           [elephantdb.generated ElephantDB
+            ElephantDBShared$Iface ElephantDB$Processor
+            DomainStatus$_Fields Status
             DomainNotFoundException DomainNotLoadedException
             HostsDownException WrongHostException
             DomainStatus LoadingStatus 
@@ -49,7 +52,7 @@
      (or (= (.getSetField status) DomainStatus$_Fields/LOADING)
          (and (status/ready? status)
               (.get_update_status (.get_ready status))))))
-
+  
   status/IStateful
   (status [state] state)
   (to-ready [state] (ready-status))
@@ -58,6 +61,14 @@
   (to-loading [state] (if (status/ready? state)
                         (ready-status :loading? true)
                         (loading-status))))
+
+(defn to-thrift [state]
+  (condp #(%1 %2) state
+    status/ready?    (ready-status)
+    status/failed?   (failed-status)
+    status/shutdown? (shutdown-status)
+    status/loading?  (loading-status)
+    status/updating? (ready-status :loading? true)))
 
 (defn domain-not-found-ex [domain]
   (DomainNotFoundException. domain))
@@ -78,44 +89,6 @@
   (when-not (db/domain-get database domain-name)
     (domain-not-found-ex domain-name)))
 
-(extend-type Database
-  ElephantDBShared$Iface
-  (getDomainStatus [_ domain-name]
-    "Returns the thrift status of the supplied domain-name."
-    (assert-domain database domain)
-    (stat/status
-     (db/domain-get database domain-name)))
-
-  (getDomains [_]
-    "Returns a sequence of all domain names being served."
-    (db/domain-names database))
-
-  (getStatus [_]
-    "Returns a map of domain-name->status for each domain."
-    (elephant-status
-     (db/domain->status database)))
-
-  (isFullyLoaded [_]
-    "Are all domains loaded properly?"
-    (db/fully-loaded? database))
-
-  (isUpdating [_]
-    "Is some domain currently updating?"
-    (db/some-updating? database))
-
-  (update [_ domain-name]
-    "If an update is available, updates the named domain and
-         hotswaps the new version."
-    (assert-domain database domain-name)
-    (u/with-ret true
-      (db/attempt-update! database domain-name)))
-
-  (updateAll [_]
-    "If an update is available on any domain, updates the domain's
-         shards from its remote store and hotswaps in the new versions."
-    (u/with-ret true
-      (db/update-all! database))))
-
 ;; ## Connections
 
 (defn thrift-transport
@@ -124,19 +97,19 @@
 
 (defn thrift-server
   [service-handler port]
-  (let [options (THsHaServer$Options.)]
-    (set! (.maxWorkerThreads options) 64)
-    (THsHaServer. (ElephantDB$Processor. service-handler)
-                  (TNonblockingServerSocket. port)
-                  (TBinaryProtocol$Factory.)
-                  options)))
+  (let [args (-> (TNonblockingServerSocket. port)
+                 (THsHaServer$Args.)
+                 (.workerThreads 64)
+                 (.executorService 64)
+                 (.protocolFactory (TBinaryProtocol$Factory.))
+                 (.processor (ElephantDB$Processor. service-handler)))]
+    (THsHaServer. args)))
 
-(defn launch-database!
-  [{:keys [port options] :as database}]
-  (let [{interval :update-interval-s} options
-        server (thrift-server database port)]
+(defn launch-server!
+  [service port interval]
+  (let [server (thrift-server service port)]
     (u/register-shutdown-hook #(.stop server))
     (log/info "Preparing database...")
-    (db/prepare database)
+    (db/prepare service)
     (log/info "Starting ElephantDB server...")
     (.serve server)))

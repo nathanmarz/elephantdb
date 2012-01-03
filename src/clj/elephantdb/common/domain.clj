@@ -5,10 +5,9 @@
             [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.shard :as shard]
-            [elephantdb.common.status :as status]
-            [elephantdb.keyval.thrift :as thrift])
+            [elephantdb.common.status :as status])
   (:import [elephantdb.store DomainStore]
-           [elephantdb.common.status IStateful]
+           [elephantdb.common.status IStateful KeywordStatus]
            [elephantdb.persistence ShardSet Shutdownable]))
 
 ;; ## Domain Getters
@@ -29,11 +28,6 @@
   [domain]
   (-> (domain-data domain)
       (get :version)))
-
-(def updating?
-  "Returns true if the domain is currently serving data and updating
-  from the remote store, false otherwise."
-  (every-pred status/loading? status/ready?))
 
 ;; Store manipulation
 
@@ -226,7 +220,7 @@
              throttle
              rw-lock
              (u/local-hostname)
-             (atom (thrift/loading-status))
+             (atom (KeywordStatus. :loading))
              (atom {})
              index)))
 
@@ -297,7 +291,7 @@
   "If the supplied domain isn't currently updating, returns a future
   containing a triggered update computation."
   [domain & {:keys [version]}]
-  (if (updating? domain)
+  (if (status/updating? domain)
     (log/info "UPDATER - Not updating as update's still in progress.")
     (future (update-domain! domain :version version))))
 
