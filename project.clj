@@ -5,7 +5,7 @@
   :repositories {"oracle" "http://download.oracle.com/maven"}
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [jvyaml "1.0.0"]
-                 [backtype/thriftjava "1.0.0"]
+                 [storm/libthrift7 "0.7.0"]
                  [jackknife "0.1.1"]
                  [hadoop-util "0.2.6"]
                  [cascading.kryo "0.1.5"]
