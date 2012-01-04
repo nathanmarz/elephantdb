@@ -48,11 +48,15 @@
   (fn [_ remote]
     (class remote)))
 
+(defmethod mk-local-store nil
+  [local-path null]
+  (DomainStore. local-path))
+
 (defmethod mk-local-store String
   [local-path remote-path]
   (try (mk-local-store local-path (DomainStore. remote-path))
        (catch IllegalArgumentException _
-           (u/throw-runtime "No remote DomainStore at " remote-path))))
+         (u/throw-runtime "No remote DomainStore at " remote-path))))
 
 (defmethod mk-local-store DomainStore
   [local-path remote-vs]
@@ -89,6 +93,11 @@
             remote-version (.mostRecentVersion remote-store)]
         (when (and local-version remote-version)
           (< local-version remote-version)))))
+
+;; ## Sinking and Sourcing
+;;
+;; These methods allow the user to sink and source objects from the
+;; supplied domain.
 
 ;; ## Domain Tidying
 
@@ -186,6 +195,7 @@
 (defrecord Domain
     [local-store remote-store serializer throttle rw-lock
      hostname status domain-data shard-index]  
+
   Shutdownable
   (shutdown [this]
     "Shutting down a domain requires closing all of its shards."
@@ -214,6 +224,25 @@
 ;;
 ;; This is the main function used by a database to build its domain objects.
 
+(defn local-domain
+  "Returns a domain object to be used with local stores only."
+  [local-root]
+  (let [localhost   (u/local-hostname)
+        local-store (mk-local-store local-root nil)
+        index        (shard/generate-index
+                      localhost (.getNumShards (.getSpec local-store)))]
+    (doto (Domain. local-store
+                   nil
+                   (Utils/makeSerializer (.getSpec local-store))
+                   nil
+                   (u/mk-rw-lock)
+                   localhost
+                   (atom (KeywordStatus. :loading))
+                   (atom {})
+                   index)
+      (load-version! (.mostRecentVersion local-store)))))
+
+;; TODO: Add more keyword arguments here! This thing should degrade gracefully.
 (defn build-domain
   "Constructs a domain record."
   [local-root hdfs-conf remote-path hosts replication
@@ -222,7 +251,7 @@
   (let [remote-fs     (h/filesystem hdfs-conf)
         remote-store  (DomainStore. remote-fs remote-path)
         local-store   (mk-local-store local-root remote-store)
-        index (shard/generate-index hosts (-> local-store .getSpec .getNumShards))]
+        index (shard/generate-index hosts (.getNumShards (.getSpec local-store)))]
     (Domain. local-store
              remote-store
              (Utils/makeSerializer (.getSpec local-store))
