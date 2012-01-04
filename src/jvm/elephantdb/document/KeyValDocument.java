@@ -22,6 +22,6 @@ public class KeyValDocument<K, V> implements Document {
             return false;
 
         KeyValDocument other = (KeyValDocument) obj;
-        return (this.key == other.key && this.value == other.value);
+        return (this.key.equals(other.key) && this.value.equals(other.value));
     }
 }

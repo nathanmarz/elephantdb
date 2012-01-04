@@ -33,7 +33,7 @@
 
 (fact
   "Spec should only allow positive numbers for the shard-count."
-  (test-spec 10)  => identity
+  (test-spec 10)  => truthy
   (test-spec 0)   => (throws AssertionError)
   (test-spec -10) => (throws AssertionError))
 

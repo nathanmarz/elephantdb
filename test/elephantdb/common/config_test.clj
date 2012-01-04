@@ -39,7 +39,7 @@
    keys."
    (convert-clj-domain-spec ?spec-map) => ?tester)
  ?spec-map                        ?tester
- test-spec                        identity
+ test-spec                        truthy
  (dissoc test-spec :num-shards)   (throws AssertionError)
  (dissoc test-spec :coordinator)  (throws AssertionError)
  (dissoc test-spec :shard-scheme) (throws AssertionError))

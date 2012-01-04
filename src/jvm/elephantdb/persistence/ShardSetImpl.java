@@ -41,7 +41,7 @@ public class ShardSetImpl implements ShardSet {
         if ( !(shardIdx >= 0 && shardIdx < getNumShards())) {
             String errorStr = shardIdx +
                     " is not a valid shard index. Index must be between 0 and " + (getNumShards() - 1);
-            throw new RuntimeException(errorStr);
+            throw new AssertionError(errorStr);
         }
     }
 
