@@ -245,9 +245,7 @@
 ;; TODO: Add more keyword arguments here! This thing should degrade gracefully.
 (defn build-domain
   "Constructs a domain record."
-  [local-root hdfs-conf remote-path hosts replication
-   & {:keys [rw-lock throttle]
-      :or {rw-lock (u/mk-rw-lock)}}]
+  [local-root hdfs-conf remote-path hosts replication & {:keys [throttle]}]
   (let [remote-fs     (h/filesystem hdfs-conf)
         remote-store  (DomainStore. remote-fs remote-path)
         local-store   (mk-local-store local-root remote-store)
@@ -256,7 +254,7 @@
              remote-store
              (Utils/makeSerializer (.getSpec local-store))
              throttle
-             rw-lock
+             (u/mk-rw-lock)
              (u/local-hostname)
              (atom (KeywordStatus. :loading))
              (atom {})

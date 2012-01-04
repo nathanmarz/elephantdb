@@ -115,8 +115,7 @@
 (defn build-database
   [{:keys [domains hosts replication
            port local-root hdfs-conf] :as conf-map}]
-  (let [rw-lock  (u/mk-rw-lock)
-        throttle (domain/throttle (:download-rate-limit conf-map))]
+  (let [throttle (domain/throttle (:download-rate-limit conf-map))]
     (Database. local-root
                port
                (u/update-vals
@@ -125,8 +124,7 @@
                   (let [local-path (domain-path local-root domain-name)]
                     (domain/build-domain
                      local-root hdfs-conf remote-path hosts replication
-                     :throttle throttle
-                     :rw-lock rw-lock))))
+                     :throttle throttle))))
                (dissoc conf-map
                        :domains :local-root :port))))
 
