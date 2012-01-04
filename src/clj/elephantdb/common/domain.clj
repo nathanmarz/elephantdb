@@ -34,8 +34,10 @@
 (defn try-domain-store
   "Attempts to return a DomainStore object from the current path and
   filesystem; if this doesn't exist, returns nil."
-  [fs domain-path]
-  (try (DomainStore. fs domain-path)
+  [domain-path & {:keys [fs]}]
+  (try (if fs
+         (DomainStore. fs domain-path)
+         (DomainStore. domain-path))
        (catch IllegalArgumentException _)))
 
 (defn mk-local-store

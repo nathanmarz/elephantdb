@@ -4,8 +4,10 @@
         midje.sweet)
   (:import [elephantdb.store DomainStore]))
 
+(def test-spec
+  (mk-test-spec 5))
 
 (fact
-  (with-fs-tmp [_ local remote]
-    (DomainStore. remote )
-    ))
+  (with-fs-tmp [fs local remote]
+    (let [remote-store (DomainStore. remote test-spec)]
+      )))
