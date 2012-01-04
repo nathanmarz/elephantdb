@@ -6,7 +6,8 @@
             [jackknife.logging :as log]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.status :as status])
-  (:import [elephantdb.store DomainStore]
+  (:import [elephantdb Utils]
+           [elephantdb.store DomainStore]
            [elephantdb.common.status IStateful KeywordStatus]
            [elephantdb.persistence ShardSet Shutdownable]))
 
@@ -40,7 +41,20 @@
          (DomainStore. domain-path))
        (catch IllegalArgumentException _)))
 
-(defn mk-local-store
+(defmulti mk-local-store
+  "Returns a new domain store based on the supplied remote store. The
+   remote store can be a path to a remote store or the DomainStore
+   itself."
+  (fn [_ remote]
+    (class remote)))
+
+(defmethod mk-local-store String
+  [local-path remote-path]
+  (try (mk-local-store local-path (DomainStore. remote-path))
+       (catch IllegalArgumentException _
+           (u/throw-runtime "No remote DomainStore at " remote-path))))
+
+(defmethod mk-local-store DomainStore
   [local-path remote-vs]
   (DomainStore. local-path (.getSpec remote-vs)))
 
@@ -211,7 +225,7 @@
         index (shard/generate-index hosts (-> local-store .getSpec .getNumShards))]
     (Domain. local-store
              remote-store
-             (-> local-store .getSpec .getCoordinator .getSerializer)
+             (Utils/makeSerializer (.getSpec local-store))
              throttle
              rw-lock
              (u/local-hostname)
