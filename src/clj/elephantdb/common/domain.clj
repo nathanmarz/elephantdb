@@ -167,13 +167,6 @@
 
 ;; ## Domain Record Definition
 
-(defn swap-status!
-  "Accepts a domain and a transition function (from the
-  elephantdb.common.status.IStateful interface) and returns the new
-  status."
-  [{:keys [status] :as domain} transition-fn & args]
-  (apply swap! status transition-fn args))
-
 (defrecord Domain
     [local-store remote-store serializer throttle rw-lock
      hostname status domain-data shard-index]  
@@ -188,14 +181,14 @@
   IStateful
   (status [this]
     @(:status this))
-  (to-ready [this]
-    (swap-status! this status/to-ready))
-  (to-loading [this]
-    (swap-status! this status/to-loading))
-  (to-failed [this msg]
-    (swap-status! this status/to-failed msg))
-  (to-shutdown [this]
-    (swap-status! this status/to-shutdown)))
+  (to-ready [{:keys [status]}]
+    (status/swap-status! status status/to-ready))
+  (to-loading [{:keys [status]}]
+    (status/swap-status! status status/to-loading))
+  (to-failed [{:keys [status]} msg]
+    (status/swap-status! status status/to-failed msg))
+  (to-shutdown [{:keys [status]}]
+    (status/swap-status! status status/to-shutdown)))
 
 (defmethod version-seq Domain
   [domain]

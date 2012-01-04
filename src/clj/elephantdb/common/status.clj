@@ -8,9 +8,6 @@
   (failed?  [_] "Have I failed?")
   (shutdown? [_] "Am I shutting down?"))
 
-(def updating?
-  (every-pred loading? ready?))
-
 (defprotocol IStateful
   (status [this] "Returns the current state object.")
   (to-ready [this] "Returns a new ready state.")
@@ -31,8 +28,18 @@
   (to-ready   [state] (KeywordStatus. :ready))
   (to-failed  [state msg] (KeywordStatus. :failed))
   (to-shutdown [state] (KeywordStatus. :shutdown))
-  (to-loading [state] (KeywordStatus. (if (ready? status)
-                                        :updating
-                                        :loading))))
+  (to-loading [state]
+    (KeywordStatus. (if (ready? state)
+                      :updating
+                      :loading))))
 
+(def updating?
+  (every-pred loading? ready?))
+
+(defn swap-status!
+  "Accepts a stateful thing wrapped in an atom and a transition
+  function (from the elephantdb.common.status.IStateful interface) and
+  returns the new status."
+  [status transition-fn & args]
+  (apply swap! status transition-fn args))
 
