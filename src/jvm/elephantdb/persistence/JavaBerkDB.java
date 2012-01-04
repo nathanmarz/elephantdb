@@ -35,8 +35,6 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
     }
 
     public Persistence createPersistence(String root, Map options) throws IOException {
-        LOG.info("Still good at this point." + root);
-        LOG.info("SERIALIZER: " + getSerializer());
         return new JavaBerkDBPersistence(root, getSerializer(), options, false);
     }
 
@@ -47,6 +45,9 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
         Serializer kvSerializer;
 
         public JavaBerkDBPersistence(String root, Serializer serializer, Map options, boolean readOnly) {
+            if (serializer == null)
+                throw new RuntimeException("JavaBerkDBPersistence requires an initialized serializer.");
+
             this.kvSerializer = serializer;
 
             new File(root).mkdirs();
@@ -81,6 +82,10 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
             } else {
                 return null;
             }
+        }
+
+        public <K, V> void put(K key, V value) throws IOException {
+            index(new KeyValDocument<K, V>(key, value));
         }
 
         private void add(byte[] key, byte[] value) throws IOException {

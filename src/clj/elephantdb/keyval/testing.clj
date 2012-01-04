@@ -1,5 +1,5 @@
 (ns elephantdb.keyval.testing
-  (:use clojure.test
+  (:use midje.sweet
         elephantdb.common.testing
         [jackknife.logging :only (info)])
   (:require [jackknife.core :as u]
@@ -26,14 +26,19 @@
 
 (defn index
   "Sinks the supplied key-value pair into the supplied persistence."
-  [persistence key value]
-  (.index persistence (KeyValDocument. key value)))
+  [^Persistence persistence key val]
+  (.index persistence (KeyValDocument. key val)))
 
 (defn edb-get
   "Retrieves the supplied key from the supplied
   persistence. Persistence must be open."
-  [persistence key]
+  [^KeyValPersistence persistence key]
   (.get persistence key))
+
+(defn edb-put
+  "Sinks the supplied key and value into the supplied persistence."
+  [^KeyValPersistence persistence key val]
+  (.put persistence key val))
 
 (defn get-all
   "Returns a sequence of all key-value pairs in the supplied
@@ -207,8 +212,8 @@
   (doseq [[k v] pairs]
     (let [newv (-> handler (.get domain-name k) (.get_data))]
       (if-not v
-        (is (nil? newv))
-        (is (pred v newv) (apply str (map seq [k v newv])))))))
+        (fact newv => nil?)
+        (fact (apply str (map seq [k v newv])) => (pred v newv))))))
 
 (defn kv-pairs= [& pairs-seq]
   (apply = (map set pairs-seq)))

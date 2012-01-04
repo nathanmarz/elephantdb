@@ -44,6 +44,10 @@ public class KyotoCabinet implements SerializationWrapper, Coordinator {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
+        public <K, V> void put(K key, V value) throws IOException {
+            index(new KeyValDocument<K, V>(key, value));
+        }
+
         public void index(KeyValDocument document) throws IOException {
         }
 

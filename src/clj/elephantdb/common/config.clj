@@ -92,10 +92,10 @@
    :shard-scheme (.getShardScheme spec)
    :num-shards   (.getNumShards spec)})
 
-(defn convert-clj-domain-spec [spec-map]
-  (DomainSpec. (:coordinator spec-map)
-               (:shard-scheme spec-map)
-               (:num-shards spec-map)))
+(defn convert-clj-domain-spec
+  [{:keys [coordinator shard-scheme num-shards]}]
+  {:pre [(and coordinator shard-scheme num-shards)]}
+  (DomainSpec. coordinator shard-scheme num-shards))
 
 (defn read-domain-spec
   "A domain spec is stored with shards in the VersionedStore. Look to

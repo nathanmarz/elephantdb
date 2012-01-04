@@ -69,6 +69,10 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public DomainSpec(Coordinator coordinator, ShardingScheme shardingScheme, int numShards, Args args) {
+        if (numShards <= 0) {
+            throw new AssertionError();
+        }
+
         this.numShards = numShards;
         this.coordinator = coordinator;
         this.shardingScheme = shardingScheme;
@@ -106,8 +110,15 @@ public class DomainSpec implements Writable, Serializable {
         return mapify().toString();
     }
 
-    @Override public boolean equals(Object other) {
-        DomainSpec o = (DomainSpec) other;
+    @Override public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+        if (obj == this)
+            return true;
+        if (obj.getClass() != getClass())
+            return false;
+
+        DomainSpec o = (DomainSpec) obj;
         return mapify().equals(o.mapify());
     }
 

@@ -11,4 +11,5 @@ import java.io.IOException;
  */
 public interface KeyValPersistence extends Persistence<KeyValDocument> {
     <K, V> V get(K key) throws IOException;
+    <K, V> void put(K key, V value) throws IOException;
 }

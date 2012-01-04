@@ -45,14 +45,15 @@
                        [k _] non-records]
                       (is (nil? (.get persistence k)))))))
 
-(def-fs-test test-output-format [fs output-dir]
-  (with-local-tmp [lfs etmp tmp2]
-    (let [data {0 {"0a" "00" "0b" "01"} 4 {"4a" "40"}}
-          writer  (mk-elephant-writer 10 (JavaBerkDB.) output-dir etmp)]
-      (write-data writer data)
-      (.close writer nil)
-      (fact (count (.listStatus fs (h/path output-dir))) => 2)
-      (check-shards fs lfs output-dir tmp2  data))))
+(deftest test-output-format
+  (with-fs-tmp [fs output-dir]
+    (with-local-tmp [lfs etmp tmp2]
+      (let [data {0 {"0a" "00" "0b" "01"} 4 {"4a" "40"}}
+            writer  (mk-elephant-writer 10 (JavaBerkDB.) output-dir etmp)]
+        (write-data writer data)
+        (.close writer nil)
+        (fact (count (.listStatus fs (h/path output-dir))) => 2)
+        (check-shards fs lfs output-dir tmp2  data)))))
 
 (deftest test-incremental
   (with-fs-tmp [fs dir1 dir2]

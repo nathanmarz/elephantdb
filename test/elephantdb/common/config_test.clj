@@ -33,16 +33,31 @@
    :coordinator  (JavaBerkDB.)
    :shard-scheme (HashModScheme.)})
 
-(fact "Spec should survive a round trip."
-  (normalize (round-trip-spec test-spec)) => (normalize test-spec))
+(tabular
+ (fact
+   "Conversion from a Clojure map -> DomainSpec requires all three
+   keys."
+   (convert-clj-domain-spec ?spec-map) => ?tester)
+ ?spec-map                        ?tester
+ test-spec                        identity
+ (dissoc test-spec :num-shards)   (throws AssertionError)
+ (dissoc test-spec :coordinator)  (throws AssertionError)
+ (dissoc test-spec :shard-scheme) (throws AssertionError))
+
+(fact "Clojure spec-map should survive a round trip."
+  (normalize
+   (round-trip-spec test-spec)) => (normalize test-spec))
 
 (fact "Check individual attributes."
   (with-fs-tmp [fs tmp]
     (write-domain-spec! test-spec fs tmp)
     (let [jspec (DomainSpec/readFromFileSystem fs tmp)]
-      (.getNumShards jspec) => 20
+      (.getNumShards jspec)                => 20
       (class-name (.getCoordinator jspec)) => "elephantdb.persistence.JavaBerkDB"
-      (class-name (.getShardScheme jspec)) => "elephantdb.partition.HashModScheme")))
+      (class-name (.getShardScheme jspec)) => "elephantdb.partition.HashModScheme"
+      (convert-clj-domain-spec test-spec)  => jspec)))
+
+;; ## Configurations
 
 (defn round-trip-conf
   "Passes the supplied clojure data structure in and out of

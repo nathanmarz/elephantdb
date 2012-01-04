@@ -1,5 +1,4 @@
 (ns elephantdb.common.testing
-  (:use clojure.test)
   (:require [hadoop-util.core :as h]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom])
