@@ -3,7 +3,8 @@
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom])
   (:import [java.util UUID Arrays]
-           [elephantdb.store DomainStore]))
+           [elephantdb.store DomainStore]
+           [elephantdb DomainSpec]))
 
 ;; ## Domain Testing
 
@@ -63,6 +64,14 @@
                             (or (every? nil? vals)
                                 (apply barr= vals)))
                       arrs))))
+
+(defn mk-test-spec
+  "Returns a DomainSpec initialized with BerkeleyDB, a HashMod scheme
+  and the supplied shard-count."
+  [shard-count]
+  (DomainSpec. "elephantdb.persistence.JavaBerkDB"
+               "elephantdb.partition.HashModScheme"
+               shard-count))
 
 ;; ## Hadoop Testing Utilities
 ;;

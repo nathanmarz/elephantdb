@@ -1,5 +1,5 @@
 (ns elephantdb.hadoop.output-format-test
-  (:use clojure.test
+  (:use midje.sweet
         elephantdb.common.testing
         elephantdb.keyval.testing)
   (:require [hadoop-util.core :as h]
@@ -14,9 +14,7 @@
            [elephantdb.store VersionedStore]))
 
 (def test-spec
-  (DomainSpec. "elephantdb.persistence.JavaBerkDB"
-               "elephantdb.partition.HashModScheme"
-               2))
+  (mk-test-spec 2))
 
 (defn write-data
   [writer data]
@@ -40,10 +38,10 @@
                                                           local-shard-path
                                                           {}))]
              (u/dofor [[k v] records]
-                      (is (= v (.get persistence k))))
+                      (fact (.get persistence k) => v))
              (u/dofor [[_ non-records] (dissoc expected s)
                        [k _] non-records]
-                      (is (nil? (.get persistence k)))))))
+                      (fact (.get persistence k) => nil?)))))
 
 (deftest test-output-format
   (with-fs-tmp [fs output-dir]

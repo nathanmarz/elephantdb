@@ -28,7 +28,7 @@
     (write-domain-spec! spec fs tmp)
     (read-domain-spec fs tmp)))
 
-(def test-spec
+(def clj-spec
   {:num-shards   20
    :coordinator  (JavaBerkDB.)
    :shard-scheme (HashModScheme.)})
@@ -39,23 +39,23 @@
    keys."
    (convert-clj-domain-spec ?spec-map) => ?tester)
  ?spec-map                        ?tester
- test-spec                        truthy
- (dissoc test-spec :num-shards)   (throws AssertionError)
- (dissoc test-spec :coordinator)  (throws AssertionError)
- (dissoc test-spec :shard-scheme) (throws AssertionError))
+ clj-spec                        truthy
+ (dissoc clj-spec :num-shards)   (throws AssertionError)
+ (dissoc clj-spec :coordinator)  (throws AssertionError)
+ (dissoc clj-spec :shard-scheme) (throws AssertionError))
 
 (fact "Clojure spec-map should survive a round trip."
   (normalize
-   (round-trip-spec test-spec)) => (normalize test-spec))
+   (round-trip-spec clj-spec)) => (normalize clj-spec))
 
 (fact "Check individual attributes."
   (with-fs-tmp [fs tmp]
-    (write-domain-spec! test-spec fs tmp)
+    (write-domain-spec! clj-spec fs tmp)
     (let [jspec (DomainSpec/readFromFileSystem fs tmp)]
       (.getNumShards jspec)                => 20
       (class-name (.getCoordinator jspec)) => "elephantdb.persistence.JavaBerkDB"
       (class-name (.getShardScheme jspec)) => "elephantdb.partition.HashModScheme"
-      (convert-clj-domain-spec test-spec)  => jspec)))
+      (convert-clj-domain-spec clj-spec)  => jspec)))
 
 ;; ## Configurations
 
