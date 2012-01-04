@@ -1,7 +1,7 @@
 package elephantdb.document;
 
 /** User: sritchie Date: 12/6/11 Time: 10:30 AM */
-public class KeyValDocument<K, V> implements Document {
+public class KeyValDocument<K, V> {
     public K key;
     public V value;
 

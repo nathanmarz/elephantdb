@@ -1,9 +1,5 @@
 package elephantdb.persistence;
 
-import elephantdb.document.LuceneDocument;
-import elephantdb.persistence.CloseableIterator;
-import elephantdb.persistence.Coordinator;
-import elephantdb.persistence.Persistence;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
@@ -36,7 +32,7 @@ public class Lucene implements Coordinator {
         return new LucenePersistence(root, options);
     }
 
-    public static class LucenePersistence implements SearchPersistence<LuceneDocument> {
+    public static class LucenePersistence implements SearchPersistence<Document> {
         Directory rootDir;
         IndexReader reader;
 
@@ -60,16 +56,15 @@ public class Lucene implements Coordinator {
             reader.close();
         }
 
-        public void index(LuceneDocument wrapper) throws IOException {
-            Document doc = wrapper.getDocument();
+        public void index(Document doc) throws IOException {
             // should be easy to implement. Lucene is going to get LuceneDocuments, and that's IT!
         }
 
-        public CloseableIterator<LuceneDocument> iterator() {
-            return new CloseableIterator<LuceneDocument>() {
+        public CloseableIterator<Document> iterator() {
+            return new CloseableIterator<Document>() {
                 int idx = 0;
                 Integer docCount = null;
-                LuceneDocument nextDoc = null;
+                Document nextDoc = null;
 
                 private void cacheNext() {
 
@@ -82,7 +77,7 @@ public class Lucene implements Coordinator {
                         close();
                     } else {
                         try {
-                            nextDoc = new LuceneDocument(reader.document(idx));
+                            nextDoc = reader.document(idx);
                         } catch (CorruptIndexException ci) {
                             throw new RuntimeException(ci);
                         } catch (IOException io) {
@@ -103,12 +98,12 @@ public class Lucene implements Coordinator {
                     return nextDoc != null;
                 }
 
-                public LuceneDocument next() {
+                public Document next() {
                     initCursor();
                     if (nextDoc == null) {
-                        throw new RuntimeException("No key/value pair available");
+                        throw new RuntimeException("No document available");
                     }
-                    LuceneDocument ret = nextDoc; // not pointers, so we actually store the value?
+                    Document ret = nextDoc; // not pointers, so we actually store the value?
                     cacheNext(); // caches up n + 1,
                     return ret;  // return the old.
                 }

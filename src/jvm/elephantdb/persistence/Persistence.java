@@ -1,15 +1,8 @@
 package elephantdb.persistence;
 
-import elephantdb.document.Document;
-
 import java.io.IOException;
 
-/**
- * Persistence accepts a Document type; the interface allows you to add
- * records to the persistence.
- * @param <D>
- */
-public interface Persistence<D extends Document> extends Iterable {
+public interface Persistence<D> extends Iterable {
 
     public void index(D document) throws IOException;
 
