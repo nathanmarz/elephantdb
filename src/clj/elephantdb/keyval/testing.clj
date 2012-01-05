@@ -85,8 +85,6 @@
   (with-open [db (.openPersistenceForRead coordinator path {})]
     (fact (get-all db) => (just pairs))))
 
-;; TODO: Graduate the following two functions!
-
 ;; bind this to get different behavior when making sharded domains.
 ;; TODO: Remove first arg from key->shard.
 (def ^:dynamic test-key->shard
@@ -114,6 +112,42 @@
             (-> writer
                 (.write (IntWritable. s) (KeyValDocument. k v))))))
       (.succeedVersion vs dpath))))
+
+;; ## Shard Mocking Functions
+
+(defn wrap-keyval
+  "Accepts a vector with [key, value] and returns a vector of
+  sharding-key, document suitable for indexing into an ElephantDB
+  Domain."
+  [[k v]]
+  [k (KeyValDocument. k v)])
+
+(def shard-keyvals
+  "Accepts a DomainSpec and a sequence of [key val] pairs and returns
+  a map of shard->doc-seq. A custom sharding function can be supplied
+  with the `:shard-fn` keyword."
+  (mk-sharder wrap-keyval))
+
+(def presharded-kv->writer!
+  (mk-presharded->writer! #(KeyValDocument. %1 %2)))
+
+(def unsharded-kv->writer!
+  (mk-unsharded->writer! wrap-keyval))
+
+(defn fill-with-writer!
+  "Accepts a domain-spec, a path and a pre-sharded map of
+  documents. sharded-docs is a map of shard->doc-seq."
+  [spec path sharded-docs & {:keys [version]}]
+  (t/with-local-tmp [lfs tmp]
+    (let [store (DomainStore. path spec)
+          dpath (create-version store
+                                :version version
+                                :force? true)]
+      (with-open [writer (elephant-writer spec path tmp)]
+        (doseq [[idx doc-seq] sharded-docs
+                doc           doc-seq]
+          (.write writer (IntWritable. idx) doc)))
+      (.succeedVersion store dpath))))
 
 (defn mk-sharded-domain
   [path spec kv-seq & {:keys [version]}]
@@ -222,8 +256,8 @@
         (fact newv => nil?)
         (fact (apply str (map seq [k v newv])) => (pred v newv))))))
 
-(defn kv-pairs= [& pairs-seq]
-  (apply = (map set pairs-seq)))
+(defn kv-pairs= [& pair-seq]
+  (apply = (map set pair-seq)))
 
 (defn check-domain [domain-name handler pairs]
   (check-domain-pred domain-name handler pairs barr=))
@@ -231,26 +265,7 @@
 (def check-domain-not
   (complement check-domain))
 
-(defn memory-persistence []
-  (let [state (atom {})]
-    (reify elephantdb.persistence.Persistence
-      (index [this doc]
-        (swap! state assoc (.key doc) (.val doc)))
-      (iterator [this]
-        (map (fn [[k v]] (KeyValDocument. k v))
-             @state))
-      (close [_]))))
-
-(defn memory-coordinator []
-  (let [state (atom {})]
-    (reify elephantdb.persistence.Coordinator
-      (openPersistenceForRead [this root opts]
-        (or (get @state root)
-            (let [fresh (memory-persistence)]
-              (swap! state assoc root fresh)
-              fresh))))))
-
-;; ## Type Versions
+;; ## Key-Value Memory Persistence
 
 (deftype MemoryPersistence [state]
   KeyValPersistence
@@ -286,12 +301,10 @@
           (swap! state assoc root fresh)
           fresh))))
 
-(defn memory-spec [shard-count]
+(defn memory-spec
+  "Returns a DomainSpec initialized with an in-memory coordinator, a
+  HashMod scheme and the supplied shard-count."
+  [shard-count]
   (DomainSpec. (MemoryCoordinator. (atom {}))
-               (HashModScheme.)
-               shard-count))
-
-(defn berkeley-spec [shard-count]
-  (DomainSpec. (elephantdb.persistence.JavaBerkDB.)
                (HashModScheme.)
                shard-count))

@@ -1,11 +1,14 @@
 (ns elephantdb.common.testing
   (:require [hadoop-util.core :as h]
             [hadoop-util.test :as t]
+            [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom])
   (:import [java.util Arrays]
            [elephantdb.store DomainStore]
+           [elephantdb.persistence ShardSet]
            [elephantdb Utils DomainSpec]
+           [org.apache.hadoop.io IntWritable]
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
            [org.apache.hadoop.mapred JobConf]))
@@ -36,6 +39,8 @@
          (into #{}))))
 
 (defn version-well-formed?
+  "Does the supplied version within the domain have all of its
+  shards?"
   [domain version]
   (= (dom/shard-set domain version)
      (-> (.localStore domain)
@@ -68,7 +73,9 @@
                                 (apply barr= vals)))
                       arrs))))
 
-(defn mk-test-spec
+;; ## Example Specs
+
+(defn berkeley-spec
   "Returns a DomainSpec initialized with BerkeleyDB, a HashMod scheme
   and the supplied shard-count."
   [shard-count]
@@ -76,27 +83,7 @@
                "elephantdb.partition.HashModScheme"
                shard-count))
 
-(defn mk-populated-store!
-  "Accepts a path, a DomainSpec and any number of pairs of shard-key
-  and indexable document, and indexes the supplied documents into the
-  supplied persistence."
-  [path spec pair-seq & {:keys [version]}]
-  (let [version      (rand-int 10)
-        store        (DomainStore. path spec)
-        shard-set    (.getShardSet store version)
-        version-path (if version
-                       (do (when (.hasVersion store version)
-                             (.deleteVersion store version))
-                           (.createVersion store version))
-                       (.createVersion store))]
-    (doseq [[idx doc-seq] (group-by #(.shardIndex shard-set (first %))
-                                    pair-seq)]
-      (with-open [shard (do (.createShard shard-set idx)
-                            (.openShardForAppend shard-set idx))]
-        (doseq [doc (map second doc-seq)]
-          (.index shard doc))))
-    (doto store
-      (.succeedVersion version-path))))
+;; ## Population Helpers
 
 (defn elephant-writer
   [spec output-dir tmp-dir & {:keys [indexer update-dir]}]
@@ -112,3 +99,120 @@
                         (LocalElephantManager/setTmpDirs [tmp-dir]))
                       nil
                       nil)))
+
+(defn create-version
+  [vs version & {:keys [version force?]}]
+  (if version
+    (do (when (.hasVersion vs version)
+          (.deleteVersion vs version))
+        (.createVersion vs version))
+    (.createVersion vs)))
+
+(defn mk-populated-store!
+  "Accepts a path, a DomainSpec and any number of pairs of shard-key
+  and indexable document, and indexes the supplied documents into the
+  supplied persistence."
+  [path spec pair-seq & {:keys [version]}]
+  (let [version      (rand-int 10)
+        store        (DomainStore. path spec)
+        shard-set    (.getShardSet store version)
+        version-path (create-version store
+                                     :version version
+                                     :force? true)]
+    (doseq [[idx doc-seq] (group-by #(.shardIndex shard-set (first %))
+                                    pair-seq)]
+      (with-open [shard (do (.createShard shard-set idx)
+                            (.openShardForAppend shard-set idx))]
+        (doseq [doc (map second doc-seq)]
+          (.index shard doc))))
+    (doto store
+      (.succeedVersion version-path))))
+
+(defn presharded->writer!
+  "Accepts a domain-spec, a path and a pre-sharded map of
+  documents. sharded-docs is a map of shard->doc-seq."
+  [spec path sharded-docs & {:keys [version]}]
+  (t/with-local-tmp [lfs tmp]
+    (let [store (DomainStore. path spec)
+          dpath (create-version store
+                                :version version
+                                :force? true)]
+      (with-open [writer (elephant-writer spec path tmp)]
+        (doseq [[idx doc-seq] sharded-docs
+                doc           doc-seq]
+          (.write writer (IntWritable. idx) doc)))
+      (.succeedVersion store dpath))))
+
+;; ## Shard Mocking
+
+(defn key->shard [scheme key shard-count]
+  (.shardIndex scheme key shard-count))
+
+(defn shard-index
+  "Accepts a DomainSpec and a sequence of shard keys and returns a
+  sequence of shard indexes."
+  [spec key]
+  (let [shard-count (.getNumShards spec)
+        scheme      (.getShardScheme spec)]
+    (key->shard scheme key shard-count)))
+
+(defmacro with-sharding-fn [shard-fn & body]
+  `(if ~shard-fn
+     (with-redefs [key->shard ~shard-fn]
+       ~@body)
+     (do ~@body)))
+
+(defn shard-docs
+  "Accepts a DomainSpec and a sequence of <shard-key, document> pairs
+  and returns a map of shard->doc-seq. A custom sharding function can
+  be supplied with the `:shard-fn` keyword."
+  [spec doc-seq & {:keys [shard-fn]
+                   :or {shard-fn key->shard}}]
+  (with-sharding-fn shard-fn
+    (->> doc-seq
+         (group-by (fn [[idx _]] (shard-index spec idx)))
+         (u/val-map (partial map second)))))
+
+(defn unsharded->writer!
+  "doc-seq is a sequence of <shard-key, document> pairs. Otherwise
+  this is the same as presharded->writer."
+  [spec path doc-seq & {:keys [version shard-fn]}]
+  (let [sharded-docs (shard-docs doc-seq :shard-fn shard-fn)]
+    (presharded->writer! spec path sharded-docs :version version)))
+
+;; ## Generic Extensions for other persistences
+
+(defn mk-sharder
+  "Accepts a function meant to accept some document or thing and
+  return a pair of <shard-key, document> suitable for indexing into a
+  Persistence. Returns a function similar to `shard-docs`."
+  [converter-fn]
+  (fn [spec item-seq & {:keys [shard-fn]}]
+    (let [doc-seq (map converter-fn item-seq)]
+      (shard-docs spec doc-seq :shard-fn shard-fn))))
+
+(defn mk-presharded->writer!
+  "Accepts a function that translates between the items in the
+  sequence and a document suitable for indexing into the supplied
+  domain and returns a function taht acts just like
+  presharded->writer!"
+  [converter-fn]
+  (fn [spec path sharded-items & {:keys [version]}]
+    (let [sharded-docs (u/val-map converter-fn sharded-items)]
+      (presharded->writer! spec path sharded-docs :version version))))
+
+(defn mk-unsharded->writer!
+  "Accepts a sharding function of the same type passed in to
+  `mk-sharder`. `sharder-fn` must accept one of the items in the
+  document seq and return a pair of <shard-key, document> suitable for
+  indexing into ElephantDB.
+
+  Returns a function that acts like unsharded->writer!, but accepts a
+  sequence of the inputs to `sharder-fn` vs a sequence of <shard-key,
+  doc> pairs."
+  [converter-fn]
+  (fn [spec path item-seq & {:keys [version shard-fn]}]
+    (let [item-sharder (mk-sharder converter-fn)
+          sharded-docs (item-sharder item-seq :shard-fn shard-fn)]
+      (presharded->writer! spec path sharded-docs :version version))))
+

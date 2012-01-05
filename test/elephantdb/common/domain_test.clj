@@ -6,8 +6,8 @@
   (:import [elephantdb.store DomainStore]))
 
 (def test-spec
-  "Example spec for testing."
-  (mk-test-spec 5))
+  "BerkeleyDB-based DomainSpec for testing."
+  (Berkeley-spec 5))
 
 (fact "Test try-domain-store."
   (t/with-fs-tmp [fs tmp]

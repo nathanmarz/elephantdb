@@ -14,7 +14,7 @@
            [elephantdb.store VersionedStore]))
 
 (def test-spec
-  (mk-test-spec 2))
+  (berkeley-spec 2))
 
 (defn write-data
   [writer data]
