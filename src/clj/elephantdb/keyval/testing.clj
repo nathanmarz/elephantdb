@@ -115,6 +115,16 @@
              :shard-fn shard-fn)))
 
 (defmacro with-domain
+  "Used as:
+
+   (with-domain [my-domain domain-spec
+                 [[1 2] [3 4]]
+                 :version 5
+                 :shard-fn (constantly 10)]
+          (seq my-domain))
+
+  A domain with the supplied domain-spec is bound to `sym` inside the
+  body of `with-domain`."
   [[sym spec kv-pairs & {:keys [version shard-fn]}] & body]
   `(t/with-fs-tmp [fs# path#]
      (mk-kv-domain ~spec path# ~kv-pairs
@@ -135,6 +145,14 @@
              :version  version)))
 
 (defmacro with-presharded-domain
+  "Unlike with-domain, with-presharded-domain accepts a map of
+   shard->key-val sequence.
+
+   (with-domain [my-domain domain-spec
+                {0 [[1 2] [3 4]]
+                 3 [[4 5]]}
+                 :version 100]
+          (seq my-domain))"
   [[sym spec shard-map & {:keys [version]}] & body]
   `(t/with-fs-tmp [fs# path#]
      (mk-presharded-kv-domain ~spec path# ~shard-map
