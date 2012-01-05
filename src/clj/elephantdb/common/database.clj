@@ -113,8 +113,7 @@
       (.shutdown domain))))
 
 (defn build-database
-  [{:keys [domains hosts replication
-           port local-root hdfs-conf] :as conf-map}]
+  [{:keys [domains hosts replication port local-root hdfs-conf] :as conf-map}]
   (let [throttle (domain/throttle (:download-rate-limit conf-map))]
     (Database. local-root
                port
@@ -122,9 +121,12 @@
                 domains
                 (fn [domain-name remote-path]
                   (let [local-path (domain-path local-root domain-name)]
-                    (domain/build-domain
-                     local-root hdfs-conf remote-path hosts replication
-                     :throttle throttle))))
+                    (domain/build-domain local-root
+                                         :hosts hosts
+                                         :replication replication
+                                         :hdfs-conf hdfs-conf
+                                         :remote-path remote-path
+                                         :throttle throttle))))
                (dissoc conf-map
                        :domains :local-root :port))))
 

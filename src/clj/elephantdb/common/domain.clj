@@ -5,8 +5,9 @@
             [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.shard :as shard]
+            [elephantdb.common.config :as conf]
             [elephantdb.common.status :as status])
-  (:import [elephantdb Utils]
+  (:import [elephantdb Utils DomainSpec]
            [elephantdb.store DomainStore]
            [elephantdb.common.status IStateful KeywordStatus]
            [elephantdb.persistence ShardSet Shutdownable]))
@@ -61,6 +62,15 @@
 (defmethod mk-local-store DomainStore
   [local-path remote-vs]
   (DomainStore. local-path (.getSpec remote-vs)))
+
+(defmethod mk-local-store DomainSpec
+  [local-path spec]
+  (DomainStore. local-path spec))
+
+(defmethod mk-local-store clojure.lang.IPersistentMap
+  [local-path spec]
+  (let [spec (conf/convert-clj-domain-spec spec)]
+    (DomainStore. local-path spec)))
 
 (defmulti version-seq type)
 
@@ -224,32 +234,20 @@
 ;;
 ;; This is the main function used by a database to build its domain objects.
 
-(defn local-domain
-  "Returns a domain object to be used with local stores only."
-  [local-root]
-  (let [localhost   (u/local-hostname)
-        local-store (mk-local-store local-root nil)
-        index        (shard/generate-index
-                      localhost (.getNumShards (.getSpec local-store)))]
-    (doto (Domain. local-store
-                   nil
-                   (Utils/makeSerializer (.getSpec local-store))
-                   nil
-                   (u/mk-rw-lock)
-                   localhost
-                   (atom (KeywordStatus. :loading))
-                   (atom {})
-                   index)
-      (load-version! (.mostRecentVersion local-store)))))
-
-;; TODO: Add more keyword arguments here! This thing should degrade gracefully.
 (defn build-domain
   "Constructs a domain record."
-  [local-root hdfs-conf remote-path hosts replication & {:keys [throttle]}]
+  [local-root
+   & {:keys [throttle hdfs-conf remote-path hosts replication spec]
+      :or {hdfs-conf   {}
+           hosts       [(u/local-hostname)]
+           replication 1}}]
   (let [remote-fs     (h/filesystem hdfs-conf)
-        remote-store  (DomainStore. remote-fs remote-path)
-        local-store   (mk-local-store local-root remote-store)
-        index (shard/generate-index hosts (.getNumShards (.getSpec local-store)))]
+        remote-store  (when remote-path
+                        (DomainStore. remote-fs remote-path))
+        local-store   (mk-local-store local-root (or remote-store spec))
+        index (shard/generate-index hosts
+                                    (.getNumShards (.getSpec local-store))
+                                    replication)]
     (Domain. local-store
              remote-store
              (Utils/makeSerializer (.getSpec local-store))
@@ -339,17 +337,17 @@
 (defn key->shard
   "Accepts a local store and a key (any object will do); returns the
   approprate shard number for the given key."
-  [{:keys [local-store] :as domain} key]
-  (let [version (current-version domain)
-        ^ShardSet shard-set (.getShardSet local-store version)]
-    (.shardIndex shard-set key)))
+  [{:keys [^DomainStore local-store] :as domain} key]
+  (when-let [version (current-version domain)]
+    (let [^ShardSet shard-set (.getShardSet local-store (current-version domain))]
+      (.shardIndex shard-set key))))
 
 (defn retrieve-shard
   "If the supplied domain contains the given sharding key, returns the
    Persistence object to which the key has been sharded, else returns
    nil."
   [domain key]
-  (let [shard-idx (key->shard domain key)]
+  (when-let [shard-idx (key->shard domain key)]
     (get-in (domain-data domain)
             [:shards shard-idx])))
 

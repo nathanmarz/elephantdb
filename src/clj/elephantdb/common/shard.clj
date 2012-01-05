@@ -57,6 +57,6 @@
   the hosts. For example, setting `pred` to `#{localhost}` would force
   the hostname bound to `localhost` to the front of the sequence."
   [shard-index shard pred]
-  (->> (host-set shard-index shard)
-       (shuffle)
-       (seq/prioritize pred)))
+  (when-let [hosts (host-set shard-index shard)]
+    (->> (shuffle hosts)
+         (seq/prioritize pred))))
