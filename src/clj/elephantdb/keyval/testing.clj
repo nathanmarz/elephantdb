@@ -257,12 +257,18 @@
   (get [this k]
     (get @(.state this) k))
 
+  (put [this k v]
+    (-> (.state this)
+        (swap! assoc k v)))
+
   (index [this doc]
     (-> (.state this)
         (swap! assoc (.key doc) (.value doc))))
+
   (iterator [this]
     (map (fn [[k v]] (KeyValDocument. k v))
          @(.state this)))
+
   (close [_]))
 
 (defrecord MemoryCoordinator [state]
