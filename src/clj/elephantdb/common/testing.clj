@@ -153,8 +153,9 @@
   create-domain!"
   [converter-fn]
   (fn [spec path sharded-items & {:keys [version]}]
-    (let [sharded-docs (u/val-map converter-fn sharded-items)]
-      (presharded->writer! spec path sharded-docs :version version))))
+    (let [sharded-docs (u/val-map (partial map converter-fn)
+                                  sharded-items)]
+      (create-domain! spec path sharded-docs :version version))))
 
 ;; ## Shard Mocking
 
@@ -194,7 +195,7 @@
   shard->document-seq. Otherwise this is the same as create-domain!."
   [spec path doc-seq & {:keys [version shard-fn]}]
   (let [sharded-docs (shard-docs doc-seq :shard-fn shard-fn)]
-    (presharded->writer! spec path sharded-docs :version version)))
+    (create-domain! spec path sharded-docs :version version)))
 
 ;; ## Generic Extensions for other persistences
 
@@ -224,6 +225,6 @@
   [converter-fn]
   (fn [spec path item-seq & {:keys [version shard-fn]}]
     (let [item-sharder (mk-sharder converter-fn)
-          sharded-docs (item-sharder item-seq :shard-fn shard-fn)]
-      (presharded->writer! spec path sharded-docs :version version))))
+          sharded-docs (item-sharder spec item-seq :shard-fn shard-fn)]
+      (create-domain! spec path sharded-docs :version version))))
 

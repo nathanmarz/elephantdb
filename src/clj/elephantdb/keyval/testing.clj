@@ -1,6 +1,7 @@
 (ns elephantdb.keyval.testing
   (:use midje.sweet
         elephantdb.common.testing
+        [elephantdb.common.domain :only (build-domain)]
         [jackknife.logging :only (info)])
   (:require [jackknife.core :as u]
             [hadoop-util.test :as t]
@@ -114,13 +115,13 @@
              :shard-fn shard-fn)))
 
 (defmacro with-domain
-  [[pathsym spec kv-pairs & {:keys [version shard-fn]}] & body]
-  `(t/with-fs-tmp [_ ~pathsym]
-     (mk-kv-domain ~spec ~pathsym ~kv-pairs
+  [[sym spec kv-pairs & {:keys [version shard-fn]}] & body]
+  `(t/with-fs-tmp [fs# path#]
+     (mk-kv-domain ~spec path# ~kv-pairs
                    :version ~version
                    :shard-fn ~shard-fn)
-     ~@body))
-
+     (let [~sym (build-domain path#)]
+       ~@body)))
 
 (defn mk-presharded-kv-domain
   "Accepts a domain-spec, path, and a map of shard->kv-pair-seq and
@@ -134,11 +135,12 @@
              :version  version)))
 
 (defmacro with-presharded-domain
-  [[pathsym spec shard-map & {:keys [version]}] & body]
-  `(t/with-fs-tmp [_ ~pathsym]
-     (mk-presharded-kv-domain ~pathsym ~spec ~shard-map
+  [[sym spec shard-map & {:keys [version]}] & body]
+  `(t/with-fs-tmp [fs# path#]
+     (mk-presharded-kv-domain ~spec path# ~shard-map
                               :version ~version)
-     ~@body))
+     (let [~sym (build-domain path#)]
+       ~@body)))
 
 ;; ## Thrift Service Testing Helpers
 
