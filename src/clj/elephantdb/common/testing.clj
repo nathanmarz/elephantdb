@@ -73,11 +73,19 @@
                "elephantdb.partition.HashModScheme"
                shard-count))
 
-(defn mk-domain-store
+;; TODO: Make a more explicit version.
+(defn mk-populated-store!
   [path spec & docs]
-  (let [store        (DomainStore. path spec)
-        version-path (.createVersion store 1)]
-    (.getShardSet store (long 1))))
+  (let [version      (rand-int 10)
+        store        (DomainStore. path spec)
+        shard-set    (.getShardSet store version)
+        version-path (.createVersion store version)]
+    (doseq [[idx doc-seq] (group-by #(.shardIndex shard-set %) docs)]
+      (with-open [shard (.openShardForAppend shard-set idx)]
+        (doseq [doc doc-seq]
+          (.index shard doc))))
+    (doto store
+      (.succeedVersion version-path))))
 
 ;; ## Hadoop Testing Utilities
 ;;

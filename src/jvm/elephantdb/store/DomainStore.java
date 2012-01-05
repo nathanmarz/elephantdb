@@ -57,7 +57,7 @@ public class DomainStore {
         return _spec;
     }
     
-    ShardSet getShardSet(long version) {
+    public ShardSet getShardSet(long version) {
         String path = versionPath(version);
         return new ShardSetImpl(path, _spec);
     }
