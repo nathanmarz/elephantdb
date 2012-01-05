@@ -207,7 +207,12 @@
 
 (deftype Domain
     [localStore remoteStore serializer throttle rwLock
-     hostname status domainData shardIndex]  
+     hostname status domainData shardIndex]
+  clojure.lang.Seqable
+  (seq [this]
+    (when-let [data (domain-data this)]
+      (mapcat #(lazy-seq (.iterator %))
+              (vals (:shards data)))))
   
   Shutdownable
   (shutdown [this]
@@ -263,7 +268,7 @@
              (u/mk-rw-lock)
              (u/local-hostname)
              (atom (KeywordStatus. :loading))
-             (atom {})
+             (atom nil)
              index)))
 
 ;; ## Domain Updater Logic
