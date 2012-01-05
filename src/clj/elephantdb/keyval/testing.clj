@@ -49,12 +49,11 @@
   (.put persistence key val))
 
 (defn get-all
-  "Returns a sequence of all key-value pairs in the supplied
-  persistence."
+  "Returns a map containing all key-value pairs in the supplied
+  KeyValuePersistence."
   [persistence]
-  (doall
-   (for [kv-pair (seq persistence)]
-     [(.key kv-pair) (.value kv-pair)])))
+  (into {} (for [kv-pair (seq persistence)]
+             [(.key kv-pair) (.value kv-pair)])))
 
 (defn append-pairs
   "Accepts a sequence of kv-pairs and indexes each into an existing
@@ -167,17 +166,15 @@
    :download-rate-limit 1024
    :update-interval-s 60})
 
+;; TODO: Add in the ability to re-bind the host->shard decision.
 (defn mk-service-handler
-  [global-config localdir host->shards]
-  (binding [shard/compute-host->shards (if host->shards
-                                         (constantly host->shards)
-                                         shard/compute-host->shards)]
-    (let [handler (db/build-database
-                   (merge global-config (mk-local-config localdir)))]
-      (while (not (.isFullyLoaded handler))
-        (info "waiting...")
-        (Thread/sleep 500))
-      handler)))
+  [global-config localdir]
+  (let [handler (db/build-database
+                 (merge global-config (mk-local-config localdir)))]
+    (while (not (.isFullyLoaded handler))
+      (info "waiting...")
+      (Thread/sleep 500))
+    handler))
 
 (defmacro with-service-handler
   [[handler-sym hosts domains-conf & [host-to-shards]] & body]
