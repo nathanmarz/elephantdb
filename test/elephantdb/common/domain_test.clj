@@ -28,3 +28,11 @@
           local-store  (mk-local-store local remote)]
       (fact "Now the specs should be equal."
         (.getSpec local-store) => (.getSpec remote-store)))))
+
+
+;; ## Domain Type Testing
+
+(fact ""
+  (with-fs-tmp [_ tmp]
+    (let [domain (build-domain tmp :spec test-spec)]
+      )))

@@ -207,14 +207,14 @@
 ;; ## Domain Type Definition
 
 (defprotocol DomainOps
-  (index! [domain document]
-    "Indexes the supplied document into the domain."))
+  (index! [domain & documents]
+    "Indexes the supplied documents into the domain."))
 
 (deftype Domain
     [localStore remoteStore serializer throttle rwLock
      hostname status domainData shardIndex]
   DomainOps
-  (index! [this document]
+  (index! [this & docs]
     ;; TODO: We need better error handling here. If a shard doesn't
     ;; exist BUT is located in the shard-index, we should create the
     ;; shard. load-version! should make sure that all shards are
