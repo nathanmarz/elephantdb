@@ -3,11 +3,12 @@
         elephantdb.test.common
         midje.sweet)
   (:require [hadoop-util.test :as t])
-  (:import [elephantdb.store DomainStore]))
+  (:import [elephantdb.store DomainStore]
+           [elephantdb.document KeyValDocument]))
 
 (def test-spec
   "BerkeleyDB-based DomainSpec for testing."
-  (Berkeley-spec 5))
+  (berkeley-spec 5))
 
 (fact "Test try-domain-store."
   (t/with-fs-tmp [fs tmp]
@@ -30,5 +31,15 @@
       (fact "Now the specs should be equal."
         (.getSpec local-store) => (.getSpec remote-store)))))
 
-(fact "domain testing."
-  (with-basic-domain [domain (berkeley-spec 4)]))
+(fact
+  "Getting a seq on a domain should return the documents from ALL
+   shards, no matter what the split."
+  (let [shard-seq [0 0 1 1]
+        doc-seq   [(KeyValDocument. 1 2)
+                   (KeyValDocument. 3 4)
+                   (KeyValDocument. 5 6)
+                   (KeyValDocument. 7 8)]]
+    (with-basic-domain [domain
+                        (berkeley-spec 3)
+                        (map vector shard-seq doc-seq)]
+      (seq domain) => (contains doc-seq :in-any-order))))

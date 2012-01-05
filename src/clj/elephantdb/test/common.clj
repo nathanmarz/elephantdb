@@ -152,8 +152,8 @@
 
 (defmacro with-sharding-fn [shard-fn & body]
   `(if ~shard-fn
-     (with-redefs [test-key->shard ~shard-fn]
-       ~@body)
+     (do (with-redefs [test-key->shard ~shard-fn]
+        ~@body))
      (do ~@body)))
 
 (defn shard-index
@@ -168,8 +168,7 @@
   "Accepts a DomainSpec and a sequence of <shard-key, document> pairs
   and returns a map of shard->doc-seq. A custom sharding function can
   be supplied with the `:shard-fn` keyword."
-  [spec doc-seq & {:keys [shard-fn]
-                   :or {shard-fn key->shard}}]
+  [spec doc-seq & {:keys [shard-fn]}]
   (with-sharding-fn shard-fn
     (->> doc-seq
          (group-by (fn [[idx _]] (shard-index spec idx)))
@@ -182,7 +181,7 @@
   "doc-seq is a sequence of <shard-key, document> pairs vs a map of
   shard->document-seq. Otherwise this is the same as create-domain!."
   [spec path doc-seq & {:keys [version shard-fn]}]
-  (let [sharded-docs (shard-docs doc-seq :shard-fn shard-fn)]
+  (let [sharded-docs (shard-docs spec doc-seq :shard-fn shard-fn)]
     (create-domain! spec path sharded-docs :version version)))
 
 (defmacro with-basic-domain
@@ -197,12 +196,13 @@
   A domain with the supplied domain-spec is bound to `sym` inside the
   body of `with-domain`."
   [[sym spec doc-seq & {:keys [version shard-fn]}] & body]
-  `(t/with-fs-tmp [fs# path#]
-     (create-unsharded-domain! ~spec path# ~doc-seq
-                               :version ~version
-                               :shard-fn ~shard-fn)
-     (let [~sym (build-domain path#)]
-       ~@body)))
+  `(log/with-log-level :off
+     (t/with-fs-tmp [fs# path#]
+       (create-unsharded-domain! ~spec path# ~doc-seq
+                                 :version ~version
+                                 :shard-fn ~shard-fn)
+       (let [~sym (dom/build-domain path#)]
+         ~@body))))
 
 ;; ## Generic Extensions for other persistences
 

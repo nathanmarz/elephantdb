@@ -2,7 +2,7 @@
   (:use midje.sweet
         elephantdb.test.common
         [elephantdb.common.domain :only (build-domain)]
-        [jackknife.logging :only (info)])
+        [jackknife.logging :only (info with-log-level)])
   (:require [jackknife.core :as u]
             [hadoop-util.test :as t]
             [elephantdb.keyval.core :as kv]
@@ -125,12 +125,13 @@
   A domain with the supplied domain-spec is bound to `sym` inside the
   body of `with-domain`."
   [[sym spec kv-pairs & {:keys [version shard-fn]}] & body]
-  `(t/with-fs-tmp [fs# path#]
-     (mk-kv-domain ~spec path# ~kv-pairs
-                   :version ~version
-                   :shard-fn ~shard-fn)
-     (let [~sym (build-domain path#)]
-       ~@body)))
+  `(with-log-level :off
+     (t/with-fs-tmp [fs# path#]
+       (mk-kv-domain ~spec path# ~kv-pairs
+                     :version ~version
+                     :shard-fn ~shard-fn)
+       (let [~sym (build-domain path#)]
+         ~@body))))
 
 (defn mk-presharded-kv-domain
   "Accepts a domain-spec, path, and a map of shard->kv-pair-seq and
@@ -153,11 +154,12 @@
                  :version 100]
           (seq my-domain))"
   [[sym spec shard-map & {:keys [version]}] & body]
-  `(t/with-fs-tmp [fs# path#]
-     (mk-presharded-kv-domain ~spec path# ~shard-map
-                              :version ~version)
-     (let [~sym (build-domain path#)]
-       ~@body)))
+  `(with-log-level :off
+     (t/with-fs-tmp [fs# path#]
+       (mk-presharded-kv-domain ~spec path# ~shard-map
+                                :version ~version)
+       (let [~sym (build-domain path#)]
+         ~@body))))
 
 ;; ## Thrift Service Testing Helpers
 
@@ -196,7 +198,7 @@
     (let [shards (get (domain-to-host-to-shards domain) host)
           pairs (apply concat (vals (select-keys shards-to-pairs shards)))]
       (for [key keys]
-        (if-let [myval (first (filter #(barr= key (first %)) pairs))]
+        (if-let [myval (first (filter #(= key (first %)) pairs))]
           (kv/mk-value (second myval))
           (throw (thrift/wrong-host-ex)))))))
 
@@ -214,22 +216,24 @@
   `(with-service-handler [~handler-sym [(u/local-hostname)] ~domains-conf]
      ~@body))
 
-(defn check-domain-pred
-  [domain-name handler pairs pred]
-  (doseq [[k v] pairs]
-    (let [newv (-> handler (.get domain-name k) (.get_data))]
-      (if-not v
-        (fact newv => nil?)
-        (fact (apply str (map seq [k v newv])) => (pred v newv))))))
+(comment
+  "OVERHAUL these."
+  (defn check-domain-pred
+    [domain-name handler pairs pred]
+    (doseq [[k v] pairs]
+      (let [newv (-> handler (.get domain-name k) (.get_data))]
+        (if-not v
+          (fact newv => nil?)
+          (fact (apply str (map seq [k v newv])) => (pred v newv))))))
 
-(defn kv-pairs= [& pair-seq]
-  (apply = (map set pair-seq)))
+  (defn kv-pairs= [& pair-seq]
+    (apply = (map set pair-seq)))
 
-(defn check-domain [domain-name handler pairs]
-  (check-domain-pred domain-name handler pairs barr=))
+  (defn check-domain [domain-name handler pairs]
+    (check-domain-pred domain-name handler pairs barr=))
 
-(def check-domain-not
-  (complement check-domain))
+  (def check-domain-not
+    (complement check-domain)))
 
 ;; ## Key-Value Memory Persistence
 
