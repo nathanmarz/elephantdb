@@ -114,6 +114,7 @@
       (.shutdown domain))))
 
 (defn build-database
+  "Returns a database linking to a bunch of read-only domains."
   [{:keys [domains hosts replication port local-root hdfs-conf] :as conf-map}]
   (let [throttle (domain/throttle (:download-rate-limit conf-map))]
     (Database. local-root
@@ -127,7 +128,8 @@
                                          :replication replication
                                          :hdfs-conf hdfs-conf
                                          :remote-path remote-path
-                                         :throttle throttle))))
+                                         :throttle throttle
+                                         :read-only true))))
                (dissoc conf-map
                        :domains :local-root :port))))
 

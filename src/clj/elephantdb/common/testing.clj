@@ -73,16 +73,19 @@
                "elephantdb.partition.HashModScheme"
                shard-count))
 
-;; TODO: Make a more explicit version.
 (defn mk-populated-store!
-  [path spec & docs]
+  "Accepts a path, a DomainSpec and any number of pairs of shard-key
+  and indexable document, and indexes the supplied documents into the
+  supplied persistence."
+  [path spec & pairs]
   (let [version      (rand-int 10)
         store        (DomainStore. path spec)
         shard-set    (.getShardSet store version)
         version-path (.createVersion store version)]
-    (doseq [[idx doc-seq] (group-by #(.shardIndex shard-set %) docs)]
+    (doseq [[idx doc-seq] (group-by #(.shardIndex shard-set (first %))
+                                    pairs)]
       (with-open [shard (.openShardForAppend shard-set idx)]
-        (doseq [doc doc-seq]
+        (doseq [doc (map second doc-seq)]
           (.index shard doc))))
     (doto store
       (.succeedVersion version-path))))

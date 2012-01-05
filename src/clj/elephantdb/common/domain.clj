@@ -161,15 +161,18 @@
 (defn open-shard!
   "Opens and returns a Persistence object standing in for the shard
   with the supplied index."
-  [domain-store shard-idx version]
+  [domain-store shard-idx version & {:keys [read-only]
+                                     :or {read-only true}}]
   (log/info "Opening shard #: " shard-idx)
-  (try (u/with-ret (.openShardForRead domain-store shard-idx)
+  (try (u/with-ret (if read-only
+                     (.openShardForRead domain-store shard-idx)
+                     (.openShardForAppend domain-store shard-idx))
          (log/info "Opened shard #: " shard-idx))
        (catch Throwable e
          (prn e)
          (log/info "Shard didn't exist. Creating shard # " shard-idx)
          (.createShard domain-store shard-idx)
-         (open-shard! domain-store shard-idx version))))
+         (open-shard! domain-store shard-idx version :read-only read-only))))
 
 (defn retrieve-shards!
   "Accepts a domain object. On success, returns a sequence of opened
@@ -177,12 +180,13 @@
   local domain store!)"
   [domain version]
   (let [local-store (.localStore domain)
-        shards      (shard-set domain)]
+        shards      (shard-set domain)
+        open!       (fn [idx]
+                      (open-shard! local-store idx version
+                                   :read-only (.readOnly domain)))]
     (assert (has-version? local-store version)
             (str version "  doesn't exist."))
-    (u/with-ret (->> (u/do-pmap (fn [idx]
-                                  (open-shard! local-store idx version))
-                                shards)
+    (u/with-ret (->> (u/do-pmap open! shards)
                      (zipmap shards))
       (log/info "Finished opening domain at " (.getRoot local-store)))))
 
@@ -211,31 +215,58 @@
   (when-let [latest (newest-version domain)]
     (load-version! domain latest)))
 
-;; ## Domain Type Definition
+;; ### Sharding Logic
+;;
+;; These functions provide hints to a given domain about where to look
+;;for a given sharding key.
 
-(defprotocol DomainOps
-  (index! [domain & documents]
-    "Indexes the supplied documents into the domain."))
+;; TODO: Make this work with a sequence of keys!
+(defn key->shard
+  "Accepts a local store and a key (any object will do); returns the
+  approprate shard number for the given key."
+  [domain key]
+  (when-let [version (current-version domain)]
+    (let [^ShardSet shard-set (-> (.localStore domain)
+                                  (.getShardSet version))]
+      (.shardIndex shard-set key))))
+
+(defn retrieve-shard
+  "If the supplied domain contains the given sharding key, returns the
+   Persistence object to which the key has been sharded, else returns
+   nil."
+  [domain key]
+  (when-let [shard-idx (key->shard domain key)]
+    (get-in (domain-data domain)
+            [:shards shard-idx])))
+
+(defn prioritize-hosts
+  "Accepts a domain and a sharding-key and returns a sequence of hosts
+  to try when attempting to find the Document paired with the sharding
+  key."
+  [domain key]
+  (shard/prioritize-hosts (.shardIndex domain)
+                          (key->shard domain key)
+                          #{(.hostname domain)}))
+
+(defn index!
+  "Accepts a domain and any number of pairs of shard-key and indexable
+  document, and indexes the supplied documents into the supplied
+  persistence."
+  [domain & pairs]
+  {:pre [(.readOnly domain)]}
+  (u/with-write-lock (.rwLock domain)
+    (when-let [shard-map (:shards (domain-data domain))]
+      (doseq [[idx doc-seq] (group-by #(key->shard domain (first %))
+                                      pairs)]
+        (let [shard (shard-map idx)]
+          (doseq [doc (map second doc-seq)]
+            (.index shard doc)))))))
+
+;; ## Domain Type Definition
 
 (deftype Domain
     [localStore remoteStore serializer throttle rwLock
-     hostname status domainData shardIndex]
-  DomainOps
-  (index! [this & docs]
-    ;; TODO: We need better error handling here. If a shard doesn't
-    ;; exist BUT is located in the shard-index, we should create the
-    ;; shard. load-version! should make sure that all shards are
-    ;; created.
-    (u/with-write-lock (.rwLock this)
-      ;; TODO: This will fail, currently. We need a way to toggle the
-      ;; readability.
-      ;;
-      ;; (with-open [shard (retrieve-shard this document)]
-      ;; (.index shard document))
-      ;;
-      ;; map over shard-index, * group by shard, index each group.
-      ))
-  
+     hostname status domainData shardIndex readOnly]
   clojure.lang.Seqable
   (seq [this]
     (when-let [data (domain-data this)]
@@ -277,9 +308,11 @@
 (defn build-domain
   "Constructs a domain record."
   [local-root
-   & {:keys [throttle hdfs-conf remote-path hosts replication spec]
+   & {:keys [throttle hdfs-conf remote-path hosts
+             replication spec read-only]
       :or {hdfs-conf   {}
            hosts       [(u/local-hostname)]
+           read-only   true
            replication 1}}]
   (let [remote-fs     (h/filesystem hdfs-conf)
         remote-store  (when remote-path
@@ -297,7 +330,8 @@
              (u/local-hostname)
              (atom (KeywordStatus. :loading))
              (atom nil)
-             index)))
+             index
+             read-only)))
 
 ;; ## Domain Updater Logic
 
@@ -370,35 +404,3 @@
   (if (status/updating? domain)
     (log/info "UPDATER - Not updating as update's still in progress.")
     (future (update-domain! domain :version version))))
-
-;; ### Sharding Logic
-;;
-;; These functions provide hints to a given domain about where to look
-;;for a given sharding key.
-
-(defn key->shard
-  "Accepts a local store and a key (any object will do); returns the
-  approprate shard number for the given key."
-  [domain key]
-  (when-let [version (current-version domain)]
-    (let [^ShardSet shard-set (.getShardSet (.localStore domain)
-                                            (current-version domain))]
-      (.shardIndex shard-set key))))
-
-(defn retrieve-shard
-  "If the supplied domain contains the given sharding key, returns the
-   Persistence object to which the key has been sharded, else returns
-   nil."
-  [domain key]
-  (when-let [shard-idx (key->shard domain key)]
-    (get-in (domain-data domain)
-            [:shards shard-idx])))
-
-(defn prioritize-hosts
-  "Accepts a domain and a sharding-key and returns a sequence of hosts
-  to try when attempting to find the Document paired with the sharding
-  key."
-  [domain key]
-  (shard/prioritize-hosts (.shardIndex domain)
-                          (key->shard domain key)
-                          #{(.hostname domain)}))
