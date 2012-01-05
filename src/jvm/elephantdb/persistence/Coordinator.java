@@ -12,5 +12,13 @@ import java.util.Map;
 public interface Coordinator extends Serializable {
     Persistence openPersistenceForRead(String root, Map options) throws IOException;
     Persistence openPersistenceForAppend(String root, Map options) throws IOException;
+
+    /**
+     * The returned persistence should be CLOSED.
+     * @param root
+     * @param options
+     * @return
+     * @throws IOException
+     */
     Persistence createPersistence(String root, Map options) throws IOException;
 }

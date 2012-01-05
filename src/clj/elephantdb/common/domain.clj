@@ -78,7 +78,7 @@
 
 (defmethod version-seq DomainStore
   [store]
-  (into [] (.getAllVersions store)))
+  (seq (.getAllVersions store)))
 
 (def newest-version
   "Returns the newest version for the supplied object, nil if it

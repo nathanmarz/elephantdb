@@ -140,7 +140,8 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
 
         private void progress() {
-            if (progressable != null) { progressable.progress(); }
+            if (progressable != null)
+                progressable.progress();
         }
     }
 
