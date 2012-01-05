@@ -146,22 +146,22 @@
                "hdfs://hadoop-devel-nn.local.twitter.com:8020"}
    :blob-conf {"fs.default.name"
                "hdfs://hadoop-devel-nn.local.twitter.com:8020"}
-   :domains {"graph" {:remote-store <remote-domain-store>
-                      :local-store <local-domain-store>
+   :domains {"graph" {:remoteStore <remote-domain-store>
+                      :localStore <local-domain-store>
                       :serializer <serializer>
                       :status <status-atom>
-                      :shard-index {:hosts->shards {}
-                                    :shard->host {}}
-                      :domain-data (atom {:version 123534534
-                                          :shards {1 <persistence>
-                                                   3 <persistence>}})}
+                      :shardIndex {:hosts->shards {}
+                                   :shard->host {}}
+                      :domainData (atom {:version 123534534
+                                         :shards {1 <persistence>
+                                                  3 <persistence>}})}
 
-             "docs" {:remote-store <remote-domain-store>
-                     :local-store <local-domain-store>
+             "docs" {:remoteStore <remote-domain-store>
+                     :localStore <local-domain-store>
                      :serializer <serializer>
                      :status <status-atom>
-                     :shard-index {:hosts->shards {}
-                                   :shard->host {}}
-                     :domain-data (atom {:version 123534534
-                                         :shards {1 <persistence>
-                                                  3 <persistence>}})}}})
+                     :shardIndex {:hosts->shards {}
+                                  :shard->host {}}
+                     :domainData (atom {:version 123534534
+                                        :shards {1 <persistence>
+                                                 3 <persistence>}})}}})

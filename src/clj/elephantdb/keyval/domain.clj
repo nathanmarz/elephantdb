@@ -17,7 +17,7 @@
   [domain key]
   (when-let [^KeyValPersistence shard (dom/retrieve-shard domain key)]
     (log/debug (format "Direct get: key %s at shard %s" key shard))
-    (u/with-read-lock (:rw-lock domain)
+    (u/with-read-lock (.rwLock domain)
       (.get shard key))))
 
 (defn index-keys

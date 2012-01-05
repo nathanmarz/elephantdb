@@ -31,7 +31,7 @@
 ;; has been sent.
 
 (defn generate-index
-  "Generates a shard-index for use by a single domain."
+  "Generates a shard index for use by a single domain."
   [hosts shard-count replication]
   (let [hosts->shards (compute-host->shards hosts
                                             shard-count

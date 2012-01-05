@@ -12,25 +12,6 @@
            [elephantdb.common.status IStateful KeywordStatus]
            [elephantdb.persistence ShardSet Shutdownable]))
 
-;; ## Domain Getters
-
-(defn domain-data
-  "Returns a data-map w/ :version & :shards."
-  [domain]
-  @(:domain-data domain))
-
-(defn shard-set
-  "Returns the set of shards the current domain is responsible for."
-  [{:keys [shard-index hostname]}]
-  (shard/shard-set shard-index hostname))
-
-(defn current-version
-  "Returns the unix timestamp (in millis) of the current version being
-  served by the supplied domain."
-  [domain]
-  (-> (domain-data domain)
-      (get :version)))
-
 ;; Store manipulation
 
 (defn try-domain-store
@@ -71,6 +52,26 @@
   [local-path spec]
   (let [spec (conf/convert-clj-domain-spec spec)]
     (DomainStore. local-path spec)))
+
+;; ## Domain Getters
+
+(defn domain-data
+  "Returns a data-map w/ :version & :shards."
+  [domain]
+  @(.domainData domain))
+
+(defn shard-set
+  "Returns the set of shards the current domain is responsible for."
+  [domain]
+  (shard/shard-set (.shardIndex domain)
+                   (.hostname domain)))
+
+(defn current-version
+  "Returns the unix timestamp (in millis) of the current version being
+  served by the supplied domain."
+  [domain]
+  (-> (domain-data domain)
+      (get :version)))
 
 (defmulti version-seq type)
 
@@ -117,7 +118,7 @@
   keeps multiple versions."
   [domain & {:keys [to-keep]
              :or {to-keep 1}}]
-  (doto (:local-store domain)
+  (doto (.localStore domain)
     (.cleanup to-keep)))
 
 (defn cleanup-domains!
@@ -166,9 +167,11 @@
   "Accepts a domain object. On success, returns a sequence of opened
   Persistence objects for the supplied version. (Version must exist in
   local domain store!)"
-  [{:keys [local-store] :as domain} version]
-  {:pre [(has-version? local-store version)]}
-  (let [shards (shard-set domain)]
+  [domain version]
+  (let [local-store (.localStore domain)
+        shards      (shard-set domain)]
+    (assert (has-version? local-store version)
+            (str version "  doesn't exist."))
     (u/with-ret (->> (u/do-pmap (fn [idx]
                                   (open-shard! local-store idx version))
                                 shards)
@@ -180,14 +183,14 @@
   and hot-swaps in the new version for the old, closing all old shards
   on completion."
   [domain new-version]
-  {:pre [(-> (:local-store domain)
+  {:pre [(-> (.localStore domain)
              (has-version? new-version))]}
   (let [{:keys [shards version] :as data} (domain-data domain)]
     (if (= version new-version)
       (log/info new-version " is already loaded.")
       (let [new-shards (retrieve-shards! domain new-version)]
-        (u/with-write-lock (:rw-lock domain)
-          (reset! (:domain-data domain)
+        (u/with-write-lock (.rwLock domain)
+          (reset! (.domainData domain)
                   {:shards new-shards
                    :version new-version}))
         (status/to-ready domain)
@@ -202,33 +205,37 @@
 
 ;; ## Domain Record Definition
 
-(defrecord Domain
-    [local-store remote-store serializer throttle rw-lock
-     hostname status domain-data shard-index]  
-
+(deftype Domain
+    [localStore remoteStore serializer throttle rwLock
+     hostname status domainData shardIndex]  
+  
   Shutdownable
   (shutdown [this]
     "Shutting down a domain requires closing all of its shards."
     (status/to-shutdown this)
-    (u/with-write-lock (:rw-lock this)
+    (u/with-write-lock (.rwLock this)
       (close-shards! (-> (domain-data this)
                          (get :shards)))))
  
   IStateful
   (status [this]
-    @(:status this))
-  (to-ready [{:keys [status]}]
-    (status/swap-status! status status/to-ready))
-  (to-loading [{:keys [status]}]
-    (status/swap-status! status status/to-loading))
-  (to-failed [{:keys [status]} msg]
-    (status/swap-status! status status/to-failed msg))
-  (to-shutdown [{:keys [status]}]
-    (status/swap-status! status status/to-shutdown)))
+    @(.status this))
+  (to-ready [this]
+    (-> (status this)
+        (status/swap-status! status/to-ready)))
+  (to-loading [this]
+    (-> (status/status this)
+        (status/swap-status! status/to-loading)))
+  (to-failed [this msg]
+    (-> (status/status this)
+        (status/swap-status! status/to-failed msg)))
+  (to-shutdown [this]
+    (-> (status/status this)
+        (status/swap-status! status/to-shutdown))))
 
 (defmethod version-seq Domain
   [domain]
-  (version-seq (:local-store domain)))
+  (version-seq (.localStore domain)))
 
 ;; ## Domain Builder
 ;;
@@ -245,12 +252,13 @@
         remote-store  (when remote-path
                         (DomainStore. remote-fs remote-path))
         local-store   (mk-local-store local-root (or remote-store spec))
+        local-spec    (.getSpec local-store)
         index (shard/generate-index hosts
-                                    (.getNumShards (.getSpec local-store))
+                                    (.getNumShards local-spec)
                                     replication)]
     (Domain. local-store
              remote-store
-             (Utils/makeSerializer (.getSpec local-store))
+             (Utils/makeSerializer local-spec)
              throttle
              (u/mk-rw-lock)
              (u/local-hostname)
@@ -267,10 +275,13 @@
   "Transfers the supplied shard (specified by `idx`) from the supplied
   remote version's remote store to the appropriate path on the local
   store."
-  [{:keys [local-store remote-store throttle]} version idx]
-  (let [remote-fs   (.getFileSystem remote-store)
-        remote-path (.shardPath remote-store idx version)
-        local-path  (.shardPath local-store idx version)]
+  [domain version idx]
+  (let [throttle     (.throttle domain)
+        local-store  (.localStore domain)
+        remote-store (.remoteStore domain)
+        remote-fs    (.getFileSystem remote-store)
+        remote-path  (.shardPath remote-store idx version)
+        local-path   (.shardPath local-store idx version)]
     (if (.exists remote-fs remote-path)
       (do (log/info
            (format "Copied %s to %s." remote-path local-path))
@@ -287,7 +298,7 @@
   its local store. To throttle the download, provide a throttling
   agent with the optional `:throttle` keyword argument."
   [domain version]
-  (let [{:keys [local-store remote-store throttle]} domain]
+  (let [local-store (.localStore domain)]
     (.createVersion local-store version)
     (u/do-pmap (partial transfer-shard! domain version)
                (shard-set domain))
@@ -298,7 +309,7 @@
   local store doesn't), false otherwise."
   [domain version]
   (and (not (has-version? domain version))
-       (-> (:remote-store domain)
+       (-> (.remoteStore domain)
            (has-version? version))))
 
 (defn update-domain!
@@ -309,12 +320,10 @@
 
   `update-domain!` accepts the following optional keyword arguments:
 
-   :throttle - provide an optional throttling agent.
    :version - try to update to some version other than the most recent
   on the remote store."
-  [{:keys [remote-store] :as domain}
-   & {:keys [version]
-      :or {version (.mostRecentVersion remote-store)}}]
+  [domain & {:keys [version]
+             :or {version (.mostRecentVersion (.remoteStore domain))}}]
   (when (transfer-possible? domain version)
     (status/to-loading domain)
     (transfer-version! domain version)
@@ -337,9 +346,10 @@
 (defn key->shard
   "Accepts a local store and a key (any object will do); returns the
   approprate shard number for the given key."
-  [{:keys [^DomainStore local-store] :as domain} key]
+  [domain key]
   (when-let [version (current-version domain)]
-    (let [^ShardSet shard-set (.getShardSet local-store (current-version domain))]
+    (let [^ShardSet shard-set (.getShardSet (:local-store domain)
+                                            (current-version domain))]
       (.shardIndex shard-set key))))
 
 (defn retrieve-shard
@@ -355,7 +365,7 @@
   "Accepts a domain and a sharding-key and returns a sequence of hosts
   to try when attempting to find the Document paired with the sharding
   key."
-  [{:keys [shard-index hostname] :as domain} key]
-  (shard/prioritize-hosts shard-index
+  [domain key]
+  (shard/prioritize-hosts (.shardIndex domain)
                           (key->shard domain key)
-                          #{hostname}))
+                          #{(.hostname domain)}))

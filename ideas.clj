@@ -121,7 +121,7 @@
                             :local-handle "local-fs-handle"
                             :remote-handle "remote-fs-handle"
                             :domain-data <data-atom>
-                            :shard-index {:hosts-to-shards <map>
+                            :shardIndex {:hosts-to-shards <map>
                                           :shards-to-hosts <map>}#
                             :current-version 12356456324
                             :version-map #{{:id 12356456324, :status :open}
@@ -132,7 +132,7 @@
   "Returns a sequence of locations for the supplied key."
   [db domain key]
   (let [shard-idx (shard-idx db key)
-        shard-map (-> db (get domain) :shard-index :shards-to-hosts)]
+        shard-map (-> db (get domain) :shardIndex :shards-to-hosts)]
     (get shard-map shard)))
 
 

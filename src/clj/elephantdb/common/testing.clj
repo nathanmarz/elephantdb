@@ -35,7 +35,7 @@
 (defn version-well-formed?
   [domain version]
   (= (dom/shard-set domain version)
-     (-> (:local-store domain)
+     (-> (.localStore domain)
          (existing-shard-set version))))
 
 ;; ## Byte Array Testing
