@@ -9,7 +9,7 @@
   (shutdown? [_] "Am I shutting down?"))
 
 (defprotocol IStateful
-  (status [this] "Returns the current state object.")
+  (get-status [this] "Returns the current state object.")
   (to-ready [this] "Returns a new ready state.")
   (to-loading [this] "Returns a new loading-state.")
   (to-failed [this msg] "Returns a new failed state.")
@@ -24,7 +24,7 @@
                            (:status x)))
   
   IStateful
-  (status [state] state)
+  (get-status [state] state)
   (to-ready   [state] (KeywordStatus. :ready))
   (to-failed  [state msg] (KeywordStatus. :failed))
   (to-shutdown [state] (KeywordStatus. :shutdown))

@@ -11,7 +11,8 @@
   (:import [elephantdb Utils DomainSpec]
            [elephantdb.store DomainStore]
            [elephantdb.common.status IStateful KeywordStatus]
-           [elephantdb.persistence ShardSet Shutdownable]))
+           [elephantdb.persistence ShardSet Shutdownable]
+           [java.util.concurrent ExecutionException]))
 
 ;; Store manipulation
 
@@ -62,7 +63,8 @@
   @(.domainData domain))
 
 (defn shard-set
-  "Returns the set of shards the current domain is responsible for."
+  "Returns the set of shards for which the current domain is
+  responsible."
   [domain]
   (shard/shard-set (.shardIndex domain)
                    (.hostname domain)))
@@ -161,8 +163,13 @@
   with the supplied index."
   [domain-store shard-idx version]
   (log/info "Opening shard #: " shard-idx)
-  (u/with-ret (.openShardForRead domain-store shard-idx)
-    (log/info "Opened shard #: " shard-idx)))
+  (try (u/with-ret (.openShardForRead domain-store shard-idx)
+         (log/info "Opened shard #: " shard-idx))
+       (catch Throwable e
+         (prn e)
+         (log/info "Shard didn't exist. Creating shard # " shard-idx)
+         (.createShard domain-store shard-idx)
+         (open-shard! domain-store shard-idx version))))
 
 (defn retrieve-shards!
   "Accepts a domain object. On success, returns a sequence of opened
@@ -232,7 +239,7 @@
   clojure.lang.Seqable
   (seq [this]
     (when-let [data (domain-data this)]
-      (mapcat #(lazy-seq (.iterator %))
+      (mapcat #(lazy-seq %)
               (vals (:shards data)))))
   
   Shutdownable
@@ -244,19 +251,19 @@
                          (get :shards)))))
  
   IStateful
-  (status [this]
+  (get-status [this]
     @(.status this))
   (to-ready [this]
-    (-> (status this)
+    (-> (.status this)
         (status/swap-status! status/to-ready)))
   (to-loading [this]
-    (-> (status/status this)
+    (-> (.status this)
         (status/swap-status! status/to-loading)))
   (to-failed [this msg]
-    (-> (status/status this)
+    (-> (.status this)
         (status/swap-status! status/to-failed msg)))
   (to-shutdown [this]
-    (-> (status/status this)
+    (-> (.status this)
         (status/swap-status! status/to-shutdown))))
 
 (defmethod version-seq Domain
@@ -317,7 +324,7 @@
            (format "Copied %s to %s." remote-path local-path)))
       (do (log/info
            "Shard %s did not exist. Creating Empty LP." remote-path)
-          (.close (.createShard local-store idx version))))))
+          (.createShard local-store idx version)))))
 
 (defn transfer-version!
   "Transfers the supplied version from the domain's remote store to

@@ -26,7 +26,8 @@
 (defn test-get-put [coordinator]
   (let [coordinator (prep-coordinator coordinator)]
     (with-local-tmp [_ tmp-path]
-      (with-open [db (.createPersistence coordinator tmp-path {})]
+      (.createPersistence coordinator tmp-path {})
+      (with-open [db (.openPersistenceForAppend coordinator tmp-path {})]
         (fact (edb-get db "a") => nil)
         (edb-put db "a" "1")
         (edb-put db "b" "2")

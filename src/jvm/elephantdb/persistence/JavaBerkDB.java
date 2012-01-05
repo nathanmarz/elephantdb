@@ -27,15 +27,17 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
     }
 
     public Persistence openPersistenceForRead(String root, Map options) throws IOException {
-        return new JavaBerkDBPersistence(root, getSerializer(), options, true);
+        return new JavaBerkDBPersistence(root, getSerializer(), options, true, false);
     }
 
     public Persistence openPersistenceForAppend(String root, Map options) throws IOException {
-        return new JavaBerkDBPersistence(root, getSerializer(), options, false);
+        return new JavaBerkDBPersistence(root, getSerializer(), options, false, false);
     }
 
     public Persistence createPersistence(String root, Map options) throws IOException {
-        return new JavaBerkDBPersistence(root, getSerializer(), options, false);
+        JavaBerkDBPersistence ret = new JavaBerkDBPersistence(root, getSerializer(), options, false, true);
+        ret.close();
+        return ret;
     }
 
     public static class JavaBerkDBPersistence implements KeyValPersistence {
@@ -44,7 +46,8 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
         Database db;
         Serializer kvSerializer;
 
-        public JavaBerkDBPersistence(String root, Serializer serializer, Map options, boolean readOnly) {
+        public JavaBerkDBPersistence(String root, Serializer serializer, Map options,
+                                     boolean readOnly, boolean allowCreate) {
             if (serializer == null)
                 throw new RuntimeException("JavaBerkDBPersistence requires an initialized serializer.");
 
@@ -57,6 +60,7 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
             envConf.setReadOnly(readOnly);
             envConf.setLocking(false);
             envConf.setTransactional(false);
+            envConf.setAllowCreate(allowCreate);
 
             // TODO: Loop through options, setConfigParam for each one.
             envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "80");

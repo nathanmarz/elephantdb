@@ -45,12 +45,13 @@
 (defn some-updating?
   [{:keys [domains]}]
   (let [domains (vals domains)]
-    (some status/loading? (map status/status domains))))
+    (some status/loading?
+          (map status/get-status domains))))
 
 (defn domain->status
   "Returns a map of domain name -> status."
   [{:keys [domains]}]
-  (u/val-map status/status domains))
+  (u/val-map status/get-status domains))
 
 (def domain-names
   "Returns a sequence of all domain names for which the supplied

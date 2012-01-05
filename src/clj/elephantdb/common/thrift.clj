@@ -54,7 +54,7 @@
               (.get_update_status (.get_ready status))))))
   
   status/IStateful
-  (status [state] state)
+  (get-status [state] state)
   (to-ready [state] (ready-status))
   (to-failed [state msg] (failed-status msg))
   (to-shutdown [state] (shutdown-status))

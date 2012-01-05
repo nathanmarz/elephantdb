@@ -60,9 +60,8 @@
   "Creates a persistence at the supplied path by indexing the supplied
   tuples."
   [coordinator path & kv-pairs]
-  (with-open [db (.createPersistence coordinator path {})]
-    (doseq [[k v] kv-pairs]
-      (index db k v))))
+  (.createPersistence coordinator path {})
+  (apply append-pairs coordinator path kv-pairs))
 
 ;; bind this to get different behavior when making sharded domains.
 ;; TODO: Remove first arg from key->shard.
