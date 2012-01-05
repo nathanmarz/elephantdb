@@ -1,8 +1,12 @@
 (ns elephantdb.keyval.domain
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
-            [elephantdb.common.domain :as dom])
-  (:import [elephantdb.persistence KeyValPersistence]))
+            [elephantdb.common.domain :as dom]
+            [elephantdb.common.status :as s])
+  (:import [elephantdb.persistence KeyValPersistence]
+           [elephantdb.document KeyValDocument]
+           [elephantdb.common.status IStateful]
+           [elephantdb.persistence Shutdownable]))
 
 (defn trim-hosts
     "Used within a multi-get's loop. Accepts a sequence of hosts + a

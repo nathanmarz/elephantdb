@@ -2,6 +2,7 @@
   (:use elephantdb.common.config
         elephantdb.common.testing
         midje.sweet)
+  (:require [hadoop-util.test :as t])
   (:import [elephantdb.persistence JavaBerkDB]
            [elephantdb.partition HashModScheme]
            [elephantdb DomainSpec]))
@@ -24,7 +25,7 @@
   "Passes the supplied DomainSpec through ElephantDB's serialization
   methods, returning the result."
   [spec]
-  (with-fs-tmp [fs tmp]
+  (t/with-fs-tmp [fs tmp]
     (write-domain-spec! spec fs tmp)
     (read-domain-spec fs tmp)))
 
@@ -49,7 +50,7 @@
    (round-trip-spec clj-spec)) => (normalize clj-spec))
 
 (fact "Check individual attributes."
-  (with-fs-tmp [fs tmp]
+  (t/with-fs-tmp [fs tmp]
     (write-domain-spec! clj-spec fs tmp)
     (let [jspec (DomainSpec/readFromFileSystem fs tmp)]
       (.getNumShards jspec)                => 20
@@ -63,7 +64,7 @@
   "Passes the supplied clojure data structure in and out of
   ElephantDB's configuration printer."
   [config]
-  (with-fs-tmp [fs tmp]
+  (t/with-fs-tmp [fs tmp]
     (write-clj-config! config fs tmp)
     (read-clj-config fs tmp)))
 

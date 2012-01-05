@@ -163,16 +163,17 @@
   with the supplied index."
   [domain-store shard-idx version & {:keys [read-only]
                                      :or {read-only true}}]
-  (log/info "Opening shard #: " shard-idx)
-  (try (u/with-ret (if read-only
-                     (.openShardForRead domain-store shard-idx)
-                     (.openShardForAppend domain-store shard-idx))
-         (log/info "Opened shard #: " shard-idx))
-       (catch Throwable e
-         (prn e)
-         (log/info "Shard didn't exist. Creating shard # " shard-idx)
-         (.createShard domain-store shard-idx)
-         (open-shard! domain-store shard-idx version :read-only read-only))))
+  (letfn [(open! []
+            (log/info "Opening shard #: " shard-idx)
+            (u/with-ret (if read-only
+                          (.openShardForRead domain-store shard-idx)
+                          (.openShardForAppend domain-store shard-idx))
+              (log/info "Opened shard #: " shard-idx)))]
+    (try (open!)
+         (catch Throwable e
+           (log/info "Shard didn't exist. Creating shard # " shard-idx)
+           (.createShard domain-store shard-idx)
+           (open!)))))
 
 (defn retrieve-shards!
   "Accepts a domain object. On success, returns a sequence of opened
@@ -253,7 +254,7 @@
   document, and indexes the supplied documents into the supplied
   persistence."
   [domain & pairs]
-  {:pre [(.readOnly domain)]}
+  {:pre [(not (.readOnly domain))]}
   (u/with-write-lock (.rwLock domain)
     (when-let [shard-map (:shards (domain-data domain))]
       (doseq [[idx doc-seq] (group-by #(key->shard domain (first %))
@@ -322,16 +323,17 @@
         index (shard/generate-index hosts
                                     (.getNumShards local-spec)
                                     replication)]
-    (Domain. local-store
-             remote-store
-             (Utils/makeSerializer local-spec)
-             throttle
-             (u/mk-rw-lock)
-             (u/local-hostname)
-             (atom (KeywordStatus. :loading))
-             (atom nil)
-             index
-             read-only)))
+    (doto (Domain. local-store
+                   remote-store
+                   (Utils/makeSerializer local-spec)
+                   throttle
+                   (u/mk-rw-lock)
+                   (u/local-hostname)
+                   (atom (KeywordStatus. :loading))
+                   (atom nil)
+                   index
+                   read-only)
+      (boot-domain!))))
 
 ;; ## Domain Updater Logic
 

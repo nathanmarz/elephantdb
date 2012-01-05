@@ -3,6 +3,7 @@
         elephantdb.common.testing
         elephantdb.keyval.testing)
   (:require [hadoop-util.core :as h]
+            [hadoop-util.test :as t]
             [jackknife.core :as u])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.hadoop ElephantOutputFormat
@@ -44,8 +45,8 @@
                       (fact (.get persistence k) => nil?)))))
 
 (deftest test-output-format
-  (with-fs-tmp [fs output-dir]
-    (with-local-tmp [lfs etmp tmp2]
+  (t/with-fs-tmp [fs output-dir]
+    (t/with-local-tmp [lfs etmp tmp2]
       (let [data {0 {"0a" "00" "0b" "01"} 4 {"4a" "40"}}
             writer  (mk-elephant-writer 10 (JavaBerkDB.) output-dir etmp)]
         (write-data writer data)
@@ -54,8 +55,8 @@
         (check-shards fs lfs output-dir tmp2  data)))))
 
 (deftest test-incremental
-  (with-fs-tmp [fs dir1 dir2]
-    (with-local-tmp [lfs ltmp1 ltmp2]
+  (t/with-fs-tmp [fs dir1 dir2]
+    (t/with-local-tmp [lfs ltmp1 ltmp2]
       (mk-presharded-domain fs dir1 (JavaBerkDB.)
                             {0 [["a" "1"]]
                              1 [["b" "2"]

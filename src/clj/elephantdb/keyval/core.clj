@@ -169,7 +169,7 @@
       (getDomainStatus [_ domain-name]
         "Returns the thrift status of the supplied domain-name."
         (thrift/assert-domain database domain-name)
-        (status/status
+        (status/get-status
          (db/domain-get database domain-name)))
 
       (getDomains [_]

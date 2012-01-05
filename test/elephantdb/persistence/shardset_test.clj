@@ -1,6 +1,7 @@
 (ns elephantdb.persistence.shardset-test
   (:use midje.sweet
         elephantdb.common.testing)
+  (:require [hadoop-util.test :as t])
   (:import [elephantdb DomainSpec]
            [elephantdb.persistence ShardSet ShardSetImpl]))
 
@@ -15,7 +16,7 @@
   (ShardSetImpl. path spec))
 
 (defn shard-count [num-shards]
-  (with-fs-tmp [_ tmp]
+  (t/with-fs-tmp [_ tmp]
     (let [set (shard-set tmp (mk-spec num-shards))]
       (.getNumShards set))))
 
@@ -25,7 +26,7 @@
   (shard-count 0)   => (throws AssertionError)
   (shard-count -10) => (throws AssertionError))
 
-(with-fs-tmp [_ tmp]
+(t/with-fs-tmp [_ tmp]
   (let [set-impl (shard-set tmp (mk-spec 5))]
     (fact "ShardSetImpl should enforce the shard-count with assertions."
       (.assertValidShard set-impl 0) => nil

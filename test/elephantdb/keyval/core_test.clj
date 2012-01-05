@@ -5,6 +5,7 @@
         elephantdb.common.testing
         [elephantdb.common.config :only (read-global-config)])
   (:require [hadoop-util.core :as h]
+            [hadoop-util.test :as t]
             [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.config :as conf]
@@ -86,7 +87,7 @@
 
 (deftest test-update-synched
   (with-local-tmp [lfs local-dir]
-    (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
+    (t/with-fs-tmp [fs dtmp1 dtmp2 gtmp]
       (let [domain-spec {:num-shards 4 :coordinator (JavaBerkDB.)}
             local-config (mk-local-config local-dir)]
         (conf/write-clj-config! {:replication 1
@@ -225,7 +226,7 @@
 
 (deftest test-live-updating
   (with-local-tmp [lfs local-dir]
-    (with-fs-tmp [fs dtmp1 dtmp2 gtmp]
+    (t/with-fs-tmp [fs dtmp1 dtmp2 gtmp]
       (let [domain-spec {:num-shards 4 :coordinator (JavaBerkDB.)}
             local-config (mk-local-config local-dir)]
         (conf/write-clj-config! {:replication 1

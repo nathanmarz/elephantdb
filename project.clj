@@ -9,7 +9,7 @@
                  [commons-io "1.4"]
                  [storm/libthrift7 "0.7.0"]
                  [jackknife "0.1.1"]
-                 [hadoop-util "0.2.6"]
+                 [hadoop-util "0.2.7"]
                  [cascading.kryo "0.1.5"]
                  [com.sleepycat/je "4.1.10"]
                  [org.apache.lucene/lucene-core "3.0.3"]

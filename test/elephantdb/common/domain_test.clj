@@ -2,6 +2,7 @@
   (:use elephantdb.common.domain
         elephantdb.common.testing
         midje.sweet)
+  (:require [hadoop-util.test :as t])
   (:import [elephantdb.store DomainStore]))
 
 (def test-spec
@@ -9,7 +10,7 @@
   (mk-test-spec 5))
 
 (fact "Test try-domain-store."
-  (with-fs-tmp [fs tmp]
+  (t/with-fs-tmp [fs tmp]
    (fact "Nonexistent stores are falsey."
      (try-domain-store tmp) => falsey)
 
@@ -19,7 +20,7 @@
      (try-domain-store tmp) => truthy)))
 
 (fact "test local store creation."
-  (with-fs-tmp [fs local remote]
+  (t/with-fs-tmp [fs local remote]
     (fact "Nonexistent remote store throws an exception."
       (mk-local-store local remote) => (throws RuntimeException))
 
@@ -33,6 +34,6 @@
 ;; ## Domain Type Testing
 
 (fact ""
-  (with-fs-tmp [_ tmp]
+  (t/with-fs-tmp [_ tmp]
     (let [domain (build-domain tmp :spec test-spec)]
       )))

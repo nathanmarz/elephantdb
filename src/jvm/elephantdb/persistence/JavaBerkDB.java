@@ -55,21 +55,20 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
 
             new File(root).mkdirs();
             EnvironmentConfig envConf = new EnvironmentConfig();
-            envConf.setAllowCreate(true);
+            envConf.setAllowCreate(allowCreate);
 
             envConf.setReadOnly(readOnly);
             envConf.setLocking(false);
             envConf.setTransactional(false);
-            envConf.setAllowCreate(allowCreate);
 
             // TODO: Loop through options, setConfigParam for each one.
             envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "80");
             envConf.setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
 
             env = new Environment(new File(root), envConf);
-
+            
             DatabaseConfig dbConf = new DatabaseConfig();
-            dbConf.setAllowCreate(true);
+            dbConf.setAllowCreate(allowCreate);
             dbConf.setReadOnly(readOnly);
             dbConf.setDeferredWrite(true);
 
