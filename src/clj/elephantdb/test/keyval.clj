@@ -1,6 +1,6 @@
-(ns elephantdb.keyval.testing
+(ns elephantdb.test.keyval
   (:use midje.sweet
-        elephantdb.common.testing
+        elephantdb.test.common
         [elephantdb.common.domain :only (build-domain)]
         [jackknife.logging :only (info)])
   (:require [jackknife.core :as u]
@@ -180,9 +180,7 @@
   [[handler-sym hosts domains-conf & [host-to-shards]] & body]
   (let [global-conf {:replication 1 :hosts hosts :domains domains-conf}]
     `(t/with-local-tmp [lfs# localtmp#]
-       (let [~handler-sym (mk-service-handler ~global-conf
-                                              localtmp#
-                                              ~host-to-shards)
+       (let [~handler-sym (mk-service-handler ~global-conf localtmp#)
              updater# (db/launch-updater! ~handler-sym 100)]
          (try ~@body
               (finally (.shutdown ~handler-sym)
@@ -276,3 +274,4 @@
   (DomainSpec. (MemoryCoordinator. (atom {}))
                (HashModScheme.)
                shard-count))
+

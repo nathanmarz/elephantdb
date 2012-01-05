@@ -1,6 +1,6 @@
 (ns elephantdb.persistence.shardset-test
   (:use midje.sweet
-        elephantdb.common.testing)
+        elephantdb.test.common)
   (:require [hadoop-util.test :as t])
   (:import [elephantdb DomainSpec]
            [elephantdb.persistence ShardSet ShardSetImpl]))

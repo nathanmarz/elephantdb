@@ -1,13 +1,12 @@
-(ns elephantdb.common.testing
+(ns elephantdb.test.common
   (:require [hadoop-util.core :as h]
             [hadoop-util.test :as t]
             [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom])
-  (:import [java.util Arrays]
-           [elephantdb.store DomainStore]
+  (:import [elephantdb.store DomainStore]
            [elephantdb.persistence ShardSet]
-           [elephantdb Utils DomainSpec]
+           [elephantdb Utils DomainSpec ByteArray]
            [org.apache.hadoop.io IntWritable]
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
@@ -50,28 +49,17 @@
 
 (defn barr [& xs]
   (when xs
-    (byte-array (map byte xs))))
-
-(defn barr=
-  ([x] true)
-  ([^bytes x ^bytes y] (java.util.Arrays/equals x y))
-  ([x y & more]
-     (if (barr= x y)
-       (if (next more)
-         (recur y (first more) (next more))
-         (barr= y (first more)))
-       false)))
+    (ByteArray.
+     (byte-array (map byte xs)))))
 
 (defn count= [& colls]
   (apply = (map count colls)))
 
-(defn barrs= [& arrs]
-  (and (count= arrs)
-       (every? identity
-               (apply map (fn [& vals]
-                            (or (every? nil? vals)
-                                (apply barr= vals)))
-                      arrs))))
+(defn colls=
+  "Accepts multiple sequences of collections; returns true of the "
+  [& coll-seqs]
+  (and (apply count= coll-seqs)
+       (every? true? (apply map = coll-seqs))))
 
 ;; ## Example Specs
 
@@ -227,4 +215,5 @@
     (let [item-sharder (mk-sharder converter-fn)
           sharded-docs (item-sharder spec item-seq :shard-fn shard-fn)]
       (create-domain! spec path sharded-docs :version version))))
+
 

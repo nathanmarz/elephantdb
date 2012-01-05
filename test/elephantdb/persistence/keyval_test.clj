@@ -1,7 +1,7 @@
 (ns elephantdb.persistence.keyval-test
   (:use midje.sweet
-        elephantdb.common.testing
-        elephantdb.keyval.testing)
+        elephantdb.test.common
+        elephantdb.test.keyval)
   (:import [elephantdb.document KeyValDocument]
            [elephantdb.persistence JavaBerkDB]))
 

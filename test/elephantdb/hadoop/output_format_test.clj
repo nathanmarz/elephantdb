@@ -1,6 +1,6 @@
 (ns elephantdb.hadoop.output-format-test
   (:use midje.sweet
-        elephantdb.common.testing)
+        elephantdb.test.common)
   (:require [hadoop-util.core :as h]
             [hadoop-util.test :as t]
             [jackknife.core :as u])

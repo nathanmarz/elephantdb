@@ -1,8 +1,8 @@
 (ns elephantdb.keyval.core-test
   (:use clojure.test
         midje.sweet
-        elephantdb.keyval.testing
-        elephantdb.common.testing
+        elephantdb.test.common
+        elephantdb.test.keyval
         [elephantdb.keyval.domain :only (to-map)]
         [elephantdb.common.config :only (read-global-config)])
   (:require [hadoop-util.core :as h]

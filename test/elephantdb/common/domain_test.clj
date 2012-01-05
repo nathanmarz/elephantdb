@@ -1,6 +1,6 @@
 (ns elephantdb.common.domain-test
   (:use elephantdb.common.domain
-        elephantdb.common.testing
+        elephantdb.test.common
         midje.sweet)
   (:require [hadoop-util.test :as t])
   (:import [elephantdb.store DomainStore]))

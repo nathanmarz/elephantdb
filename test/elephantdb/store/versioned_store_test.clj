@@ -1,5 +1,5 @@
 (ns elephantdb.store.versioned-store-test
-  (:use elephantdb.common.testing
+  (:use elephantdb.test.common
         midje.sweet
         [hadoop-util.test :only (with-fs-tmp)])
   (:import [elephantdb.store VersionedStore]))

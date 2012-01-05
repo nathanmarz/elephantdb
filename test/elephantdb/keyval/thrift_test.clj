@@ -1,8 +1,7 @@
 (ns elephantdb.keyval.thrift-test
-  (:use clojure.test
-        midje.sweet
-        elephantdb.keyval.testing
-        elephantdb.common.testing
+  (:use midje.sweet
+        elephantdb.test.common
+        elephantdb.test.keyval
         [elephantdb.keyval.domain :only (to-map)]
         [elephantdb.common.config :only (read-global-config)])
   (:require [hadoop-util.core :as h]
@@ -26,10 +25,10 @@
 
 (defmacro expected-domain-data [handler domain & key-value-pairs]
   `(doseq [[key-sym# val-sym#] (partition 2 [~@key-value-pairs])]
-     (if (seq val-sym#)
-       (is (barr= (apply barr val-sym#)
-                  (get-val ~handler ~domain (barr key-sym#))))
-       (is (= val-sym# (get-val ~handler ~domain (barr key-sym#)))))))
+     (fact
+       (get-val ~handler ~domain (barr key-sym#)) => (if (seq val-sym#)
+                                                       (apply barr val-sym#)
+                                                       val-sym#))))
 
 (fact "test multiple domains."
   (let [data1 {0 [0 0]
@@ -69,7 +68,7 @@
                             2 nil)
       (direct-get-val elephant "test1" (barr 10)) => (throws Exception))))
 
-(deftest test-update-synched
+(fact "Test synced updating."
   (with-local-tmp [lfs local-dir]
     (t/with-fs-tmp [fs dtmp1 dtmp2 gtmp]
       (let [domain-spec {:num-shards 4 :coordinator (JavaBerkDB.)}
@@ -97,7 +96,7 @@
         ;; start edb and shutdown right away to get version 1 of both
         ;; domains
         (-> (read-global-config gtmp local-config)
-            (mk-service-handler local-dir nil)
+            (mk-service-handler local-dir)
             (.shutdown))
 
         ;; create new version only for do-update domain
@@ -118,7 +117,7 @@
                                         3 [44 44]) :version 2)
 
         (let [handler (-> (read-global-config gtmp local-config)
-                          (mk-service-handler local-dir nil))]
+                          (mk-service-handler local-dir))]
           ;; domain no-update should not have changed
           (expected-domain-data handler "no-update"
                                 0 [0 0]
@@ -144,7 +143,7 @@
                                           3 [88 88]) :version 3))
 
         (let [handler (-> (read-global-config gtmp local-config)
-                          (mk-service-handler local-dir nil))]
+                          (mk-service-handler local-dir))]
           (facts
             (.getDomainStatus handler "do-update") => status/failed?
             (.getDomainStatus handler "no-update") => status/ready?)
@@ -159,7 +158,7 @@
                                 fs
                                 gtmp)
         (let [handler (-> (read-global-config gtmp local-config)
-                          (mk-service-handler local-dir nil))
+                          (mk-service-handler local-dir))
               deleted-domain-path (.pathToFile lfs (h/path local-dir "do-update"))]
           (facts
             (.size (.getDomains handler)) => 1
@@ -171,15 +170,15 @@
           (.shutdown handler))))))
 
 ;; TODO: need to do something to prioritize hosts in tests (override get-priority-hosts)
-(deftest test-multi-get
-  (let [shards-to-pairs {0 (domain-data 0 [0 0]
-                                        1 [1 1]
-                                        2 nil)
-                         1 (domain-data 10 [10 0])
-                         2 (domain-data 20 [20 0]
-                                        21 [21 1]
-                                        22 nil)
-                         3 (domain-data 30 [30 0])}
+(fact "Test multi-get."
+  (let [shards-to-pairs {0 {0 [0 0]
+                            1 [1 1]
+                            2 nil}
+                         1 {10 [10 0]}
+                         2 {20 [20 0]
+                            21 [21 1]
+                            22 nil}
+                         3 {30 [30 0]}}
         domain-to-host-to-shards {"test1" {(u/local-hostname) [0 3]
                                            "host2" [1 0]
                                            "host3" [2 1]
@@ -198,17 +197,16 @@
                                 0 [0 0]
                                 20 [20 0]
                                 2 nil)
-          (is (barrs= [[0 0] nil [30 0]]
-                      (multi-get-vals elephant "test1" [0 22 30])))
-          (is (barrs= [[0 0] [1 1] nil [30 0] [10 0]]
-                      (multi-get-vals elephant "test1" [0 1 2 30 10])))
-          (is (= [] (multi-get-vals elephant "test1" []))))
+          (facts
+            (multi-get-vals elephant "test1" [0 22 30]) => [[0 0] nil [30 0]]
+            (multi-get-vals elephant "test1" [0 1 2 30 10]) => [[0 0] [1 1] nil [30 0] [10 0]]
+            (multi-get-vals elephant "test1" [])) => [])
         (with-mocked-remote [domain-to-host-to-shards shards-to-pairs ["host3" "host4"]]
-          (is (barrs= [[0 0] [10 0]]
-                      (multi-get-vals elephant "test1" [0 10])))
-          (is (thrown? Exception (multi-get-vals elephant "test1" [0 22]))))))))
+          (fact
+            (multi-get-vals elephant "test1" [0 10]) => [[0 0] [10 0]])
+          (multi-get-vals elephant "test1" [0 22]) => (throws Exception))))))
 
-(deftest test-live-updating
+(fact "Test live updating."
   (with-local-tmp [lfs local-dir]
     (t/with-fs-tmp [fs dtmp1 dtmp2 gtmp]
       (let [domain-spec {:num-shards 4 :coordinator (JavaBerkDB.)}
@@ -235,7 +233,7 @@
 
         ;; start up edb service
         (let [handler (-> (read-global-config gtmp local-config)
-                          (mk-service-handler local-dir nil))]
+                          (mk-service-handler local-dir))]
 
           ;; create version 2 for domain2
           (mk-sharded-domain dtmp2 domain-spec

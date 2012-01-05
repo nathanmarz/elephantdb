@@ -1,6 +1,6 @@
 (ns elephantdb.common.config-test
   (:use elephantdb.common.config
-        elephantdb.common.testing
+        elephantdb.test.common
         midje.sweet)
   (:require [hadoop-util.test :as t])
   (:import [elephantdb.persistence JavaBerkDB]

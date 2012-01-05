@@ -1,7 +1,7 @@
 (ns elephantdb.hadoop.input-format-test
   (:use midje.sweet
-        elephantdb.common.testing
-        elephantdb.keyval.testing)
+        elephantdb.test.common
+        elephantdb.test.keyval)
   (:import [elephantdb Utils]
            [elephantdb.persistence JavaBerkDB]
            [elephantdb.partition HashModScheme]

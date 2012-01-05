@@ -1,6 +1,6 @@
 (ns elephantdb.common.spec-test
   (:use midje.sweet
-        [elephantdb.common.testing :only (berkeley-spec)])
+        [elephantdb.test.common :only (berkeley-spec)])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.document KeyValDocument]))
 
