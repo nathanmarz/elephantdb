@@ -5,7 +5,10 @@
             [elephantdb.common.domain :as dom])
   (:import [java.util Arrays]
            [elephantdb.store DomainStore]
-           [elephantdb DomainSpec]))
+           [elephantdb Utils DomainSpec]
+           [elephantdb.hadoop ElephantOutputFormat
+            ElephantOutputFormat$Args LocalElephantManager]
+           [org.apache.hadoop.mapred JobConf]))
 
 ;; ## Domain Testing
 
@@ -94,3 +97,18 @@
           (.index shard doc))))
     (doto store
       (.succeedVersion version-path))))
+
+(defn elephant-writer
+  [spec output-dir tmp-dir & {:keys [indexer update-dir]}]
+  (let [args  (ElephantOutputFormat$Args. spec output-dir)]
+    (when indexer
+      (set! (.indexer args) indexer))
+    (when update-dir
+      (set! (.updateDirHdfs args) update-dir))
+    (.getRecordWriter (ElephantOutputFormat.)
+                      nil
+                      (doto (JobConf.)
+                        (Utils/setObject ElephantOutputFormat/ARGS_CONF args)
+                        (LocalElephantManager/setTmpDirs [tmp-dir]))
+                      nil
+                      nil)))

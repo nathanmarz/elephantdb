@@ -3,25 +3,7 @@
         elephantdb.common.testing
         elephantdb.keyval.testing)
   (:import [elephantdb.document KeyValDocument]
-           [elephantdb.serialize KryoSerializer SerializationWrapper]
            [elephantdb.persistence JavaBerkDB]))
-
-(defn prep-coordinator
-  "If the supplied coordinator implements SerializationWrapper, sets
-  the proper serialization; else does nothing. In either case,
-  `prep-coordinator` returns the supplied coordinator."
-  [coordinator]
-  (if (instance? SerializationWrapper coordinator)
-    (doto coordinator
-      (.setSerializer (KryoSerializer.)))
-    coordinator))
-
-(defn is-db-pairs?
-  "Returns true if the persistence housed by the supplied coordinator
-  contains the supplied pairs, false otherwise."
-  [coordinator path & pairs]
-  (with-open [db (.openPersistenceForRead coordinator path {})]
-    (fact (get-all db) => (just pairs))))
 
 (defn test-get-put [coordinator]
   (let [coordinator (prep-coordinator coordinator)]

@@ -12,23 +12,27 @@
             [elephantdb.common.config :as conf])
   (:import [elephantdb Utils DomainSpec]
            [elephantdb.partition HashModScheme]
-           [elephantdb.hadoop ElephantOutputFormat
-            ElephantOutputFormat$Args LocalElephantManager]
            [elephantdb.store DomainStore]
            [elephantdb.persistence Persistence KeyValPersistence Coordinator]
            [org.apache.hadoop.io IntWritable]
-           [org.apache.hadoop.mapred JobConf]
            [org.apache.thrift7 TException]
+           [elephantdb.serialize KryoSerializer SerializationWrapper]
            [elephantdb.document KeyValDocument]))
 
 ;; ## Key Value Testing
 ;;
-;; I haven't fixed this (or any of the tests) up yet.
+;; The following functions provide various helpers for manipulating
+;;and accessing KeyValPersistence objects and the domains that wrap
+;;them.
+
+;; TODO: Index should be moved into a namespace that deals more
+;; generally with domains, vs this key-value specific testing
+;; namespace.
 
 (defn index
-  "Sinks the supplied key-value pair into the supplied persistence."
-  [^Persistence persistence key val]
-  (.index persistence (KeyValDocument. key val)))
+  "Sinks the supplied document into the supplied persistence."
+  [^Persistence persistence doc]
+  (.index persistence doc))
 
 (defn edb-get
   "Retrieves the supplied key from the supplied
@@ -64,26 +68,29 @@
   (.createPersistence coordinator path {})
   (apply append-pairs coordinator path kv-pairs))
 
+(defn prep-coordinator
+  "If the supplied coordinator implements SerializationWrapper, sets
+  the proper serialization; else does nothing. In either case,
+  `prep-coordinator` returns the supplied coordinator."
+  [coordinator]
+  (if (instance? SerializationWrapper coordinator)
+    (doto coordinator
+      (.setSerializer (KryoSerializer.)))
+    coordinator))
+
+(defn is-db-pairs?
+  "Returns true if the persistence housed by the supplied coordinator
+  contains the supplied pairs, false otherwise."
+  [coordinator path & pairs]
+  (with-open [db (.openPersistenceForRead coordinator path {})]
+    (fact (get-all db) => (just pairs))))
+
 ;; TODO: Graduate the following two functions!
 
-(defn mk-elephant-writer
-  [shards coordinator output-dir tmpdir & {:keys [indexer update-dir]}]
-  (let [args  (ElephantOutputFormat$Args.
-               (conf/convert-clj-domain-spec
-                {:num-shards shards
-                 :coordinator coordinator})
-               output-dir)]
-    (when indexer
-      (set! (.indexer args) indexer))
-    (when update-dir
-      (set! (.updateDirHdfs args) update-dir))
-    (.getRecordWriter (ElephantOutputFormat.)
-                      nil
-                      (doto (JobConf.)
-                        (Utils/setObject ElephantOutputFormat/ARGS_CONF args)
-                        (LocalElephantManager/setTmpDirs [tmpdir]))
-                      nil
-                      nil)))
+;; bind this to get different behavior when making sharded domains.
+;; TODO: Remove first arg from key->shard.
+(def ^:dynamic test-key->shard
+  (partial dom/key->shard "testdomain"))
 
 (defn mk-sharded-domain
   [path domain-spec keyvals & {:keys [version]}]
@@ -98,17 +105,14 @@
                           (fn [[k v]]
                             [(test-key->shard k (:num-shards domain-spec))
                              k v])
-                          keyvals)
-          writer (mk-elephant-writer
-                  (:num-shards domain-spec)
-                  (:coordinator domain-spec)
-                  dpath
-                  localtmp)]
-      (doseq [[s k v] shardedkeyvals]
-        (when v
-          (-> writer
-              (.write (IntWritable. s) (KeyValDocument. k v)))))
-      (.close writer nil)
+                          keyvals)]
+      (with-open [writer (elephant-writer domain-spec
+                                          dpath
+                                          localtmp)]
+        (doseq [[s k v] shardedkeyvals]
+          (when v
+            (-> writer
+                (.write (IntWritable. s) (KeyValDocument. k v))))))
       (.succeedVersion vs dpath))))
 
 (defn mk-sharded-domain
@@ -119,11 +123,6 @@
                               [k (KeyValDocument. k v)])
                             kv-seq)
                        :version version))
-
-;; bind this to get different behavior when making sharded domains.
-;; TODO: Remove first arg from key->shard.
-(def ^:dynamic test-key->shard
-  (partial dom/key->shard "testdomain"))
 
 (defn reverse-pre-sharded [shardmap]
   (->> shardmap

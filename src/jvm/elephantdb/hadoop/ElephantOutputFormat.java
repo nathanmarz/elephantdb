@@ -17,6 +17,7 @@ import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.util.Progressable;
 import org.apache.log4j.Logger;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -49,7 +50,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
     }
 
-    public class ElephantRecordWriter implements RecordWriter<IntWritable, BytesWritable> {
+    public class ElephantRecordWriter implements RecordWriter<IntWritable, BytesWritable>, Closeable {
 
         FileSystem fileSystem;
         Args args;
@@ -116,6 +117,10 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
                 LOG.info("Wrote last 25000 records in " + delta + " ms");
                 localManager.progress();
             }
+        }
+        
+        public void close() throws IOException {
+            close(null);
         }
 
         public void close(Reporter reporter) throws IOException {
