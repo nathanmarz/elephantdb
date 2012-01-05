@@ -73,6 +73,12 @@
                "elephantdb.partition.HashModScheme"
                shard-count))
 
+(defn mk-domain-store
+  [path spec & docs]
+  (let [store        (DomainStore. path spec)
+        version-path (.createVersion store 1)]
+    (.getShardSet store (long 1))))
+
 ;; ## Hadoop Testing Utilities
 ;;
 ;; TODO: Most of this code is now located inside of

@@ -222,8 +222,12 @@
     (u/with-write-lock (.rwLock this)
       ;; TODO: This will fail, currently. We need a way to toggle the
       ;; readability.
-      (with-open [shard (retrieve-shard this document)]
-        (.index shard document))))
+      ;;
+      ;; (with-open [shard (retrieve-shard this document)]
+      ;; (.index shard document))
+      ;;
+      ;; map over shard-index, * group by shard, index each group.
+      ))
   
   clojure.lang.Seqable
   (seq [this]
@@ -370,7 +374,7 @@
   approprate shard number for the given key."
   [domain key]
   (when-let [version (current-version domain)]
-    (let [^ShardSet shard-set (.getShardSet (:local-store domain)
+    (let [^ShardSet shard-set (.getShardSet (.localStore domain)
                                             (current-version domain))]
       (.shardIndex shard-set key))))
 
