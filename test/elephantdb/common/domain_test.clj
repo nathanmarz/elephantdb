@@ -30,10 +30,5 @@
       (fact "Now the specs should be equal."
         (.getSpec local-store) => (.getSpec remote-store)))))
 
-
-;; ## Domain Type Testing
-
-(fact ""
-  (t/with-fs-tmp [_ tmp]
-    (let [domain (build-domain tmp :spec test-spec)]
-      )))
+(fact "domain testing."
+  (with-basic-domain [domain (berkeley-spec 4)]))

@@ -147,12 +147,12 @@
 
 ;; ## Shard Mocking
 
-(defn key->shard [scheme key shard-count]
+(defn test-key->shard [scheme key shard-count]
   (.shardIndex scheme key shard-count))
 
 (defmacro with-sharding-fn [shard-fn & body]
   `(if ~shard-fn
-     (with-redefs [key->shard ~shard-fn]
+     (with-redefs [test-key->shard ~shard-fn]
        ~@body)
      (do ~@body)))
 
@@ -162,7 +162,7 @@
   [spec key]
   (let [shard-count (.getNumShards spec)
         scheme      (.getShardScheme spec)]
-    (key->shard scheme key shard-count)))
+    (test-key->shard scheme key shard-count)))
 
 (defn shard-docs
   "Accepts a DomainSpec and a sequence of <shard-key, document> pairs
@@ -184,6 +184,25 @@
   [spec path doc-seq & {:keys [version shard-fn]}]
   (let [sharded-docs (shard-docs doc-seq :shard-fn shard-fn)]
     (create-domain! spec path sharded-docs :version version)))
+
+(defmacro with-basic-domain
+  "Used as:
+
+   (with-basic-domain [my-domain domain-spec
+                       [doc-1 doc-2...]
+                       :version 5
+                       :shard-fn (constantly 10)]
+          (seq my-domain))
+
+  A domain with the supplied domain-spec is bound to `sym` inside the
+  body of `with-domain`."
+  [[sym spec doc-seq & {:keys [version shard-fn]}] & body]
+  `(t/with-fs-tmp [fs# path#]
+     (create-unsharded-domain! ~spec path# ~doc-seq
+                               :version ~version
+                               :shard-fn ~shard-fn)
+     (let [~sym (build-domain path#)]
+       ~@body)))
 
 ;; ## Generic Extensions for other persistences
 
