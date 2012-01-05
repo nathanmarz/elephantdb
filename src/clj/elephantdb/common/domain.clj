@@ -78,6 +78,8 @@
 
 (defmulti version-seq type)
 
+(defmethod version-seq nil [_] nil)
+
 (defmethod version-seq DomainStore
   [store]
   (seq (.getAllVersions store)))
@@ -377,9 +379,10 @@
   "Returns true if the remote store has the supplied version (and the
   local store doesn't), false otherwise."
   [domain version]
-  (and (not (has-version? domain version))
-       (-> (.remoteStore domain)
-           (has-version? version))))
+  (boolean
+   (and (not (has-version? domain version))
+        (-> (.remoteStore domain)
+            (has-version? version)))))
 
 (defn update-domain!
   "When a new version is available on the remote store,

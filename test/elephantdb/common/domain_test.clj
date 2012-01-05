@@ -31,31 +31,38 @@
       (fact "Now the specs should be equal."
         (.getSpec local-store) => (.getSpec remote-store)))))
 
-(fact
-  "Getting a seq on a domain should return the documents from ALL
-   shards, no matter what the split."
-  (let [domain-spec (berkeley-spec 3)
-        shard-seq   [0 0 1 1]
-        doc-seq     [(KeyValDocument. 1 2)
-                     (KeyValDocument. 3 4)
-                     (KeyValDocument. 5 6)
-                     (KeyValDocument. 7 8)]]
-    (with-basic-domain [domain
-                        domain-spec
-                        (map vector shard-seq doc-seq)
-                        :version 10]
-
-      "We check that the seq produces values from shards 0 and 1."
-      (seq domain) => (contains doc-seq :in-any-order)
+(let [spec    (berkeley-spec 3)
+      doc-seq [[0 (KeyValDocument. 1 2)]
+               [0 (KeyValDocument. 3 4)]
+               [1 (KeyValDocument. 5 6)]
+               [1 (KeyValDocument. 7 8)]]]
+ 
+  (with-basic-domain [domain spec doc-seq :version 10]
+    (facts
+      "Getting a seq on a domain should return the documents from ALL
+       shards, no matter what the split."
+      (seq domain) => (contains (map second doc-seq) :in-any-order)
       (current-version domain) => 10
       (newest-version domain) => 10
       (version-seq domain) => [10]
       (has-version? domain 5) => falsey
       (has-version? domain 10) => truthy
-      (has-data? domain) => truthy
+      (has-data? domain) => truthy))
 
-      "Testing an empty local domain."
-      (t/with-fs-tmp [_ tmp]
-        (let [other-domain (build-domain tmp :spec domain-spec)]
-          (version-seq other-domain) => nil
-          (has-data? other-domain) => falsey)))))
+  (t/with-fs-tmp [_ tmp]
+    (let [domain (build-domain tmp :spec spec)]
+      (facts
+        "Testing an empty local domain."
+        (version-seq domain) => nil
+        (has-data? domain) => falsey
+        (domain-data domain) => nil)
+
+      "Start by creating 5 difference versions of a domain in the
+      given temp file."
+      (doseq [v (range 5)]
+        (create-unsharded-domain! spec tmp doc-seq :version v))
+      (facts (version-seq domain) => [4 3 2 1 0]
+        (current-version domain) => nil
+        (load-version! domain 1)
+        (current-version domain) => 1
+        (transfer-possible? domain 10) => false?))))
