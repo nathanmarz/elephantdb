@@ -34,12 +34,28 @@
 (fact
   "Getting a seq on a domain should return the documents from ALL
    shards, no matter what the split."
-  (let [shard-seq [0 0 1 1]
-        doc-seq   [(KeyValDocument. 1 2)
-                   (KeyValDocument. 3 4)
-                   (KeyValDocument. 5 6)
-                   (KeyValDocument. 7 8)]]
+  (let [domain-spec (berkeley-spec 3)
+        shard-seq   [0 0 1 1]
+        doc-seq     [(KeyValDocument. 1 2)
+                     (KeyValDocument. 3 4)
+                     (KeyValDocument. 5 6)
+                     (KeyValDocument. 7 8)]]
     (with-basic-domain [domain
-                        (berkeley-spec 3)
-                        (map vector shard-seq doc-seq)]
-      (seq domain) => (contains doc-seq :in-any-order))))
+                        domain-spec
+                        (map vector shard-seq doc-seq)
+                        :version 10]
+
+      "We check that the seq produces values from shards 0 and 1."
+      (seq domain) => (contains doc-seq :in-any-order)
+      (current-version domain) => 10
+      (newest-version domain) => 10
+      (version-seq domain) => [10]
+      (has-version? domain 5) => falsey
+      (has-version? domain 10) => truthy
+      (has-data? domain) => truthy
+
+      "Testing an empty local domain."
+      (t/with-fs-tmp [_ tmp]
+        (let [other-domain (build-domain tmp :spec domain-spec)]
+          (version-seq other-domain) => nil
+          (has-data? other-domain) => falsey)))))
