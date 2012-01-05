@@ -3,7 +3,7 @@
             [hadoop-util.test :as t]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom])
-  (:import [java.util UUID Arrays]
+  (:import [java.util Arrays]
            [elephantdb.store DomainStore]
            [elephantdb DomainSpec]))
 

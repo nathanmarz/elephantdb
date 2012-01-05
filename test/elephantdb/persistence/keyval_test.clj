@@ -25,7 +25,7 @@
 
 (defn test-get-put [coordinator]
   (let [coordinator (prep-coordinator coordinator)]
-    (with-local-tmp [_ tmp-path]
+    (t/with-local-tmp [_ tmp-path]
       (.createPersistence coordinator tmp-path {})
       (with-open [db (.openPersistenceForAppend coordinator tmp-path {})]
         (fact (edb-get db "a") => nil)
@@ -49,7 +49,7 @@
 
 (defn test-iterate [coord]
   (let [coord (prep-coordinator coord)]
-    (with-local-tmp [_ tmp-path]
+    (t/with-local-tmp [_ tmp-path]
       (create-pairs coord tmp-path ["a" "1"])
       (is-db-pairs? coord tmp-path ["a" "1"])
       (append-pairs coord tmp-path ["c" "3"] ["b" "4"])

@@ -3,6 +3,7 @@
         elephantdb.common.testing
         [jackknife.logging :only (info)])
   (:require [jackknife.core :as u]
+            [hadoop-util.test :as t]
             [elephantdb.keyval.core :as kv]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.shard :as shard]
@@ -86,7 +87,7 @@
 
 (defn mk-sharded-domain
   [path domain-spec keyvals & {:keys [version]}]
-  (with-local-tmp [lfs localtmp]
+  (t/with-local-tmp [lfs localtmp]
     (let [vs (DomainStore. path (conf/convert-clj-domain-spec domain-spec))
           dpath (if version
                   (do (when (.hasVersion vs version)
@@ -157,13 +158,13 @@
 
 (defmacro with-sharded-domain
   [[pathsym domain-spec keyvals] & body]
-  `(with-fs-tmp [_ ~pathsym]
+  `(t/with-fs-tmp [_ ~pathsym]
      (mk-sharded-domain ~pathsym ~domain-spec ~keyvals)
      ~@body))
 
 (defmacro with-presharded-domain
   [[dname pathsym coordinator shardmap] & body]
-  `(with-fs-tmp [_ ~pathsym]
+  `(t/with-fs-tmp [_ ~pathsym]
      (mk-presharded-domain ~pathsym
                            ~coordinator
                            ~shardmap)
@@ -177,7 +178,7 @@
 (defmacro with-service-handler
   [[handler-sym hosts domains-conf & [host-to-shards]] & body]
   (let [global-conf {:replication 1 :hosts hosts :domains domains-conf}]
-    `(with-local-tmp [lfs# localtmp#]
+    `(t/with-local-tmp [lfs# localtmp#]
        (let [~handler-sym (mk-service-handler ~global-conf
                                               localtmp#
                                               ~host-to-shards)
