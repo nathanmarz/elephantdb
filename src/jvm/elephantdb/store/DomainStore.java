@@ -14,8 +14,8 @@ import java.util.List;
 
 
 public class DomainStore {
-    VersionedStore _vs;
-    DomainSpec _spec;
+    VersionedStore vs;
+    DomainSpec spec;
 
     public DomainStore(FileSystem fs, String path) throws IOException {
         this(new VersionedStore(fs, path), null);
@@ -34,40 +34,40 @@ public class DomainStore {
     }
 
     protected DomainStore(VersionedStore vs, DomainSpec spec) throws IOException {
-        _vs = vs;
+        this.vs = vs;
         String path = vs.getRoot();
         FileSystem fs = vs.getFileSystem();
         if(DomainSpec.exists(fs, path)) {
-            _spec = DomainSpec.readFromFileSystem(fs, path);
+            this.spec = DomainSpec.readFromFileSystem(fs, path);
 
-            if(spec!=null && !_spec.equals(spec)) {
-                throw new IllegalArgumentException(spec.toString() + " does not match existing " + _spec.toString());
+            if(spec!=null && !this.spec.equals(spec)) {
+                throw new IllegalArgumentException(spec.toString() + " does not match existing " + this.spec.toString());
             }
         } else {
             if(spec == null) {
                 throw new IllegalArgumentException("You must supply a DomainSpec when creating a DomainStore.");
             } else {
-                _spec = spec;
+                this.spec = spec;
                 spec.writeToFileSystem(fs, path);
             }
         }
     }
 
     public DomainSpec getSpec() {
-        return _spec;
+        return spec;
     }
     
     public ShardSet getShardSet(long version) {
         String path = versionPath(version);
-        return new ShardSetImpl(path, _spec);
+        return new ShardSetImpl(path, spec);
     }
 
     public FileSystem getFileSystem() {
-        return _vs.getFileSystem();
+        return vs.getFileSystem();
     }
 
     public String getRoot() {
-        return _vs.getRoot();
+        return vs.getRoot();
     }
 
     /*
@@ -110,43 +110,47 @@ public class DomainStore {
     Back to old code.
      */
     public String versionPath(long version) {
-        return _vs.versionPath(version);
+        return vs.versionPath(version);
     }
 
     public String mostRecentVersionPath() throws IOException {
-        return _vs.mostRecentVersionPath();
+        return vs.mostRecentVersionPath();
     }
 
     public String mostRecentVersionPath(long maxVersion) throws IOException {
-        return _vs.mostRecentVersionPath(maxVersion);
+        return vs.mostRecentVersionPath(maxVersion);
     }
 
     public Long mostRecentVersion() throws IOException {
-        return _vs.mostRecentVersion();
+        return vs.mostRecentVersion();
     }
 
     public Long mostRecentVersion(long maxVersion) throws IOException {
-        return _vs.mostRecentVersion(maxVersion);
+        return vs.mostRecentVersion(maxVersion);
     }
 
     public String createVersion() throws IOException {
-        return _vs.createVersion();
+        return vs.createVersion();
     }
 
     public String createVersion(long version) throws IOException {
-        return _vs.createVersion(version);
+        return vs.createVersion(version);
     }
 
     public void failVersion(String path) throws IOException {
-        _vs.failVersion(path);
+        vs.failVersion(path);
     }
 
     public void deleteVersion(long version) throws IOException {
-        _vs.deleteVersion(version);
+        vs.deleteVersion(version);
     }
 
     public void succeedVersion(String path) throws IOException {
-        _vs.succeedVersion(path);
+        vs.succeedVersion(path);
+    }
+
+    public Long parseVersion(String path) throws IOException {
+        return vs.parseVersion(path);
     }
 
     public static void synchronizeVersions(FileSystem fs, DomainSpec spec, String oldv, String newv) throws IOException {
@@ -176,18 +180,18 @@ public class DomainStore {
     }
 
     public void cleanup() throws IOException {
-        _vs.cleanup();
+        vs.cleanup();
     }
 
     public void cleanup(int versionsToKeep) throws IOException {
-        _vs.cleanup(versionsToKeep);
+        vs.cleanup(versionsToKeep);
     }
 
     public List<Long> getAllVersions() throws IOException {
-        return _vs.getAllVersions();
+        return vs.getAllVersions();
     }
 
     public boolean hasVersion(long version) throws IOException {
-        return _vs.hasVersion(version);
+        return vs.hasVersion(version);
     }
 }

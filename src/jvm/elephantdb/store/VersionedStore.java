@@ -153,7 +153,7 @@ public class VersionedStore {
         return v;
     }
 
-    private Long parseVersion(String path) {
+    public Long parseVersion(String path) {
         String name = new Path(path).getName();
         if(name.endsWith(FINISHED_VERSION_SUFFIX)) {
             name = name.substring(0, name.length()-FINISHED_VERSION_SUFFIX.length());
