@@ -63,10 +63,7 @@
   (.createPersistence coordinator path {})
   (apply append-pairs coordinator path kv-pairs))
 
-;; bind this to get different behavior when making sharded domains.
-;; TODO: Remove first arg from key->shard.
-(def ^:dynamic test-key->shard
-  (partial dom/key->shard "testdomain"))
+;; TODO: Graduate the following two functions!
 
 (defn mk-elephant-writer
   [shards coordinator output-dir tmpdir & {:keys [indexer update-dir]}]
@@ -88,14 +85,13 @@
                       nil)))
 
 (defn mk-sharded-domain
-  [fs path domain-spec keyvals & {:keys [version]}]
+  [path domain-spec keyvals & {:keys [version]}]
   (with-local-tmp [lfs localtmp]
-    (let [vs (DomainStore. fs path (conf/convert-clj-domain-spec domain-spec))
+    (let [vs (DomainStore. path (conf/convert-clj-domain-spec domain-spec))
           dpath (if version
-                  (let [v (long version)]
-                    (do (if (.hasVersion vs v)
-                          (.deleteVersion vs v))
-                        (.createVersion vs v)))
+                  (do (when (.hasVersion vs version)
+                        (.deleteVersion vs version))
+                      (.createVersion vs version))
                   (.createVersion vs))
           shardedkeyvals (map
                           (fn [[k v]]
@@ -109,11 +105,24 @@
                   localtmp)]
       (doseq [[s k v] shardedkeyvals]
         (when v
-          (.write writer
-                  (IntWritable. s)
-                  (KeyValDocument. k v))))
+          (-> writer
+              (.write (IntWritable. s) (KeyValDocument. k v)))))
       (.close writer nil)
       (.succeedVersion vs dpath))))
+
+(defn mk-sharded-domain
+  [path spec kv-seq & {:keys [version]}]
+  (mk-populated-store! path
+                       spec
+                       (map (fn [[k v]]
+                              [k (KeyValDocument. k v)])
+                            kv-seq)
+                       :version version))
+
+;; bind this to get different behavior when making sharded domains.
+;; TODO: Remove first arg from key->shard.
+(def ^:dynamic test-key->shard
+  (partial dom/key->shard "testdomain"))
 
 (defn reverse-pre-sharded [shardmap]
   (->> shardmap
@@ -121,13 +130,13 @@
        (u/reverse-multimap)
        (u/val-map first)))
 
-(defn mk-presharded-domain [fs path coordinator shardmap]
+(defn mk-presharded-domain [path coordinator shardmap]
   (let [keyvals (apply concat (vals shardmap))
         shards (reverse-pre-sharded shardmap)
         domain-spec {:num-shards (count shardmap)
                      :coordinator coordinator}]
     (binding [test-key->shard (fn [k _] (shards k))]
-      (mk-sharded-domain fs path domain-spec keyvals))))
+      (mk-sharded-domain path domain-spec keyvals))))
 
 (defn mk-local-config [local-dir]
   {:local-dir local-dir
@@ -148,15 +157,14 @@
 
 (defmacro with-sharded-domain
   [[pathsym domain-spec keyvals] & body]
-  `(with-fs-tmp [fs# ~pathsym]
-     (mk-sharded-domain fs# ~pathsym ~domain-spec ~keyvals)
+  `(with-fs-tmp [_ ~pathsym]
+     (mk-sharded-domain ~pathsym ~domain-spec ~keyvals)
      ~@body))
 
 (defmacro with-presharded-domain
   [[dname pathsym coordinator shardmap] & body]
-  `(with-fs-tmp [fs# ~pathsym]
-     (mk-presharded-domain fs#
-                           ~pathsym
+  `(with-fs-tmp [_ ~pathsym]
+     (mk-presharded-domain ~pathsym
                            ~coordinator
                            ~shardmap)
      (binding [dom/key->shard (let [rev# (reverse-pre-sharded ~shardmap)]

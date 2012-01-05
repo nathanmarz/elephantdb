@@ -1,5 +1,6 @@
 (ns elephantdb.keyval.core-test
   (:use clojure.test
+        midje.sweet
         elephantdb.keyval.testing
         elephantdb.common.testing
         [elephantdb.common.config :only (read-global-config)])
@@ -81,7 +82,7 @@
                             0 [0 0]
                             20 [20 0]
                             2 nil)
-      (is (thrown? Exception (direct-get-val elephant "test1" (barr 10)))))))
+      (direct-get-val elephant "test1" (barr 10)) => (throws Exception))))
 
 (deftest test-update-synched
   (with-local-tmp [lfs local-dir]
@@ -95,14 +96,14 @@
                                 gtmp)
 
         ;; create version 1 for no-update
-        (mk-sharded-domain fs dtmp1 domain-spec
+        (mk-sharded-domain dtmp1 domain-spec
                            (domain-data 0 [0 0]
                                         1 [1 1]
                                         2 [2 2]
                                         3 [3 3]) :version 1)
 
         ;; create version 1 for do-update
-        (mk-sharded-domain fs dtmp2 domain-spec
+        (mk-sharded-domain dtmp2 domain-spec
                            (domain-data 0 [10 10]
                                         1 [20 20]
                                         2 [30 30]
@@ -118,14 +119,14 @@
         ;;
         ;; create version 1 for no-update (override to make sure it
         ;; didn't reload this version)
-        (mk-sharded-domain fs dtmp1 domain-spec
+        (mk-sharded-domain dtmp1 domain-spec
                            (domain-data 0 [1]
                                         1 [2]
                                         2 [3]
                                         3 [4]) :version 1)
 
         ;; create version 2 for do-update
-        (mk-sharded-domain fs dtmp2 domain-spec
+        (mk-sharded-domain dtmp2 domain-spec
                            (domain-data 0 [11 11]
                                         1 [22 22]
                                         2 [33 33]
@@ -151,7 +152,7 @@
         ;; now test with new version but different domain-spec
         (let [domain-spec-new {:num-shards 6 :coordinator (JavaBerkDB.)}]
           (h/delete fs dtmp2 true)
-          (mk-sharded-domain fs dtmp2 domain-spec-new
+          (mk-sharded-domain dtmp2 domain-spec-new
                              (domain-data 0 [55 55]
                                           1 [66 66]
                                           2 [77 77]
@@ -159,8 +160,9 @@
 
         (let [handler (-> (read-global-config gtmp local-config)
                           (mk-service-handler local-dir nil))]
-          (is (status/failed? (.getDomainStatus handler "do-update")))
-          (is (status/ready? (.getDomainStatus handler "no-update")))
+          (facts
+            (.getDomainStatus handler "do-update") => status/failed?
+            (.getDomainStatus handler "no-update") => status/ready?)
           (.shutdown handler))
         
         ;; if we delete a domain from the global conf, it should
@@ -174,11 +176,13 @@
         (let [handler (-> (read-global-config gtmp local-config)
                           (mk-service-handler local-dir nil))
               deleted-domain-path (.pathToFile lfs (h/path local-dir "do-update"))]
-          (is (= 1 (.size (.getDomains handler))))
-          (is (= "no-update" (first (.getDomains handler))))
-
+          (facts
+            (.size (.getDomains handler)) => 1
+            (first (.getDomains handler))  => "no-update")
+            
           "make sure local path of domain has been deleted:"
-          (is (= false (.exists deleted-domain-path)))
+          (fact
+            (.exists deleted-domain-path) => false)
           (.shutdown handler))))))
 
 ;; TODO: need to do something to prioritize hosts in tests (override get-priority-hosts)
@@ -231,14 +235,14 @@
                                 gtmp)
 
         ;; create version 1 for domain1
-        (mk-sharded-domain fs dtmp1 domain-spec
+        (mk-sharded-domain dtmp1 domain-spec
                            (domain-data 0 [0 0]
                                         1 [1 1]
                                         2 [2 2]
                                         3 [3 3]) :version 1)
 
         ;; create version 1 for domain2
-        (mk-sharded-domain fs dtmp2 domain-spec
+        (mk-sharded-domain dtmp2 domain-spec
                            (domain-data 0 [10 10]
                                         1 [20 20]
                                         2 [30 30]
@@ -249,7 +253,7 @@
                           (mk-service-handler local-dir nil))]
 
           ;; create version 2 for domain2
-          (mk-sharded-domain fs dtmp2 domain-spec
+          (mk-sharded-domain dtmp2 domain-spec
                              (domain-data 0 [11 11]
                                           1 [22 22]
                                           2 [33 33]
@@ -301,14 +305,14 @@
                                 3 [44 44])
 
           ;; create version 2 for domain1
-          (mk-sharded-domain fs dtmp1 domain-spec
+          (mk-sharded-domain dtmp1 domain-spec
                              (domain-data 0 [1 1]
                                           1 [2 2]
                                           2 [3 3]
                                           3 [4 4]) :version 2)
 
           ;; create version 3 for domain2
-          (mk-sharded-domain fs dtmp2 domain-spec
+          (mk-sharded-domain dtmp2 domain-spec
                              (domain-data 0 [12 12]
                                           1 [23 23]
                                           2 [34 34]
@@ -317,11 +321,12 @@
           ;; force update of all domains
           (.updateAll handler)
 
-          (is (status/loading? (.getDomainStatus handler "domain1")))
-          (is (status/loading? (.getDomainStatus handler "domain2")))
+          (facts
+            (.getDomainStatus handler "domain1") => status/loading?
+            (.getDomainStatus handler "domain2") => status/loading? 
 
-          (is (status/ready? (.getDomainStatus handler "domain1")))
-          (is (status/ready? (.getDomainStatus handler "domain2")))
+            (.getDomainStatus handler "domain1") => status/ready? 
+            (.getDomainStatus handler "domain2") => status/ready?) 
 
           ;; wait a bit
           (while (.isUpdating handler)
@@ -344,11 +349,14 @@
           (is (status/ready? (.getDomainStatus handler "domain2")))
 
           ;; make sure the old versions have been deleted locally
-          (let [domain1-old-path1 (.pathToFile lfs (h/path (h/str-path local-dir "domain1" "1")))
-                domain2-old-path1 (.pathToFile lfs (h/path (h/str-path local-dir "domain2" "1")))
-                domain2-old-path2 (.pathToFile lfs (h/path (h/str-path local-dir "domain2" "2")))]
-            (is (= false (.exists domain1-old-path1)))
-            (is (= false (.exists domain2-old-path1)))
-            (is (= false (.exists domain2-old-path2))))
-
+          (let [domain1-old-path1
+                (.pathToFile lfs (h/path (h/str-path local-dir "domain1" "1")))
+                domain2-old-path1
+                (.pathToFile lfs (h/path (h/str-path local-dir "domain2" "1")))
+                domain2-old-path2
+                (.pathToFile lfs (h/path (h/str-path local-dir "domain2" "2")))]
+            (facts
+              (.exists domain1-old-path1) => false
+              (.exists domain2-old-path1) => false
+              (.exists domain2-old-path2) => false))
           (.shutdown handler))))))

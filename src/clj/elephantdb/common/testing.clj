@@ -12,8 +12,7 @@
   "Returns true of the specs of all supplied DomainStores match, false
   otherwise."
   [& stores]
-  (apply = (map (fn [^DomainStore x]
-                  (.getSpec x))
+  (apply = (map #(.getSpec %)
                 stores)))
 
 ;; `existing-shard-set` is good for testing, but we don't really need
@@ -77,13 +76,17 @@
   "Accepts a path, a DomainSpec and any number of pairs of shard-key
   and indexable document, and indexes the supplied documents into the
   supplied persistence."
-  [path spec & pairs]
+  [path spec pair-seq & {:keys [version]}]
   (let [version      (rand-int 10)
         store        (DomainStore. path spec)
         shard-set    (.getShardSet store version)
-        version-path (.createVersion store version)]
+        version-path (if version
+                       (do (when (.hasVersion store version)
+                             (.deleteVersion store version))
+                           (.createVersion store version))
+                       (.createVersion store))]
     (doseq [[idx doc-seq] (group-by #(.shardIndex shard-set (first %))
-                                    pairs)]
+                                    pair-seq)]
       (with-open [shard (.openShardForAppend shard-set idx)]
         (doseq [doc (map second doc-seq)]
           (.index shard doc))))
