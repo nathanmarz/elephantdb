@@ -1,4 +1,5 @@
 (ns elephantdb.common.domain
+  (:refer-clojure :exclude (conj!))
   (:use [jackknife.def :only (defalias)])
   (:require [hadoop-util.core :as h]
             [hadoop-util.transfer :as transfer]
@@ -203,11 +204,27 @@
   (when-let [latest (newest-version domain)]
     (load-version! domain latest)))
 
-;; ## Domain Record Definition
+;; ## Domain Type Definition
+
+(defprotocol DomainOps
+  (index! [domain document]
+    "Indexes the supplied document into the domain."))
 
 (deftype Domain
     [localStore remoteStore serializer throttle rwLock
      hostname status domainData shardIndex]
+  DomainOps
+  (index! [this document]
+    ;; TODO: We need better error handling here. If a shard doesn't
+    ;; exist BUT is located in the shard-index, we should create the
+    ;; shard. load-version! should make sure that all shards are
+    ;; created.
+    (u/with-write-lock (.rwLock this)
+      ;; TODO: This will fail, currently. We need a way to toggle the
+      ;; readability.
+      (with-open [shard (retrieve-shard this document)]
+        (.index shard document))))
+  
   clojure.lang.Seqable
   (seq [this]
     (when-let [data (domain-data this)]
