@@ -108,28 +108,9 @@
         (.createVersion vs version))
     (.createVersion vs)))
 
-(defn create-domain!
-  "Accepts a domain-spec, a path and a pre-sharded map of documents
-  and creates a pre-filled domain at the supplied path. create-domain!
-  supports optional keyword arguments:
-
-  :version -- the version used to create the domain."
-  [path spec sharded-docs & {:keys [version]}]
-  (let [store        (DomainStore. path spec)
-        version-path (create-version store
-                                     :version version
-                                     :force? true)
-        version      (.parseVersion store version-path)]
-    (doseq [[idx doc-seq] sharded-docs]
-      (with-open [shard (do (.createShard store idx version)
-                            (.openShardForAppend store idx version))]
-        (doseq [doc doc-seq]
-          (.index shard doc))))
-    (.succeedVersion store version-path)))
-
 ;; ## Hadoop Writer-based Additions
 
-(defn presharded->writer!
+(defn create-domain-with-writer!
   "Accepts a domain-spec, a path and a pre-sharded map of
   documents. sharded-docs is a map of shard->doc-seq."
   [spec path sharded-docs & {:keys [version]}]
@@ -144,11 +125,32 @@
           (.write writer (IntWritable. idx) doc)))
       (.succeedVersion store version-path))))
 
-(defn mk-presharded->writer!
+;; ## Local Creation
+
+(defn create-domain!
+  "Accepts a domain-spec, a path and a pre-sharded map of documents
+  and creates a pre-filled domain at the supplied path. create-domain!
+  supports optional keyword arguments:
+
+  :version -- the version used to create the domain."
+  [spec path sharded-docs & {:keys [version]}]
+  (let [store        (DomainStore. path spec)
+        version-path (create-version store
+                                     :version version
+                                     :force? true)
+        version      (.parseVersion store version-path)]
+    (doseq [[idx doc-seq] sharded-docs]
+      (with-open [shard (do (.createShard store idx version)
+                            (.openShardForAppend store idx version))]
+        (doseq [doc doc-seq]
+          (.index shard doc))))
+    (.succeedVersion store version-path)))
+
+(defn mk-domain-creator
   "Accepts a function that translates between the items in the
   sequence and a document suitable for indexing into the supplied
   domain and returns a function taht acts just like
-  presharded->writer!"
+  create-domain!"
   [converter-fn]
   (fn [spec path sharded-items & {:keys [version]}]
     (let [sharded-docs (u/val-map converter-fn sharded-items)]
@@ -184,9 +186,12 @@
          (group-by (fn [[idx _]] (shard-index spec idx)))
          (u/val-map (partial map second)))))
 
-(defn unsharded->writer!
-  "doc-seq is a sequence of <shard-key, document> pairs. Otherwise
-  this is the same as presharded->writer."
+;; And again, we're at a function that's very similar to create-domain
+;; from above.
+
+(defn create-unsharded-domain!
+  "doc-seq is a sequence of <shard-key, document> pairs vs a map of
+  shard->document-seq. Otherwise this is the same as create-domain!."
   [spec path doc-seq & {:keys [version shard-fn]}]
   (let [sharded-docs (shard-docs doc-seq :shard-fn shard-fn)]
     (presharded->writer! spec path sharded-docs :version version)))
@@ -202,15 +207,20 @@
     (let [doc-seq (map converter-fn item-seq)]
       (shard-docs spec doc-seq :shard-fn shard-fn))))
 
-(defn mk-unsharded->writer!
+(defn mk-unsharded-domain-creator
   "Accepts a sharding function of the same type passed in to
-  `mk-sharder`. `sharder-fn` must accept one of the items in the
+  `mk-sharder`. `converter-fn` must accept one of the items in the
   document seq and return a pair of <shard-key, document> suitable for
   indexing into ElephantDB.
 
-  Returns a function that acts like unsharded->writer!, but accepts a
-  sequence of the inputs to `sharder-fn` vs a sequence of <shard-key,
-  doc> pairs."
+  Returns a function that acts like create-unsharded-domain!, but
+  accepts a sequence of the inputs to `sharder-fn` vs a sequence of
+  <shard-key, doc> pairs.
+
+  You can also supply the following keyword arguments:
+
+  :version  -- domain version.
+  :shard-fn -- fn from shardkey->shard index."
   [converter-fn]
   (fn [spec path item-seq & {:keys [version shard-fn]}]
     (let [item-sharder (mk-sharder converter-fn)

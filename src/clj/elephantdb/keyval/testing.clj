@@ -28,6 +28,8 @@
 ;; TODO: Index should be moved into a namespace that deals more
 ;; generally with domains, vs this key-value specific testing
 ;; namespace.
+;;
+;; ### Persistence & Coordinator Level Tests
 
 (defn index
   "Sinks the supplied document into the supplied persistence."
@@ -85,35 +87,7 @@
   (with-open [db (.openPersistenceForRead coordinator path {})]
     (fact (get-all db) => (just pairs))))
 
-;; bind this to get different behavior when making sharded domains.
-;; TODO: Remove first arg from key->shard.
-(def ^:dynamic test-key->shard
-  (partial dom/key->shard "testdomain"))
-
-(defn mk-sharded-domain
-  [path domain-spec keyvals & {:keys [version]}]
-  (t/with-local-tmp [lfs localtmp]
-    (let [vs (DomainStore. path (conf/convert-clj-domain-spec domain-spec))
-          dpath (if version
-                  (do (when (.hasVersion vs version)
-                        (.deleteVersion vs version))
-                      (.createVersion vs version))
-                  (.createVersion vs))
-          shardedkeyvals (map
-                          (fn [[k v]]
-                            [(test-key->shard k (:num-shards domain-spec))
-                             k v])
-                          keyvals)]
-      (with-open [writer (elephant-writer domain-spec
-                                          dpath
-                                          localtmp)]
-        (doseq [[s k v] shardedkeyvals]
-          (when v
-            (-> writer
-                (.write (IntWritable. s) (KeyValDocument. k v))))))
-      (.succeedVersion vs dpath))))
-
-;; ## Shard Mocking Functions
+;; ## DomainStore Level Testing
 
 (defn wrap-keyval
   "Accepts a vector with [key, value] and returns a vector of
@@ -128,49 +102,45 @@
   with the `:shard-fn` keyword."
   (mk-sharder wrap-keyval))
 
-(def presharded-kv->writer!
-  (mk-presharded->writer! #(KeyValDocument. %1 %2)))
+(defn mk-kv-domain
+  "Accepts a domain-spec, path, and a sequence of kv-pairs and
+   populated the domain at the supplied path.
 
-(def unsharded-kv->writer!
-  (mk-unsharded->writer! wrap-keyval))
+  Optional keyword arguments are :shard-fn and :version."
+  [spec path kv-seq & {:keys [version shard-fn]}]
+  (let [creator (mk-unsharded-domain-creator wrap-keyval)]
+    (creator spec path kv-seq
+             :version  version
+             :shard-fn shard-fn)))
 
-(defn fill-with-writer!
-  "Accepts a domain-spec, a path and a pre-sharded map of
-  documents. sharded-docs is a map of shard->doc-seq."
-  [spec path sharded-docs & {:keys [version]}]
-  (t/with-local-tmp [lfs tmp]
-    (let [store (DomainStore. path spec)
-          dpath (create-version store
-                                :version version
-                                :force? true)]
-      (with-open [writer (elephant-writer spec path tmp)]
-        (doseq [[idx doc-seq] sharded-docs
-                doc           doc-seq]
-          (.write writer (IntWritable. idx) doc)))
-      (.succeedVersion store dpath))))
+(defmacro with-domain
+  [[pathsym spec kv-pairs & {:keys [version shard-fn]}] & body]
+  `(t/with-fs-tmp [_ ~pathsym]
+     (mk-kv-domain ~spec ~pathsym ~kv-pairs
+                   :version ~version
+                   :shard-fn ~shard-fn)
+     ~@body))
 
-(defn mk-sharded-domain
-  [path spec kv-seq & {:keys [version]}]
-  (mk-populated-store! path
-                       spec
-                       (map (fn [[k v]]
-                              [k (KeyValDocument. k v)])
-                            kv-seq)
-                       :version version))
 
-(defn reverse-pre-sharded [shardmap]
-  (->> shardmap
-       (u/val-map #(map first %))
-       (u/reverse-multimap)
-       (u/val-map first)))
+(defn mk-presharded-kv-domain
+  "Accepts a domain-spec, path, and a map of shard->kv-pair-seq and
+   populated the domain at the supplied path.
 
-(defn mk-presharded-domain [path coordinator shardmap]
-  (let [keyvals (apply concat (vals shardmap))
-        shards (reverse-pre-sharded shardmap)
-        domain-spec {:num-shards (count shardmap)
-                     :coordinator coordinator}]
-    (binding [test-key->shard (fn [k _] (shards k))]
-      (mk-sharded-domain path domain-spec keyvals))))
+  Optional keyword arguments are :shard-fn and :version."
+  [spec path shard-map & {:keys [version]}]
+  (let [creator (mk-domain-creator (fn [[k v]]
+                                     (KeyValDocument. k v)))]
+    (creator spec path shard-map
+             :version  version)))
+
+(defmacro with-presharded-domain
+  [[pathsym spec shard-map & {:keys [version]}] & body]
+  `(t/with-fs-tmp [_ ~pathsym]
+     (mk-presharded-kv-domain ~pathsym ~spec ~shard-map
+                              :version ~version)
+     ~@body))
+
+;; ## Thrift Service Testing Helpers
 
 (defn mk-local-config [local-dir]
   {:local-dir local-dir
@@ -188,25 +158,6 @@
         (info "waiting...")
         (Thread/sleep 500))
       handler)))
-
-(defmacro with-sharded-domain
-  [[pathsym domain-spec keyvals] & body]
-  `(t/with-fs-tmp [_ ~pathsym]
-     (mk-sharded-domain ~pathsym ~domain-spec ~keyvals)
-     ~@body))
-
-(defmacro with-presharded-domain
-  [[dname pathsym coordinator shardmap] & body]
-  `(t/with-fs-tmp [_ ~pathsym]
-     (mk-presharded-domain ~pathsym
-                           ~coordinator
-                           ~shardmap)
-     (binding [dom/key->shard (let [rev# (reverse-pre-sharded ~shardmap)]
-                                (fn [d# k# a#]
-                                  (if (= d# ~dname)
-                                    (rev# k#)
-                                    (dom/key->shard d# k# a#))))]
-       ~@body)))
 
 (defmacro with-service-handler
   [[handler-sym hosts domains-conf & [host-to-shards]] & body]
