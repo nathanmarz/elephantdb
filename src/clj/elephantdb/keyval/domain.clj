@@ -24,6 +24,13 @@
     (u/with-read-lock (.rwLock domain)
       (.get shard key))))
 
+(defn to-map
+  "Returns a persistent map containing all kv pairs in the supplied
+  domain."
+  [domain]
+  (into {} (for [^KeyValDocument doc (seq domain)]
+             [(.key doc) (.value doc)])))
+
 (defn index-keys
   "For the supplied domain and sequence of keys, returns a sequence of
   maps with the following keys:
