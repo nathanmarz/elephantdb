@@ -49,6 +49,8 @@
       (has-version? domain 10) => truthy
       (has-data? domain) => truthy))
 
+  ;; TODO: Examine the domain creation pattern here -- we can break
+  ;; this out into a separate testing DSL function.
   (t/with-fs-tmp [_ tmp]
     (let [domain (build-domain tmp :spec spec)]
       (facts
