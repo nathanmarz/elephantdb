@@ -21,21 +21,24 @@
   [{:keys [domains]} domain-name]
   (get domains domain-name))
 
+(def domain-names
+  "Returns a sequence of all domain names for which the supplied
+   database is responsible."
+  (comp keys :domains))
+
 (defn attempt-update!
   "If an update is available, updates the named domain and hotswaps
    the new version. Returns a future."
   [database domain-name]
-  (future
-    (when-let [domain (domain-get database domain-name)]
-      (domain/attempt-update! domain))))
+  (when-let [domain (domain-get database domain-name)]
+    (domain/attempt-update! domain)))
 
 (defn update-all!
   "If an update is available on any domain, updates the domain's
   shards from its remote store and hotswaps in the new versions."
   [database]
-  (future
-    (u/do-pmap domain/attempt-update!
-               (vals (:domains database)))))
+  (doseq [domain (domain-names database)]
+    (domain/attempt-update! (domain-get database domain))))
 
 (defn fully-loaded?
   [{:keys [domains]}]
@@ -52,11 +55,6 @@
   "Returns a map of domain name -> status."
   [{:keys [domains]}]
   (u/val-map status/get-status domains))
-
-(def domain-names
-  "Returns a sequence of all domain names for which the supplied
-   database is responsible."
-  (comp keys :domains))
 
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
@@ -115,23 +113,21 @@
 
 (defn build-database
   "Returns a database linking to a bunch of read-only domains."
-  [{:keys [domains hosts replication port local-root hdfs-conf] :as conf-map}]
-  (let [throttle (domain/throttle (:download-rate-limit conf-map))]
+  [{:keys [domains port local-root] :as conf-map}]
+  (let [throttle (domain/throttle (:download-rate-limit conf-map))
+        options   (select-keys conf-map [:hosts :replication :hdfs-conf
+                                         :remote-path :throttle])
+        options   (into {} (remove (comp nil? second) options))]
     (Database. local-root
                port
                (u/update-vals
                 domains
                 (fn [domain-name remote-path]
                   (let [local-path (domain-path local-root domain-name)]
-                    (domain/build-domain local-root
-                                         :hosts hosts
-                                         :replication replication
-                                         :hdfs-conf hdfs-conf
-                                         :remote-path remote-path
-                                         :throttle throttle
-                                         :read-only true))))
-               (dissoc conf-map
-                       :domains :local-root :port))))
+                    (apply domain/build-domain local-root
+                           :remote-path remote-path
+                           options))))
+               (dissoc conf-map :domains :local-root :port))))
 
 ;; A full database ends up looking something like the commented out
 ;; block below. Previously, a large number of functions would try and

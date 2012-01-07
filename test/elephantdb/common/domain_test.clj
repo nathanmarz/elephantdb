@@ -36,7 +36,7 @@
                [0 (KeyValDocument. 3 4)]
                [1 (KeyValDocument. 5 6)]
                [1 (KeyValDocument. 7 8)]]]
- 
+
   (with-basic-domain [domain spec doc-seq :version 10]
     (facts
       "Getting a seq on a domain should return the documents from ALL

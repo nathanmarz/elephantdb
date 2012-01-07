@@ -117,7 +117,7 @@
   "Used as:
 
    (with-domain [my-domain domain-spec
-                 [[1 2] [3 4]]
+                 {1 2, 3 4}
                  :version 5
                  :shard-fn (constantly 10)]
           (seq my-domain))

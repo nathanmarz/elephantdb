@@ -10,7 +10,7 @@
             [elephantdb.common.status :as status])
   (:import [elephantdb Utils DomainSpec]
            [elephantdb.store DomainStore]
-           [elephantdb.common.status IStateful KeywordStatus]
+           [elephantdb.common.status IStateful IStatus KeywordStatus]
            [elephantdb.persistence ShardSet Shutdownable]
            [java.util.concurrent ExecutionException]))
 
@@ -163,19 +163,16 @@
 (defn open-shard!
   "Opens and returns a Persistence object standing in for the shard
   with the supplied index."
-  [domain-store shard-idx version & {:keys [read-only]
-                                     :or {read-only true}}]
-  (letfn [(open! []
-            (log/info "Opening shard #: " shard-idx)
-            (u/with-ret (if read-only
-                          (.openShardForRead domain-store shard-idx)
-                          (.openShardForAppend domain-store shard-idx))
-              (log/info "Opened shard #: " shard-idx)))]
-    (try (open!)
-         (catch Throwable e
-           (log/info "Shard didn't exist. Creating shard # " shard-idx)
-           (.createShard domain-store shard-idx)
-           (open!)))))
+  [domain-store shard-idx version & {:keys [allow-writes]}]
+  (let [fs (.getFileSystem domain-store)]
+    (when-not (.exists fs (h/path (.shardPath domain-store shard-idx)))
+      (log/info "Shard doesn't exist. Creating shard # " shard-idx)
+      (.createShard domain-store shard-idx))
+    (log/info "Opening shard #: " shard-idx)
+    (u/with-ret (if allow-writes
+                  (.openShardForAppend domain-store shard-idx)
+                  (.openShardForRead domain-store shard-idx))
+      (log/info "Opened shard #: " shard-idx))))
 
 (defn retrieve-shards!
   "Accepts a domain object. On success, returns a sequence of opened
@@ -186,7 +183,7 @@
         shards      (shard-set domain)
         open!       (fn [idx]
                       (open-shard! local-store idx version
-                                   :read-only (.readOnly domain)))]
+                                   :allow-writes (.allowWrites domain)))]
     (assert (has-version? local-store version)
             (str version "  doesn't exist."))
     (u/with-ret (->> (u/do-pmap open! shards)
@@ -256,7 +253,7 @@
   document, and indexes the supplied documents into the supplied
   persistence."
   [domain & pairs]
-  {:pre [(not (.readOnly domain))]}
+  {:pre [(.allowWrites domain)]}
   (u/with-write-lock (.rwLock domain)
     (when-let [shard-map (:shards (domain-data domain))]
       (doseq [[idx doc-seq] (group-by #(key->shard domain (first %))
@@ -269,7 +266,7 @@
 
 (deftype Domain
     [localStore remoteStore serializer throttle rwLock
-     hostname status domainData shardIndex readOnly]
+     hostname status domainData shardIndex allowWrites]
   clojure.lang.Seqable
   (seq [this]
     (when-let [data (domain-data this)]
@@ -298,7 +295,16 @@
         (status/swap-status! status/to-failed msg)))
   (to-shutdown [this]
     (-> (.status this)
-        (status/swap-status! status/to-shutdown))))
+        (status/swap-status! status/to-shutdown)))
+
+  IStatus
+  (ready? [this] (status/ready? (status/get-status this)))
+  (failed? [this] (status/failed? (status/get-status this)))
+  (shutdown? [this] (status/shutdown? (status/get-status this)))
+  (loading? [this] (status/loading? (status/get-status this))))
+
+(defn domain? [x]
+  (instance? Domain x))
 
 (defmethod version-seq Domain
   [domain]
@@ -312,10 +318,9 @@
   "Constructs a domain record."
   [local-root
    & {:keys [throttle hdfs-conf remote-path hosts
-             replication spec read-only]
+             replication spec allow-writes]
       :or {hdfs-conf   {}
            hosts       [(u/local-hostname)]
-           read-only   true
            replication 1}}]
   (let [remote-fs     (h/filesystem hdfs-conf)
         remote-store  (when remote-path
@@ -334,7 +339,7 @@
                    (atom (KeywordStatus. :loading))
                    (atom nil)
                    index
-                   read-only)
+                   allow-writes)
       (boot-domain!))))
 
 ;; ## Domain Updater Logic
@@ -353,27 +358,22 @@
         remote-fs    (.getFileSystem remote-store)
         remote-path  (.shardPath remote-store idx version)
         local-path   (.shardPath local-store idx version)]
-    (if (.exists remote-fs remote-path)
-      (do (log/info
-           (format "Copied %s to %s." remote-path local-path))
-          (transfer/rcopy remote-fs remote-path local-path
-                          :throttle throttle)
-          (log/info
-           (format "Copied %s to %s." remote-path local-path)))
-      (do (log/info
-           "Shard %s did not exist. Creating Empty LP." remote-path)
-          (.createShard local-store idx version)))))
+    (when (.exists remote-fs (h/path remote-path))
+      (log/info (format "Copying %s to %s." remote-path local-path))
+      (transfer/rcopy remote-fs remote-path local-path
+                      :throttle throttle)
+      (log/info (format "Copied %s to %s." remote-path local-path)))))
 
 (defn transfer-version!
   "Transfers the supplied version from the domain's remote store to
   its local store. To throttle the download, provide a throttling
   agent with the optional `:throttle` keyword argument."
   [domain version]
-  (let [local-store (.localStore domain)]
-    (.createVersion local-store version)
+  (let [local-store  (.localStore domain)
+        version-path (.createVersion local-store version)]
     (u/do-pmap (partial transfer-shard! domain version)
                (shard-set domain))
-    (.succeedVersion local-store version)))
+    (.succeedVersion local-store version-path)))
 
 (defn transfer-possible?
   "Returns true if the remote store has the supplied version (and the
@@ -394,18 +394,18 @@
 
    :version - try to update to some version other than the most recent
   on the remote store."
-  [domain & {:keys [version]
-             :or {version (.mostRecentVersion (.remoteStore domain))}}]
-  (when (transfer-possible? domain version)
-    (status/to-loading domain)
-    (transfer-version! domain version)
-    (load-version! version)
-    (status/to-ready domain)))
+  [domain & {:keys [version]}]
+  (let [version (or version (.mostRecentVersion (.remoteStore domain)))]
+    (when (transfer-possible? domain version)
+      (doto domain
+        (status/to-loading)
+        (transfer-version! version)
+        (load-version! version)
+        (status/to-ready)))))
 
 (defn attempt-update!
   "If the supplied domain isn't currently updating, returns a future
   containing a triggered update computation."
   [domain & {:keys [version]}]
-  (if (status/updating? domain)
-    (log/info "UPDATER - Not updating as update's still in progress.")
+  (when-not (status/updating? domain)
     (future (update-domain! domain :version version))))
