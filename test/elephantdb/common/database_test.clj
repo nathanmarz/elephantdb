@@ -6,7 +6,9 @@
             [hadoop-util.test :as t])
   (:import [elephantdb.document KeyValDocument]))
 
-(defn uuid-stream []
+(defn uuid-stream
+  "Generates an infinite stream of UUIDs."
+  []
   (repeatedly #(t/uuid)))
 
 (defn build-test-db [root-dir remote-dir domain-seq]
@@ -23,6 +25,8 @@
                        :domains    path-map}))))
 
 (defmacro with-database
+  "Generates a database with the supplied sequence of domain names and
+  binds it to `sym` inside of the form."
   [[sym domain-seq] & body]
   `(t/with-fs-tmp [fs# remote#]
      (t/with-local-tmp [lfs# local#]
