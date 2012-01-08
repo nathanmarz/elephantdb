@@ -1,6 +1,7 @@
 (ns elephantdb.common.database
   (:require [hadoop-util.core :as h]
             [jackknife.core :as u]
+            [jackknife.seq :as seq]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as domain]
             [elephantdb.common.status :as status])
@@ -45,11 +46,10 @@
   (every? (some-fn status/ready? status/failed?)
           (vals domains)))
 
-(defn some-updating?
+(defn some-loading?
   [{:keys [domains]}]
   (let [domains (vals domains)]
-    (some status/loading?
-          (map status/get-status domains))))
+    (seq/some? status/loading? (map status/get-status domains))))
 
 (defn domain->status
   "Returns a map of domain name -> status."
