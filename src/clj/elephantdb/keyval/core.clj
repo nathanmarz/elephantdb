@@ -1,12 +1,14 @@
 (ns elephantdb.keyval.core
   "Functions for connecting the an ElephantDB (key-value) service via
   Thrift."
+  (:use [elephantdb.common.domain :only (loaded?)])
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
             [elephantdb.common.status :as status]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.config :as conf]
+            
             [elephantdb.keyval.domain :as dom])
   (:import [org.apache.thrift7.protocol TBinaryProtocol]
            [org.apache.thrift7.transport TTransport]
@@ -22,7 +24,6 @@
   "Wraps the supplied byte array in an instance of
   `elephantdb.generated.Value`."
   [val]
-  (prn val)
   (doto (Value.)
     (.set_data ^Value val)))
 
@@ -80,6 +81,15 @@
 (defmacro defservice []
   "Something like this.")
 
+;; TODO: Perfect example of a spot where we could throw a data
+;; structure warning up with throw+ if the database isn't loaded.
+
+(defn direct-multiget [database domain-name key-seq]
+  (let [domain (db/domain-get database domain-name)]
+    (when (loaded? domain)
+      (map (partial dom/kv-get domain)
+           key-seq))))
+
 (defn kv-service [database]
   (reify db/Preparable
     (prepare [_] (db/prepare database))
@@ -90,10 +100,9 @@
     ElephantDB$Iface      
     (directMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
-      (try (let [domain (db/domain-get database domain-name)]
-             (doall
-              (map #(mk-value (dom/kv-get domain %))
-                   keys)))
+      (try (if-let [val-seq (direct-multiget database domain-name keys)]
+             (map mk-value val-seq)
+             (throw (thrift/domain-not-loaded-ex)))
            (catch RuntimeException _
              (throw (thrift/wrong-host-ex)))))
 

@@ -180,8 +180,8 @@
   [[sym name->docs & {:keys [host-shard-fn conf-map]}] & body]
   `(t/with-fs-tmp [fs# remote-tmp#]
      (t/with-local-tmp [lfs# local-tmp#]
-       (let [db#  (build-test-db local-tmp# remote-tmp#
-                                 ~name->docs ~conf-map)
+       (let [db#  (build-unsharded-test-db local-tmp# remote-tmp#
+                                           ~name->docs ~conf-map)
              ~sym     (mk-service-handler db#)
              updater# (db/launch-updater! db#)]
          (try ~@body

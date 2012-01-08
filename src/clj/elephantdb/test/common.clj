@@ -61,6 +61,11 @@
   (and (apply count= coll-seqs)
        (every? true? (apply map = coll-seqs))))
 
+(defn barrs=
+  [& barr-seqs]
+  (apply colls= (for [xs barr-seqs]
+                  (map #(ByteArray. %) xs))))
+
 ;; ## Example Specs
 
 (defn berkeley-spec
@@ -253,6 +258,11 @@
 
 
 ;; ## Test Database
+;;
+;; TODO:
+;;
+;; * Options for loaded vs unloaded database
+;; * Sharded vs unsharded
 
 (defn build-test-db
   "Accepts a local and remote root directory and a map of domain name
@@ -277,4 +287,30 @@
   `(t/with-fs-tmp [fs# remote#]
      (t/with-local-tmp [lfs# local#]
        (let [~sym (build-test-db local# remote# ~domain-seq)]
+         ~@body))))
+
+(defn build-unsharded-test-db
+  "Accepts a local and remote root directory and a map of domain name
+  -> presharded map of documents (a map with <shard-idx, doc-seq>
+  pairs) and returns a Database object.
+
+  Accepts an optional configuration map as a final argument."
+  [local-root remote-root domain-map & [conf-map]]
+  {:pre [(or (not conf-map) (map? conf-map))]}
+  (let [spec     (berkeley-spec 4)
+        path-map (domain-path-map remote-root (keys domain-map))]
+    (doseq [[domain-name remote-path] path-map]
+      (create-unsharded-domain! spec remote-path (domain-map domain-name)))
+    (db/build-database (merge conf-map
+                              {:local-root local-root
+                               :domains    path-map}))))
+
+
+(defmacro with-unsharded-database
+  "Generates a database with the supplied sequence of domain names and
+  binds it to `sym` inside of the form."
+  [[sym domain-seq] & body]
+  `(t/with-fs-tmp [fs# remote#]
+     (t/with-local-tmp [lfs# local#]
+       (let [~sym (build-unsharded-test-db local# remote# ~domain-seq)]
          ~@body))))

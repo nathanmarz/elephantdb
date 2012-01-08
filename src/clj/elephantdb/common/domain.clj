@@ -100,6 +100,10 @@
   load, false otherwise."
   (comp boolean newest-version))
 
+(def loaded?
+  "Returns true if the domain is loaded, false otherwise."
+  (comp boolean domain-data))
+
 (defn needs-update?
   "Returns true if the remote VersionedStore contains newer data than
   the local store,, false otherwise."
