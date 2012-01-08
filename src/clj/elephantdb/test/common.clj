@@ -3,7 +3,8 @@
             [hadoop-util.test :as t]
             [jackknife.core :as u]
             [jackknife.logging :as log]
-            [elephantdb.common.domain :as dom])
+            [elephantdb.common.domain :as dom]
+            [elephantdb.common.database :as db])
   (:import [elephantdb.store DomainStore]
            [elephantdb.persistence ShardSet]
            [elephantdb Utils DomainSpec ByteArray]
@@ -49,8 +50,7 @@
 
 (defn barr [& xs]
   (when xs
-    (ByteArray.
-     (byte-array (map byte xs)))))
+    (byte-array (map byte xs))))
 
 (defn count= [& colls]
   (apply = (map count colls)))
@@ -95,6 +95,22 @@
           (.deleteVersion vs version))
         (.createVersion vs version))
     (.createVersion vs)))
+
+;; ## Name Generation
+
+(defn uuid-stream
+  "Generates an infinite stream of UUIDs."
+  []
+  (repeatedly #(t/uuid)))
+
+(defn domain-path-map
+  "Accepts a sequence of domain names and returns a map of domain-name
+  to a path nested within root."
+  [root name-seq]
+  (->> (uuid-stream)
+       (map (partial str root "/"))
+       (interleave name-seq)
+       (apply hash-map)))
 
 ;; ## Hadoop Writer-based Additions
 
@@ -236,3 +252,29 @@
       (create-domain! spec path sharded-docs :version version))))
 
 
+;; ## Test Database
+
+(defn build-test-db
+  "Accepts a local and remote root directory and a map of domain name
+  -> presharded map of documents (a map with <shard-idx, doc-seq>
+  pairs) and returns a Database object.
+
+  Accepts an optional configuration map as a final argument."
+  [local-root remote-root domain-map & [conf-map]]
+  {:pre [(or (not conf-map) (map? conf-map))]}
+  (let [spec     (berkeley-spec 4)
+        path-map (domain-path-map remote-root (keys domain-map))]
+    (doseq [[domain-name remote-path] path-map]
+      (create-domain! spec remote-path (domain-map domain-name)))
+    (db/build-database (merge conf-map
+                              {:local-root local-root
+                               :domains    path-map}))))
+
+(defmacro with-database
+  "Generates a database with the supplied sequence of domain names and
+  binds it to `sym` inside of the form."
+  [[sym domain-seq] & body]
+  `(t/with-fs-tmp [fs# remote#]
+     (t/with-local-tmp [lfs# local#]
+       (let [~sym (build-test-db local# remote# ~domain-seq)]
+         ~@body))))

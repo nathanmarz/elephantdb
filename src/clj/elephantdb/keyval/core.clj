@@ -14,7 +14,7 @@
            [elephantdb.persistence Shutdownable]
            [elephantdb.common.database Database]
            [elephantdb.generated ElephantDB$Client Value
-            ElephantDBShared$Iface ElephantDB$Iface
+            ElephantDB$Iface ElephantDB$Processor
             DomainNotFoundException DomainNotLoadedException
             HostsDownException WrongHostException]))
 
@@ -22,6 +22,7 @@
   "Wraps the supplied byte array in an instance of
   `elephantdb.generated.Value`."
   [val]
+  (prn val)
   (doto (Value.)
     (.set_data ^Value val)))
 
@@ -79,129 +80,135 @@
 (defmacro defservice []
   "Something like this.")
 
-(defn kv-service [conf-map]
-  (let [database (db/build-database conf-map)]
-    (reify db/Preparable
-      (prepare [_] (db/prepare database))
+(defn kv-service [database]
+  (reify db/Preparable
+    (prepare [_] (db/prepare database))
 
-      Shutdownable
-      (shutdown [_] (.shutdown database))
+    Shutdownable
+    (shutdown [_] (.shutdown database))
 
-      ElephantDB$Iface      
-      (directMultiGet [_ domain-name keys]
-        (thrift/assert-domain database domain-name)
-        (try (let [domain (db/domain-get database domain-name)]
-               (doall
-                (map #(mk-value (dom/kv-get domain %))
-                     keys)))
-             (catch RuntimeException _
-               (throw (thrift/wrong-host-ex)))))
+    ElephantDB$Iface      
+    (directMultiGet [_ domain-name keys]
+      (thrift/assert-domain database domain-name)
+      (try (let [domain (db/domain-get database domain-name)]
+             (doall
+              (map #(mk-value (dom/kv-get domain %))
+                   keys)))
+           (catch RuntimeException _
+             (throw (thrift/wrong-host-ex)))))
 
-      ;; ## MultiGet
-      ;;
-      ;; Start out by indexing each key; this requires indexing each key
-      ;; into a map (see `index-keys` above). The loop first checks that
-      ;; every key has at least one host associated with it. If any key is
-      ;; lacking hosts, the multiGet throws an exception.
-      ;;
-      ;; If no exception is thrown, the system groups keys by the first host
-      ;; in the list (localhost, if any keys are located on the machine
-      ;; executing the call) and performs a directMultiGet on each for its
-      ;; keys.
-      ;;
-      ;; If any host has unsuccessful results (didn't return anything), the
-      ;; host is removed from the host lists of every key, and multiGet
-      ;; recurses.
-      ;;
-      ;; Once the multi-get loop completes without any failures the entire
-      ;; sequence of values is returned in order.
+    ;; ## MultiGet
+    ;;
+    ;; Start out by indexing each key; this requires indexing each key
+    ;; into a map (see `index-keys` above). The loop first checks that
+    ;; every key has at least one host associated with it. If any key is
+    ;; lacking hosts, the multiGet throws an exception.
+    ;;
+    ;; If no exception is thrown, the system groups keys by the first host
+    ;; in the list (localhost, if any keys are located on the machine
+    ;; executing the call) and performs a directMultiGet on each for its
+    ;; keys.
+    ;;
+    ;; If any host has unsuccessful results (didn't return anything), the
+    ;; host is removed from the host lists of every key, and multiGet
+    ;; recurses.
+    ;;
+    ;; Once the multi-get loop completes without any failures the entire
+    ;; sequence of values is returned in order.
 
-      (multiGet [this domain-name key-seq]
-        (thrift/assert-domain database domain-name)
-        (let [localhost (u/local-hostname)]
-          (loop [indexed-keys (-> (db/domain-get database domain-name)
-                                  (dom/index-keys key-seq))
-                 results []]
-            (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
-              (throw (thrift/hosts-down-ex (:all-hosts bad-key)))
-              (let [host-map   (group-by (comp first :hosts) indexed-keys)
-                    get-fn     (partial multi-get*
-                                        this
-                                        domain-name
-                                        (:port database)
-                                        localhost)
-                    rets       (u/do-pmap (fn [[host indexed-keys]]
-                                            [host (get-fn host indexed-keys)])
-                                          host-map)
-                    successful (into {} (filter second rets))
-                    results    (->> (vals successful)
-                                    (apply concat results))
-                    fail-map   (apply dissoc host-map (keys successful))]
-                (if (empty? fail-map)
-                  (map :value (sort-by :index results))
-                  (recur (map (fn [m]
-                                (update-in m [:hosts]
-                                           dom/trim-hosts (keys fail-map)))
-                              (apply concat (vals fail-map)))
-                         results)))))))
+    (multiGet [this domain-name key-seq]
+      (thrift/assert-domain database domain-name)
+      (let [localhost (u/local-hostname)]
+        (loop [indexed-keys (-> (db/domain-get database domain-name)
+                                (dom/index-keys key-seq))
+               results []]
+          (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
+            (throw (thrift/hosts-down-ex (:all-hosts bad-key)))
+            (let [host-map   (group-by (comp first :hosts) indexed-keys)
+                  get-fn     (partial multi-get*
+                                      this
+                                      domain-name
+                                      (:port database)
+                                      localhost)
+                  rets       (u/do-pmap (fn [[host indexed-keys]]
+                                          [host (get-fn host indexed-keys)])
+                                        host-map)
+                  successful (into {} (filter second rets))
+                  results    (->> (vals successful)
+                                  (apply concat results))
+                  fail-map   (apply dissoc host-map (keys successful))]
+              (if (empty? fail-map)
+                (map :value (sort-by :index results))
+                (recur (map (fn [m]
+                              (update-in m [:hosts]
+                                         dom/trim-hosts (keys fail-map)))
+                            (apply concat (vals fail-map)))
+                       results)))))))
 
-      (multiGetInt [this domain key-seq]
-        (.multiGet this domain key-seq))
+    (multiGetInt [this domain key-seq]
+      (.multiGet this domain key-seq))
 
-      (multiGetLong [this domain key-seq]
-        (.multiGet this domain key-seq))
+    (multiGetLong [this domain key-seq]
+      (.multiGet this domain key-seq))
 
-      (multiGetString [this domain key-seq]
-        (.multiGet this domain key-seq))
+    (multiGetString [this domain key-seq]
+      (.multiGet this domain key-seq))
 
-      (get [this domain key]
-        (first (.multiGet this domain [key])))
-      
-      (getInt [this domain key]
-        (.get this domain key))
+    (get [this domain key]
+      (first (.multiGet this domain [key])))
+    
+    (getInt [this domain key]
+      (.get this domain key))
 
-      (getLong [this domain key]
-        (.get this domain key))
+    (getLong [this domain key]
+      (.get this domain key))
 
-      (getString [this domain key]
-        (.get this domain key))
+    (getString [this domain key]
+      (.get this domain key))
 
-      (getDomainStatus [_ domain-name]
-        "Returns the thrift status of the supplied domain-name."
-        (thrift/assert-domain database domain-name)
-        (status/get-status
-         (db/domain-get database domain-name)))
+    (getDomainStatus [_ domain-name]
+      "Returns the thrift status of the supplied domain-name."
+      (thrift/assert-domain database domain-name)
+      (-> (db/domain-get database domain-name)
+          (status/get-status)
+          (thrift/to-thrift)))
 
-      (getDomains [_]
-        "Returns a sequence of all domain names being served."
-        (db/domain-names database))
+    (getDomains [_]
+      "Returns a sequence of all domain names being served."
+      (db/domain-names database))
 
-      (getStatus [_]
-        "Returns a map of domain-name->status for each domain."
-        (thrift/elephant-status
-         (u/update-vals (db/domain->status database)
-                        (fn [_ status] (thrift/to-thrift status)))))
+    (getStatus [_]
+      "Returns a map of domain-name->status for each domain."
+      (thrift/elephant-status
+       (u/update-vals (db/domain->status database)
+                      (fn [_ status] (thrift/to-thrift status)))))
 
-      (isFullyLoaded [_]
-        "Are all domains loaded properly?"
-        (db/fully-loaded? database))
+    (isFullyLoaded [_]
+      "Are all domains loaded properly?"
+      (db/fully-loaded? database))
 
-      (isUpdating [_]
-        "Is some domain currently updating?"
-        (db/some-loading? database))
+    (isUpdating [_]
+      "Is some domain currently updating?"
+      (db/some-loading? database))
 
-      (update [_ domain-name]
-        "If an update is available, updates the named domain and
+    (update [_ domain-name]
+      "If an update is available, updates the named domain and
          hotswaps the new version."
-        (thrift/assert-domain database domain-name)
-        (u/with-ret true
-          (db/attempt-update! database domain-name)))
+      (thrift/assert-domain database domain-name)
+      (u/with-ret true
+        (db/attempt-update! database domain-name)))
 
-      (updateAll [_]
-        "If an update is available on any domain, updates the domain's
+    (updateAll [_]
+      "If an update is available on any domain, updates the domain's
          shards from its remote store and hotswaps in the new versions."
-        (u/with-ret true
-          (db/update-all! database))))))
+      (u/with-ret true
+        (db/update-all! database)))))
+
+(defn processor
+  "Returns a key-value thrift processor suitable for passing into
+  launch-server!"
+  [service-handler]
+  (ElephantDB$Processor. service-handler))
 
 ;; # Main Access
 ;;
@@ -224,7 +231,8 @@
   (let [local-config   (conf/read-local-config  local-config-path)
         global-config  (conf/read-global-config global-config-hdfs-path
                                                 local-config)
-        conf-map (merge global-config local-config)]
-    (thrift/launch-server! (kv-service conf-map)
+        conf-map (merge global-config local-config)
+        database (db/build-database conf-map)]
+    (thrift/launch-server! (processor database)
                            (:port conf-map)
                            (:update-interval-s conf-map))))

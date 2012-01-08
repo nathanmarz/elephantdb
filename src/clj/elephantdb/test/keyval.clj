@@ -7,13 +7,9 @@
             [hadoop-util.test :as t]
             [elephantdb.keyval.core :as kv]
             [elephantdb.common.thrift :as thrift]
-            [elephantdb.common.shard :as shard]
-            [elephantdb.common.domain :as dom]
-            [elephantdb.common.database :as db]
-            [elephantdb.common.config :as conf])
-  (:import [elephantdb Utils DomainSpec]
+            [elephantdb.common.database :as db])
+  (:import [elephantdb  DomainSpec]
            [elephantdb.partition HashModScheme]
-           [elephantdb.store DomainStore]
            [elephantdb.persistence Persistence KeyValPersistence Coordinator]
            [org.apache.hadoop.io IntWritable]
            [org.apache.thrift7 TException]
@@ -169,23 +165,27 @@
    :update-interval-s 60})
 
 ;; TODO: Add in the ability to re-bind the host->shard decision.
-(defn mk-service-handler
-  [global-config localdir]
-  (let [handler (db/build-database
-                 (merge global-config (mk-local-config localdir)))]
+(defn mk-service-handler [database]
+  (let [handler  (doto (kv/kv-service database)
+                   (db/prepare)
+                   (.updateAll))]
     (while (not (.isFullyLoaded handler))
       (info "waiting...")
-      (Thread/sleep 500))
+      (Thread/sleep 50))
     handler))
 
+;; TODO: Fake out host->shard function, start an updater, and cancel
+;; with future-cancel.
 (defmacro with-service-handler
-  [[handler-sym hosts domains-conf & [host-to-shards]] & body]
-  (let [global-conf {:replication 1 :hosts hosts :domains domains-conf}]
-    `(t/with-local-tmp [lfs# localtmp#]
-       (let [~handler-sym (mk-service-handler ~global-conf localtmp#)
-             updater# (db/launch-updater! ~handler-sym 100)]
+  [[sym name->docs & {:keys [host-shard-fn conf-map]}] & body]
+  `(t/with-fs-tmp [fs# remote-tmp#]
+     (t/with-local-tmp [lfs# local-tmp#]
+       (let [db#  (build-test-db local-tmp# remote-tmp#
+                                 ~name->docs ~conf-map)
+             ~sym     (mk-service-handler db#)
+             updater# (db/launch-updater! db#)]
          (try ~@body
-              (finally (.shutdown ~handler-sym)
+              (finally (.shutdown ~sym)
                        (future-cancel updater#)))))))
 
 (defn mk-mocked-remote-multiget-fn
@@ -278,4 +278,3 @@
   (DomainSpec. (MemoryCoordinator. (atom {}))
                (HashModScheme.)
                shard-count))
-

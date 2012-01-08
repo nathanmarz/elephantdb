@@ -74,7 +74,7 @@
 
 (defn launch-updater!
   [database]
-  (let [interval-secs (get-in database [:options :update-intervals-s])
+  (let [interval-secs (get-in database [:options :update-interval-s])
         interval-ms   (* 1000 interval-secs)]
     (future
       (log/info (format "Starting updater process with an interval of: %s seconds."
@@ -97,11 +97,9 @@
 (defrecord Database [local-root port domains options]
   Preparable
   (prepare [{:keys [local-root domains] :as database}]
-    (launch-updater! database)
     (u/register-shutdown-hook #(.shutdown database))
     (future
-      (purge-unused-domains! local-root
-                             (keys domains))
+      (purge-unused-domains! local-root (keys domains))
       (doseq [domain (vals domains)]
         (domain/boot-domain! domain))))
 
@@ -124,7 +122,7 @@
                 domains
                 (fn [domain-name remote-path]
                   (let [local-path (domain-path local-root domain-name)]
-                    (apply domain/build-domain local-root
+                    (apply domain/build-domain local-path
                            :remote-path remote-path
                            options))))
                (dissoc conf-map :domains :local-root :port))))

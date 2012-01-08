@@ -8,8 +8,7 @@
            [org.apache.thrift7.transport TTransport
             TFramedTransport TSocket TNonblockingServerSocket]          
            [elephantdb.common.database Database]
-           [elephantdb.generated ElephantDB
-            ElephantDBShared$Iface ElephantDB$Processor
+           [elephantdb.generated
             DomainStatus$_Fields Status
             DomainNotFoundException DomainNotLoadedException
             HostsDownException WrongHostException
@@ -62,13 +61,17 @@
                         (ready-status :loading? true)
                         (loading-status))))
 
+;; We currently default to "loading status"; I'll fix this when I
+;; reconcile the "IDLE" status I've been using internally at boot.
+
 (defn to-thrift [state]
   (condp #(%1 %2) state
     status/ready?    (ready-status
                       :loading? (status/loading? state))
     status/loading?  (loading-status)
     status/failed?   (failed-status)
-    status/shutdown? (shutdown-status)))
+    status/shutdown? (shutdown-status)
+    (loading-status)))
 
 (defn domain-not-found-ex [domain]
   (DomainNotFoundException. domain))
@@ -96,13 +99,13 @@
   (TFramedTransport. (TSocket. host port)))
 
 (defn thrift-server
-  [service-handler port]
+  [processor port]
   (let [args (-> (TNonblockingServerSocket. port)
                  (THsHaServer$Args.)
                  (.workerThreads 64)
                  (.executorService 64)
                  (.protocolFactory (TBinaryProtocol$Factory.))
-                 (.processor (ElephantDB$Processor. service-handler)))]
+                 (.processor processor))]
     (THsHaServer. args)))
 
 (defn launch-server!

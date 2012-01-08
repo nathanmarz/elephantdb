@@ -186,7 +186,7 @@
                                    :allow-writes (.allowWrites domain)))]
     (assert (has-version? local-store version)
             (str version "  doesn't exist."))
-    (u/with-ret (->> (u/do-pmap open! shards)
+    (u/with-ret (->> (doall (map open! shards))
                      (zipmap shards))
       (log/info "Finished opening domain at " (.getRoot local-store)))))
 
@@ -400,8 +400,7 @@
       (doto domain
         (status/to-loading)
         (transfer-version! version)
-        (load-version! version)
-        (status/to-ready)))))
+        (load-version! version)))))
 
 (defn attempt-update!
   "If the supplied domain isn't currently updating, returns a future
