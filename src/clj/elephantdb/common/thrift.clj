@@ -64,11 +64,11 @@
 
 (defn to-thrift [state]
   (condp #(%1 %2) state
-    status/ready?    (ready-status)
-    status/failed?   (failed-status)
-    status/shutdown? (shutdown-status)
+    status/ready?    (ready-status
+                      :loading? (status/loading? state))
     status/loading?  (loading-status)
-    status/updating? (ready-status :loading? true)))
+    status/failed?   (failed-status)
+    status/shutdown? (shutdown-status)))
 
 (defn domain-not-found-ex [domain]
   (DomainNotFoundException. domain))

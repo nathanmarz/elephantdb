@@ -336,7 +336,7 @@
                    throttle
                    (u/mk-rw-lock)
                    (u/local-hostname)
-                   (atom (KeywordStatus. :loading))
+                   (atom (KeywordStatus. :idle))
                    (atom nil)
                    index
                    allow-writes)
@@ -407,5 +407,5 @@
   "If the supplied domain isn't currently updating, returns a future
   containing a triggered update computation."
   [domain & {:keys [version]}]
-  (when-not (status/updating? domain)
+  (when-not (status/loading? domain)
     (future (update-domain! domain :version version))))

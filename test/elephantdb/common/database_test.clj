@@ -2,8 +2,9 @@
   (:use elephantdb.common.database
         elephantdb.test.common
         midje.sweet)
-  (:require [elephantdb.common.domain :as domain]
-            [hadoop-util.test :as t])
+  (:require [hadoop-util.test :as t]
+            [elephantdb.common.domain :as domain]
+            [elephantdb.common.status :as status])
   (:import [elephantdb.document KeyValDocument]))
 
 (defn uuid-stream
@@ -41,9 +42,18 @@
 
     "Nothing's been loaded yet."
     (fully-loaded? db) => false
-
+    (some-loading? db) => false
+    
     "We update the domain and wait until completion with a deref."
     @(attempt-update! db "domain-a")
 
+    "Update's complete?"
+    (some-loading? db) => false
+    
     "Now the domain is fully loaded."
-    (fully-loaded? db) => true))
+    (fully-loaded? db) => true
+
+    "This is a half-baked test, but fine for now; we want to actually
+    pass in data, not just check that the hardcoded data made it in
+    all right."
+    (count (seq (domain-get db "domain-a"))) => 3))

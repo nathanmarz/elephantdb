@@ -188,7 +188,7 @@
 
       (isUpdating [_]
         "Is some domain currently updating?"
-        (db/some-updating? database))
+        (db/some-loading? database))
 
       (update [_ domain-name]
         "If an update is available, updates the named domain and

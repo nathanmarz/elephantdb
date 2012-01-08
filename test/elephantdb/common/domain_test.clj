@@ -2,7 +2,8 @@
   (:use elephantdb.common.domain
         elephantdb.test.common
         midje.sweet)
-  (:require [hadoop-util.test :as t])
+  (:require [hadoop-util.test :as t]
+            [elephantdb.common.status :as status])
   (:import [elephantdb.store DomainStore]
            [elephantdb.document KeyValDocument]))
 
@@ -65,6 +66,14 @@
         (create-unsharded-domain! spec tmp doc-seq :version v))
       (facts (version-seq domain) => [4 3 2 1 0]
         (current-version domain) => nil
+
+        "Domain's not ready..."
+        (status/ready? domain) => false
+
+        "But when we load a version"
         (load-version! domain 1)
+
+        "Status changes to ready."
+        (status/ready? domain) => true
         (current-version domain) => 1
         (transfer-possible? domain 10) => false?))))
