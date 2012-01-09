@@ -174,7 +174,8 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
                 }
 
                 public void close() {
-                    if (cursor != null) { cursor.close(); }
+                    if (cursor != null)
+                        cursor.close();
                 }
 
             };

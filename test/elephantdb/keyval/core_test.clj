@@ -12,12 +12,19 @@
            [elephantdb.document KeyValDocument]))
 
 
+(defn get-val
+  [service domain-name k]
+  (.get_data (.get service domain-name k)))
+
 (defmacro expected-domain-data [handler domain & key-value-pairs]
   `(doseq [[key-sym# val-sym#] (partition 2 [~@key-value-pairs])]
      (fact
-       (get-val ~handler ~domain (barr key-sym#)) => (if (seq val-sym#)
-                                                       (apply barr val-sym#)
-                                                       val-sym#))))
+       (get-val ~handler
+                ~domain
+                (barr key-sym#))
+       => (if (seq val-sym#)
+            (apply barr val-sym#)
+            val-sym#))))
 
 (defn mk-docseq [m]
   (for [[k v] m]
@@ -61,9 +68,7 @@
         (.getStatus handler))) => (partial every? status/ready?)
 
       "Test of directMultiGet."
-      (letfn [(get [k]
-                (.get_data (.get handler "test1" k)))
-              (direct-multiget [ks]
+      (letfn [(direct-multiget [ks]
                 (map #(.get_data %)
                      (.directMultiGet handler "test1" ks)))
               (direct-get [k]
@@ -73,7 +78,9 @@
         (barrs-equal? (direct-multiget [(barr 0) (barr 2) (barr 1)])
                       [(barr 0 0) (barr 2 2) (barr 1 1)])
         (ByteArray. (direct-get (barr 0))) => (ByteArray. (barr 0 0))
-        (ByteArray. (get (barr 0))) => (ByteArray. (barr 0 0))))))
+
+        "Currently failing -- test multiGet."
+        (ByteArray. (get-val handler "test1" (barr 0))) => (ByteArray. (barr 0 0))))))
 
 (fact "Domain should contain all input key-value pairs."
   (let [input-map {"key" "val"
@@ -303,7 +310,6 @@
                                 3 [3 3])
 
           ;; domain2 should not have changed either
-          
           (expected-domain-data handler "domain2"
                                 0 [10 10]
                                 1 [20 20]
@@ -311,9 +317,7 @@
                                 3 [40 40])
 
           ;; nothing should happen for domain1
-          
           (.update handler "domain1")
-          
 
           ;; wait a bit
           (while (.isUpdating handler)
@@ -381,9 +385,9 @@
                                 2 [34 34]
                                 3 [45 45])
 
-          (is (status/ready? (.getDomainStatus handler "domain1")))
-          (is (status/ready? (.getDomainStatus handler "domain2")))
-
+          (.getDomainStatus handler "domain1") => (status/ready?)
+          (.getDomainStatus handler "domain2") => (status/ready?)
+          
           ;; make sure the old versions have been deleted locally
           (let [domain1-old-path1
                 (.pathToFile lfs (h/path (h/str-path local-dir "domain1" "1")))
