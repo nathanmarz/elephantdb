@@ -169,10 +169,14 @@
   (let [handler  (doto (kv/kv-service database)
                    (db/prepare)
                    (.updateAll))]
-    (while (not (.isFullyLoaded handler))
-      (info "waiting...")
-      (Thread/sleep 50))
-    handler))
+    (loop [times 20]
+      (if (pos? times)
+        (if (.isFullyLoaded handler)
+          handler
+          (do (info "waiting...")
+              (Thread/sleep 50)
+              (recur (dec times))))
+        (throw (RuntimeException. "Couldn't load handler!"))))))
 
 ;; TODO: Fake out host->shard function, start an updater, and cancel
 ;; with future-cancel.
