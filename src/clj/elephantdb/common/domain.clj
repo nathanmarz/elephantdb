@@ -169,9 +169,6 @@
   with the supplied index."
   [domain-store shard-idx version & {:keys [allow-writes]}]
   (let [fs (.getFileSystem domain-store)]
-    (when-not (.exists fs (h/path (.shardPath domain-store shard-idx)))
-      (log/info "Shard doesn't exist. Creating shard # " shard-idx)
-      (.createShard domain-store shard-idx))
     (log/info "Opening shard #: " shard-idx)
     (u/with-ret (if allow-writes
                   (.openShardForAppend domain-store shard-idx)
@@ -362,11 +359,13 @@
         remote-fs    (.getFileSystem remote-store)
         remote-path  (.shardPath remote-store idx version)
         local-path   (.shardPath local-store idx version)]
-    (when (.exists remote-fs (h/path remote-path))
-      (log/info (format "Copying %s to %s." remote-path local-path))
-      (transfer/rcopy remote-fs remote-path local-path
-                      :throttle throttle)
-      (log/info (format "Copied %s to %s." remote-path local-path)))))
+    (if (.exists remote-fs (h/path remote-path))
+      (do (log/info (format "Copying %s to %s." remote-path local-path))
+          (transfer/rcopy remote-fs remote-path local-path
+                          :throttle throttle)
+          (log/info (format "Copied %s to %s." remote-path local-path)))
+      (do (log/info "Shard doesn't exist. Creating shard # " idx)
+          (.createShard local-store idx version)))))
 
 (defn transfer-version!
   "Transfers the supplied version from the domain's remote store to
