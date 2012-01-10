@@ -2,7 +2,6 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
-import elephantdb.document.Document;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.Persistence;
 import elephantdb.serialize.Serializer;
@@ -63,7 +62,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         // shard index as an IntWritable key.
         public boolean next(NullWritable k, BytesWritable v) throws IOException {
             if (iterator.hasNext()) {
-                Document pair = (Document) iterator.next();
+                Object pair = iterator.next();
 
                 byte[] crushed = split.getSerializer().serialize(pair);
                 v.set(new BytesWritable(crushed));

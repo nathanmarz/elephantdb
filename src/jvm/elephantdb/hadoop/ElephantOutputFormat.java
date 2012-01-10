@@ -2,7 +2,6 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
-import elephantdb.document.Document;
 import elephantdb.index.IdentityIndexer;
 import elephantdb.index.Indexer;
 import elephantdb.persistence.Coordinator;
@@ -97,7 +96,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             Persistence lp = retrieveShard(shard.get());
 
             // TODO: Change this behavior and get Cascading to serialize object.
-            Document doc = (Document) serializer.deserialize(Utils.getBytes(carrier));
+            Object doc = serializer.deserialize(Utils.getBytes(carrier));
 
             if (args.indexer != null) {
                 args.indexer.index(lp, doc);
