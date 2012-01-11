@@ -182,7 +182,7 @@
 
     (multiGetLong [this domain key-seq]
       (.multiGet this domain key-seq))
-
+    
     (multiGetString [this domain key-seq]
       (.multiGet this domain key-seq))
 
@@ -190,14 +190,14 @@
       (first (.multiGet this domain [(.array key)])))
     
     (getInt [this domain key]
-      (kryo-get this database domain key))
+      (first (.multiGet this domain [key])))
 
     (getLong [this domain key]
-      (kryo-get this database domain key))
+      (first (.multiGet this domain [key])))
 
     (getString [this domain key]
-      (kryo-get this database domain key))
-
+      (first (.multiGet this domain [key])))
+    
     (getDomainStatus [_ domain-name]
       "Returns the thrift status of the supplied domain-name."
       (thrift/assert-domain database domain-name)

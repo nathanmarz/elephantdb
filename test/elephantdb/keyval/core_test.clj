@@ -51,9 +51,16 @@
   (with-service-handler [handler
                          {"test" (mk-docseq {(barr 1) (barr 2)
                                              (barr 3) (barr 4)
-                                             (barr 5) (barr 6)})}
+                                             (barr 5) (barr 6)
+                                             "key"    "val"
+                                             1         (barr 10)
+                                             2         (barr 11)
+                                             3         (barr 12)})}
                          :conf-map {:update-interval-s 0.01}]
-    (get-val handler "test" (barr 1)) => (barr 2)))
+    (seq (get-val handler "test" (barr 1))) => [2]
+    (seq (.get_data (.getLong handler "test" 1))) => [10]
+    (mapcat (comp seq #(.get_data %))
+            (.multiGetLong handler "test" [1 2 3])) => [10 11 12]))
 
 (fact "Basic tests."
   "TODO: Replace mk-docseq with an actual service handler tailored for
