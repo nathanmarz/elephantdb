@@ -29,6 +29,14 @@
         (edb-put db "a" "11")
         (fact (edb-get db "a") => "11")))))
 
+(defn is-db-pairs?
+  "Returns true if the persistence housed by the supplied coordinator
+  contains the supplied pairs, false otherwise."
+  [coordinator path & pairs]
+  (with-open [db (.openPersistenceForRead coordinator path {})]
+    (fact (get-all db) => (just pairs))))
+
+;; ## DomainStore Level Testing
 (defn test-iterate [coord]
   (let [coord (prep-coordinator coord)]
     (t/with-local-tmp [_ tmp-path]

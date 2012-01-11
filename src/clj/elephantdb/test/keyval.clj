@@ -1,6 +1,5 @@
 (ns elephantdb.test.keyval
-  (:use midje.sweet
-        elephantdb.test.common
+  (:use elephantdb.test.common
         [elephantdb.common.domain :only (build-domain)]
         [jackknife.logging :only (info with-log-level)])
   (:require [jackknife.core :as u]
@@ -75,13 +74,6 @@
     (doto coordinator
       (.setSerializer (KryoSerializer.)))
     coordinator))
-
-(defn is-db-pairs?
-  "Returns true if the persistence housed by the supplied coordinator
-  contains the supplied pairs, false otherwise."
-  [coordinator path & pairs]
-  (with-open [db (.openPersistenceForRead coordinator path {})]
-    (fact (get-all db) => (just pairs))))
 
 ;; ## DomainStore Level Testing
 
@@ -221,7 +213,7 @@
      ~@body))
 
 (comment
-  "OVERHAUL these."
+  "OVERHAUL these. Remove fact references."
   (defn check-domain-pred
     [domain-name handler pairs pred]
     (doseq [[k v] pairs]
