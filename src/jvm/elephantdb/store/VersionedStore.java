@@ -21,13 +21,13 @@ public class VersionedStore {
     private FileSystem fs;
 
     public VersionedStore(String path) throws IOException {
-      this(Utils.getFS(path, new Configuration()), path);
+        this(Utils.getFS(path, new Configuration()), path);
     }
-    
+
     public VersionedStore(FileSystem fs, String path) throws IOException {
-      this.fs = fs;
-      root = path;
-      mkdirs(root);
+        this.fs = fs;
+        root = path;
+        mkdirs(root);
     }
 
     public FileSystem getFileSystem() {
@@ -122,13 +122,17 @@ public class VersionedStore {
      */
     public List<Long> getAllVersions() throws IOException {
         List<Long> ret = new ArrayList<Long>();
-        for(Path p: listDir(root)) {
-            if(p.getName().endsWith(FINISHED_VERSION_SUFFIX)) {
-                ret.add(validateAndGetVersion(p.toString()));
+
+        Path rootPath = new Path(getRoot());
+        if (getFileSystem().exists(rootPath)) {
+            for(Path p: listDir(root)) {
+                if(p.getName().endsWith(FINISHED_VERSION_SUFFIX)) {
+                    ret.add(validateAndGetVersion(p.toString()));
+                }
             }
+            Collections.sort(ret);
+            Collections.reverse(ret);
         }
-        Collections.sort(ret);
-        Collections.reverse(ret);
         return ret;
     }
 
@@ -168,7 +172,7 @@ public class VersionedStore {
     private void createNewFile(String path) throws IOException {
         if(fs instanceof LocalFileSystem)
             new File(path).createNewFile();
-        else 
+        else
             fs.createNewFile(new Path(path));
     }
 
