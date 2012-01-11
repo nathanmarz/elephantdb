@@ -90,6 +90,17 @@
       (map (partial dom/kv-get domain)
            key-seq))))
 
+(defn kryo-registrations [local-store]
+  "TODO: Take a list of lists of kryo pairs, return the proper thrift
+   business."
+  (-> local-store .getSpec .getKryoPairs))
+
+(defn kryo-get
+  [service database domain-name key]
+  (thrift/assert-domain database domain-name)
+  (let [ser (.serializer (db/domain-get database domain-name))]
+    (.kryoGet service domain-name (.serialize ser key))))
+
 (defn kv-service [database]
   (reify db/Preparable
     (prepare [_] (db/prepare database))
@@ -97,7 +108,19 @@
     Shutdownable
     (shutdown [_] (.shutdown database))
 
-    ElephantDB$Iface      
+    ElephantDB$Iface
+    (getRegistrations [_ domain-name]
+      "TODO: Move into domain."
+      (thrift/assert-domain database domain-name)
+      (-> (db/domain-get database domain-name)
+          (.localStore)
+          (kryo-registrations)))
+
+    (kryoGet [this domain-name key]      
+      (thrift/assert-domain database domain-name)
+      (let [ser (.serializer (db/domain-get database domain-name))]
+        (.multiGet this domain-name [(.deserialize ser key)])))
+    
     (directMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
       (try (if-let [val-seq (direct-multiget database domain-name keys)]
@@ -167,13 +190,13 @@
       (first (.multiGet this domain [(.array key)])))
     
     (getInt [this domain key]
-      (.get this domain key))
+      (kryo-get this database domain key))
 
     (getLong [this domain key]
-      (.get this domain key))
+      (kryo-get this database domain key))
 
     (getString [this domain key]
-      (.get this domain key))
+      (kryo-get this database domain key))
 
     (getDomainStatus [_ domain-name]
       "Returns the thrift status of the supplied domain-name."

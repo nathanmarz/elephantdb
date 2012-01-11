@@ -25,7 +25,7 @@ public class ElephantDB {
 
   public interface Iface extends ElephantDBShared.Iface {
 
-    public List<KryoRegistration> getRegistrations() throws org.apache.thrift7.TException;
+    public List<KryoRegistration> getRegistrations(String domain) throws org.apache.thrift7.TException;
 
     public Value kryoGet(String domain, ByteBuffer key) throws org.apache.thrift7.TException;
 
@@ -51,7 +51,7 @@ public class ElephantDB {
 
   public interface AsyncIface extends ElephantDBShared .AsyncIface {
 
-    public void getRegistrations(org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.getRegistrations_call> resultHandler) throws org.apache.thrift7.TException;
+    public void getRegistrations(String domain, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.getRegistrations_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void kryoGet(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.kryoGet_call> resultHandler) throws org.apache.thrift7.TException;
 
@@ -95,15 +95,16 @@ public class ElephantDB {
       super(iprot, oprot);
     }
 
-    public List<KryoRegistration> getRegistrations() throws org.apache.thrift7.TException
+    public List<KryoRegistration> getRegistrations(String domain) throws org.apache.thrift7.TException
     {
-      send_getRegistrations();
+      send_getRegistrations(domain);
       return recv_getRegistrations();
     }
 
-    public void send_getRegistrations() throws org.apache.thrift7.TException
+    public void send_getRegistrations(String domain) throws org.apache.thrift7.TException
     {
       getRegistrations_args args = new getRegistrations_args();
+      args.set_domain(domain);
       sendBase("getRegistrations", args);
     }
 
@@ -456,21 +457,24 @@ public class ElephantDB {
       super(protocolFactory, clientManager, transport);
     }
 
-    public void getRegistrations(org.apache.thrift7.async.AsyncMethodCallback<getRegistrations_call> resultHandler) throws org.apache.thrift7.TException {
+    public void getRegistrations(String domain, org.apache.thrift7.async.AsyncMethodCallback<getRegistrations_call> resultHandler) throws org.apache.thrift7.TException {
       checkReady();
-      getRegistrations_call method_call = new getRegistrations_call(resultHandler, this, ___protocolFactory, ___transport);
+      getRegistrations_call method_call = new getRegistrations_call(domain, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
 
     public static class getRegistrations_call extends org.apache.thrift7.async.TAsyncMethodCall {
-      public getRegistrations_call(org.apache.thrift7.async.AsyncMethodCallback<getRegistrations_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+      private String domain;
+      public getRegistrations_call(String domain, org.apache.thrift7.async.AsyncMethodCallback<getRegistrations_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
         super(client, protocolFactory, transport, resultHandler, false);
+        this.domain = domain;
       }
 
       public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
         prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("getRegistrations", org.apache.thrift7.protocol.TMessageType.CALL, 0));
         getRegistrations_args args = new getRegistrations_args();
+        args.set_domain(domain);
         args.write(prot);
         prot.writeMessageEnd();
       }
@@ -873,7 +877,7 @@ public class ElephantDB {
 
       protected getRegistrations_result getResult(I iface, getRegistrations_args args) throws org.apache.thrift7.TException {
         getRegistrations_result result = new getRegistrations_result();
-        result.success = iface.getRegistrations();
+        result.success = iface.getRegistrations(args.domain);
         return result;
       }
     }
@@ -1115,11 +1119,13 @@ public class ElephantDB {
   public static class getRegistrations_args implements org.apache.thrift7.TBase<getRegistrations_args, getRegistrations_args._Fields>, java.io.Serializable, Cloneable   {
     private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("getRegistrations_args");
 
+    private static final org.apache.thrift7.protocol.TField DOMAIN_FIELD_DESC = new org.apache.thrift7.protocol.TField("domain", org.apache.thrift7.protocol.TType.STRING, (short)1);
 
+    private String domain; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
-;
+      DOMAIN((short)1, "domain");
 
       private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -1134,6 +1140,8 @@ public class ElephantDB {
        */
       public static _Fields findByThriftId(int fieldId) {
         switch(fieldId) {
+          case 1: // DOMAIN
+            return DOMAIN;
           default:
             return null;
         }
@@ -1172,9 +1180,14 @@ public class ElephantDB {
         return _fieldName;
       }
     }
+
+    // isset id assignments
+
     public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
     static {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.DOMAIN, new org.apache.thrift7.meta_data.FieldMetaData("domain", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getRegistrations_args.class, metaDataMap);
     }
@@ -1182,10 +1195,20 @@ public class ElephantDB {
     public getRegistrations_args() {
     }
 
+    public getRegistrations_args(
+      String domain)
+    {
+      this();
+      this.domain = domain;
+    }
+
     /**
      * Performs a deep copy on <i>other</i>.
      */
     public getRegistrations_args(getRegistrations_args other) {
+      if (other.is_set_domain()) {
+        this.domain = other.domain;
+      }
     }
 
     public getRegistrations_args deepCopy() {
@@ -1194,15 +1217,50 @@ public class ElephantDB {
 
     @Override
     public void clear() {
+      this.domain = null;
+    }
+
+    public String get_domain() {
+      return this.domain;
+    }
+
+    public void set_domain(String domain) {
+      this.domain = domain;
+    }
+
+    public void unset_domain() {
+      this.domain = null;
+    }
+
+    /** Returns true if field domain is set (has been assigned a value) and false otherwise */
+    public boolean is_set_domain() {
+      return this.domain != null;
+    }
+
+    public void set_domain_isSet(boolean value) {
+      if (!value) {
+        this.domain = null;
+      }
     }
 
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
+      case DOMAIN:
+        if (value == null) {
+          unset_domain();
+        } else {
+          set_domain((String)value);
+        }
+        break;
+
       }
     }
 
     public Object getFieldValue(_Fields field) {
       switch (field) {
+      case DOMAIN:
+        return get_domain();
+
       }
       throw new IllegalStateException();
     }
@@ -1214,6 +1272,8 @@ public class ElephantDB {
       }
 
       switch (field) {
+      case DOMAIN:
+        return is_set_domain();
       }
       throw new IllegalStateException();
     }
@@ -1231,12 +1291,26 @@ public class ElephantDB {
       if (that == null)
         return false;
 
+      boolean this_present_domain = true && this.is_set_domain();
+      boolean that_present_domain = true && that.is_set_domain();
+      if (this_present_domain || that_present_domain) {
+        if (!(this_present_domain && that_present_domain))
+          return false;
+        if (!this.domain.equals(that.domain))
+          return false;
+      }
+
       return true;
     }
 
     @Override
     public int hashCode() {
       HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_domain = true && (is_set_domain());
+      builder.append(present_domain);
+      if (present_domain)
+        builder.append(domain);
 
       return builder.toHashCode();
     }
@@ -1249,6 +1323,16 @@ public class ElephantDB {
       int lastComparison = 0;
       getRegistrations_args typedOther = (getRegistrations_args)other;
 
+      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_domain()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.domain, typedOther.domain);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
       return 0;
     }
 
@@ -1266,6 +1350,13 @@ public class ElephantDB {
           break;
         }
         switch (field.id) {
+          case 1: // DOMAIN
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.domain = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
           default:
             org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
         }
@@ -1279,6 +1370,11 @@ public class ElephantDB {
       validate();
 
       oprot.writeStructBegin(STRUCT_DESC);
+      if (this.domain != null) {
+        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
+        oprot.writeString(this.domain);
+        oprot.writeFieldEnd();
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -1288,6 +1384,13 @@ public class ElephantDB {
       StringBuilder sb = new StringBuilder("getRegistrations_args(");
       boolean first = true;
 
+      sb.append("domain:");
+      if (this.domain == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.domain);
+      }
+      first = false;
       sb.append(")");
       return sb.toString();
     }
@@ -1571,14 +1674,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list21 = iprot.readListBegin();
-                this.success = new ArrayList<KryoRegistration>(_list21.size);
-                for (int _i22 = 0; _i22 < _list21.size; ++_i22)
+                org.apache.thrift7.protocol.TList _list17 = iprot.readListBegin();
+                this.success = new ArrayList<KryoRegistration>(_list17.size);
+                for (int _i18 = 0; _i18 < _list17.size; ++_i18)
                 {
-                  KryoRegistration _elem23; // required
-                  _elem23 = new KryoRegistration();
-                  _elem23.read(iprot);
-                  this.success.add(_elem23);
+                  KryoRegistration _elem19; // required
+                  _elem19 = new KryoRegistration();
+                  _elem19.read(iprot);
+                  this.success.add(_elem19);
                 }
                 iprot.readListEnd();
               }
@@ -1602,9 +1705,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (KryoRegistration _iter24 : this.success)
+          for (KryoRegistration _iter20 : this.success)
           {
-            _iter24.write(oprot);
+            _iter20.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -6602,13 +6705,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list25 = iprot.readListBegin();
-                this.key = new ArrayList<ByteBuffer>(_list25.size);
-                for (int _i26 = 0; _i26 < _list25.size; ++_i26)
+                org.apache.thrift7.protocol.TList _list21 = iprot.readListBegin();
+                this.key = new ArrayList<ByteBuffer>(_list21.size);
+                for (int _i22 = 0; _i22 < _list21.size; ++_i22)
                 {
-                  ByteBuffer _elem27; // required
-                  _elem27 = iprot.readBinary();
-                  this.key.add(_elem27);
+                  ByteBuffer _elem23; // required
+                  _elem23 = iprot.readBinary();
+                  this.key.add(_elem23);
                 }
                 iprot.readListEnd();
               }
@@ -6638,9 +6741,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (ByteBuffer _iter28 : this.key)
+          for (ByteBuffer _iter24 : this.key)
           {
-            oprot.writeBinary(_iter28);
+            oprot.writeBinary(_iter24);
           }
           oprot.writeListEnd();
         }
@@ -7172,14 +7275,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list29 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list29.size);
-                for (int _i30 = 0; _i30 < _list29.size; ++_i30)
+                org.apache.thrift7.protocol.TList _list25 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list25.size);
+                for (int _i26 = 0; _i26 < _list25.size; ++_i26)
                 {
-                  Value _elem31; // required
-                  _elem31 = new Value();
-                  _elem31.read(iprot);
-                  this.success.add(_elem31);
+                  Value _elem27; // required
+                  _elem27 = new Value();
+                  _elem27.read(iprot);
+                  this.success.add(_elem27);
                 }
                 iprot.readListEnd();
               }
@@ -7227,9 +7330,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter32 : this.success)
+          for (Value _iter28 : this.success)
           {
-            _iter32.write(oprot);
+            _iter28.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -7650,13 +7753,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list33 = iprot.readListBegin();
-                this.key = new ArrayList<String>(_list33.size);
-                for (int _i34 = 0; _i34 < _list33.size; ++_i34)
+                org.apache.thrift7.protocol.TList _list29 = iprot.readListBegin();
+                this.key = new ArrayList<String>(_list29.size);
+                for (int _i30 = 0; _i30 < _list29.size; ++_i30)
                 {
-                  String _elem35; // required
-                  _elem35 = iprot.readString();
-                  this.key.add(_elem35);
+                  String _elem31; // required
+                  _elem31 = iprot.readString();
+                  this.key.add(_elem31);
                 }
                 iprot.readListEnd();
               }
@@ -7686,9 +7789,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (String _iter36 : this.key)
+          for (String _iter32 : this.key)
           {
-            oprot.writeString(_iter36);
+            oprot.writeString(_iter32);
           }
           oprot.writeListEnd();
         }
@@ -8220,14 +8323,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list37 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list37.size);
-                for (int _i38 = 0; _i38 < _list37.size; ++_i38)
+                org.apache.thrift7.protocol.TList _list33 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list33.size);
+                for (int _i34 = 0; _i34 < _list33.size; ++_i34)
                 {
-                  Value _elem39; // required
-                  _elem39 = new Value();
-                  _elem39.read(iprot);
-                  this.success.add(_elem39);
+                  Value _elem35; // required
+                  _elem35 = new Value();
+                  _elem35.read(iprot);
+                  this.success.add(_elem35);
                 }
                 iprot.readListEnd();
               }
@@ -8275,9 +8378,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter40 : this.success)
+          for (Value _iter36 : this.success)
           {
-            _iter40.write(oprot);
+            _iter36.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -8698,13 +8801,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list41 = iprot.readListBegin();
-                this.key = new ArrayList<Integer>(_list41.size);
-                for (int _i42 = 0; _i42 < _list41.size; ++_i42)
+                org.apache.thrift7.protocol.TList _list37 = iprot.readListBegin();
+                this.key = new ArrayList<Integer>(_list37.size);
+                for (int _i38 = 0; _i38 < _list37.size; ++_i38)
                 {
-                  int _elem43; // required
-                  _elem43 = iprot.readI32();
-                  this.key.add(_elem43);
+                  int _elem39; // required
+                  _elem39 = iprot.readI32();
+                  this.key.add(_elem39);
                 }
                 iprot.readListEnd();
               }
@@ -8734,9 +8837,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.I32, this.key.size()));
-          for (int _iter44 : this.key)
+          for (int _iter40 : this.key)
           {
-            oprot.writeI32(_iter44);
+            oprot.writeI32(_iter40);
           }
           oprot.writeListEnd();
         }
@@ -9268,14 +9371,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list45 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list45.size);
-                for (int _i46 = 0; _i46 < _list45.size; ++_i46)
+                org.apache.thrift7.protocol.TList _list41 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list41.size);
+                for (int _i42 = 0; _i42 < _list41.size; ++_i42)
                 {
-                  Value _elem47; // required
-                  _elem47 = new Value();
-                  _elem47.read(iprot);
-                  this.success.add(_elem47);
+                  Value _elem43; // required
+                  _elem43 = new Value();
+                  _elem43.read(iprot);
+                  this.success.add(_elem43);
                 }
                 iprot.readListEnd();
               }
@@ -9323,9 +9426,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter48 : this.success)
+          for (Value _iter44 : this.success)
           {
-            _iter48.write(oprot);
+            _iter44.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -9746,13 +9849,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list49 = iprot.readListBegin();
-                this.key = new ArrayList<Long>(_list49.size);
-                for (int _i50 = 0; _i50 < _list49.size; ++_i50)
+                org.apache.thrift7.protocol.TList _list45 = iprot.readListBegin();
+                this.key = new ArrayList<Long>(_list45.size);
+                for (int _i46 = 0; _i46 < _list45.size; ++_i46)
                 {
-                  long _elem51; // required
-                  _elem51 = iprot.readI64();
-                  this.key.add(_elem51);
+                  long _elem47; // required
+                  _elem47 = iprot.readI64();
+                  this.key.add(_elem47);
                 }
                 iprot.readListEnd();
               }
@@ -9782,9 +9885,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.I64, this.key.size()));
-          for (long _iter52 : this.key)
+          for (long _iter48 : this.key)
           {
-            oprot.writeI64(_iter52);
+            oprot.writeI64(_iter48);
           }
           oprot.writeListEnd();
         }
@@ -10316,14 +10419,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list53 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list53.size);
-                for (int _i54 = 0; _i54 < _list53.size; ++_i54)
+                org.apache.thrift7.protocol.TList _list49 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list49.size);
+                for (int _i50 = 0; _i50 < _list49.size; ++_i50)
                 {
-                  Value _elem55; // required
-                  _elem55 = new Value();
-                  _elem55.read(iprot);
-                  this.success.add(_elem55);
+                  Value _elem51; // required
+                  _elem51 = new Value();
+                  _elem51.read(iprot);
+                  this.success.add(_elem51);
                 }
                 iprot.readListEnd();
               }
@@ -10371,9 +10474,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter56 : this.success)
+          for (Value _iter52 : this.success)
           {
-            _iter56.write(oprot);
+            _iter52.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -10796,13 +10899,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list57 = iprot.readListBegin();
-                this.key = new ArrayList<ByteBuffer>(_list57.size);
-                for (int _i58 = 0; _i58 < _list57.size; ++_i58)
+                org.apache.thrift7.protocol.TList _list53 = iprot.readListBegin();
+                this.key = new ArrayList<ByteBuffer>(_list53.size);
+                for (int _i54 = 0; _i54 < _list53.size; ++_i54)
                 {
-                  ByteBuffer _elem59; // required
-                  _elem59 = iprot.readBinary();
-                  this.key.add(_elem59);
+                  ByteBuffer _elem55; // required
+                  _elem55 = iprot.readBinary();
+                  this.key.add(_elem55);
                 }
                 iprot.readListEnd();
               }
@@ -10832,9 +10935,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (ByteBuffer _iter60 : this.key)
+          for (ByteBuffer _iter56 : this.key)
           {
-            oprot.writeBinary(_iter60);
+            oprot.writeBinary(_iter56);
           }
           oprot.writeListEnd();
         }
@@ -11366,14 +11469,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list61 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list61.size);
-                for (int _i62 = 0; _i62 < _list61.size; ++_i62)
+                org.apache.thrift7.protocol.TList _list57 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list57.size);
+                for (int _i58 = 0; _i58 < _list57.size; ++_i58)
                 {
-                  Value _elem63; // required
-                  _elem63 = new Value();
-                  _elem63.read(iprot);
-                  this.success.add(_elem63);
+                  Value _elem59; // required
+                  _elem59 = new Value();
+                  _elem59.read(iprot);
+                  this.success.add(_elem59);
                 }
                 iprot.readListEnd();
               }
@@ -11421,9 +11524,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter64 : this.success)
+          for (Value _iter60 : this.success)
           {
-            _iter64.write(oprot);
+            _iter60.write(oprot);
           }
           oprot.writeListEnd();
         }

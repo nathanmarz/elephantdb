@@ -1671,13 +1671,13 @@ public class ElephantDBShared {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list17 = iprot.readListBegin();
-                this.success = new ArrayList<String>(_list17.size);
-                for (int _i18 = 0; _i18 < _list17.size; ++_i18)
+                org.apache.thrift7.protocol.TList _list13 = iprot.readListBegin();
+                this.success = new ArrayList<String>(_list13.size);
+                for (int _i14 = 0; _i14 < _list13.size; ++_i14)
                 {
-                  String _elem19; // required
-                  _elem19 = iprot.readString();
-                  this.success.add(_elem19);
+                  String _elem15; // required
+                  _elem15 = iprot.readString();
+                  this.success.add(_elem15);
                 }
                 iprot.readListEnd();
               }
@@ -1701,9 +1701,9 @@ public class ElephantDBShared {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.success.size()));
-          for (String _iter20 : this.success)
+          for (String _iter16 : this.success)
           {
-            oprot.writeString(_iter20);
+            oprot.writeString(_iter16);
           }
           oprot.writeListEnd();
         }

@@ -807,10 +807,10 @@ class setDiff_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype117, _size114) = iprot.readListBegin()
-          for _i118 in xrange(_size114):
-            _elem119 = iprot.readString().decode('utf-8')
-            self.success.append(_elem119)
+          (_etype110, _size107) = iprot.readListBegin()
+          for _i111 in xrange(_size107):
+            _elem112 = iprot.readString().decode('utf-8')
+            self.success.append(_elem112)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -827,8 +827,8 @@ class setDiff_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter120 in self.success:
-        oprot.writeString(iter120.encode('utf-8'))
+      for iter113 in self.success:
+        oprot.writeString(iter113.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -958,10 +958,10 @@ class setUnion_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype124, _size121) = iprot.readListBegin()
-          for _i125 in xrange(_size121):
-            _elem126 = iprot.readString().decode('utf-8')
-            self.success.append(_elem126)
+          (_etype117, _size114) = iprot.readListBegin()
+          for _i118 in xrange(_size114):
+            _elem119 = iprot.readString().decode('utf-8')
+            self.success.append(_elem119)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -978,8 +978,8 @@ class setUnion_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter127 in self.success:
-        oprot.writeString(iter127.encode('utf-8'))
+      for iter120 in self.success:
+        oprot.writeString(iter120.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1109,10 +1109,10 @@ class setIntersection_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype131, _size128) = iprot.readListBegin()
-          for _i132 in xrange(_size128):
-            _elem133 = iprot.readString().decode('utf-8')
-            self.success.append(_elem133)
+          (_etype124, _size121) = iprot.readListBegin()
+          for _i125 in xrange(_size121):
+            _elem126 = iprot.readString().decode('utf-8')
+            self.success.append(_elem126)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1129,8 +1129,8 @@ class setIntersection_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter134 in self.success:
-        oprot.writeString(iter134.encode('utf-8'))
+      for iter127 in self.success:
+        oprot.writeString(iter127.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1324,10 +1324,10 @@ class multiMember_args:
       elif fid == 3:
         if ftype == TType.LIST:
           self.setVals = []
-          (_etype138, _size135) = iprot.readListBegin()
-          for _i139 in xrange(_size135):
-            _elem140 = iprot.readString().decode('utf-8')
-            self.setVals.append(_elem140)
+          (_etype131, _size128) = iprot.readListBegin()
+          for _i132 in xrange(_size128):
+            _elem133 = iprot.readString().decode('utf-8')
+            self.setVals.append(_elem133)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1352,8 +1352,8 @@ class multiMember_args:
     if self.setVals is not None:
       oprot.writeFieldBegin('setVals', TType.LIST, 3)
       oprot.writeListBegin(TType.STRING, len(self.setVals))
-      for iter141 in self.setVals:
-        oprot.writeString(iter141.encode('utf-8'))
+      for iter134 in self.setVals:
+        oprot.writeString(iter134.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1399,11 +1399,11 @@ class multiMember_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype145, _size142) = iprot.readListBegin()
-          for _i146 in xrange(_size142):
-            _elem147 = Value()
-            _elem147.read(iprot)
-            self.success.append(_elem147)
+          (_etype138, _size135) = iprot.readListBegin()
+          for _i139 in xrange(_size135):
+            _elem140 = Value()
+            _elem140.read(iprot)
+            self.success.append(_elem140)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1420,8 +1420,8 @@ class multiMember_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter148 in self.success:
-        iter148.write(oprot)
+      for iter141 in self.success:
+        iter141.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()

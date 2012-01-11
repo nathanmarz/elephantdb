@@ -525,10 +525,10 @@ class getFields_args:
       elif fid == 3:
         if ftype == TType.LIST:
           self.fields = []
-          (_etype180, _size177) = iprot.readListBegin()
-          for _i181 in xrange(_size177):
-            _elem182 = iprot.readString().decode('utf-8')
-            self.fields.append(_elem182)
+          (_etype173, _size170) = iprot.readListBegin()
+          for _i174 in xrange(_size170):
+            _elem175 = iprot.readString().decode('utf-8')
+            self.fields.append(_elem175)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -553,8 +553,8 @@ class getFields_args:
     if self.fields is not None:
       oprot.writeFieldBegin('fields', TType.LIST, 3)
       oprot.writeListBegin(TType.STRING, len(self.fields))
-      for iter183 in self.fields:
-        oprot.writeString(iter183.encode('utf-8'))
+      for iter176 in self.fields:
+        oprot.writeString(iter176.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()

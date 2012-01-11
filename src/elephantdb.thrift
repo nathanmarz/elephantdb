@@ -75,7 +75,7 @@ service ElephantDBShared {
 service ElephantDB extends ElephantDBShared {
   // This interface will allow java clients to send kryo-serialized
   // keys over the wire.
-  list<KryoRegistration> getRegistrations();
+  list<KryoRegistration> getRegistrations(1: string domain);
   Value kryoGet(1: string domain, 2: binary key);
   
   Value get(1: string domain, 2: binary key)
