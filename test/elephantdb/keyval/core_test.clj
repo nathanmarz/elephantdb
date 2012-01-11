@@ -4,24 +4,23 @@
         elephantdb.test.keyval
         midje.sweet
         [elephantdb.keyval.domain :only (to-map)])
-  (:require [elephantdb.common.status :as status]
+  (:require [jackknife.core :as u]
+            [elephantdb.common.status :as status]
             [elephantdb.common.domain :as dom]
             [elephantdb.common.database :as db])
   (:import [elephantdb.persistence JavaBerkDB]
            [elephantdb ByteArray]
-           [elephantdb.document KeyValDocument]))
-
+           [elephantdb.document KeyValDocument]
+           [java.nio ByteBuffer]))
 
 (defn get-val
   [service domain-name k]
-  (.get_data (.get service domain-name k)))
+  (.get_data (.get service domain-name (ByteBuffer/wrap k))))
 
 (defmacro expected-domain-data [handler domain & key-value-pairs]
   `(doseq [[key-sym# val-sym#] (partition 2 [~@key-value-pairs])]
      (fact
-       (get-val ~handler
-                ~domain
-                (barr key-sym#))
+       (get-val ~handler ~domain (barr key-sym#))
        => (if (seq val-sym#)
             (apply barr val-sym#)
             val-sym#))))
@@ -47,6 +46,14 @@
 (defn barrs-equal? [coll-a coll-b]
   (fact (str coll-a " equals " coll-b)
     (barrs= coll-a coll-b) => true))
+
+(fact "Test that we don't need to wrap in advance."
+  (with-service-handler [handler
+                         {"test" (mk-docseq {(barr 1) (barr 2)
+                                             (barr 3) (barr 4)
+                                             (barr 5) (barr 6)})}
+                         :conf-map {:update-interval-s 0.01}]
+    (get-val handler "test" (barr 1)) => (barr 2)))
 
 (fact "Basic tests."
   "TODO: Replace mk-docseq with an actual service handler tailored for

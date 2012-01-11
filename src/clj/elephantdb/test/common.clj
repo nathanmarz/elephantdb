@@ -5,7 +5,8 @@
             [jackknife.logging :as log]
             [elephantdb.common.domain :as dom]
             [elephantdb.common.database :as db])
-  (:import [elephantdb.store DomainStore]
+  (:import [java.nio ByteBuffer]
+           [elephantdb.store DomainStore]
            [elephantdb.persistence ShardSet]
            [elephantdb Utils DomainSpec ByteArray]
            [org.apache.hadoop.io IntWritable]

@@ -21,6 +21,8 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
+  print '   getRegistrations()'
+  print '  Value kryoGet(string domain, string key)'
   print '  Value get(string domain, string key)'
   print '  Value getString(string domain, string key)'
   print '  Value getInt(string domain, i32 key)'
@@ -80,7 +82,19 @@ protocol = TBinaryProtocol.TBinaryProtocol(transport)
 client = ElephantDB.Client(protocol)
 transport.open()
 
-if cmd == 'get':
+if cmd == 'getRegistrations':
+  if len(args) != 0:
+    print 'getRegistrations requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.getRegistrations())
+
+elif cmd == 'kryoGet':
+  if len(args) != 2:
+    print 'kryoGet requires 2 args'
+    sys.exit(1)
+  pp.pprint(client.kryoGet(args[0],args[1],))
+
+elif cmd == 'get':
   if len(args) != 2:
     print 'get requires 2 args'
     sys.exit(1)

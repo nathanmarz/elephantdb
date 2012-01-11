@@ -17,6 +17,17 @@ except:
 
 
 class Iface(elephantdb.ElephantDBShared.Iface):
+  def getRegistrations(self, ):
+    pass
+
+  def kryoGet(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    pass
+
   def get(self, domain, key):
     """
     Parameters:
@@ -93,6 +104,63 @@ class Iface(elephantdb.ElephantDBShared.Iface):
 class Client(elephantdb.ElephantDBShared.Client, Iface):
   def __init__(self, iprot, oprot=None):
     elephantdb.ElephantDBShared.Client.__init__(self, iprot, oprot)
+
+  def getRegistrations(self, ):
+    self.send_getRegistrations()
+    return self.recv_getRegistrations()
+
+  def send_getRegistrations(self, ):
+    self._oprot.writeMessageBegin('getRegistrations', TMessageType.CALL, self._seqid)
+    args = getRegistrations_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getRegistrations(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = getRegistrations_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getRegistrations failed: unknown result");
+
+  def kryoGet(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    self.send_kryoGet(domain, key)
+    return self.recv_kryoGet()
+
+  def send_kryoGet(self, domain, key):
+    self._oprot.writeMessageBegin('kryoGet', TMessageType.CALL, self._seqid)
+    args = kryoGet_args()
+    args.domain = domain
+    args.key = key
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_kryoGet(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = kryoGet_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "kryoGet failed: unknown result");
 
   def get(self, domain, key):
     """
@@ -440,6 +508,8 @@ class Client(elephantdb.ElephantDBShared.Client, Iface):
 class Processor(elephantdb.ElephantDBShared.Processor, Iface, TProcessor):
   def __init__(self, handler):
     elephantdb.ElephantDBShared.Processor.__init__(self, handler)
+    self._processMap["getRegistrations"] = Processor.process_getRegistrations
+    self._processMap["kryoGet"] = Processor.process_kryoGet
     self._processMap["get"] = Processor.process_get
     self._processMap["getString"] = Processor.process_getString
     self._processMap["getInt"] = Processor.process_getInt
@@ -464,6 +534,28 @@ class Processor(elephantdb.ElephantDBShared.Processor, Iface, TProcessor):
     else:
       self._processMap[name](self, seqid, iprot, oprot)
     return True
+
+  def process_getRegistrations(self, seqid, iprot, oprot):
+    args = getRegistrations_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getRegistrations_result()
+    result.success = self._handler.getRegistrations()
+    oprot.writeMessageBegin("getRegistrations", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_kryoGet(self, seqid, iprot, oprot):
+    args = kryoGet_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = kryoGet_result()
+    result.success = self._handler.kryoGet(args.domain, args.key)
+    oprot.writeMessageBegin("kryoGet", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
 
   def process_get(self, seqid, iprot, oprot):
     args = get_args()
@@ -629,6 +721,248 @@ class Processor(elephantdb.ElephantDBShared.Processor, Iface, TProcessor):
 
 
 # HELPER FUNCTIONS AND STRUCTURES
+
+class getRegistrations_args:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getRegistrations_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getRegistrations_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT,(KryoRegistration, KryoRegistration.thrift_spec)), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype40, _size37) = iprot.readListBegin()
+          for _i41 in xrange(_size37):
+            _elem42 = KryoRegistration()
+            _elem42.read(iprot)
+            self.success.append(_elem42)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getRegistrations_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter43 in self.success:
+        iter43.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class kryoGet_args:
+  """
+  Attributes:
+   - domain
+   - key
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'domain', None, None, ), # 1
+    (2, TType.STRING, 'key', None, None, ), # 2
+  )
+
+  def __init__(self, domain=None, key=None,):
+    self.domain = domain
+    self.key = key
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.domain = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.key = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('kryoGet_args')
+    if self.domain is not None:
+      oprot.writeFieldBegin('domain', TType.STRING, 1)
+      oprot.writeString(self.domain.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.key is not None:
+      oprot.writeFieldBegin('key', TType.STRING, 2)
+      oprot.writeString(self.key)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class kryoGet_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (Value, Value.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRUCT:
+          self.success = Value()
+          self.success.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('kryoGet_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
 
 class get_args:
   """
@@ -1348,10 +1682,10 @@ class multiGet_args:
       elif fid == 2:
         if ftype == TType.LIST:
           self.key = []
-          (_etype40, _size37) = iprot.readListBegin()
-          for _i41 in xrange(_size37):
-            _elem42 = iprot.readString();
-            self.key.append(_elem42)
+          (_etype47, _size44) = iprot.readListBegin()
+          for _i48 in xrange(_size44):
+            _elem49 = iprot.readString();
+            self.key.append(_elem49)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1372,8 +1706,8 @@ class multiGet_args:
     if self.key is not None:
       oprot.writeFieldBegin('key', TType.LIST, 2)
       oprot.writeListBegin(TType.STRING, len(self.key))
-      for iter43 in self.key:
-        oprot.writeString(iter43)
+      for iter50 in self.key:
+        oprot.writeString(iter50)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1428,11 +1762,11 @@ class multiGet_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype47, _size44) = iprot.readListBegin()
-          for _i48 in xrange(_size44):
-            _elem49 = Value()
-            _elem49.read(iprot)
-            self.success.append(_elem49)
+          (_etype54, _size51) = iprot.readListBegin()
+          for _i55 in xrange(_size51):
+            _elem56 = Value()
+            _elem56.read(iprot)
+            self.success.append(_elem56)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1467,8 +1801,8 @@ class multiGet_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter50 in self.success:
-        iter50.write(oprot)
+      for iter57 in self.success:
+        iter57.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.dnfe is not None:
@@ -1535,10 +1869,10 @@ class multiGetString_args:
       elif fid == 2:
         if ftype == TType.LIST:
           self.key = []
-          (_etype54, _size51) = iprot.readListBegin()
-          for _i55 in xrange(_size51):
-            _elem56 = iprot.readString().decode('utf-8')
-            self.key.append(_elem56)
+          (_etype61, _size58) = iprot.readListBegin()
+          for _i62 in xrange(_size58):
+            _elem63 = iprot.readString().decode('utf-8')
+            self.key.append(_elem63)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1559,8 +1893,8 @@ class multiGetString_args:
     if self.key is not None:
       oprot.writeFieldBegin('key', TType.LIST, 2)
       oprot.writeListBegin(TType.STRING, len(self.key))
-      for iter57 in self.key:
-        oprot.writeString(iter57.encode('utf-8'))
+      for iter64 in self.key:
+        oprot.writeString(iter64.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1615,11 +1949,11 @@ class multiGetString_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype61, _size58) = iprot.readListBegin()
-          for _i62 in xrange(_size58):
-            _elem63 = Value()
-            _elem63.read(iprot)
-            self.success.append(_elem63)
+          (_etype68, _size65) = iprot.readListBegin()
+          for _i69 in xrange(_size65):
+            _elem70 = Value()
+            _elem70.read(iprot)
+            self.success.append(_elem70)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1654,8 +1988,8 @@ class multiGetString_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter64 in self.success:
-        iter64.write(oprot)
+      for iter71 in self.success:
+        iter71.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.dnfe is not None:
@@ -1722,10 +2056,10 @@ class multiGetInt_args:
       elif fid == 2:
         if ftype == TType.LIST:
           self.key = []
-          (_etype68, _size65) = iprot.readListBegin()
-          for _i69 in xrange(_size65):
-            _elem70 = iprot.readI32();
-            self.key.append(_elem70)
+          (_etype75, _size72) = iprot.readListBegin()
+          for _i76 in xrange(_size72):
+            _elem77 = iprot.readI32();
+            self.key.append(_elem77)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1746,8 +2080,8 @@ class multiGetInt_args:
     if self.key is not None:
       oprot.writeFieldBegin('key', TType.LIST, 2)
       oprot.writeListBegin(TType.I32, len(self.key))
-      for iter71 in self.key:
-        oprot.writeI32(iter71)
+      for iter78 in self.key:
+        oprot.writeI32(iter78)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1802,11 +2136,11 @@ class multiGetInt_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype75, _size72) = iprot.readListBegin()
-          for _i76 in xrange(_size72):
-            _elem77 = Value()
-            _elem77.read(iprot)
-            self.success.append(_elem77)
+          (_etype82, _size79) = iprot.readListBegin()
+          for _i83 in xrange(_size79):
+            _elem84 = Value()
+            _elem84.read(iprot)
+            self.success.append(_elem84)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1841,8 +2175,8 @@ class multiGetInt_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter78 in self.success:
-        iter78.write(oprot)
+      for iter85 in self.success:
+        iter85.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.dnfe is not None:
@@ -1909,10 +2243,10 @@ class multiGetLong_args:
       elif fid == 2:
         if ftype == TType.LIST:
           self.key = []
-          (_etype82, _size79) = iprot.readListBegin()
-          for _i83 in xrange(_size79):
-            _elem84 = iprot.readI64();
-            self.key.append(_elem84)
+          (_etype89, _size86) = iprot.readListBegin()
+          for _i90 in xrange(_size86):
+            _elem91 = iprot.readI64();
+            self.key.append(_elem91)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1933,8 +2267,8 @@ class multiGetLong_args:
     if self.key is not None:
       oprot.writeFieldBegin('key', TType.LIST, 2)
       oprot.writeListBegin(TType.I64, len(self.key))
-      for iter85 in self.key:
-        oprot.writeI64(iter85)
+      for iter92 in self.key:
+        oprot.writeI64(iter92)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1989,11 +2323,11 @@ class multiGetLong_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype89, _size86) = iprot.readListBegin()
-          for _i90 in xrange(_size86):
-            _elem91 = Value()
-            _elem91.read(iprot)
-            self.success.append(_elem91)
+          (_etype96, _size93) = iprot.readListBegin()
+          for _i97 in xrange(_size93):
+            _elem98 = Value()
+            _elem98.read(iprot)
+            self.success.append(_elem98)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2028,8 +2362,8 @@ class multiGetLong_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter92 in self.success:
-        iter92.write(oprot)
+      for iter99 in self.success:
+        iter99.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.dnfe is not None:
@@ -2096,10 +2430,10 @@ class directMultiGet_args:
       elif fid == 2:
         if ftype == TType.LIST:
           self.key = []
-          (_etype96, _size93) = iprot.readListBegin()
-          for _i97 in xrange(_size93):
-            _elem98 = iprot.readString();
-            self.key.append(_elem98)
+          (_etype103, _size100) = iprot.readListBegin()
+          for _i104 in xrange(_size100):
+            _elem105 = iprot.readString();
+            self.key.append(_elem105)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2120,8 +2454,8 @@ class directMultiGet_args:
     if self.key is not None:
       oprot.writeFieldBegin('key', TType.LIST, 2)
       oprot.writeListBegin(TType.STRING, len(self.key))
-      for iter99 in self.key:
-        oprot.writeString(iter99)
+      for iter106 in self.key:
+        oprot.writeString(iter106)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2176,11 +2510,11 @@ class directMultiGet_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype103, _size100) = iprot.readListBegin()
-          for _i104 in xrange(_size100):
-            _elem105 = Value()
-            _elem105.read(iprot)
-            self.success.append(_elem105)
+          (_etype110, _size107) = iprot.readListBegin()
+          for _i111 in xrange(_size107):
+            _elem112 = Value()
+            _elem112.read(iprot)
+            self.success.append(_elem112)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2215,8 +2549,8 @@ class directMultiGet_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter106 in self.success:
-        iter106.write(oprot)
+      for iter113 in self.success:
+        iter113.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.dnfe is not None:

@@ -25,6 +25,10 @@ public class ElephantDB {
 
   public interface Iface extends ElephantDBShared.Iface {
 
+    public List<KryoRegistration> getRegistrations() throws org.apache.thrift7.TException;
+
+    public Value kryoGet(String domain, ByteBuffer key) throws org.apache.thrift7.TException;
+
     public Value get(String domain, ByteBuffer key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
 
     public Value getString(String domain, String key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
@@ -46,6 +50,10 @@ public class ElephantDB {
   }
 
   public interface AsyncIface extends ElephantDBShared .AsyncIface {
+
+    public void getRegistrations(org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.getRegistrations_call> resultHandler) throws org.apache.thrift7.TException;
+
+    public void kryoGet(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.kryoGet_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void get(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.get_call> resultHandler) throws org.apache.thrift7.TException;
 
@@ -85,6 +93,52 @@ public class ElephantDB {
 
     public Client(org.apache.thrift7.protocol.TProtocol iprot, org.apache.thrift7.protocol.TProtocol oprot) {
       super(iprot, oprot);
+    }
+
+    public List<KryoRegistration> getRegistrations() throws org.apache.thrift7.TException
+    {
+      send_getRegistrations();
+      return recv_getRegistrations();
+    }
+
+    public void send_getRegistrations() throws org.apache.thrift7.TException
+    {
+      getRegistrations_args args = new getRegistrations_args();
+      sendBase("getRegistrations", args);
+    }
+
+    public List<KryoRegistration> recv_getRegistrations() throws org.apache.thrift7.TException
+    {
+      getRegistrations_result result = new getRegistrations_result();
+      receiveBase(result, "getRegistrations");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "getRegistrations failed: unknown result");
+    }
+
+    public Value kryoGet(String domain, ByteBuffer key) throws org.apache.thrift7.TException
+    {
+      send_kryoGet(domain, key);
+      return recv_kryoGet();
+    }
+
+    public void send_kryoGet(String domain, ByteBuffer key) throws org.apache.thrift7.TException
+    {
+      kryoGet_args args = new kryoGet_args();
+      args.set_domain(domain);
+      args.set_key(key);
+      sendBase("kryoGet", args);
+    }
+
+    public Value recv_kryoGet() throws org.apache.thrift7.TException
+    {
+      kryoGet_result result = new kryoGet_result();
+      receiveBase(result, "kryoGet");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "kryoGet failed: unknown result");
     }
 
     public Value get(String domain, ByteBuffer key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
@@ -400,6 +454,70 @@ public class ElephantDB {
 
     public AsyncClient(org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.async.TAsyncClientManager clientManager, org.apache.thrift7.transport.TNonblockingTransport transport) {
       super(protocolFactory, clientManager, transport);
+    }
+
+    public void getRegistrations(org.apache.thrift7.async.AsyncMethodCallback<getRegistrations_call> resultHandler) throws org.apache.thrift7.TException {
+      checkReady();
+      getRegistrations_call method_call = new getRegistrations_call(resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class getRegistrations_call extends org.apache.thrift7.async.TAsyncMethodCall {
+      public getRegistrations_call(org.apache.thrift7.async.AsyncMethodCallback<getRegistrations_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+      }
+
+      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
+        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("getRegistrations", org.apache.thrift7.protocol.TMessageType.CALL, 0));
+        getRegistrations_args args = new getRegistrations_args();
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public List<KryoRegistration> getResult() throws org.apache.thrift7.TException {
+        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_getRegistrations();
+      }
+    }
+
+    public void kryoGet(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<kryoGet_call> resultHandler) throws org.apache.thrift7.TException {
+      checkReady();
+      kryoGet_call method_call = new kryoGet_call(domain, key, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class kryoGet_call extends org.apache.thrift7.async.TAsyncMethodCall {
+      private String domain;
+      private ByteBuffer key;
+      public kryoGet_call(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<kryoGet_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.domain = domain;
+        this.key = key;
+      }
+
+      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
+        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("kryoGet", org.apache.thrift7.protocol.TMessageType.CALL, 0));
+        kryoGet_args args = new kryoGet_args();
+        args.set_domain(domain);
+        args.set_key(key);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public Value getResult() throws org.apache.thrift7.TException {
+        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_kryoGet();
+      }
     }
 
     public void get(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<get_call> resultHandler) throws org.apache.thrift7.TException {
@@ -730,6 +848,8 @@ public class ElephantDB {
     }
 
     private static <I extends Iface> Map<String,  org.apache.thrift7.ProcessFunction<I, ? extends  org.apache.thrift7.TBase>> getProcessMap(Map<String,  org.apache.thrift7.ProcessFunction<I, ? extends  org.apache.thrift7.TBase>> processMap) {
+      processMap.put("getRegistrations", new getRegistrations());
+      processMap.put("kryoGet", new kryoGet());
       processMap.put("get", new get());
       processMap.put("getString", new getString());
       processMap.put("getInt", new getInt());
@@ -740,6 +860,38 @@ public class ElephantDB {
       processMap.put("multiGetLong", new multiGetLong());
       processMap.put("directMultiGet", new directMultiGet());
       return processMap;
+    }
+
+    private static class getRegistrations<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, getRegistrations_args> {
+      public getRegistrations() {
+        super("getRegistrations");
+      }
+
+      protected getRegistrations_args getEmptyArgsInstance() {
+        return new getRegistrations_args();
+      }
+
+      protected getRegistrations_result getResult(I iface, getRegistrations_args args) throws org.apache.thrift7.TException {
+        getRegistrations_result result = new getRegistrations_result();
+        result.success = iface.getRegistrations();
+        return result;
+      }
+    }
+
+    private static class kryoGet<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, kryoGet_args> {
+      public kryoGet() {
+        super("kryoGet");
+      }
+
+      protected kryoGet_args getEmptyArgsInstance() {
+        return new kryoGet_args();
+      }
+
+      protected kryoGet_result getResult(I iface, kryoGet_args args) throws org.apache.thrift7.TException {
+        kryoGet_result result = new kryoGet_result();
+        result.success = iface.kryoGet(args.domain, args.key);
+        return result;
+      }
     }
 
     private static class get<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, get_args> {
@@ -955,6 +1107,1251 @@ public class ElephantDB {
           result.whe = whe;
         }
         return result;
+      }
+    }
+
+  }
+
+  public static class getRegistrations_args implements org.apache.thrift7.TBase<getRegistrations_args, getRegistrations_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("getRegistrations_args");
+
+
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+;
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getRegistrations_args.class, metaDataMap);
+    }
+
+    public getRegistrations_args() {
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getRegistrations_args(getRegistrations_args other) {
+    }
+
+    public getRegistrations_args deepCopy() {
+      return new getRegistrations_args(this);
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getRegistrations_args)
+        return this.equals((getRegistrations_args)that);
+      return false;
+    }
+
+    public boolean equals(getRegistrations_args that) {
+      if (that == null)
+        return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(getRegistrations_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      getRegistrations_args typedOther = (getRegistrations_args)other;
+
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("getRegistrations_args(");
+      boolean first = true;
+
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class getRegistrations_result implements org.apache.thrift7.TBase<getRegistrations_result, getRegistrations_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("getRegistrations_result");
+
+    private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.LIST, (short)0);
+
+    private List<KryoRegistration> success; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      SUCCESS((short)0, "success");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
+              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, KryoRegistration.class))));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getRegistrations_result.class, metaDataMap);
+    }
+
+    public getRegistrations_result() {
+    }
+
+    public getRegistrations_result(
+      List<KryoRegistration> success)
+    {
+      this();
+      this.success = success;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getRegistrations_result(getRegistrations_result other) {
+      if (other.is_set_success()) {
+        List<KryoRegistration> __this__success = new ArrayList<KryoRegistration>();
+        for (KryoRegistration other_element : other.success) {
+          __this__success.add(new KryoRegistration(other_element));
+        }
+        this.success = __this__success;
+      }
+    }
+
+    public getRegistrations_result deepCopy() {
+      return new getRegistrations_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+    }
+
+    public int get_success_size() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    public java.util.Iterator<KryoRegistration> get_success_iterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void add_to_success(KryoRegistration elem) {
+      if (this.success == null) {
+        this.success = new ArrayList<KryoRegistration>();
+      }
+      this.success.add(elem);
+    }
+
+    public List<KryoRegistration> get_success() {
+      return this.success;
+    }
+
+    public void set_success(List<KryoRegistration> success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((List<KryoRegistration>)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getRegistrations_result)
+        return this.equals((getRegistrations_result)that);
+      return false;
+    }
+
+    public boolean equals(getRegistrations_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(getRegistrations_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      getRegistrations_result typedOther = (getRegistrations_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 0: // SUCCESS
+            if (field.type == org.apache.thrift7.protocol.TType.LIST) {
+              {
+                org.apache.thrift7.protocol.TList _list21 = iprot.readListBegin();
+                this.success = new ArrayList<KryoRegistration>(_list21.size);
+                for (int _i22 = 0; _i22 < _list21.size; ++_i22)
+                {
+                  KryoRegistration _elem23; // required
+                  _elem23 = new KryoRegistration();
+                  _elem23.read(iprot);
+                  this.success.add(_elem23);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_success()) {
+        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+        {
+          oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
+          for (KryoRegistration _iter24 : this.success)
+          {
+            _iter24.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("getRegistrations_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class kryoGet_args implements org.apache.thrift7.TBase<kryoGet_args, kryoGet_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("kryoGet_args");
+
+    private static final org.apache.thrift7.protocol.TField DOMAIN_FIELD_DESC = new org.apache.thrift7.protocol.TField("domain", org.apache.thrift7.protocol.TType.STRING, (short)1);
+    private static final org.apache.thrift7.protocol.TField KEY_FIELD_DESC = new org.apache.thrift7.protocol.TField("key", org.apache.thrift7.protocol.TType.STRING, (short)2);
+
+    private String domain; // required
+    private ByteBuffer key; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      DOMAIN((short)1, "domain"),
+      KEY((short)2, "key");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // DOMAIN
+            return DOMAIN;
+          case 2: // KEY
+            return KEY;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.DOMAIN, new org.apache.thrift7.meta_data.FieldMetaData("domain", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      tmpMap.put(_Fields.KEY, new org.apache.thrift7.meta_data.FieldMetaData("key", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING          , true)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(kryoGet_args.class, metaDataMap);
+    }
+
+    public kryoGet_args() {
+    }
+
+    public kryoGet_args(
+      String domain,
+      ByteBuffer key)
+    {
+      this();
+      this.domain = domain;
+      this.key = key;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public kryoGet_args(kryoGet_args other) {
+      if (other.is_set_domain()) {
+        this.domain = other.domain;
+      }
+      if (other.is_set_key()) {
+        this.key = org.apache.thrift7.TBaseHelper.copyBinary(other.key);
+;
+      }
+    }
+
+    public kryoGet_args deepCopy() {
+      return new kryoGet_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.domain = null;
+      this.key = null;
+    }
+
+    public String get_domain() {
+      return this.domain;
+    }
+
+    public void set_domain(String domain) {
+      this.domain = domain;
+    }
+
+    public void unset_domain() {
+      this.domain = null;
+    }
+
+    /** Returns true if field domain is set (has been assigned a value) and false otherwise */
+    public boolean is_set_domain() {
+      return this.domain != null;
+    }
+
+    public void set_domain_isSet(boolean value) {
+      if (!value) {
+        this.domain = null;
+      }
+    }
+
+    public byte[] get_key() {
+      set_key(org.apache.thrift7.TBaseHelper.rightSize(key));
+      return key == null ? null : key.array();
+    }
+
+    public ByteBuffer buffer_for_key() {
+      return key;
+    }
+
+    public void set_key(byte[] key) {
+      set_key(key == null ? (ByteBuffer)null : ByteBuffer.wrap(key));
+    }
+
+    public void set_key(ByteBuffer key) {
+      this.key = key;
+    }
+
+    public void unset_key() {
+      this.key = null;
+    }
+
+    /** Returns true if field key is set (has been assigned a value) and false otherwise */
+    public boolean is_set_key() {
+      return this.key != null;
+    }
+
+    public void set_key_isSet(boolean value) {
+      if (!value) {
+        this.key = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case DOMAIN:
+        if (value == null) {
+          unset_domain();
+        } else {
+          set_domain((String)value);
+        }
+        break;
+
+      case KEY:
+        if (value == null) {
+          unset_key();
+        } else {
+          set_key((ByteBuffer)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return get_domain();
+
+      case KEY:
+        return get_key();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case DOMAIN:
+        return is_set_domain();
+      case KEY:
+        return is_set_key();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof kryoGet_args)
+        return this.equals((kryoGet_args)that);
+      return false;
+    }
+
+    public boolean equals(kryoGet_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_domain = true && this.is_set_domain();
+      boolean that_present_domain = true && that.is_set_domain();
+      if (this_present_domain || that_present_domain) {
+        if (!(this_present_domain && that_present_domain))
+          return false;
+        if (!this.domain.equals(that.domain))
+          return false;
+      }
+
+      boolean this_present_key = true && this.is_set_key();
+      boolean that_present_key = true && that.is_set_key();
+      if (this_present_key || that_present_key) {
+        if (!(this_present_key && that_present_key))
+          return false;
+        if (!this.key.equals(that.key))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_domain = true && (is_set_domain());
+      builder.append(present_domain);
+      if (present_domain)
+        builder.append(domain);
+
+      boolean present_key = true && (is_set_key());
+      builder.append(present_key);
+      if (present_key)
+        builder.append(key);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(kryoGet_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      kryoGet_args typedOther = (kryoGet_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_domain()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.domain, typedOther.domain);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_key()).compareTo(typedOther.is_set_key());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_key()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.key, typedOther.key);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // DOMAIN
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.domain = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // KEY
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.key = iprot.readBinary();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.domain != null) {
+        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
+        oprot.writeString(this.domain);
+        oprot.writeFieldEnd();
+      }
+      if (this.key != null) {
+        oprot.writeFieldBegin(KEY_FIELD_DESC);
+        oprot.writeBinary(this.key);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("kryoGet_args(");
+      boolean first = true;
+
+      sb.append("domain:");
+      if (this.domain == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.domain);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("key:");
+      if (this.key == null) {
+        sb.append("null");
+      } else {
+        org.apache.thrift7.TBaseHelper.toString(this.key, sb);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class kryoGet_result implements org.apache.thrift7.TBase<kryoGet_result, kryoGet_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("kryoGet_result");
+
+    private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.STRUCT, (short)0);
+
+    private Value success; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      SUCCESS((short)0, "success");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(kryoGet_result.class, metaDataMap);
+    }
+
+    public kryoGet_result() {
+    }
+
+    public kryoGet_result(
+      Value success)
+    {
+      this();
+      this.success = success;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public kryoGet_result(kryoGet_result other) {
+      if (other.is_set_success()) {
+        this.success = new Value(other.success);
+      }
+    }
+
+    public kryoGet_result deepCopy() {
+      return new kryoGet_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+    }
+
+    public Value get_success() {
+      return this.success;
+    }
+
+    public void set_success(Value success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((Value)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof kryoGet_result)
+        return this.equals((kryoGet_result)that);
+      return false;
+    }
+
+    public boolean equals(kryoGet_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(kryoGet_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      kryoGet_result typedOther = (kryoGet_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 0: // SUCCESS
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.success = new Value();
+              this.success.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_success()) {
+        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+        this.success.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("kryoGet_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
       }
     }
 
@@ -5205,13 +6602,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list21 = iprot.readListBegin();
-                this.key = new ArrayList<ByteBuffer>(_list21.size);
-                for (int _i22 = 0; _i22 < _list21.size; ++_i22)
+                org.apache.thrift7.protocol.TList _list25 = iprot.readListBegin();
+                this.key = new ArrayList<ByteBuffer>(_list25.size);
+                for (int _i26 = 0; _i26 < _list25.size; ++_i26)
                 {
-                  ByteBuffer _elem23; // required
-                  _elem23 = iprot.readBinary();
-                  this.key.add(_elem23);
+                  ByteBuffer _elem27; // required
+                  _elem27 = iprot.readBinary();
+                  this.key.add(_elem27);
                 }
                 iprot.readListEnd();
               }
@@ -5241,9 +6638,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (ByteBuffer _iter24 : this.key)
+          for (ByteBuffer _iter28 : this.key)
           {
-            oprot.writeBinary(_iter24);
+            oprot.writeBinary(_iter28);
           }
           oprot.writeListEnd();
         }
@@ -5775,14 +7172,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list25 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list25.size);
-                for (int _i26 = 0; _i26 < _list25.size; ++_i26)
+                org.apache.thrift7.protocol.TList _list29 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list29.size);
+                for (int _i30 = 0; _i30 < _list29.size; ++_i30)
                 {
-                  Value _elem27; // required
-                  _elem27 = new Value();
-                  _elem27.read(iprot);
-                  this.success.add(_elem27);
+                  Value _elem31; // required
+                  _elem31 = new Value();
+                  _elem31.read(iprot);
+                  this.success.add(_elem31);
                 }
                 iprot.readListEnd();
               }
@@ -5830,9 +7227,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter28 : this.success)
+          for (Value _iter32 : this.success)
           {
-            _iter28.write(oprot);
+            _iter32.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -6253,13 +7650,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list29 = iprot.readListBegin();
-                this.key = new ArrayList<String>(_list29.size);
-                for (int _i30 = 0; _i30 < _list29.size; ++_i30)
+                org.apache.thrift7.protocol.TList _list33 = iprot.readListBegin();
+                this.key = new ArrayList<String>(_list33.size);
+                for (int _i34 = 0; _i34 < _list33.size; ++_i34)
                 {
-                  String _elem31; // required
-                  _elem31 = iprot.readString();
-                  this.key.add(_elem31);
+                  String _elem35; // required
+                  _elem35 = iprot.readString();
+                  this.key.add(_elem35);
                 }
                 iprot.readListEnd();
               }
@@ -6289,9 +7686,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (String _iter32 : this.key)
+          for (String _iter36 : this.key)
           {
-            oprot.writeString(_iter32);
+            oprot.writeString(_iter36);
           }
           oprot.writeListEnd();
         }
@@ -6823,14 +8220,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list33 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list33.size);
-                for (int _i34 = 0; _i34 < _list33.size; ++_i34)
+                org.apache.thrift7.protocol.TList _list37 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list37.size);
+                for (int _i38 = 0; _i38 < _list37.size; ++_i38)
                 {
-                  Value _elem35; // required
-                  _elem35 = new Value();
-                  _elem35.read(iprot);
-                  this.success.add(_elem35);
+                  Value _elem39; // required
+                  _elem39 = new Value();
+                  _elem39.read(iprot);
+                  this.success.add(_elem39);
                 }
                 iprot.readListEnd();
               }
@@ -6878,9 +8275,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter36 : this.success)
+          for (Value _iter40 : this.success)
           {
-            _iter36.write(oprot);
+            _iter40.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -7301,13 +8698,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list37 = iprot.readListBegin();
-                this.key = new ArrayList<Integer>(_list37.size);
-                for (int _i38 = 0; _i38 < _list37.size; ++_i38)
+                org.apache.thrift7.protocol.TList _list41 = iprot.readListBegin();
+                this.key = new ArrayList<Integer>(_list41.size);
+                for (int _i42 = 0; _i42 < _list41.size; ++_i42)
                 {
-                  int _elem39; // required
-                  _elem39 = iprot.readI32();
-                  this.key.add(_elem39);
+                  int _elem43; // required
+                  _elem43 = iprot.readI32();
+                  this.key.add(_elem43);
                 }
                 iprot.readListEnd();
               }
@@ -7337,9 +8734,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.I32, this.key.size()));
-          for (int _iter40 : this.key)
+          for (int _iter44 : this.key)
           {
-            oprot.writeI32(_iter40);
+            oprot.writeI32(_iter44);
           }
           oprot.writeListEnd();
         }
@@ -7871,14 +9268,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list41 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list41.size);
-                for (int _i42 = 0; _i42 < _list41.size; ++_i42)
+                org.apache.thrift7.protocol.TList _list45 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list45.size);
+                for (int _i46 = 0; _i46 < _list45.size; ++_i46)
                 {
-                  Value _elem43; // required
-                  _elem43 = new Value();
-                  _elem43.read(iprot);
-                  this.success.add(_elem43);
+                  Value _elem47; // required
+                  _elem47 = new Value();
+                  _elem47.read(iprot);
+                  this.success.add(_elem47);
                 }
                 iprot.readListEnd();
               }
@@ -7926,9 +9323,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter44 : this.success)
+          for (Value _iter48 : this.success)
           {
-            _iter44.write(oprot);
+            _iter48.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -8349,13 +9746,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list45 = iprot.readListBegin();
-                this.key = new ArrayList<Long>(_list45.size);
-                for (int _i46 = 0; _i46 < _list45.size; ++_i46)
+                org.apache.thrift7.protocol.TList _list49 = iprot.readListBegin();
+                this.key = new ArrayList<Long>(_list49.size);
+                for (int _i50 = 0; _i50 < _list49.size; ++_i50)
                 {
-                  long _elem47; // required
-                  _elem47 = iprot.readI64();
-                  this.key.add(_elem47);
+                  long _elem51; // required
+                  _elem51 = iprot.readI64();
+                  this.key.add(_elem51);
                 }
                 iprot.readListEnd();
               }
@@ -8385,9 +9782,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.I64, this.key.size()));
-          for (long _iter48 : this.key)
+          for (long _iter52 : this.key)
           {
-            oprot.writeI64(_iter48);
+            oprot.writeI64(_iter52);
           }
           oprot.writeListEnd();
         }
@@ -8919,14 +10316,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list49 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list49.size);
-                for (int _i50 = 0; _i50 < _list49.size; ++_i50)
+                org.apache.thrift7.protocol.TList _list53 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list53.size);
+                for (int _i54 = 0; _i54 < _list53.size; ++_i54)
                 {
-                  Value _elem51; // required
-                  _elem51 = new Value();
-                  _elem51.read(iprot);
-                  this.success.add(_elem51);
+                  Value _elem55; // required
+                  _elem55 = new Value();
+                  _elem55.read(iprot);
+                  this.success.add(_elem55);
                 }
                 iprot.readListEnd();
               }
@@ -8974,9 +10371,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter52 : this.success)
+          for (Value _iter56 : this.success)
           {
-            _iter52.write(oprot);
+            _iter56.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -9399,13 +10796,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list53 = iprot.readListBegin();
-                this.key = new ArrayList<ByteBuffer>(_list53.size);
-                for (int _i54 = 0; _i54 < _list53.size; ++_i54)
+                org.apache.thrift7.protocol.TList _list57 = iprot.readListBegin();
+                this.key = new ArrayList<ByteBuffer>(_list57.size);
+                for (int _i58 = 0; _i58 < _list57.size; ++_i58)
                 {
-                  ByteBuffer _elem55; // required
-                  _elem55 = iprot.readBinary();
-                  this.key.add(_elem55);
+                  ByteBuffer _elem59; // required
+                  _elem59 = iprot.readBinary();
+                  this.key.add(_elem59);
                 }
                 iprot.readListEnd();
               }
@@ -9435,9 +10832,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (ByteBuffer _iter56 : this.key)
+          for (ByteBuffer _iter60 : this.key)
           {
-            oprot.writeBinary(_iter56);
+            oprot.writeBinary(_iter60);
           }
           oprot.writeListEnd();
         }
@@ -9969,14 +11366,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list57 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list57.size);
-                for (int _i58 = 0; _i58 < _list57.size; ++_i58)
+                org.apache.thrift7.protocol.TList _list61 = iprot.readListBegin();
+                this.success = new ArrayList<Value>(_list61.size);
+                for (int _i62 = 0; _i62 < _list61.size; ++_i62)
                 {
-                  Value _elem59; // required
-                  _elem59 = new Value();
-                  _elem59.read(iprot);
-                  this.success.add(_elem59);
+                  Value _elem63; // required
+                  _elem63 = new Value();
+                  _elem63.read(iprot);
+                  this.success.add(_elem63);
                 }
                 iprot.readListEnd();
               }
@@ -10024,9 +11421,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter60 : this.success)
+          for (Value _iter64 : this.success)
           {
-            _iter60.write(oprot);
+            _iter64.write(oprot);
           }
           oprot.writeListEnd();
         }

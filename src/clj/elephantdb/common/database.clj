@@ -117,7 +117,7 @@
                                          :remote-path :throttle])
         options   (into {} (remove (comp nil? second) options))]
     (Database. local-root
-               port
+               (or port 3578) ;; TODO: Merge this default in elsewhere.
                (u/update-vals
                 domains
                 (fn [domain-name remote-path]

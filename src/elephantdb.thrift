@@ -62,14 +62,6 @@ struct KryoRegistration {
   2: optional string serializerName;
 }
 
-// This interface will allow java clients to send kryo-serialized
-// keys over the wire and recieve 
-
-service KryoDB {
-  list<KryoRegistration> getRegistrations();
-  Value kryoGet(1: string domain, 2: binary key);
-}
-
 service ElephantDBShared {
   DomainStatus getDomainStatus(1: string domain);
   list<string> getDomains();
@@ -81,6 +73,11 @@ service ElephantDBShared {
 }
 
 service ElephantDB extends ElephantDBShared {
+  // This interface will allow java clients to send kryo-serialized
+  // keys over the wire.
+  list<KryoRegistration> getRegistrations();
+  Value kryoGet(1: string domain, 2: binary key);
+  
   Value get(1: string domain, 2: binary key)
     throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
   Value getString(1: string domain, 2: string key)
@@ -101,6 +98,8 @@ service ElephantDB extends ElephantDBShared {
 
   list<Value> directMultiGet(1: string domain, 2: list<binary> key)
     throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
+
+  
 }
 
 

@@ -2235,13 +2235,13 @@ public class ElephantDBDoc {
           case 3: // FIELDS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list97 = iprot.readListBegin();
-                this.fields = new ArrayList<String>(_list97.size);
-                for (int _i98 = 0; _i98 < _list97.size; ++_i98)
+                org.apache.thrift7.protocol.TList _list101 = iprot.readListBegin();
+                this.fields = new ArrayList<String>(_list101.size);
+                for (int _i102 = 0; _i102 < _list101.size; ++_i102)
                 {
-                  String _elem99; // required
-                  _elem99 = iprot.readString();
-                  this.fields.add(_elem99);
+                  String _elem103; // required
+                  _elem103 = iprot.readString();
+                  this.fields.add(_elem103);
                 }
                 iprot.readListEnd();
               }
@@ -2276,9 +2276,9 @@ public class ElephantDBDoc {
         oprot.writeFieldBegin(FIELDS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.fields.size()));
-          for (String _iter100 : this.fields)
+          for (String _iter104 : this.fields)
           {
-            oprot.writeString(_iter100);
+            oprot.writeString(_iter104);
           }
           oprot.writeListEnd();
         }

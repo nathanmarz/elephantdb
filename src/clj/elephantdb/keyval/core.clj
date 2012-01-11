@@ -8,9 +8,9 @@
             [elephantdb.common.status :as status]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.config :as conf]
-            
             [elephantdb.keyval.domain :as dom])
-  (:import [org.apache.thrift7.protocol TBinaryProtocol]
+  (:import [java.nio ByteBuffer]
+           [org.apache.thrift7.protocol TBinaryProtocol]
            [org.apache.thrift7.transport TTransport]
            [org.apache.thrift7 TException]
            [elephantdb.persistence Shutdownable]
@@ -43,7 +43,7 @@
 (defn try-multi-get
   "Attempts a direct multi-get to the supplied service for each of the
   keys in the supplied `key-seq`."
-  [^ElephantDB$Client service domain-name error-suffix key-seq]
+  [^ElephantDB$Iface service domain-name error-suffix key-seq]
   (try (.directMultiGet service domain-name key-seq)
        (catch TException e
          (log/error e "Thrift exception on " error-suffix)) ;; try next host
@@ -64,7 +64,7 @@
 
 (defn multi-get*
   [service domain-name port localhost hostname indexed-keys]
-  (let [key-seq  (map :keys indexed-keys)
+  (let [key-seq  (map :key indexed-keys)
         suffix   (format "%s:%s/%s" hostname domain-name key-seq)
         multiget #(try-multi-get % domain-name suffix key-seq)]
     (when-let [vals (if (= localhost hostname)
@@ -101,7 +101,7 @@
     (directMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
       (try (if-let [val-seq (direct-multiget database domain-name keys)]
-             (map mk-value val-seq)
+             (doall (map mk-value val-seq))
              (throw (thrift/domain-not-loaded-ex)))
            (catch RuntimeException _
              (throw (thrift/wrong-host-ex)))))
@@ -164,7 +164,7 @@
       (.multiGet this domain key-seq))
 
     (get [this domain key]
-      (first (.multiGet this domain [key])))
+      (first (.multiGet this domain [(.array key)])))
     
     (getInt [this domain key]
       (.get this domain key))
