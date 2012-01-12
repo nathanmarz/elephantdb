@@ -5,6 +5,7 @@
         midje.sweet
         [elephantdb.keyval.domain :only (to-map)])
   (:require [jackknife.core :as u]
+            [jackknife.seq :as seq]
             [elephantdb.common.status :as status]
             [elephantdb.common.domain :as dom]
             [elephantdb.common.database :as db])
@@ -12,6 +13,12 @@
            [elephantdb ByteArray]
            [elephantdb.document KeyValDocument]
            [java.nio ByteBuffer]))
+
+;; TODO: Make the checker chatty.
+(defn barr-compare [expected-ds]
+  (chatty-checker [actual-ds]
+                  (barrs= (seq/collectify expected-ds)
+                          (seq/collectify actual-ds))))
 
 (defn get-val
   [service domain-name k]
@@ -43,10 +50,6 @@
     "Post update, we get a sequence of values."
     (direct-multiget db "domain-a" [1 3 5 "new!"]) => [2 4 6 nil]))
 
-(defn barrs-equal? [coll-a coll-b]
-  (fact (str coll-a " equals " coll-b)
-    (barrs= coll-a coll-b) => true))
-
 (fact "Test that we don't need to wrap in advance."
   (with-service-handler [handler
                          {"test" (mk-docseq {(barr 1) (barr 2)
@@ -57,10 +60,10 @@
                                              2         (barr 11)
                                              3         (barr 12)})}
                          :conf-map {:update-interval-s 0.01}]
-    (seq (get-val handler "test" (barr 1))) => [2]
-    (seq (.get_data (.getLong handler "test" 1))) => [10]
-    (mapcat (comp seq #(.get_data %))
-            (.multiGetLong handler "test" [1 2 3])) => [10 11 12]))
+    (get-val handler "test" (barr 1)) => (barr-compare (barr 2))
+    (.get_data (.getLong handler "test" 1)) => (barr-compare (barr 10))
+    (map #(.get_data %)
+         (.multiGetLong handler "test" [1 2 3])) => (barr-compare [10 11 12])))
 
 (fact "Basic tests."
   "TODO: Replace mk-docseq with an actual service handler tailored for
@@ -89,12 +92,13 @@
                 (first (direct-multiget [k])))]
         "Multiget should retrieve values across shards, returning them
         in order. (TODO: mock out shard order.)"
-        (barrs-equal? (direct-multiget [(barr 0) (barr 2) (barr 1)])
-                      [(barr 0 0) (barr 2 2) (barr 1 1)])
-        (ByteArray. (direct-get (barr 0))) => (ByteArray. (barr 0 0))
+        (fact (direct-multiget [(barr 0) (barr 2) (barr 1)])
+          => (just-barrs [(barr 0 0) (barr 2 2) (barr 1 1)]))
+        
+        (direct-get (barr 0)) => (barr-compare (barr 0 0))
 
         "Currently failing -- test multiGet."
-        (ByteArray. (get-val handler "test1" (barr 0))) => (ByteArray. (barr 0 0))))))
+        (get-val handler "test1" (barr 0)) => (barr-compare (barr 0 0))))))
 
 (fact "Domain should contain all input key-value pairs."
   (let [input-map {"key" "val"

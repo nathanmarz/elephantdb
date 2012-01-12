@@ -53,19 +53,23 @@
   (when xs
     (byte-array (map byte xs))))
 
+(defn barr=
+  ([x] true)
+  ([^bytes x ^bytes y] (java.util.Arrays/equals x y))
+  ([x y & more]
+     (if (barr= x y)
+       (if (next more)
+         (recur y (first more) (next more))
+         (barr= y (first more)))
+       false)))
+
 (defn count= [& colls]
   (apply = (map count colls)))
 
-(defn colls=
-  "Accepts multiple sequences of collections; returns true of the "
-  [& coll-seqs]
-  (and (apply count= coll-seqs)
-       (every? true? (apply map = coll-seqs))))
-
 (defn barrs=
   [& barr-seqs]
-  (apply colls= (for [xs barr-seqs]
-                  (map #(ByteArray. %) xs))))
+  (and (apply count= barr-seqs)
+       (every? true? (apply map barr= barr-seqs))))
 
 ;; ## Example Specs
 
