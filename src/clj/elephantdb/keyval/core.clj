@@ -237,7 +237,7 @@
       (u/with-ret true
         (db/update-all! database)))))
 
-(defn processor
+(defn kv-processor
   "Returns a key-value thrift processor suitable for passing into
   launch-server!"
   [service-handler]
@@ -266,6 +266,7 @@
                                                 local-config)
         conf-map (merge global-config local-config)
         database (db/build-database conf-map)]
-    (thrift/launch-server! (processor (kv-service database))
+    (thrift/launch-server! kv-processor
+                           (kv-service database)
                            (:port conf-map)
                            (:update-interval-s conf-map))))

@@ -103,14 +103,15 @@
   (let [args (-> (TNonblockingServerSocket. port)
                  (THsHaServer$Args.)
                  (.workerThreads 64)
-                 (.executorService 64)
                  (.protocolFactory (TBinaryProtocol$Factory.))
                  (.processor processor))]
     (THsHaServer. args)))
 
 (defn launch-server!
-  [service port interval]
-  (let [server (thrift-server service port)]
+  "Accepts a function that takes in a service and returns a processor,
+  a thrift IFace implementation, a port and an updater interval."
+  [processor-fn service port interval]
+  (let [server (thrift-server (processor-fn service) port)]
     (u/register-shutdown-hook #(.stop server))
     (log/info "Preparing database...")
     (db/prepare service)
