@@ -152,11 +152,12 @@
 ;; ## Thrift Service Testing Helpers
 
 (defn mk-local-config [local-dir]
-  {:local-dir local-dir
+  {:local-root local-dir
    :download-rate-limit 1024
    :update-interval-s 60})
 
 ;; TODO: Add in the ability to re-bind the host->shard decision.
+
 (defn mk-service-handler [database]
   (let [handler  (doto (kv/kv-service database)
                    (db/prepare)
