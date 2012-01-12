@@ -18,7 +18,8 @@
            [elephantdb.generated ElephantDB$Client Value
             ElephantDB$Iface ElephantDB$Processor
             DomainNotFoundException DomainNotLoadedException
-            HostsDownException WrongHostException]))
+            HostsDownException WrongHostException])
+  (:gen-class))
 
 (defn mk-value
   "Wraps the supplied byte array in an instance of
@@ -265,6 +266,6 @@
                                                 local-config)
         conf-map (merge global-config local-config)
         database (db/build-database conf-map)]
-    (thrift/launch-server! (processor database)
+    (thrift/launch-server! (processor (kv-service database))
                            (:port conf-map)
                            (:update-interval-s conf-map))))

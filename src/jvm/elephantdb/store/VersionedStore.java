@@ -6,6 +6,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.AccessControlException;
 
 import java.io.File;
 import java.io.IOException;
@@ -179,8 +180,14 @@ public class VersionedStore {
     private void mkdirs(String path) throws IOException {
         if(fs instanceof LocalFileSystem)
             new File(path).mkdirs();
-        else
-            fs.mkdirs(new Path(path));
+        else {
+            try {
+                fs.mkdirs(new Path(path));
+            } catch (AccessControlException e) {
+                throw new RuntimeException("Root directory doesn't exist, and user doesn't have the permissions " +
+                        "to create" + path + ".", e);
+            }
+        }
     }
 
 

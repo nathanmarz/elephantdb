@@ -124,7 +124,7 @@
                   (let [local-path (domain-path local-root domain-name)]
                     (apply domain/build-domain local-path
                            :remote-path remote-path
-                           options))))
+                           (apply concat options)))))
                (dissoc conf-map :domains :local-root :port))))
 
 ;; A full database ends up looking something like the commented out
