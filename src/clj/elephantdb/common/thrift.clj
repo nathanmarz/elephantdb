@@ -110,12 +110,8 @@
 (defn launch-server!
   "Accepts a function that takes in a service and returns a processor,
   a thrift IFace implementation, a port and an updater interval."
-  [processor-fn service port interval]
+  [processor-fn service port]
   (let [server  (thrift-server (processor-fn service) port)]
     (u/register-shutdown-hook #(.stop server))
-    (log/info "Preparing database...")
-    (doto service
-      (db/prepare)
-      (db/launch-updater!))
     (log/info "Starting ElephantDB server...")
     (.serve server)))

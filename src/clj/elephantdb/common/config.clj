@@ -55,7 +55,7 @@
 
 (def DEFAULT-LOCAL-CONFIG
   {:download-rate-limit 128
-   :update-interval     60})
+   :update-interval-s   60})
 
 (defn read-local-config
   "Reads in the local configuration file from the supplied local

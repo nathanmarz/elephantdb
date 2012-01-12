@@ -73,16 +73,18 @@
                        true))))
 
 (defn launch-updater!
-  [database]
-  (let [interval-secs (get-in database [:options :update-interval-s])
-        interval-ms   (* 1000 interval-secs)]
-    (future
-      (log/info (format "Starting updater process with an interval of: %s seconds."
-                        interval-secs))
-      (while true
-        (Thread/sleep interval-ms)
-        (log/info "Updater process: firing update on all domains.")
-        (update-all! database)))))
+  [database interval-secs]
+  (let [interval-ms (* 1000 interval-secs)
+        updater (future
+                  (log/info "Starting updater process with an"
+                            " interval of: " interval-secs " seconds.")
+                  (while true
+                    (Thread/sleep interval-ms)
+                    (log/info "Updater process: firing update on all domains.")
+                    (update-all! database)))]
+    (u/register-shutdown-hook #(do (log/info "Killing updater...")
+                                   (future-cancel updater)))
+    updater))
 
 ;; ## Database Creation
 ;;
@@ -97,6 +99,7 @@
 (defrecord Database [local-root port domains options]
   Preparable
   (prepare [{:keys [local-root domains] :as database}]
+    (log/info "Preparing database...")
     (u/register-shutdown-hook #(.shutdown database))
     (future
       (purge-unused-domains! local-root (keys domains))

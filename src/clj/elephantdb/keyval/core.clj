@@ -13,7 +13,6 @@
            [org.apache.thrift7.protocol TBinaryProtocol]
            [org.apache.thrift7.transport TTransport]
            [org.apache.thrift7 TException]
-           [elephantdb.persistence Shutdownable]
            [elephantdb.common.database Database]
            [elephantdb.generated ElephantDB$Client Value
             ElephantDB$Iface ElephantDB$Processor
@@ -29,6 +28,15 @@
     (.set_data ^Value val)))
 
 ;; ## Thrift Connection
+
+(defn kv-client [transport]
+  (ElephantDB$Client. (TBinaryProtocol. transport)))
+
+(defn kv-processor
+  "Returns a key-value thrift processor suitable for passing into
+  launch-server!"
+  [service-handler]
+  (ElephantDB$Processor. service-handler))
 
 (defmacro with-kv-connection
   [host port client-sym & body]
@@ -101,13 +109,7 @@
     (.kryoGet service domain-name (.serialize ser key))))
 
 (defn kv-service [database]
-  (reify db/Preparable
-    (prepare [_] (db/prepare database))
-
-    Shutdownable
-    (shutdown [_] (.shutdown database))
-
-    ElephantDB$Iface
+  (reify ElephantDB$Iface
     (getRegistrations [_ domain-name]
       "TODO: Move into domain."
       (thrift/assert-domain database domain-name)
@@ -235,15 +237,6 @@
       (u/with-ret true
         (db/update-all! database)))))
 
-(defn kv-client [transport]
-  (ElephantDB$Client. (TBinaryProtocol. transport)))
-
-(defn kv-processor
-  "Returns a key-value thrift processor suitable for passing into
-  launch-server!"
-  [service-handler]
-  (ElephantDB$Processor. service-handler))
-
 ;; # Main Access
 ;;
 ;; This namespace is the main access point to the edb
@@ -267,7 +260,9 @@
                                                 local-config)
         conf-map (merge global-config local-config)
         database (db/build-database conf-map)]
+    (doto database
+      (db/prepare)
+      (db/launch-updater! (:update-interval-s conf-map)))
     (thrift/launch-server! kv-processor
                            (kv-service database)
-                           (:port conf-map)
-                           (:update-interval-s conf-map))))
+                           (:port conf-map))))
