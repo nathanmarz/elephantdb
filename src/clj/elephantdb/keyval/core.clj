@@ -30,12 +30,10 @@
 
 ;; ## Thrift Connection
 
-(defn kv-client [transport]
-  (ElephantDB$Client. (TBinaryProtocol. transport)))
-
 (defmacro with-kv-connection
   [host port client-sym & body]
-  `(with-open [^TTransport conn# (thrift/thrift-transport ~host ~port)]
+  `(with-open [^TTransport conn# (doto (thrift/thrift-transport ~host ~port)
+                                   (.open))]
      (let [^ElephantDB$Client ~client-sym (kv-client conn#)]
        ~@body)))
 
@@ -205,7 +203,7 @@
       (-> (db/domain-get database domain-name)
           (status/get-status)
           (thrift/to-thrift)))
-
+    
     (getDomains [_]
       "Returns a sequence of all domain names being served."
       (db/domain-names database))
@@ -236,6 +234,9 @@
          shards from its remote store and hotswaps in the new versions."
       (u/with-ret true
         (db/update-all! database)))))
+
+(defn kv-client [transport]
+  (ElephantDB$Client. (TBinaryProtocol. transport)))
 
 (defn kv-processor
   "Returns a key-value thrift processor suitable for passing into
