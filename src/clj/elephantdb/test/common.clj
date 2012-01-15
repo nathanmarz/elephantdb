@@ -8,7 +8,7 @@
   (:import [java.nio ByteBuffer]
            [elephantdb.store DomainStore]
            [elephantdb.persistence ShardSet]
-           [elephantdb Utils DomainSpec ByteArray]
+           [elephantdb Utils DomainSpec]
            [org.apache.hadoop.io IntWritable]
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]

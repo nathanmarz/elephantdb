@@ -10,7 +10,6 @@
             [elephantdb.common.domain :as dom]
             [elephantdb.common.database :as db])
   (:import [elephantdb.persistence JavaBerkDB]
-           [elephantdb ByteArray]
            [elephantdb.document KeyValDocument]
            [java.nio ByteBuffer]))
 
