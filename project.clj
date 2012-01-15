@@ -12,7 +12,7 @@
                  [jackknife "0.1.1"]
                  [hadoop-util "0.2.7"]
                  [cascading.kryo "0.1.5"]
-                 [com.sleepycat/je "4.1.10"]
+                 [com.sleepycat/je "5.0.34"]
                  [org.apache.lucene/lucene-core "3.0.3"]
                  [org.apache.lucene/lucene-queries "3.0.3"]]
   :dev-dependencies [[org.apache.hadoop/hadoop-core "0.20.2-dev"]
