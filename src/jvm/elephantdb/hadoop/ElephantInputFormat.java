@@ -18,7 +18,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +25,6 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
     public static final String ARGS_CONF = "elephant.output.args";
 
     public static class Args implements Serializable {
-        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
         public String inputDirHdfs;
         public Long version = null;
 
@@ -51,10 +49,13 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             this.reporter = reporter;
             args = (Args) Utils.getObject(this.split.conf, ARGS_CONF);
             elephantManager = new LocalElephantManager(
-                    Utils.getFS(this.split.shardPath, split.conf), this.split.spec, args.persistenceOptions,
+                    Utils.getFS(this.split.shardPath, split.conf), this.split.spec,
                     LocalElephantManager.getTmpDirs(this.split.conf));
             String localpath = elephantManager.downloadRemoteShard("shard", this.split.shardPath);
-            lp = this.split.spec.getCoordinator().openPersistenceForRead(localpath, args.persistenceOptions);
+
+            Map<String, Object> opts = this.split.spec.getPersistenceOptions();
+            lp = this.split.spec.getCoordinator().openPersistenceForRead(localpath, opts);
+
             iterator = lp.iterator();
         }
 

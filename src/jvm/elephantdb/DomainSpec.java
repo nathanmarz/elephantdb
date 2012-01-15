@@ -29,7 +29,7 @@ public class DomainSpec implements Writable, Serializable {
     // This gets serialized in via the conf.
     public static class Args implements Serializable {
         public List<List<String>> kryoPairs = new ArrayList<List<String>>();
-        public Map persistenceOptions = new HashMap();
+        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
     }
 
     Args optionalArgs;
@@ -87,7 +87,7 @@ public class DomainSpec implements Writable, Serializable {
         return optionalArgs.kryoPairs;
     }
 
-    public Map getPersistenceOptions() {
+    public Map<String, Object> getPersistenceOptions() {
         return optionalArgs.persistenceOptions;
     }
 

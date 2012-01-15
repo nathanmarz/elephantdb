@@ -34,14 +34,11 @@ public class LocalElephantManager {
     File dirFlag;
     String localRoot;
     DomainSpec spec;
-    Map<String, Object> persistenceOptions;
 
-    public LocalElephantManager(FileSystem fs, DomainSpec spec,
-        Map<String, Object> persistenceOptions, List<String> tmpDirs) throws IOException {
+    public LocalElephantManager(FileSystem fs, DomainSpec spec, List<String> tmpDirs) throws IOException {
         localRoot = selectAndFlagRoot(tmpDirs);
         this.fs = fs;
         this.spec = spec;
-        this.persistenceOptions = persistenceOptions;
     }
 
     /**
@@ -56,7 +53,7 @@ public class LocalElephantManager {
         Coordinator coord = spec.getCoordinator();
         String returnDir = localTmpDir(id);
         if (remotePath == null || !fs.exists(new Path(remotePath))) {
-            coord.createPersistence(returnDir, persistenceOptions);
+            coord.createPersistence(returnDir, this.spec.getPersistenceOptions());
         } else {
             fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
             Collection<File> crcs =

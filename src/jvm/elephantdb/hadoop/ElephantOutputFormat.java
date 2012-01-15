@@ -40,9 +40,6 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         // If this is set, the output format will go download it!
         public String updateDirHdfs = null;
 
-        // ends up going to and Coordinator, which passes it on.
-        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
-
         public Args(DomainSpec spec, String outputDirHdfs) {
             this.spec = spec;
             this.outputDirHdfs = outputDirHdfs;
@@ -53,13 +50,13 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
 
         FileSystem fileSystem;
         Args args;
-        Map<Integer, Persistence> _lps = new HashMap<Integer, Persistence>();
+        Map<Integer, Persistence> lps = new HashMap<Integer, Persistence>();
         Progressable progressable;
         LocalElephantManager localManager;
         Serializer serializer;
 
-        int _numWritten = 0;
-        long _lastCheckpoint = System.currentTimeMillis();
+        int numWritten = 0;
+        long lastCheckpoint = System.currentTimeMillis();
 
         public ElephantRecordWriter(Configuration conf, Args args, Progressable progressable)
             throws IOException {
@@ -68,8 +65,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
 
             this.serializer = Utils.makeSerializer(this.args.spec);
             this.progressable = progressable;
-            localManager = new LocalElephantManager(fileSystem, args.spec,
-                    args.persistenceOptions, LocalElephantManager.getTmpDirs(conf));
+            localManager = new LocalElephantManager(fileSystem, args.spec, LocalElephantManager.getTmpDirs(conf));
         }
 
         private String remoteUpdateDirForShard(int shard) {
@@ -78,15 +74,17 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         
         private Persistence retrieveShard(int shardIdx) throws IOException {
             Persistence lp = null;
-            Coordinator fact = args.spec.getCoordinator();
-            Map<String, Object> options = args.persistenceOptions;
-            if (_lps.containsKey(shardIdx)) {
-                lp = _lps.get(shardIdx);
+
+            if (lps.containsKey(shardIdx)) {
+                lp = lps.get(shardIdx);
             } else {
                 String updateDir = remoteUpdateDirForShard(shardIdx);
                 String localShard = localManager.downloadRemoteShard("" + shardIdx, updateDir);
-                lp = fact.openPersistenceForAppend(localShard, options);
-                _lps.put(shardIdx, lp);
+
+                Coordinator fact = args.spec.getCoordinator();
+                lp = fact.openPersistenceForAppend(localShard, args.spec.getPersistenceOptions());
+
+                lps.put(shardIdx, lp);
                 progress();
             }
             return lp;
@@ -108,11 +106,11 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
 
         public void bumpProgress() {
-            _numWritten++;
-            if (_numWritten % 25000 == 0) {
+            numWritten++;
+            if (numWritten % 25000 == 0) {
                 long now = System.currentTimeMillis();
-                long delta = now - _lastCheckpoint;
-                _lastCheckpoint = now;
+                long delta = now - lastCheckpoint;
+                lastCheckpoint = now;
                 LOG.info("Wrote last 25000 records in " + delta + " ms");
                 localManager.progress();
             }
@@ -123,10 +121,10 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
 
         public void close(Reporter reporter) throws IOException {
-            for (Integer shard : _lps.keySet()) {
+            for (Integer shard : lps.keySet()) {
                 String lpDir = localManager.localTmpDir("" + shard);
                 LOG.info("Closing LP for shard " + shard + " at " + lpDir);
-                _lps.get(shard).close();
+                lps.get(shard).close();
                 LOG.info("Closed LP for shard " + shard + " at " + lpDir);
                 progress();
                 String remoteDir = args.outputDirHdfs + "/" + shard;
