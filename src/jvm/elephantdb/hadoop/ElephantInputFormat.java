@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ElephantInputFormat implements InputFormat<NullWritable, BytesWritable> {
-    public static final String ARGS_CONF = "elephant.output.args";
+    public static final String ARGS_CONF = "elephant.input.args";
 
     public static class Args implements Serializable {
         public String inputDirHdfs;

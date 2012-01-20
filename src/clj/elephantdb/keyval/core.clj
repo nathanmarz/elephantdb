@@ -86,7 +86,8 @@
 ;; by default, but replace as necessary.
 
 (defmacro defservice []
-  "Something like this.")
+  "Something like this. Model the macro after defcache in
+  clojure.core.cache.")
 
 ;; TODO: Perfect example of a spot where we could throw a data
 ;; structure warning up with throw+ if the database isn't loaded.
@@ -96,6 +97,48 @@
     (when (loaded? domain)
       (map (partial dom/kv-get domain)
            key-seq))))
+
+;; ## MultiGet
+;;
+;; Start out by indexing each key; this requires indexing each key
+;; into a map (see `index-keys` above). The loop first checks that
+;; every key has at least one host associated with it. If any key is
+;; lacking hosts, the multiGet throws an exception.
+;;
+;; If no exception is thrown, the system groups keys by the first host
+;; in the list (localhost, if any keys are located on the machine
+;; executing the call) and performs a directMultiGet on each for its
+;; keys.
+;;
+;; If any host has unsuccessful results (didn't return anything), the
+;; host is removed from the host lists of every key, and multiGet
+;; recurses.
+;;
+;; Once the multi-get loop completes without any failures the entire
+;; sequence of values is returned in order.
+
+(defn multi-get
+  [get-fn database domain-name key-seq]
+  (loop [results []
+         indexed-keys (-> (db/domain-get database domain-name)
+                          (dom/index-keys key-seq))]
+    (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
+      (throw (thrift/hosts-down-ex (:all-hosts bad-key)))
+      (let [host-map   (group-by (comp first :hosts) indexed-keys)
+            rets       (u/do-pmap (fn [[host indexed-keys]]
+                                    [host (get-fn host indexed-keys)])
+                                  host-map)
+            successful (into {} (filter second rets))
+            results    (->> (vals successful)
+                            (apply concat results))
+            fail-map   (apply dissoc host-map (keys successful))]
+        (if (empty? fail-map)
+          (map :value (sort-by :index results))
+          (recur results
+                 (map (fn [m]
+                        (update-in m [:hosts]
+                                   dom/trim-hosts (keys fail-map)))
+                      (apply concat (vals fail-map)))))))))
 
 (defn kryo-registrations [local-store]
   "TODO: Take a list of lists of kryo pairs, return the proper thrift
@@ -108,19 +151,18 @@
   (let [ser (.serializer (db/domain-get database domain-name))]
     (.kryoGet service domain-name (.serialize ser key))))
 
+(defn get-registrations [database domain-name]
+  (let [domain (db/domain-get database domain-name)]
+    (kryo-registrations (.localStore domain))))
+
 (defn kv-service [database]
   (reify ElephantDB$Iface
     (getRegistrations [_ domain-name]
-      "TODO: Move into domain."
       (thrift/assert-domain database domain-name)
-      (-> (db/domain-get database domain-name)
-          (.localStore)
-          (kryo-registrations)))
+      (get-registrations database domain-name))
 
-    (kryoGet [this domain-name key]      
-      (thrift/assert-domain database domain-name)
-      (let [ser (.serializer (db/domain-get database domain-name))]
-        (.multiGet this domain-name [(.deserialize ser key)])))
+    (kryoGet [this domain-name key]
+      (kryo-get this database domain-name key))
     
     (directMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
@@ -130,53 +172,14 @@
            (catch RuntimeException _
              (throw (thrift/wrong-host-ex)))))
 
-    ;; ## MultiGet
-    ;;
-    ;; Start out by indexing each key; this requires indexing each key
-    ;; into a map (see `index-keys` above). The loop first checks that
-    ;; every key has at least one host associated with it. If any key is
-    ;; lacking hosts, the multiGet throws an exception.
-    ;;
-    ;; If no exception is thrown, the system groups keys by the first host
-    ;; in the list (localhost, if any keys are located on the machine
-    ;; executing the call) and performs a directMultiGet on each for its
-    ;; keys.
-    ;;
-    ;; If any host has unsuccessful results (didn't return anything), the
-    ;; host is removed from the host lists of every key, and multiGet
-    ;; recurses.
-    ;;
-    ;; Once the multi-get loop completes without any failures the entire
-    ;; sequence of values is returned in order.
-
     (multiGet [this domain-name key-seq]
       (thrift/assert-domain database domain-name)
-      (let [localhost (u/local-hostname)]
-        (loop [indexed-keys (-> (db/domain-get database domain-name)
-                                (dom/index-keys key-seq))
-               results []]
-          (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
-            (throw (thrift/hosts-down-ex (:all-hosts bad-key)))
-            (let [host-map   (group-by (comp first :hosts) indexed-keys)
-                  get-fn     (partial multi-get*
-                                      this
-                                      domain-name
-                                      (:port database)
-                                      localhost)
-                  rets       (u/do-pmap (fn [[host indexed-keys]]
-                                          [host (get-fn host indexed-keys)])
-                                        host-map)
-                  successful (into {} (filter second rets))
-                  results    (->> (vals successful)
-                                  (apply concat results))
-                  fail-map   (apply dissoc host-map (keys successful))]
-              (if (empty? fail-map)
-                (map :value (sort-by :index results))
-                (recur (map (fn [m]
-                              (update-in m [:hosts]
-                                         dom/trim-hosts (keys fail-map)))
-                            (apply concat (vals fail-map)))
-                       results)))))))
+      (let [get-fn (partial multi-get*
+                            this
+                            domain-name
+                            (:port database)
+                            (u/local-hostname))]
+        (multi-get get-fn database domain-name key-seq)))
 
     (multiGetInt [this domain key-seq]
       (.multiGet this domain key-seq))
