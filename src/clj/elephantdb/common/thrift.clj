@@ -8,8 +8,7 @@
            [org.apache.thrift7.transport TTransport
             TFramedTransport TSocket TNonblockingServerSocket]          
            [elephantdb.common.database Database]
-           [elephantdb.generated
-            DomainStatus$_Fields Status
+           [elephantdb.generated DomainStatus$_Fields Status
             DomainNotFoundException DomainNotLoadedException
             HostsDownException WrongHostException
             DomainStatus LoadingStatus 

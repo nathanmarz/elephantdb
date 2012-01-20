@@ -47,3 +47,17 @@
           (print "Remote: ")
           (time (dotimes [_ 1000]
                   (afn o))))))))
+
+(defprotocol KryoOps
+  (create! [_]))
+
+(deftype CouchDB [url]
+  KryoOps
+  (create! [this]
+    (.connect (:client this)
+              400
+              (:url this) 54555)
+    (ObjectSpace/getRemoteObject client DATABASE-ID klass))
+  clojure.lang.ILookup
+  (valAt [this k] (.get url k))
+  (valAt [this k default] (or (.valAt this k) default)))

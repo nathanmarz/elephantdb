@@ -14,10 +14,10 @@
            [org.apache.thrift7.transport TTransport]
            [org.apache.thrift7 TException]
            [elephantdb.common.database Database]
-           [elephantdb.generated ElephantDB$Client Value
-            ElephantDB$Iface ElephantDB$Processor
-            DomainNotFoundException DomainNotLoadedException
-            HostsDownException WrongHostException])
+           [elephantdb.generated DomainNotFoundException
+            DomainNotLoadedException HostsDownException WrongHostException]
+           [elephantdb.keyval.generated ElephantDB$Client Value
+            ElephantDB$Iface ElephantDB$Processor])
   (:gen-class))
 
 (defn mk-value
