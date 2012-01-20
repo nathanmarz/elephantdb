@@ -1,10 +1,28 @@
 (ns elephantdb.common.kryo
   "Namespace for inter-machine Kryo service calls."
+  (:require [elephantdb.common.database :as db])
   (:import [java.net InetAddress]
            [com.esotericsoftware.kryonet Server Client
             Listener FrameworkMessage EndPoint]
            [com.esotericsoftware.kryonet.rmi ObjectSpace]
            [elephantdb.persistence Shutdownable]))
+
+(defn kryo-registrations
+  [local-store]
+  "TODO: Take a list of lists of kryo pairs, return the proper thrift
+   business."
+  (-> local-store .getSpec .getKryoPairs))
+
+(defn kryo-get
+  [service database domain-name key]
+  (thrift/assert-domain database domain-name)
+  (let [ser (.serializer (db/domain-get database domain-name))]
+    (.kryoGet service domain-name (.serialize ser key))))
+
+(defn get-registrations [database domain-name]
+  (let [domain (db/domain-get database domain-name)]
+    (kryo-registrations (.localStore domain))))
+
 
 (defn prep [^EndPoint point]
   (doto (.getKryo point)

@@ -1,10 +1,10 @@
 #!/usr/local/bin/thrift --gen py:utf8strings --gen java:beans,nocamel,hashcode
 
-namespace java elephantdb.keyset.generated
+namespace java elephantdb.generated.keyset
 
 include "core.thrift"
 
-service ElephantDBSet extends ElephantDBShared {
+service ElephantDBSet extends core.ElephantDBShared {
   // Required kv pairs:
   // kv == (setKey, member) -> null
   // (setKey + "SIZE") -> i64
@@ -17,7 +17,7 @@ service ElephantDBSet extends ElephantDBShared {
   list<string> setIntersection(1: string domain, 2: string keyOne, 3: string keyTwo); // take variable args
   i64 size(1: string domain, 2: string key);
 
-  list<Value> multiMember(1: string domain, 2: string setKey, 3: list<string> setVals);
+  list<core.Value> multiMember(1: string domain, 2: string setKey, 3: list<string> setVals);
 }
 
 

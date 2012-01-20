@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
-package elephantdb.generated;
+package elephantdb.generated.keyset;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import java.util.List;
@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 
 public class ElephantDBSet {
 
-  public interface Iface extends ElephantDBShared.Iface {
+  public interface Iface extends elephantdb.generated.ElephantDBShared.Iface {
 
     public boolean member(String domain, String setKey, String member) throws org.apache.thrift7.TException;
 
@@ -37,11 +37,11 @@ public class ElephantDBSet {
 
     public long size(String domain, String key) throws org.apache.thrift7.TException;
 
-    public List<Value> multiMember(String domain, String setKey, List<String> setVals) throws org.apache.thrift7.TException;
+    public List<elephantdb.generated.Value> multiMember(String domain, String setKey, List<String> setVals) throws org.apache.thrift7.TException;
 
   }
 
-  public interface AsyncIface extends ElephantDBShared .AsyncIface {
+  public interface AsyncIface extends elephantdb.generated.ElephantDBShared .AsyncIface {
 
     public void member(String domain, String setKey, String member, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.member_call> resultHandler) throws org.apache.thrift7.TException;
 
@@ -59,7 +59,7 @@ public class ElephantDBSet {
 
   }
 
-  public static class Client extends ElephantDBShared.Client implements Iface {
+  public static class Client extends elephantdb.generated.ElephantDBShared.Client implements Iface {
     public static class Factory implements org.apache.thrift7.TServiceClientFactory<Client> {
       public Factory() {}
       public Client getClient(org.apache.thrift7.protocol.TProtocol prot) {
@@ -227,7 +227,7 @@ public class ElephantDBSet {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "size failed: unknown result");
     }
 
-    public List<Value> multiMember(String domain, String setKey, List<String> setVals) throws org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> multiMember(String domain, String setKey, List<String> setVals) throws org.apache.thrift7.TException
     {
       send_multiMember(domain, setKey, setVals);
       return recv_multiMember();
@@ -242,7 +242,7 @@ public class ElephantDBSet {
       sendBase("multiMember", args);
     }
 
-    public List<Value> recv_multiMember() throws org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> recv_multiMember() throws org.apache.thrift7.TException
     {
       multiMember_result result = new multiMember_result();
       receiveBase(result, "multiMember");
@@ -253,7 +253,7 @@ public class ElephantDBSet {
     }
 
   }
-  public static class AsyncClient extends ElephantDBShared.AsyncClient implements AsyncIface {
+  public static class AsyncClient extends elephantdb.generated.ElephantDBShared.AsyncClient implements AsyncIface {
     public static class Factory implements org.apache.thrift7.async.TAsyncClientFactory<AsyncClient> {
       private org.apache.thrift7.async.TAsyncClientManager clientManager;
       private org.apache.thrift7.protocol.TProtocolFactory protocolFactory;
@@ -520,7 +520,7 @@ public class ElephantDBSet {
         prot.writeMessageEnd();
       }
 
-      public List<Value> getResult() throws org.apache.thrift7.TException {
+      public List<elephantdb.generated.Value> getResult() throws org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -532,7 +532,7 @@ public class ElephantDBSet {
 
   }
 
-  public static class Processor<I extends Iface> extends ElephantDBShared.Processor implements org.apache.thrift7.TProcessor {
+  public static class Processor<I extends Iface> extends elephantdb.generated.ElephantDBShared.Processor implements org.apache.thrift7.TProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class.getName());
     public Processor(I iface) {
       super(iface, getProcessMap(new HashMap<String, org.apache.thrift7.ProcessFunction<I, ? extends org.apache.thrift7.TBase>>()));
@@ -2899,13 +2899,13 @@ public class ElephantDBSet {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list61 = iprot.readListBegin();
-                this.success = new ArrayList<String>(_list61.size);
-                for (int _i62 = 0; _i62 < _list61.size; ++_i62)
+                org.apache.thrift7.protocol.TList _list0 = iprot.readListBegin();
+                this.success = new ArrayList<String>(_list0.size);
+                for (int _i1 = 0; _i1 < _list0.size; ++_i1)
                 {
-                  String _elem63; // required
-                  _elem63 = iprot.readString();
-                  this.success.add(_elem63);
+                  String _elem2; // required
+                  _elem2 = iprot.readString();
+                  this.success.add(_elem2);
                 }
                 iprot.readListEnd();
               }
@@ -2929,9 +2929,9 @@ public class ElephantDBSet {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.success.size()));
-          for (String _iter64 : this.success)
+          for (String _iter3 : this.success)
           {
-            oprot.writeString(_iter64);
+            oprot.writeString(_iter3);
           }
           oprot.writeListEnd();
         }
@@ -3723,13 +3723,13 @@ public class ElephantDBSet {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list65 = iprot.readListBegin();
-                this.success = new ArrayList<String>(_list65.size);
-                for (int _i66 = 0; _i66 < _list65.size; ++_i66)
+                org.apache.thrift7.protocol.TList _list4 = iprot.readListBegin();
+                this.success = new ArrayList<String>(_list4.size);
+                for (int _i5 = 0; _i5 < _list4.size; ++_i5)
                 {
-                  String _elem67; // required
-                  _elem67 = iprot.readString();
-                  this.success.add(_elem67);
+                  String _elem6; // required
+                  _elem6 = iprot.readString();
+                  this.success.add(_elem6);
                 }
                 iprot.readListEnd();
               }
@@ -3753,9 +3753,9 @@ public class ElephantDBSet {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.success.size()));
-          for (String _iter68 : this.success)
+          for (String _iter7 : this.success)
           {
-            oprot.writeString(_iter68);
+            oprot.writeString(_iter7);
           }
           oprot.writeListEnd();
         }
@@ -4547,13 +4547,13 @@ public class ElephantDBSet {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list69 = iprot.readListBegin();
-                this.success = new ArrayList<String>(_list69.size);
-                for (int _i70 = 0; _i70 < _list69.size; ++_i70)
+                org.apache.thrift7.protocol.TList _list8 = iprot.readListBegin();
+                this.success = new ArrayList<String>(_list8.size);
+                for (int _i9 = 0; _i9 < _list8.size; ++_i9)
                 {
-                  String _elem71; // required
-                  _elem71 = iprot.readString();
-                  this.success.add(_elem71);
+                  String _elem10; // required
+                  _elem10 = iprot.readString();
+                  this.success.add(_elem10);
                 }
                 iprot.readListEnd();
               }
@@ -4577,9 +4577,9 @@ public class ElephantDBSet {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.success.size()));
-          for (String _iter72 : this.success)
+          for (String _iter11 : this.success)
           {
-            oprot.writeString(_iter72);
+            oprot.writeString(_iter11);
           }
           oprot.writeListEnd();
         }
@@ -5740,13 +5740,13 @@ public class ElephantDBSet {
           case 3: // SET_VALS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list73 = iprot.readListBegin();
-                this.setVals = new ArrayList<String>(_list73.size);
-                for (int _i74 = 0; _i74 < _list73.size; ++_i74)
+                org.apache.thrift7.protocol.TList _list12 = iprot.readListBegin();
+                this.setVals = new ArrayList<String>(_list12.size);
+                for (int _i13 = 0; _i13 < _list12.size; ++_i13)
                 {
-                  String _elem75; // required
-                  _elem75 = iprot.readString();
-                  this.setVals.add(_elem75);
+                  String _elem14; // required
+                  _elem14 = iprot.readString();
+                  this.setVals.add(_elem14);
                 }
                 iprot.readListEnd();
               }
@@ -5781,9 +5781,9 @@ public class ElephantDBSet {
         oprot.writeFieldBegin(SET_VALS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.setVals.size()));
-          for (String _iter76 : this.setVals)
+          for (String _iter15 : this.setVals)
           {
-            oprot.writeString(_iter76);
+            oprot.writeString(_iter15);
           }
           oprot.writeListEnd();
         }
@@ -5852,7 +5852,7 @@ public class ElephantDBSet {
 
     private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.LIST, (short)0);
 
-    private List<Value> success; // required
+    private List<elephantdb.generated.Value> success; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -5919,7 +5919,7 @@ public class ElephantDBSet {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
-              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class))));
+              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class))));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(multiMember_result.class, metaDataMap);
     }
@@ -5928,7 +5928,7 @@ public class ElephantDBSet {
     }
 
     public multiMember_result(
-      List<Value> success)
+      List<elephantdb.generated.Value> success)
     {
       this();
       this.success = success;
@@ -5939,9 +5939,9 @@ public class ElephantDBSet {
      */
     public multiMember_result(multiMember_result other) {
       if (other.is_set_success()) {
-        List<Value> __this__success = new ArrayList<Value>();
-        for (Value other_element : other.success) {
-          __this__success.add(new Value(other_element));
+        List<elephantdb.generated.Value> __this__success = new ArrayList<elephantdb.generated.Value>();
+        for (elephantdb.generated.Value other_element : other.success) {
+          __this__success.add(new elephantdb.generated.Value(other_element));
         }
         this.success = __this__success;
       }
@@ -5960,22 +5960,22 @@ public class ElephantDBSet {
       return (this.success == null) ? 0 : this.success.size();
     }
 
-    public java.util.Iterator<Value> get_success_iterator() {
+    public java.util.Iterator<elephantdb.generated.Value> get_success_iterator() {
       return (this.success == null) ? null : this.success.iterator();
     }
 
-    public void add_to_success(Value elem) {
+    public void add_to_success(elephantdb.generated.Value elem) {
       if (this.success == null) {
-        this.success = new ArrayList<Value>();
+        this.success = new ArrayList<elephantdb.generated.Value>();
       }
       this.success.add(elem);
     }
 
-    public List<Value> get_success() {
+    public List<elephantdb.generated.Value> get_success() {
       return this.success;
     }
 
-    public void set_success(List<Value> success) {
+    public void set_success(List<elephantdb.generated.Value> success) {
       this.success = success;
     }
 
@@ -6000,7 +6000,7 @@ public class ElephantDBSet {
         if (value == null) {
           unset_success();
         } else {
-          set_success((List<Value>)value);
+          set_success((List<elephantdb.generated.Value>)value);
         }
         break;
 
@@ -6104,14 +6104,14 @@ public class ElephantDBSet {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list77 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list77.size);
-                for (int _i78 = 0; _i78 < _list77.size; ++_i78)
+                org.apache.thrift7.protocol.TList _list16 = iprot.readListBegin();
+                this.success = new ArrayList<elephantdb.generated.Value>(_list16.size);
+                for (int _i17 = 0; _i17 < _list16.size; ++_i17)
                 {
-                  Value _elem79; // required
-                  _elem79 = new Value();
-                  _elem79.read(iprot);
-                  this.success.add(_elem79);
+                  elephantdb.generated.Value _elem18; // required
+                  _elem18 = new elephantdb.generated.Value();
+                  _elem18.read(iprot);
+                  this.success.add(_elem18);
                 }
                 iprot.readListEnd();
               }
@@ -6135,9 +6135,9 @@ public class ElephantDBSet {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter80 : this.success)
+          for (elephantdb.generated.Value _iter19 : this.success)
           {
-            _iter80.write(oprot);
+            _iter19.write(oprot);
           }
           oprot.writeListEnd();
         }

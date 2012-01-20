@@ -1,33 +1,52 @@
 #!/usr/local/bin/thrift --gen py:utf8strings --gen java:beans,nocamel,hashcode
 
-namespace java elephantdb.keyval.generated
+namespace java elephantdb.generated.keyval
 
 include "core.thrift"
 
-service ElephantDB extends ElephantDBShared {
-  // This interface will allow java clients to send kryo-serialized
-  // keys over the wire.
-  list<KryoRegistration> getRegistrations(1: string domain);
-  Value kryoGet(1: string domain, 2: binary key);
+service ElephantDB extends core.ElephantDBShared {  
+  core.Value get(1: string domain, 2: binary key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
+  core.Value getString(1: string domain, 2: string key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
   
-  Value get(1: string domain, 2: binary key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  Value getString(1: string domain, 2: string key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  Value getInt(1: string domain, 2: i32 key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  Value getLong(1: string domain, 2: i64 key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+  core.Value getInt(1: string domain, 2: i32 key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
 
-  list<Value> multiGet(1: string domain, 2: list<binary> key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  list<Value> multiGetString(1: string domain, 2: list<string> key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  list<Value> multiGetInt(1: string domain, 2: list<i32> key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
-  list<Value> multiGetLong(1: string domain, 2: list<i64> key)
-    throws (1: DomainNotFoundException dnfe, 2: HostsDownException hde, 3: DomainNotLoadedException dnle);
+  core.Value getLong(1: string domain, 2: i64 key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
+  
+  list<core.Value> multiGet(1: string domain, 2: list<binary> key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
+  
+  list<core.Value> multiGetString(1: string domain, 2: list<string> key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
+  
+  list<core.Value> multiGetInt(1: string domain, 2: list<i32> key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
+  
+  list<core.Value> multiGetLong(1: string domain, 2: list<i64> key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
 
-  list<Value> directMultiGet(1: string domain, 2: list<binary> key)
-    throws (1: DomainNotFoundException dnfe, 2: DomainNotLoadedException dnle, 3: WrongHostException whe);
+  list<core.Value> directMultiGet(1: string domain, 2: list<binary> key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
+  
 }

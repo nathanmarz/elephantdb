@@ -14,9 +14,9 @@
            [org.apache.thrift7.transport TTransport]
            [org.apache.thrift7 TException]
            [elephantdb.common.database Database]
-           [elephantdb.generated DomainNotFoundException
+           [elephantdb.generated Value DomainNotFoundException
             DomainNotLoadedException HostsDownException WrongHostException]
-           [elephantdb.keyval.generated ElephantDB$Client Value
+           [elephantdb.generated.keyval ElephantDB$Client 
             ElephantDB$Iface ElephantDB$Processor])
   (:gen-class))
 
@@ -140,30 +140,8 @@
                                    dom/trim-hosts (keys fail-map)))
                       (apply concat (vals fail-map)))))))))
 
-(defn kryo-registrations [local-store]
-  "TODO: Take a list of lists of kryo pairs, return the proper thrift
-   business."
-  (-> local-store .getSpec .getKryoPairs))
-
-(defn kryo-get
-  [service database domain-name key]
-  (thrift/assert-domain database domain-name)
-  (let [ser (.serializer (db/domain-get database domain-name))]
-    (.kryoGet service domain-name (.serialize ser key))))
-
-(defn get-registrations [database domain-name]
-  (let [domain (db/domain-get database domain-name)]
-    (kryo-registrations (.localStore domain))))
-
 (defn kv-service [database]
-  (reify ElephantDB$Iface
-    (getRegistrations [_ domain-name]
-      (thrift/assert-domain database domain-name)
-      (get-registrations database domain-name))
-
-    (kryoGet [this domain-name key]
-      (kryo-get this database domain-name key))
-    
+  (reify ElephantDB$Iface    
     (directMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
       (try (if-let [val-seq (direct-multiget database domain-name keys)]

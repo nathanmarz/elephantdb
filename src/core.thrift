@@ -1,6 +1,7 @@
 #!/usr/local/bin/thrift --gen py:utf8strings --gen java:beans,nocamel,hashcode
 
 namespace java elephantdb.generated
+namespace py elephantdb
 
 struct Value {
   1: optional binary data;

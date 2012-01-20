@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
-package elephantdb.generated;
+package elephantdb.generated.search;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import java.util.List;
@@ -23,15 +23,15 @@ import org.slf4j.LoggerFactory;
 
 public class ElephantDBSearch {
 
-  public interface Iface extends ElephantDBShared.Iface {
+  public interface Iface extends elephantdb.generated.ElephantDBShared.Iface {
 
   }
 
-  public interface AsyncIface extends ElephantDBShared .AsyncIface {
+  public interface AsyncIface extends elephantdb.generated.ElephantDBShared .AsyncIface {
 
   }
 
-  public static class Client extends ElephantDBShared.Client implements Iface {
+  public static class Client extends elephantdb.generated.ElephantDBShared.Client implements Iface {
     public static class Factory implements org.apache.thrift7.TServiceClientFactory<Client> {
       public Factory() {}
       public Client getClient(org.apache.thrift7.protocol.TProtocol prot) {
@@ -52,7 +52,7 @@ public class ElephantDBSearch {
     }
 
   }
-  public static class AsyncClient extends ElephantDBShared.AsyncClient implements AsyncIface {
+  public static class AsyncClient extends elephantdb.generated.ElephantDBShared.AsyncClient implements AsyncIface {
     public static class Factory implements org.apache.thrift7.async.TAsyncClientFactory<AsyncClient> {
       private org.apache.thrift7.async.TAsyncClientManager clientManager;
       private org.apache.thrift7.protocol.TProtocolFactory protocolFactory;
@@ -71,7 +71,7 @@ public class ElephantDBSearch {
 
   }
 
-  public static class Processor<I extends Iface> extends ElephantDBShared.Processor implements org.apache.thrift7.TProcessor {
+  public static class Processor<I extends Iface> extends elephantdb.generated.ElephantDBShared.Processor implements org.apache.thrift7.TProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class.getName());
     public Processor(I iface) {
       super(iface, getProcessMap(new HashMap<String, org.apache.thrift7.ProcessFunction<I, ? extends org.apache.thrift7.TBase>>()));

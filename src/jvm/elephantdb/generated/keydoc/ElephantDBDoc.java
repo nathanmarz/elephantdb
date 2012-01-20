@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
-package elephantdb.generated;
+package elephantdb.generated.keydoc;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import java.util.List;
@@ -23,17 +23,17 @@ import org.slf4j.LoggerFactory;
 
 public class ElephantDBDoc {
 
-  public interface Iface extends ElephantDBShared.Iface {
+  public interface Iface extends elephantdb.generated.ElephantDBShared.Iface {
 
-    public Value get(String domain, String key) throws org.apache.thrift7.TException;
+    public elephantdb.generated.Value get(String domain, String key) throws org.apache.thrift7.TException;
 
-    public Value getField(String domain, String key, String field) throws org.apache.thrift7.TException;
+    public elephantdb.generated.Value getField(String domain, String key, String field) throws org.apache.thrift7.TException;
 
-    public Value getFields(String domain, String key, List<String> fields) throws org.apache.thrift7.TException;
+    public elephantdb.generated.Value getFields(String domain, String key, List<String> fields) throws org.apache.thrift7.TException;
 
   }
 
-  public interface AsyncIface extends ElephantDBShared .AsyncIface {
+  public interface AsyncIface extends elephantdb.generated.ElephantDBShared .AsyncIface {
 
     public void get(String domain, String key, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.get_call> resultHandler) throws org.apache.thrift7.TException;
 
@@ -43,7 +43,7 @@ public class ElephantDBDoc {
 
   }
 
-  public static class Client extends ElephantDBShared.Client implements Iface {
+  public static class Client extends elephantdb.generated.ElephantDBShared.Client implements Iface {
     public static class Factory implements org.apache.thrift7.TServiceClientFactory<Client> {
       public Factory() {}
       public Client getClient(org.apache.thrift7.protocol.TProtocol prot) {
@@ -63,7 +63,7 @@ public class ElephantDBDoc {
       super(iprot, oprot);
     }
 
-    public Value get(String domain, String key) throws org.apache.thrift7.TException
+    public elephantdb.generated.Value get(String domain, String key) throws org.apache.thrift7.TException
     {
       send_get(domain, key);
       return recv_get();
@@ -77,7 +77,7 @@ public class ElephantDBDoc {
       sendBase("get", args);
     }
 
-    public Value recv_get() throws org.apache.thrift7.TException
+    public elephantdb.generated.Value recv_get() throws org.apache.thrift7.TException
     {
       get_result result = new get_result();
       receiveBase(result, "get");
@@ -87,7 +87,7 @@ public class ElephantDBDoc {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "get failed: unknown result");
     }
 
-    public Value getField(String domain, String key, String field) throws org.apache.thrift7.TException
+    public elephantdb.generated.Value getField(String domain, String key, String field) throws org.apache.thrift7.TException
     {
       send_getField(domain, key, field);
       return recv_getField();
@@ -102,7 +102,7 @@ public class ElephantDBDoc {
       sendBase("getField", args);
     }
 
-    public Value recv_getField() throws org.apache.thrift7.TException
+    public elephantdb.generated.Value recv_getField() throws org.apache.thrift7.TException
     {
       getField_result result = new getField_result();
       receiveBase(result, "getField");
@@ -112,7 +112,7 @@ public class ElephantDBDoc {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "getField failed: unknown result");
     }
 
-    public Value getFields(String domain, String key, List<String> fields) throws org.apache.thrift7.TException
+    public elephantdb.generated.Value getFields(String domain, String key, List<String> fields) throws org.apache.thrift7.TException
     {
       send_getFields(domain, key, fields);
       return recv_getFields();
@@ -127,7 +127,7 @@ public class ElephantDBDoc {
       sendBase("getFields", args);
     }
 
-    public Value recv_getFields() throws org.apache.thrift7.TException
+    public elephantdb.generated.Value recv_getFields() throws org.apache.thrift7.TException
     {
       getFields_result result = new getFields_result();
       receiveBase(result, "getFields");
@@ -138,7 +138,7 @@ public class ElephantDBDoc {
     }
 
   }
-  public static class AsyncClient extends ElephantDBShared.AsyncClient implements AsyncIface {
+  public static class AsyncClient extends elephantdb.generated.ElephantDBShared.AsyncClient implements AsyncIface {
     public static class Factory implements org.apache.thrift7.async.TAsyncClientFactory<AsyncClient> {
       private org.apache.thrift7.async.TAsyncClientManager clientManager;
       private org.apache.thrift7.protocol.TProtocolFactory protocolFactory;
@@ -180,7 +180,7 @@ public class ElephantDBDoc {
         prot.writeMessageEnd();
       }
 
-      public Value getResult() throws org.apache.thrift7.TException {
+      public elephantdb.generated.Value getResult() throws org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -218,7 +218,7 @@ public class ElephantDBDoc {
         prot.writeMessageEnd();
       }
 
-      public Value getResult() throws org.apache.thrift7.TException {
+      public elephantdb.generated.Value getResult() throws org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -256,7 +256,7 @@ public class ElephantDBDoc {
         prot.writeMessageEnd();
       }
 
-      public Value getResult() throws org.apache.thrift7.TException {
+      public elephantdb.generated.Value getResult() throws org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -268,7 +268,7 @@ public class ElephantDBDoc {
 
   }
 
-  public static class Processor<I extends Iface> extends ElephantDBShared.Processor implements org.apache.thrift7.TProcessor {
+  public static class Processor<I extends Iface> extends elephantdb.generated.ElephantDBShared.Processor implements org.apache.thrift7.TProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class.getName());
     public Processor(I iface) {
       super(iface, getProcessMap(new HashMap<String, org.apache.thrift7.ProcessFunction<I, ? extends org.apache.thrift7.TBase>>()));
@@ -734,7 +734,7 @@ public class ElephantDBDoc {
 
     private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.STRUCT, (short)0);
 
-    private Value success; // required
+    private elephantdb.generated.Value success; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -800,7 +800,7 @@ public class ElephantDBDoc {
     static {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(get_result.class, metaDataMap);
     }
@@ -809,7 +809,7 @@ public class ElephantDBDoc {
     }
 
     public get_result(
-      Value success)
+      elephantdb.generated.Value success)
     {
       this();
       this.success = success;
@@ -820,7 +820,7 @@ public class ElephantDBDoc {
      */
     public get_result(get_result other) {
       if (other.is_set_success()) {
-        this.success = new Value(other.success);
+        this.success = new elephantdb.generated.Value(other.success);
       }
     }
 
@@ -833,11 +833,11 @@ public class ElephantDBDoc {
       this.success = null;
     }
 
-    public Value get_success() {
+    public elephantdb.generated.Value get_success() {
       return this.success;
     }
 
-    public void set_success(Value success) {
+    public void set_success(elephantdb.generated.Value success) {
       this.success = success;
     }
 
@@ -862,7 +862,7 @@ public class ElephantDBDoc {
         if (value == null) {
           unset_success();
         } else {
-          set_success((Value)value);
+          set_success((elephantdb.generated.Value)value);
         }
         break;
 
@@ -965,7 +965,7 @@ public class ElephantDBDoc {
         switch (field.id) {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.success = new Value();
+              this.success = new elephantdb.generated.Value();
               this.success.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -1522,7 +1522,7 @@ public class ElephantDBDoc {
 
     private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.STRUCT, (short)0);
 
-    private Value success; // required
+    private elephantdb.generated.Value success; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -1588,7 +1588,7 @@ public class ElephantDBDoc {
     static {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getField_result.class, metaDataMap);
     }
@@ -1597,7 +1597,7 @@ public class ElephantDBDoc {
     }
 
     public getField_result(
-      Value success)
+      elephantdb.generated.Value success)
     {
       this();
       this.success = success;
@@ -1608,7 +1608,7 @@ public class ElephantDBDoc {
      */
     public getField_result(getField_result other) {
       if (other.is_set_success()) {
-        this.success = new Value(other.success);
+        this.success = new elephantdb.generated.Value(other.success);
       }
     }
 
@@ -1621,11 +1621,11 @@ public class ElephantDBDoc {
       this.success = null;
     }
 
-    public Value get_success() {
+    public elephantdb.generated.Value get_success() {
       return this.success;
     }
 
-    public void set_success(Value success) {
+    public void set_success(elephantdb.generated.Value success) {
       this.success = success;
     }
 
@@ -1650,7 +1650,7 @@ public class ElephantDBDoc {
         if (value == null) {
           unset_success();
         } else {
-          set_success((Value)value);
+          set_success((elephantdb.generated.Value)value);
         }
         break;
 
@@ -1753,7 +1753,7 @@ public class ElephantDBDoc {
         switch (field.id) {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.success = new Value();
+              this.success = new elephantdb.generated.Value();
               this.success.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -2235,13 +2235,13 @@ public class ElephantDBDoc {
           case 3: // FIELDS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list97 = iprot.readListBegin();
-                this.fields = new ArrayList<String>(_list97.size);
-                for (int _i98 = 0; _i98 < _list97.size; ++_i98)
+                org.apache.thrift7.protocol.TList _list0 = iprot.readListBegin();
+                this.fields = new ArrayList<String>(_list0.size);
+                for (int _i1 = 0; _i1 < _list0.size; ++_i1)
                 {
-                  String _elem99; // required
-                  _elem99 = iprot.readString();
-                  this.fields.add(_elem99);
+                  String _elem2; // required
+                  _elem2 = iprot.readString();
+                  this.fields.add(_elem2);
                 }
                 iprot.readListEnd();
               }
@@ -2276,9 +2276,9 @@ public class ElephantDBDoc {
         oprot.writeFieldBegin(FIELDS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.fields.size()));
-          for (String _iter100 : this.fields)
+          for (String _iter3 : this.fields)
           {
-            oprot.writeString(_iter100);
+            oprot.writeString(_iter3);
           }
           oprot.writeListEnd();
         }
@@ -2347,7 +2347,7 @@ public class ElephantDBDoc {
 
     private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.STRUCT, (short)0);
 
-    private Value success; // required
+    private elephantdb.generated.Value success; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -2413,7 +2413,7 @@ public class ElephantDBDoc {
     static {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getFields_result.class, metaDataMap);
     }
@@ -2422,7 +2422,7 @@ public class ElephantDBDoc {
     }
 
     public getFields_result(
-      Value success)
+      elephantdb.generated.Value success)
     {
       this();
       this.success = success;
@@ -2433,7 +2433,7 @@ public class ElephantDBDoc {
      */
     public getFields_result(getFields_result other) {
       if (other.is_set_success()) {
-        this.success = new Value(other.success);
+        this.success = new elephantdb.generated.Value(other.success);
       }
     }
 
@@ -2446,11 +2446,11 @@ public class ElephantDBDoc {
       this.success = null;
     }
 
-    public Value get_success() {
+    public elephantdb.generated.Value get_success() {
       return this.success;
     }
 
-    public void set_success(Value success) {
+    public void set_success(elephantdb.generated.Value success) {
       this.success = success;
     }
 
@@ -2475,7 +2475,7 @@ public class ElephantDBDoc {
         if (value == null) {
           unset_success();
         } else {
-          set_success((Value)value);
+          set_success((elephantdb.generated.Value)value);
         }
         break;
 
@@ -2578,7 +2578,7 @@ public class ElephantDBDoc {
         switch (field.id) {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.success = new Value();
+              this.success = new elephantdb.generated.Value();
               this.success.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
