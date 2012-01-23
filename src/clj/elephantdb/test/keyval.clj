@@ -159,8 +159,8 @@
 ;; TODO: Add in the ability to re-bind the host->shard decision.
 
 (defn mk-service-handler [database]
+  (db/prepare database)
   (let [handler  (doto (kv/kv-service database)
-                   (db/prepare)
                    (.updateAll))]
     (loop [times 20]
       (if (pos? times)
@@ -173,17 +173,21 @@
 
 ;; TODO: Fake out host->shard function, start an updater, and cancel
 ;; with future-cancel.
+(defn with-service-handler*
+  [handler-fn name->docs & {:keys [host-shard-fn conf-map]}]
+  (t/with-fs-tmp [_ remote-tmp]
+    (t/with-local-tmp [_ local-tmp]
+      (let [db (build-unsharded-test-db local-tmp remote-tmp
+                                        name->docs conf-map)
+            updater (db/launch-updater! db (:update-interval-s conf-map))
+            handler (mk-service-handler db)]
+        (try (handler-fn handler)
+             (finally (.shutdown handler)
+                      (future-cancel updater)))))))
+
 (defmacro with-service-handler
-  [[sym name->docs & {:keys [host-shard-fn conf-map]}] & body]
-  `(t/with-fs-tmp [fs# remote-tmp#]
-     (t/with-local-tmp [lfs# local-tmp#]
-       (let [db#  (build-unsharded-test-db local-tmp# remote-tmp#
-                                           ~name->docs ~conf-map)
-             ~sym     (mk-service-handler db#)
-             updater# (db/launch-updater! db#)]
-         (try ~@body
-              (finally (.shutdown ~sym)
-                       (future-cancel updater#)))))))
+  [[sym & opts] & body]
+  `(with-service-handler* (fn [~sym] ~@body) ~@opts))
 
 (defn mk-mocked-remote-multiget-fn
   [domain-to-host-to-shards shards-to-pairs down-hosts]
@@ -196,7 +200,7 @@
           pairs (apply concat (vals (select-keys shards-to-pairs shards)))]
       (for [key keys]
         (if-let [myval (first (filter #(= key (first %)) pairs))]
-          (kv/mk-value (second myval))
+          (thrift/mk-value (second myval))
           (throw (thrift/wrong-host-ex)))))))
 
 (defmacro with-mocked-remote

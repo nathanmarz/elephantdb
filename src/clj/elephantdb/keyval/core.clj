@@ -14,18 +14,11 @@
            [org.apache.thrift7.transport TTransport]
            [org.apache.thrift7 TException]
            [elephantdb.common.database Database]
-           [elephantdb.generated Value DomainNotFoundException
+           [elephantdb.generated DomainNotFoundException
             DomainNotLoadedException HostsDownException WrongHostException]
            [elephantdb.generated.keyval ElephantDB$Client 
             ElephantDB$Iface ElephantDB$Processor])
   (:gen-class))
-
-(defn mk-value
-  "Wraps the supplied byte array in an instance of
-  `elephantdb.generated.Value`."
-  [val]
-  (doto (Value.)
-    (.set_data ^Value val)))
 
 ;; ## Thrift Connection
 
@@ -145,7 +138,7 @@
     (directMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
       (try (if-let [val-seq (direct-multiget database domain-name keys)]
-             (doall (map mk-value val-seq))
+             (doall (map thrift/mk-value val-seq))
              (throw (thrift/domain-not-loaded-ex)))
            (catch RuntimeException _
              (throw (thrift/wrong-host-ex)))))

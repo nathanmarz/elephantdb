@@ -20,8 +20,7 @@
   "Returns true of the specs of all supplied DomainStores match, false
   otherwise."
   [& stores]
-  (apply = (map #(.getSpec %)
-                stores)))
+  (apply = (map #(.getSpec %) stores)))
 
 ;; `existing-shard-set` is good for testing, but we don't really need
 ;; it in a working production system (since the domain knows what
@@ -221,7 +220,9 @@
 
 (defmacro with-basic-domain
   [[sym & opts] & body]
-  `(apply (fn [~sym] ~@body) opts))
+  `(with-basic-domain*
+     (fn [~sym] ~@body)
+     ~@opts))
 
 ;; ## Generic Extensions for other persistences
 
@@ -278,7 +279,7 @@
                               {:local-root local-root
                                :domains    path-map}))))
 
-(defn with-database
+(defn with-database*
   "Generates a database with the supplied sequence of domain names and
   binds it to `sym` inside of the form."
   [dom-fn domain-seq]
@@ -288,9 +289,9 @@
 
 (defmacro with-database
   [[sym domain-seq] & body]
-  (with-database*
-    (fn [~sym] ~@body)
-    domain-seq))
+  `(with-database*
+     (fn [~sym] ~@body)
+     ~domain-seq))
 
 (defn build-unsharded-test-db
   "Accepts a local and remote root directory and a map of domain name
@@ -315,10 +316,10 @@
   [db-fn domain-seq]
   (t/with-fs-tmp [_ remote]
     (t/with-local-tmp [_ local]
-      (afn (build-unsharded-test-db local remote domain-seq)))))
+      (db-fn (build-unsharded-test-db local remote domain-seq)))))
 
 (defmacro with-unsharded-database
   [[sym domain-seq] & body]
-  (with-unsharded-database*
-    (fn [~sym] ~@body)
-    domain-seq))
+  `(with-unsharded-database*
+     (fn [~sym] ~@body)
+     ~domain-seq))

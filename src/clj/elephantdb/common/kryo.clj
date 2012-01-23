@@ -23,7 +23,6 @@
   (let [domain (db/domain-get database domain-name)]
     (kryo-registrations (.localStore domain))))
 
-
 (defn prep [^EndPoint point]
   (doto (.getKryo point)
     (ObjectSpace/registerClasses)

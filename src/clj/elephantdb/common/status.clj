@@ -17,7 +17,8 @@
 
 (defrecord KeywordStatus [status]
   IStatus
-  (ready? [x]    (-> x :status (= :ready)))
+  (ready? [x] (contains? #{:ready :updating}
+                         (:status x)))
   (failed? [x]   (-> x :status (= :failed)))
   (shutdown? [x] (-> x :status (= :shutdown)))
   (loading? [x] (contains? #{:updating :loading}

@@ -8,7 +8,7 @@
            [org.apache.thrift7.transport TTransport
             TFramedTransport TSocket TNonblockingServerSocket]          
            [elephantdb.common.database Database]
-           [elephantdb.generated DomainStatus$_Fields Status
+           [elephantdb.generated Value DomainStatus$_Fields Status
             DomainNotFoundException DomainNotLoadedException
             HostsDownException WrongHostException
             DomainStatus LoadingStatus 
@@ -37,7 +37,8 @@
 (extend-type DomainStatus
   status/IStatus
   (ready? [status]
-    (= (.getSetField status) DomainStatus$_Fields/READY))
+    (or (= (.getSetField status) DomainStatus$_Fields/READY)
+        (.get_update_status (.get_ready status))))
  
   (failed? [status]
     (= (.getSetField status) DomainStatus$_Fields/FAILED))
@@ -90,6 +91,15 @@
   [database domain-name]
   (when-not (db/domain-get database domain-name)
     (domain-not-found-ex domain-name)))
+
+;; # Value Wrappers
+
+(defn mk-value
+  "Wraps the supplied byte array in an instance of
+  `elephantdb.generated.Value`."
+  [val]
+  (doto (Value.)
+    (.set_data ^Value val)))
 
 ;; ## Connections
 
