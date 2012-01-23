@@ -14,14 +14,17 @@
            [java.nio ByteBuffer]))
 
 ;; TODO: Make the checker chatty.
-(defn barr-compare [expected-ds]
+(defn gets-barrs [expected-ds]
   (chatty-checker [actual-ds]
                   (barrs= (seq/collectify expected-ds)
-                          (seq/collectify actual-ds))))
+                          (map #(.get_data %)
+                               (seq/collectify actual-ds)))))
 
-(defn get-val
-  [service domain-name k]
-  (.get_data (.get service domain-name (ByteBuffer/wrap k))))
+(defn buf
+  "Accepts a series of numbers and returns a ByteBuffer containing
+  each number in byte-array form."
+  [& xs]
+  (ByteBuffer/wrap (apply barr xs)))
 
 (defmacro expected-domain-data [handler domain & key-value-pairs]
   `(doseq [[key-sym# val-sym#] (partition 2 [~@key-value-pairs])]
@@ -51,18 +54,32 @@
 
 (fact "Test that we don't need to wrap in advance."
   (with-service-handler [handler
-                         {"test" (mk-docseq {(barr 1) (barr 2)
-                                             (barr 3) (barr 4)
-                                             (barr 5) (barr 6)
-                                             "key"    "val"
-                                             1         (barr 10)
-                                             2         (barr 11)
-                                             3         (barr 12)})}
+                         {"test" (mk-docseq {(barr 3) (barr 4)
+                                             (barr 4) (barr 5)
+                                             1        (barr 10)
+                                             2        (barr 11)
+                                             "key"    (barr 10)
+                                             "key2"   (barr 14)})}
                          :conf-map {:update-interval-s 0.01}]
-    (get-val handler "test" (barr 1)) => (barr-compare (barr 2))
-    (.get_data (.getLong handler "test" 1)) => (barr-compare (barr 10))
-    (map #(.get_data %)
-         (.multiGetLong handler "test" [1 2 3])) => (barr-compare [10 11 12])))
+
+    "Calling get with a ByteBuffer produces the proper value."
+    (.get handler "test" (buf 3)) => (gets-barrs (barr 4))
+    (.multiGet handler "test" [(buf 3) (buf 4)]) => (gets-barrs [(barr 4)
+                                                                 (barr 5)])
+
+    "getInt and getLong allow you to use numeric keys directly. Note
+     that getInt and getLong have the same behavior."
+    (.getInt handler "test" 1) => (gets-barrs (barr 10))
+    (.multiGetInt handler "test" [1 2]) => (gets-barrs [(barr 10)
+                                                        (barr 11)])
+    (.getLong handler "test" 1) => (gets-barrs (barr 10))
+    (.multiGetLong handler "test" [1 2])  => (gets-barrs [(barr 10)
+                                                          (barr 11)])
+
+    "getString takes a bare string key."
+    (.getString handler "test" "key")  => (gets-barrs (barr 10))
+    (.multiGetString handler "test" ["key" "key2"]) => (gets-barrs [(barr 10)
+                                                                    (barr 14)])))
 
 (fact "Basic tests."
   "TODO: Replace mk-docseq with an actual service handler tailored for
@@ -85,19 +102,18 @@
 
       "Test of directMultiGet."
       (letfn [(direct-multiget [ks]
-                (map #(.get_data %)
-                     (.directMultiGet handler "test1" ks)))
+                (.directMultiGet handler "test1" ks))
               (direct-get [k]
                 (first (direct-multiget [k])))]
         "Multiget should retrieve values across shards, returning them
         in order. (TODO: mock out shard order.)"
         (fact (direct-multiget [(barr 0) (barr 2) (barr 1)])
-          => (just-barrs [(barr 0 0) (barr 2 2) (barr 1 1)]))
+          => (gets-barrs [(barr 0 0) (barr 2 2) (barr 1 1)]))
         
-        (direct-get (barr 0)) => (barr-compare (barr 0 0))
+        (direct-get (barr 0)) => (gets-barrs (barr 0 0))
 
         "Currently failing -- test multiGet."
-        (get-val handler "test1" (barr 0)) => (barr-compare (barr 0 0))))))
+        (.get handler "test1" (buf 0)) => (gets-barrs (barr 0 0))))))
 
 (fact "Domain should contain all input key-value pairs."
   (let [input-map {"key" "val"

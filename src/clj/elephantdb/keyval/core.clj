@@ -133,6 +133,15 @@
                                    dom/trim-hosts (keys fail-map)))
                       (apply concat (vals fail-map)))))))))
 
+(defn kv-get-fn [service domain-name db]
+  (partial multi-get*
+           service
+           domain-name
+           (:port db)
+           (u/local-hostname)))
+
+;; TODO: Catch errors if we're not dealing specifically with a byte array.
+
 (defn kv-service [database]
   (reify ElephantDB$Iface    
     (directMultiGet [_ domain-name keys]
@@ -145,33 +154,48 @@
 
     (multiGet [this domain-name key-seq]
       (thrift/assert-domain database domain-name)
-      (let [get-fn (partial multi-get*
-                            this
-                            domain-name
-                            (:port database)
-                            (u/local-hostname))]
+      (let [get-fn (kv-get-fn this domain-name database)]
+        (multi-get get-fn
+                   database
+                   domain-name
+                   (map (fn [^ByteBuffer x]
+                          (.array x))
+                        key-seq))))
+
+    (multiGetInt [this domain-name key-seq]
+      (thrift/assert-domain database domain-name)
+      (let [get-fn (kv-get-fn this domain-name database)]
         (multi-get get-fn database domain-name key-seq)))
 
-    (multiGetInt [this domain key-seq]
-      (.multiGet this domain key-seq))
-
-    (multiGetLong [this domain key-seq]
-      (.multiGet this domain key-seq))
+    (multiGetLong [this domain-name key-seq]
+      (thrift/assert-domain database domain-name)
+      (let [get-fn (kv-get-fn this domain-name database)]
+        (multi-get get-fn database domain-name key-seq)))
     
-    (multiGetString [this domain key-seq]
-      (.multiGet this domain key-seq))
+    (multiGetString [this domain-name key-seq]
+      (thrift/assert-domain database domain-name)
+      (let [get-fn (kv-get-fn this domain-name database)]
+        (multi-get get-fn database domain-name key-seq)))
 
-    (get [this domain key]
-      (first (.multiGet this domain [(.array key)])))
+    (get [this domain-name key]
+      (thrift/assert-domain database domain-name)
+      (let [get-fn (kv-get-fn this domain-name database)]
+        (first (multi-get get-fn database domain-name [(.array key)]))))
     
-    (getInt [this domain key]
-      (first (.multiGet this domain [key])))
+    (getInt [this domain-name key]
+      (thrift/assert-domain database domain-name)
+      (let [get-fn (kv-get-fn this domain-name database)]
+        (first (multi-get get-fn database domain-name [key]))))
 
-    (getLong [this domain key]
-      (first (.multiGet this domain [key])))
+    (getLong [this domain-name key]
+      (thrift/assert-domain database domain-name)
+      (let [get-fn (kv-get-fn this domain-name database)]
+        (first (multi-get get-fn database domain-name [key]))))
 
-    (getString [this domain key]
-      (first (.multiGet this domain [key])))
+    (getString [this domain-name key]
+      (thrift/assert-domain database domain-name)
+      (let [get-fn (kv-get-fn this domain-name database)]
+        (first (multi-get get-fn database domain-name [key]))))
     
     (getDomainStatus [_ domain-name]
       "Returns the thrift status of the supplied domain-name."

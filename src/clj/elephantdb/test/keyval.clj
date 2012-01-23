@@ -182,7 +182,7 @@
             updater (db/launch-updater! db (:update-interval-s conf-map))
             handler (mk-service-handler db)]
         (try (handler-fn handler)
-             (finally (.shutdown handler)
+             (finally (.shutdown db)
                       (future-cancel updater)))))))
 
 (defmacro with-service-handler
