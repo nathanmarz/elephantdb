@@ -281,25 +281,20 @@
   (shutdown [this]
     "Shutting down a domain requires closing all of its shards."
     (status/to-shutdown this)
-    (u/with-write-lock (.rwLock this)
+    (u/with-write-lock rwLock
       (close-shards! (-> (domain-data this)
                          (get :shards)))))
  
   IStateful
-  (get-status [this]
-    @(.status this))
+  (get-status [_] @status)
   (to-ready [this]
-    (-> (.status this)
-        (status/swap-status! status/to-ready)))
-  (to-loading [this]
-    (-> (.status this)
-        (status/swap-status! status/to-loading)))
-  (to-failed [this msg]
-    (-> (.status this)
-        (status/swap-status! status/to-failed msg)))
-  (to-shutdown [this]
-    (-> (.status this)
-        (status/swap-status! status/to-shutdown)))
+    (status/swap-status! status status/to-ready))
+  (to-loading [_]
+    (status/swap-status! status status/to-loading))
+  (to-failed [_ msg]
+    (status/swap-status! status status/to-failed msg))
+  (to-shutdown []
+    (status/swap-status! status status/to-shutdown))
 
   IStatus
   (ready? [this] (status/ready? (status/get-status this)))

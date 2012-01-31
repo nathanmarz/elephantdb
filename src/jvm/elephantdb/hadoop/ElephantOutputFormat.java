@@ -147,9 +147,9 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
     }
 
-    public RecordWriter<IntWritable, BytesWritable> getRecordWriter(FileSystem fs,
-        JobConf conf, String string, Progressable progressable) throws IOException {
-        LOG.info("GETTING AGRS: " + ARGS_CONF);
+    public RecordWriter<IntWritable, BytesWritable> getRecordWriter
+            (FileSystem fs,JobConf conf, String string, Progressable progressable)
+            throws IOException {
         return new ElephantRecordWriter(conf, (Args) Utils.getObject(conf, ARGS_CONF), progressable);
     }
 
