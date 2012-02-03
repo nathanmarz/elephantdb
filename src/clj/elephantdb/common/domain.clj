@@ -293,7 +293,7 @@
     (status/swap-status! status status/to-loading))
   (to-failed [_ msg]
     (status/swap-status! status status/to-failed msg))
-  (to-shutdown []
+  (to-shutdown [_]
     (status/swap-status! status status/to-shutdown))
 
   IStatus

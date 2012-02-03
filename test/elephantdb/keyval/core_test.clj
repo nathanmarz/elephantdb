@@ -38,6 +38,10 @@
   (for [[k v] m]
     [k (KeyValDocument. k v)]))
 
+(defn serial [xs]
+  (let [ser (Utils/makeSerializer (berkeley-spec 4))]
+    (map #(.serialize ser %) xs)))
+
 (with-unsharded-database
   [db {"domain-a" [[1 (KeyValDocument. 1 2)]
                    [3 (KeyValDocument. 3 4)]
@@ -79,7 +83,13 @@
     "getString takes a bare string key."
     (.getString handler "test" "key")  => (gets-barrs (barr 10))
     (.multiGetString handler "test" ["key" "key2"]) => (gets-barrs [(barr 10)
-                                                                    (barr 14)])))
+                                                                    (barr 14)])
+
+    "getString takes a bare string key."
+    (.getString handler "test" "key")  => (gets-barrs (barr 10))
+    (->> (serial [1 "key2"])
+         (.directKryoMultiGet handler "test")) => (gets-barrs [(barr 10)
+                                                               (barr 14)])))
 
 (fact "Basic tests."
   "TODO: Replace mk-docseq with an actual service handler tailored for
