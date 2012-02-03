@@ -261,6 +261,7 @@
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
+    (future (db/update-all! database))
     (thrift/launch-server! kv-processor
                            (kv-service database)
                            (:port conf-map))))
