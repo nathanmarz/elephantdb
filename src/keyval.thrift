@@ -48,5 +48,9 @@ service ElephantDB extends core.ElephantDBShared {
     throws (1: core.DomainNotFoundException dnfe,
   2: core.HostsDownException hde,
   3: core.DomainNotLoadedException dnle);
-  
+
+  list<core.Value> directKryoMultiGet(1: string domain, 2: list<binary> key)
+    throws (1: core.DomainNotFoundException dnfe,
+  2: core.HostsDownException hde,
+  3: core.DomainNotLoadedException dnle);
 }

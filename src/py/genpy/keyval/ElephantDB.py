@@ -89,6 +89,14 @@ class Iface(elephantdb.ElephantDBShared.Iface):
     """
     pass
 
+  def directKryoMultiGet(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    pass
+
 
 class Client(elephantdb.ElephantDBShared.Client, Iface):
   def __init__(self, iprot, oprot=None):
@@ -436,6 +444,44 @@ class Client(elephantdb.ElephantDBShared.Client, Iface):
       raise result.dnle
     raise TApplicationException(TApplicationException.MISSING_RESULT, "directMultiGet failed: unknown result");
 
+  def directKryoMultiGet(self, domain, key):
+    """
+    Parameters:
+     - domain
+     - key
+    """
+    self.send_directKryoMultiGet(domain, key)
+    return self.recv_directKryoMultiGet()
+
+  def send_directKryoMultiGet(self, domain, key):
+    self._oprot.writeMessageBegin('directKryoMultiGet', TMessageType.CALL, self._seqid)
+    args = directKryoMultiGet_args()
+    args.domain = domain
+    args.key = key
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_directKryoMultiGet(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = directKryoMultiGet_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.dnfe is not None:
+      raise result.dnfe
+    if result.hde is not None:
+      raise result.hde
+    if result.dnle is not None:
+      raise result.dnle
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "directKryoMultiGet failed: unknown result");
+
 
 class Processor(elephantdb.ElephantDBShared.Processor, Iface, TProcessor):
   def __init__(self, handler):
@@ -449,6 +495,7 @@ class Processor(elephantdb.ElephantDBShared.Processor, Iface, TProcessor):
     self._processMap["multiGetInt"] = Processor.process_multiGetInt
     self._processMap["multiGetLong"] = Processor.process_multiGetLong
     self._processMap["directMultiGet"] = Processor.process_directMultiGet
+    self._processMap["directKryoMultiGet"] = Processor.process_directKryoMultiGet
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -623,6 +670,24 @@ class Processor(elephantdb.ElephantDBShared.Processor, Iface, TProcessor):
     except elephantdb.ttypes.DomainNotLoadedException, dnle:
       result.dnle = dnle
     oprot.writeMessageBegin("directMultiGet", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_directKryoMultiGet(self, seqid, iprot, oprot):
+    args = directKryoMultiGet_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = directKryoMultiGet_result()
+    try:
+      result.success = self._handler.directKryoMultiGet(args.domain, args.key)
+    except elephantdb.ttypes.DomainNotFoundException, dnfe:
+      result.dnfe = dnfe
+    except elephantdb.ttypes.HostsDownException, hde:
+      result.hde = hde
+    except elephantdb.ttypes.DomainNotLoadedException, dnle:
+      result.dnle = dnle
+    oprot.writeMessageBegin("directKryoMultiGet", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -2217,6 +2282,193 @@ class directMultiGet_result:
       oprot.writeListBegin(TType.STRUCT, len(self.success))
       for iter69 in self.success:
         iter69.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    if self.dnfe is not None:
+      oprot.writeFieldBegin('dnfe', TType.STRUCT, 1)
+      self.dnfe.write(oprot)
+      oprot.writeFieldEnd()
+    if self.hde is not None:
+      oprot.writeFieldBegin('hde', TType.STRUCT, 2)
+      self.hde.write(oprot)
+      oprot.writeFieldEnd()
+    if self.dnle is not None:
+      oprot.writeFieldBegin('dnle', TType.STRUCT, 3)
+      self.dnle.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class directKryoMultiGet_args:
+  """
+  Attributes:
+   - domain
+   - key
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'domain', None, None, ), # 1
+    (2, TType.LIST, 'key', (TType.STRING,None), None, ), # 2
+  )
+
+  def __init__(self, domain=None, key=None,):
+    self.domain = domain
+    self.key = key
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.domain = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.LIST:
+          self.key = []
+          (_etype73, _size70) = iprot.readListBegin()
+          for _i74 in xrange(_size70):
+            _elem75 = iprot.readString();
+            self.key.append(_elem75)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('directKryoMultiGet_args')
+    if self.domain is not None:
+      oprot.writeFieldBegin('domain', TType.STRING, 1)
+      oprot.writeString(self.domain.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.key is not None:
+      oprot.writeFieldBegin('key', TType.LIST, 2)
+      oprot.writeListBegin(TType.STRING, len(self.key))
+      for iter76 in self.key:
+        oprot.writeString(iter76)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class directKryoMultiGet_result:
+  """
+  Attributes:
+   - success
+   - dnfe
+   - hde
+   - dnle
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT,(elephantdb.ttypes.Value, elephantdb.ttypes.Value.thrift_spec)), None, ), # 0
+    (1, TType.STRUCT, 'dnfe', (elephantdb.ttypes.DomainNotFoundException, elephantdb.ttypes.DomainNotFoundException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'hde', (elephantdb.ttypes.HostsDownException, elephantdb.ttypes.HostsDownException.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'dnle', (elephantdb.ttypes.DomainNotLoadedException, elephantdb.ttypes.DomainNotLoadedException.thrift_spec), None, ), # 3
+  )
+
+  def __init__(self, success=None, dnfe=None, hde=None, dnle=None,):
+    self.success = success
+    self.dnfe = dnfe
+    self.hde = hde
+    self.dnle = dnle
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype80, _size77) = iprot.readListBegin()
+          for _i81 in xrange(_size77):
+            _elem82 = elephantdb.ttypes.Value()
+            _elem82.read(iprot)
+            self.success.append(_elem82)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.dnfe = elephantdb.ttypes.DomainNotFoundException()
+          self.dnfe.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.hde = elephantdb.ttypes.HostsDownException()
+          self.hde.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.dnle = elephantdb.ttypes.DomainNotLoadedException()
+          self.dnle.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('directKryoMultiGet_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter83 in self.success:
+        iter83.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.dnfe is not None:
