@@ -7,21 +7,15 @@ echo Generating release $RELEASE
 DIR=_release/elephantdb-$RELEASE
 
 rm -rf _release
-export LEIN_ROOT=1
 rm *.zip
 rm *jar
-lein clean, deps, compile, jar
+export LEIN_ROOT=1 && lein clean, deps, compile, jar
 mkdir -p $DIR
 mkdir $DIR/lib
 cp elephantdb*jar $DIR/
 cp lib/*.jar $DIR/lib
 
 echo $RELEASE > $DIR/RELEASE
-
-cp -R log4j $DIR/
-mkdir $DIR/logs
-
-cp -R bin $DIR/
 
 cp README.md $DIR/
 cp LICENSE $DIR/
