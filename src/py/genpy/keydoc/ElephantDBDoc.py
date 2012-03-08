@@ -286,7 +286,7 @@ class get_result:
   """
 
   thrift_spec = (
-    (0, TType.STRUCT, 'success', (Value, Value.thrift_spec), None, ), # 0
+    (0, TType.STRUCT, 'success', (elephantdb.ttypes.Value, elephantdb.ttypes.Value.thrift_spec), None, ), # 0
   )
 
   def __init__(self, success=None,):
@@ -303,7 +303,7 @@ class get_result:
         break
       if fid == 0:
         if ftype == TType.STRUCT:
-          self.success = Value()
+          self.success = elephantdb.ttypes.Value()
           self.success.read(iprot)
         else:
           iprot.skip(ftype)
@@ -430,7 +430,7 @@ class getField_result:
   """
 
   thrift_spec = (
-    (0, TType.STRUCT, 'success', (Value, Value.thrift_spec), None, ), # 0
+    (0, TType.STRUCT, 'success', (elephantdb.ttypes.Value, elephantdb.ttypes.Value.thrift_spec), None, ), # 0
   )
 
   def __init__(self, success=None,):
@@ -447,7 +447,7 @@ class getField_result:
         break
       if fid == 0:
         if ftype == TType.STRUCT:
-          self.success = Value()
+          self.success = elephantdb.ttypes.Value()
           self.success.read(iprot)
         else:
           iprot.skip(ftype)
@@ -525,10 +525,10 @@ class getFields_args:
       elif fid == 3:
         if ftype == TType.LIST:
           self.fields = []
-          (_etype173, _size170) = iprot.readListBegin()
-          for _i174 in xrange(_size170):
-            _elem175 = iprot.readString().decode('utf-8')
-            self.fields.append(_elem175)
+          (_etype3, _size0) = iprot.readListBegin()
+          for _i4 in xrange(_size0):
+            _elem5 = iprot.readString().decode('utf-8')
+            self.fields.append(_elem5)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -553,8 +553,8 @@ class getFields_args:
     if self.fields is not None:
       oprot.writeFieldBegin('fields', TType.LIST, 3)
       oprot.writeListBegin(TType.STRING, len(self.fields))
-      for iter176 in self.fields:
-        oprot.writeString(iter176.encode('utf-8'))
+      for iter6 in self.fields:
+        oprot.writeString(iter6.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -582,7 +582,7 @@ class getFields_result:
   """
 
   thrift_spec = (
-    (0, TType.STRUCT, 'success', (Value, Value.thrift_spec), None, ), # 0
+    (0, TType.STRUCT, 'success', (elephantdb.ttypes.Value, elephantdb.ttypes.Value.thrift_spec), None, ), # 0
   )
 
   def __init__(self, success=None,):
@@ -599,7 +599,7 @@ class getFields_result:
         break
       if fid == 0:
         if ftype == TType.STRUCT:
-          self.success = Value()
+          self.success = elephantdb.ttypes.Value()
           self.success.read(iprot)
         else:
           iprot.skip(ftype)

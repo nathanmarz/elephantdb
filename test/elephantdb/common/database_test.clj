@@ -5,6 +5,9 @@
             [elephantdb.common.domain :as domain])
   (:import [elephantdb.document KeyValDocument]))
 
+(defn count-equals [n]
+  (chatty-checker [coll] (= n (count (seq coll)))))
+
 (t/with-database [db {"domain-a" {0 [(KeyValDocument. 1 2)]
                                   1 [(KeyValDocument. 3 4) (KeyValDocument. 5 6)]}}]
   (facts "Domain-get should return nil when the domain doesn't exist."
@@ -28,4 +31,4 @@
     "This is a half-baked test, but fine for now; we want to actually
     pass in data, not just check that the hardcoded data made it in
     all right."
-    (count (seq (domain-get db "domain-a"))) => 3))
+    (domain-get db "domain-a") => (count-equals 3)))

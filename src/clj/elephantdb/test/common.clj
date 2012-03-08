@@ -8,7 +8,7 @@
   (:import [java.nio ByteBuffer]
            [elephantdb.store DomainStore]
            [elephantdb.persistence ShardSet]
-           [elephantdb Utils DomainSpec ByteArray]
+           [elephantdb Utils DomainSpec]
            [org.apache.hadoop.io IntWritable]
            [elephantdb.hadoop ElephantOutputFormat
             ElephantOutputFormat$Args LocalElephantManager]
@@ -20,8 +20,7 @@
   "Returns true of the specs of all supplied DomainStores match, false
   otherwise."
   [& stores]
-  (apply = (map #(.getSpec %)
-                stores)))
+  (apply = (map #(.getSpec %) stores)))
 
 ;; `existing-shard-set` is good for testing, but we don't really need
 ;; it in a working production system (since the domain knows what
@@ -210,25 +209,20 @@
   (let [sharded-docs (shard-docs spec doc-seq :shard-fn shard-fn)]
     (create-domain! spec path sharded-docs :version version)))
 
+(defn with-basic-domain*
+  [dom-fn spec doc-seq & {:keys [version shard-fn]}]
+  (log/with-log-level :off
+    (t/with-fs-tmp [_ path]
+      (create-unsharded-domain! spec path doc-seq
+                                :version version
+                                :shard-fn shard-fn)
+      (dom-fn (dom/build-domain path)))))
+
 (defmacro with-basic-domain
-  "Used as:
-
-   (with-basic-domain [my-domain domain-spec
-                       [doc-1 doc-2...]
-                       :version 5
-                       :shard-fn (constantly 10)]
-          (seq my-domain))
-
-  A domain with the supplied domain-spec is bound to `sym` inside the
-  body of `with-domain`."
-  [[sym spec doc-seq & {:keys [version shard-fn]}] & body]
-  `(log/with-log-level :off
-     (t/with-fs-tmp [fs# path#]
-       (create-unsharded-domain! ~spec path# ~doc-seq
-                                 :version ~version
-                                 :shard-fn ~shard-fn)
-       (let [~sym (dom/build-domain path#)]
-         ~@body))))
+  [[sym & opts] & body]
+  `(with-basic-domain*
+     (fn [~sym] ~@body)
+     ~@opts))
 
 ;; ## Generic Extensions for other persistences
 
@@ -285,14 +279,19 @@
                               {:local-root local-root
                                :domains    path-map}))))
 
-(defmacro with-database
+(defn with-database*
   "Generates a database with the supplied sequence of domain names and
   binds it to `sym` inside of the form."
+  [dom-fn domain-seq]
+  (t/with-fs-tmp [_ remote]
+    (t/with-local-tmp [_ local]
+      (dom-fn (build-test-db local remote domain-seq)))))
+
+(defmacro with-database
   [[sym domain-seq] & body]
-  `(t/with-fs-tmp [fs# remote#]
-     (t/with-local-tmp [lfs# local#]
-       (let [~sym (build-test-db local# remote# ~domain-seq)]
-         ~@body))))
+  `(with-database*
+     (fn [~sym] ~@body)
+     ~domain-seq))
 
 (defn build-unsharded-test-db
   "Accepts a local and remote root directory and a map of domain name
@@ -311,11 +310,16 @@
                                :domains    path-map}))))
 
 
-(defmacro with-unsharded-database
+(defn with-unsharded-database*
   "Generates a database with the supplied sequence of domain names and
   binds it to `sym` inside of the form."
+  [db-fn domain-seq]
+  (t/with-fs-tmp [_ remote]
+    (t/with-local-tmp [_ local]
+      (db-fn (build-unsharded-test-db local remote domain-seq)))))
+
+(defmacro with-unsharded-database
   [[sym domain-seq] & body]
-  `(t/with-fs-tmp [fs# remote#]
-     (t/with-local-tmp [lfs# local#]
-       (let [~sym (build-unsharded-test-db local# remote# ~domain-seq)]
-         ~@body))))
+  `(with-unsharded-database*
+     (fn [~sym] ~@body)
+     ~domain-seq))

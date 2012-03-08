@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
-package elephantdb.generated;
+package elephantdb.generated.keyval;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import java.util.List;
@@ -23,37 +23,31 @@ import org.slf4j.LoggerFactory;
 
 public class ElephantDB {
 
-  public interface Iface extends ElephantDBShared.Iface {
+  public interface Iface extends elephantdb.generated.ElephantDBShared.Iface {
 
-    public List<KryoRegistration> getRegistrations(String domain) throws org.apache.thrift7.TException;
+    public elephantdb.generated.Value get(String domain, ByteBuffer key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public Value kryoGet(String domain, ByteBuffer key) throws org.apache.thrift7.TException;
+    public elephantdb.generated.Value getString(String domain, String key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public Value get(String domain, ByteBuffer key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
+    public elephantdb.generated.Value getInt(String domain, int key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public Value getString(String domain, String key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
+    public elephantdb.generated.Value getLong(String domain, long key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public Value getInt(String domain, int key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
+    public List<elephantdb.generated.Value> multiGet(String domain, List<ByteBuffer> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public Value getLong(String domain, long key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
+    public List<elephantdb.generated.Value> multiGetString(String domain, List<String> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public List<Value> multiGet(String domain, List<ByteBuffer> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
+    public List<elephantdb.generated.Value> multiGetInt(String domain, List<Integer> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public List<Value> multiGetString(String domain, List<String> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
+    public List<elephantdb.generated.Value> multiGetLong(String domain, List<Long> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public List<Value> multiGetInt(String domain, List<Integer> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
+    public List<elephantdb.generated.Value> directMultiGet(String domain, List<ByteBuffer> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
-    public List<Value> multiGetLong(String domain, List<Long> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException;
-
-    public List<Value> directMultiGet(String domain, List<ByteBuffer> key) throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, org.apache.thrift7.TException;
+    public List<elephantdb.generated.Value> directKryoMultiGet(String domain, List<ByteBuffer> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException;
 
   }
 
-  public interface AsyncIface extends ElephantDBShared .AsyncIface {
-
-    public void getRegistrations(String domain, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.getRegistrations_call> resultHandler) throws org.apache.thrift7.TException;
-
-    public void kryoGet(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.kryoGet_call> resultHandler) throws org.apache.thrift7.TException;
+  public interface AsyncIface extends elephantdb.generated.ElephantDBShared .AsyncIface {
 
     public void get(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.get_call> resultHandler) throws org.apache.thrift7.TException;
 
@@ -73,9 +67,11 @@ public class ElephantDB {
 
     public void directMultiGet(String domain, List<ByteBuffer> key, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.directMultiGet_call> resultHandler) throws org.apache.thrift7.TException;
 
+    public void directKryoMultiGet(String domain, List<ByteBuffer> key, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.directKryoMultiGet_call> resultHandler) throws org.apache.thrift7.TException;
+
   }
 
-  public static class Client extends ElephantDBShared.Client implements Iface {
+  public static class Client extends elephantdb.generated.ElephantDBShared.Client implements Iface {
     public static class Factory implements org.apache.thrift7.TServiceClientFactory<Client> {
       public Factory() {}
       public Client getClient(org.apache.thrift7.protocol.TProtocol prot) {
@@ -95,54 +91,7 @@ public class ElephantDB {
       super(iprot, oprot);
     }
 
-    public List<KryoRegistration> getRegistrations(String domain) throws org.apache.thrift7.TException
-    {
-      send_getRegistrations(domain);
-      return recv_getRegistrations();
-    }
-
-    public void send_getRegistrations(String domain) throws org.apache.thrift7.TException
-    {
-      getRegistrations_args args = new getRegistrations_args();
-      args.set_domain(domain);
-      sendBase("getRegistrations", args);
-    }
-
-    public List<KryoRegistration> recv_getRegistrations() throws org.apache.thrift7.TException
-    {
-      getRegistrations_result result = new getRegistrations_result();
-      receiveBase(result, "getRegistrations");
-      if (result.is_set_success()) {
-        return result.success;
-      }
-      throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "getRegistrations failed: unknown result");
-    }
-
-    public Value kryoGet(String domain, ByteBuffer key) throws org.apache.thrift7.TException
-    {
-      send_kryoGet(domain, key);
-      return recv_kryoGet();
-    }
-
-    public void send_kryoGet(String domain, ByteBuffer key) throws org.apache.thrift7.TException
-    {
-      kryoGet_args args = new kryoGet_args();
-      args.set_domain(domain);
-      args.set_key(key);
-      sendBase("kryoGet", args);
-    }
-
-    public Value recv_kryoGet() throws org.apache.thrift7.TException
-    {
-      kryoGet_result result = new kryoGet_result();
-      receiveBase(result, "kryoGet");
-      if (result.is_set_success()) {
-        return result.success;
-      }
-      throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "kryoGet failed: unknown result");
-    }
-
-    public Value get(String domain, ByteBuffer key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public elephantdb.generated.Value get(String domain, ByteBuffer key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_get(domain, key);
       return recv_get();
@@ -156,7 +105,7 @@ public class ElephantDB {
       sendBase("get", args);
     }
 
-    public Value recv_get() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public elephantdb.generated.Value recv_get() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       get_result result = new get_result();
       receiveBase(result, "get");
@@ -175,7 +124,7 @@ public class ElephantDB {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "get failed: unknown result");
     }
 
-    public Value getString(String domain, String key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public elephantdb.generated.Value getString(String domain, String key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_getString(domain, key);
       return recv_getString();
@@ -189,7 +138,7 @@ public class ElephantDB {
       sendBase("getString", args);
     }
 
-    public Value recv_getString() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public elephantdb.generated.Value recv_getString() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       getString_result result = new getString_result();
       receiveBase(result, "getString");
@@ -208,7 +157,7 @@ public class ElephantDB {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "getString failed: unknown result");
     }
 
-    public Value getInt(String domain, int key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public elephantdb.generated.Value getInt(String domain, int key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_getInt(domain, key);
       return recv_getInt();
@@ -222,7 +171,7 @@ public class ElephantDB {
       sendBase("getInt", args);
     }
 
-    public Value recv_getInt() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public elephantdb.generated.Value recv_getInt() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       getInt_result result = new getInt_result();
       receiveBase(result, "getInt");
@@ -241,7 +190,7 @@ public class ElephantDB {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "getInt failed: unknown result");
     }
 
-    public Value getLong(String domain, long key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public elephantdb.generated.Value getLong(String domain, long key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_getLong(domain, key);
       return recv_getLong();
@@ -255,7 +204,7 @@ public class ElephantDB {
       sendBase("getLong", args);
     }
 
-    public Value recv_getLong() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public elephantdb.generated.Value recv_getLong() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       getLong_result result = new getLong_result();
       receiveBase(result, "getLong");
@@ -274,7 +223,7 @@ public class ElephantDB {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "getLong failed: unknown result");
     }
 
-    public List<Value> multiGet(String domain, List<ByteBuffer> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> multiGet(String domain, List<ByteBuffer> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_multiGet(domain, key);
       return recv_multiGet();
@@ -288,7 +237,7 @@ public class ElephantDB {
       sendBase("multiGet", args);
     }
 
-    public List<Value> recv_multiGet() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> recv_multiGet() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       multiGet_result result = new multiGet_result();
       receiveBase(result, "multiGet");
@@ -307,7 +256,7 @@ public class ElephantDB {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "multiGet failed: unknown result");
     }
 
-    public List<Value> multiGetString(String domain, List<String> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> multiGetString(String domain, List<String> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_multiGetString(domain, key);
       return recv_multiGetString();
@@ -321,7 +270,7 @@ public class ElephantDB {
       sendBase("multiGetString", args);
     }
 
-    public List<Value> recv_multiGetString() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> recv_multiGetString() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       multiGetString_result result = new multiGetString_result();
       receiveBase(result, "multiGetString");
@@ -340,7 +289,7 @@ public class ElephantDB {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "multiGetString failed: unknown result");
     }
 
-    public List<Value> multiGetInt(String domain, List<Integer> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> multiGetInt(String domain, List<Integer> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_multiGetInt(domain, key);
       return recv_multiGetInt();
@@ -354,7 +303,7 @@ public class ElephantDB {
       sendBase("multiGetInt", args);
     }
 
-    public List<Value> recv_multiGetInt() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> recv_multiGetInt() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       multiGetInt_result result = new multiGetInt_result();
       receiveBase(result, "multiGetInt");
@@ -373,7 +322,7 @@ public class ElephantDB {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "multiGetInt failed: unknown result");
     }
 
-    public List<Value> multiGetLong(String domain, List<Long> key) throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> multiGetLong(String domain, List<Long> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_multiGetLong(domain, key);
       return recv_multiGetLong();
@@ -387,7 +336,7 @@ public class ElephantDB {
       sendBase("multiGetLong", args);
     }
 
-    public List<Value> recv_multiGetLong() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> recv_multiGetLong() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       multiGetLong_result result = new multiGetLong_result();
       receiveBase(result, "multiGetLong");
@@ -406,7 +355,7 @@ public class ElephantDB {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "multiGetLong failed: unknown result");
     }
 
-    public List<Value> directMultiGet(String domain, List<ByteBuffer> key) throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> directMultiGet(String domain, List<ByteBuffer> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       send_directMultiGet(domain, key);
       return recv_directMultiGet();
@@ -420,7 +369,7 @@ public class ElephantDB {
       sendBase("directMultiGet", args);
     }
 
-    public List<Value> recv_directMultiGet() throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, org.apache.thrift7.TException
+    public List<elephantdb.generated.Value> recv_directMultiGet() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
     {
       directMultiGet_result result = new directMultiGet_result();
       receiveBase(result, "directMultiGet");
@@ -430,17 +379,50 @@ public class ElephantDB {
       if (result.dnfe != null) {
         throw result.dnfe;
       }
+      if (result.hde != null) {
+        throw result.hde;
+      }
       if (result.dnle != null) {
         throw result.dnle;
-      }
-      if (result.whe != null) {
-        throw result.whe;
       }
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "directMultiGet failed: unknown result");
     }
 
+    public List<elephantdb.generated.Value> directKryoMultiGet(String domain, List<ByteBuffer> key) throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
+    {
+      send_directKryoMultiGet(domain, key);
+      return recv_directKryoMultiGet();
+    }
+
+    public void send_directKryoMultiGet(String domain, List<ByteBuffer> key) throws org.apache.thrift7.TException
+    {
+      directKryoMultiGet_args args = new directKryoMultiGet_args();
+      args.set_domain(domain);
+      args.set_key(key);
+      sendBase("directKryoMultiGet", args);
+    }
+
+    public List<elephantdb.generated.Value> recv_directKryoMultiGet() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException
+    {
+      directKryoMultiGet_result result = new directKryoMultiGet_result();
+      receiveBase(result, "directKryoMultiGet");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.dnfe != null) {
+        throw result.dnfe;
+      }
+      if (result.hde != null) {
+        throw result.hde;
+      }
+      if (result.dnle != null) {
+        throw result.dnle;
+      }
+      throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "directKryoMultiGet failed: unknown result");
+    }
+
   }
-  public static class AsyncClient extends ElephantDBShared.AsyncClient implements AsyncIface {
+  public static class AsyncClient extends elephantdb.generated.ElephantDBShared.AsyncClient implements AsyncIface {
     public static class Factory implements org.apache.thrift7.async.TAsyncClientFactory<AsyncClient> {
       private org.apache.thrift7.async.TAsyncClientManager clientManager;
       private org.apache.thrift7.protocol.TProtocolFactory protocolFactory;
@@ -455,73 +437,6 @@ public class ElephantDB {
 
     public AsyncClient(org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.async.TAsyncClientManager clientManager, org.apache.thrift7.transport.TNonblockingTransport transport) {
       super(protocolFactory, clientManager, transport);
-    }
-
-    public void getRegistrations(String domain, org.apache.thrift7.async.AsyncMethodCallback<getRegistrations_call> resultHandler) throws org.apache.thrift7.TException {
-      checkReady();
-      getRegistrations_call method_call = new getRegistrations_call(domain, resultHandler, this, ___protocolFactory, ___transport);
-      this.___currentMethod = method_call;
-      ___manager.call(method_call);
-    }
-
-    public static class getRegistrations_call extends org.apache.thrift7.async.TAsyncMethodCall {
-      private String domain;
-      public getRegistrations_call(String domain, org.apache.thrift7.async.AsyncMethodCallback<getRegistrations_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
-        super(client, protocolFactory, transport, resultHandler, false);
-        this.domain = domain;
-      }
-
-      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
-        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("getRegistrations", org.apache.thrift7.protocol.TMessageType.CALL, 0));
-        getRegistrations_args args = new getRegistrations_args();
-        args.set_domain(domain);
-        args.write(prot);
-        prot.writeMessageEnd();
-      }
-
-      public List<KryoRegistration> getResult() throws org.apache.thrift7.TException {
-        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
-          throw new IllegalStateException("Method call not finished!");
-        }
-        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
-        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
-        return (new Client(prot)).recv_getRegistrations();
-      }
-    }
-
-    public void kryoGet(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<kryoGet_call> resultHandler) throws org.apache.thrift7.TException {
-      checkReady();
-      kryoGet_call method_call = new kryoGet_call(domain, key, resultHandler, this, ___protocolFactory, ___transport);
-      this.___currentMethod = method_call;
-      ___manager.call(method_call);
-    }
-
-    public static class kryoGet_call extends org.apache.thrift7.async.TAsyncMethodCall {
-      private String domain;
-      private ByteBuffer key;
-      public kryoGet_call(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<kryoGet_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
-        super(client, protocolFactory, transport, resultHandler, false);
-        this.domain = domain;
-        this.key = key;
-      }
-
-      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
-        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("kryoGet", org.apache.thrift7.protocol.TMessageType.CALL, 0));
-        kryoGet_args args = new kryoGet_args();
-        args.set_domain(domain);
-        args.set_key(key);
-        args.write(prot);
-        prot.writeMessageEnd();
-      }
-
-      public Value getResult() throws org.apache.thrift7.TException {
-        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
-          throw new IllegalStateException("Method call not finished!");
-        }
-        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
-        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
-        return (new Client(prot)).recv_kryoGet();
-      }
     }
 
     public void get(String domain, ByteBuffer key, org.apache.thrift7.async.AsyncMethodCallback<get_call> resultHandler) throws org.apache.thrift7.TException {
@@ -549,7 +464,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public Value getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException {
+      public elephantdb.generated.Value getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -584,7 +499,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public Value getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException {
+      public elephantdb.generated.Value getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -619,7 +534,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public Value getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException {
+      public elephantdb.generated.Value getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -654,7 +569,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public Value getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException {
+      public elephantdb.generated.Value getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -689,7 +604,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public List<Value> getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException {
+      public List<elephantdb.generated.Value> getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -724,7 +639,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public List<Value> getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException {
+      public List<elephantdb.generated.Value> getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -759,7 +674,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public List<Value> getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException {
+      public List<elephantdb.generated.Value> getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -794,7 +709,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public List<Value> getResult() throws DomainNotFoundException, HostsDownException, DomainNotLoadedException, org.apache.thrift7.TException {
+      public List<elephantdb.generated.Value> getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -829,7 +744,7 @@ public class ElephantDB {
         prot.writeMessageEnd();
       }
 
-      public List<Value> getResult() throws DomainNotFoundException, DomainNotLoadedException, WrongHostException, org.apache.thrift7.TException {
+      public List<elephantdb.generated.Value> getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
         if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -839,9 +754,44 @@ public class ElephantDB {
       }
     }
 
+    public void directKryoMultiGet(String domain, List<ByteBuffer> key, org.apache.thrift7.async.AsyncMethodCallback<directKryoMultiGet_call> resultHandler) throws org.apache.thrift7.TException {
+      checkReady();
+      directKryoMultiGet_call method_call = new directKryoMultiGet_call(domain, key, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class directKryoMultiGet_call extends org.apache.thrift7.async.TAsyncMethodCall {
+      private String domain;
+      private List<ByteBuffer> key;
+      public directKryoMultiGet_call(String domain, List<ByteBuffer> key, org.apache.thrift7.async.AsyncMethodCallback<directKryoMultiGet_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.domain = domain;
+        this.key = key;
+      }
+
+      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
+        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("directKryoMultiGet", org.apache.thrift7.protocol.TMessageType.CALL, 0));
+        directKryoMultiGet_args args = new directKryoMultiGet_args();
+        args.set_domain(domain);
+        args.set_key(key);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public List<elephantdb.generated.Value> getResult() throws elephantdb.generated.DomainNotFoundException, elephantdb.generated.HostsDownException, elephantdb.generated.DomainNotLoadedException, org.apache.thrift7.TException {
+        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_directKryoMultiGet();
+      }
+    }
+
   }
 
-  public static class Processor<I extends Iface> extends ElephantDBShared.Processor implements org.apache.thrift7.TProcessor {
+  public static class Processor<I extends Iface> extends elephantdb.generated.ElephantDBShared.Processor implements org.apache.thrift7.TProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class.getName());
     public Processor(I iface) {
       super(iface, getProcessMap(new HashMap<String, org.apache.thrift7.ProcessFunction<I, ? extends org.apache.thrift7.TBase>>()));
@@ -852,8 +802,6 @@ public class ElephantDB {
     }
 
     private static <I extends Iface> Map<String,  org.apache.thrift7.ProcessFunction<I, ? extends  org.apache.thrift7.TBase>> getProcessMap(Map<String,  org.apache.thrift7.ProcessFunction<I, ? extends  org.apache.thrift7.TBase>> processMap) {
-      processMap.put("getRegistrations", new getRegistrations());
-      processMap.put("kryoGet", new kryoGet());
       processMap.put("get", new get());
       processMap.put("getString", new getString());
       processMap.put("getInt", new getInt());
@@ -863,39 +811,8 @@ public class ElephantDB {
       processMap.put("multiGetInt", new multiGetInt());
       processMap.put("multiGetLong", new multiGetLong());
       processMap.put("directMultiGet", new directMultiGet());
+      processMap.put("directKryoMultiGet", new directKryoMultiGet());
       return processMap;
-    }
-
-    private static class getRegistrations<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, getRegistrations_args> {
-      public getRegistrations() {
-        super("getRegistrations");
-      }
-
-      protected getRegistrations_args getEmptyArgsInstance() {
-        return new getRegistrations_args();
-      }
-
-      protected getRegistrations_result getResult(I iface, getRegistrations_args args) throws org.apache.thrift7.TException {
-        getRegistrations_result result = new getRegistrations_result();
-        result.success = iface.getRegistrations(args.domain);
-        return result;
-      }
-    }
-
-    private static class kryoGet<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, kryoGet_args> {
-      public kryoGet() {
-        super("kryoGet");
-      }
-
-      protected kryoGet_args getEmptyArgsInstance() {
-        return new kryoGet_args();
-      }
-
-      protected kryoGet_result getResult(I iface, kryoGet_args args) throws org.apache.thrift7.TException {
-        kryoGet_result result = new kryoGet_result();
-        result.success = iface.kryoGet(args.domain, args.key);
-        return result;
-      }
     }
 
     private static class get<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, get_args> {
@@ -911,11 +828,11 @@ public class ElephantDB {
         get_result result = new get_result();
         try {
           result.success = iface.get(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (HostsDownException hde) {
+        } catch (elephantdb.generated.HostsDownException hde) {
           result.hde = hde;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
         }
         return result;
@@ -935,11 +852,11 @@ public class ElephantDB {
         getString_result result = new getString_result();
         try {
           result.success = iface.getString(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (HostsDownException hde) {
+        } catch (elephantdb.generated.HostsDownException hde) {
           result.hde = hde;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
         }
         return result;
@@ -959,11 +876,11 @@ public class ElephantDB {
         getInt_result result = new getInt_result();
         try {
           result.success = iface.getInt(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (HostsDownException hde) {
+        } catch (elephantdb.generated.HostsDownException hde) {
           result.hde = hde;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
         }
         return result;
@@ -983,11 +900,11 @@ public class ElephantDB {
         getLong_result result = new getLong_result();
         try {
           result.success = iface.getLong(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (HostsDownException hde) {
+        } catch (elephantdb.generated.HostsDownException hde) {
           result.hde = hde;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
         }
         return result;
@@ -1007,11 +924,11 @@ public class ElephantDB {
         multiGet_result result = new multiGet_result();
         try {
           result.success = iface.multiGet(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (HostsDownException hde) {
+        } catch (elephantdb.generated.HostsDownException hde) {
           result.hde = hde;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
         }
         return result;
@@ -1031,11 +948,11 @@ public class ElephantDB {
         multiGetString_result result = new multiGetString_result();
         try {
           result.success = iface.multiGetString(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (HostsDownException hde) {
+        } catch (elephantdb.generated.HostsDownException hde) {
           result.hde = hde;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
         }
         return result;
@@ -1055,11 +972,11 @@ public class ElephantDB {
         multiGetInt_result result = new multiGetInt_result();
         try {
           result.success = iface.multiGetInt(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (HostsDownException hde) {
+        } catch (elephantdb.generated.HostsDownException hde) {
           result.hde = hde;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
         }
         return result;
@@ -1079,11 +996,11 @@ public class ElephantDB {
         multiGetLong_result result = new multiGetLong_result();
         try {
           result.success = iface.multiGetLong(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (HostsDownException hde) {
+        } catch (elephantdb.generated.HostsDownException hde) {
           result.hde = hde;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
         }
         return result;
@@ -1103,1358 +1020,38 @@ public class ElephantDB {
         directMultiGet_result result = new directMultiGet_result();
         try {
           result.success = iface.directMultiGet(args.domain, args.key);
-        } catch (DomainNotFoundException dnfe) {
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
           result.dnfe = dnfe;
-        } catch (DomainNotLoadedException dnle) {
+        } catch (elephantdb.generated.HostsDownException hde) {
+          result.hde = hde;
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
           result.dnle = dnle;
-        } catch (WrongHostException whe) {
-          result.whe = whe;
         }
         return result;
       }
     }
 
-  }
+    private static class directKryoMultiGet<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, directKryoMultiGet_args> {
+      public directKryoMultiGet() {
+        super("directKryoMultiGet");
+      }
 
-  public static class getRegistrations_args implements org.apache.thrift7.TBase<getRegistrations_args, getRegistrations_args._Fields>, java.io.Serializable, Cloneable   {
-    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("getRegistrations_args");
+      protected directKryoMultiGet_args getEmptyArgsInstance() {
+        return new directKryoMultiGet_args();
+      }
 
-    private static final org.apache.thrift7.protocol.TField DOMAIN_FIELD_DESC = new org.apache.thrift7.protocol.TField("domain", org.apache.thrift7.protocol.TType.STRING, (short)1);
-
-    private String domain; // required
-
-    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
-      DOMAIN((short)1, "domain");
-
-      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
-
-      static {
-        for (_Fields field : EnumSet.allOf(_Fields.class)) {
-          byName.put(field.getFieldName(), field);
+      protected directKryoMultiGet_result getResult(I iface, directKryoMultiGet_args args) throws org.apache.thrift7.TException {
+        directKryoMultiGet_result result = new directKryoMultiGet_result();
+        try {
+          result.success = iface.directKryoMultiGet(args.domain, args.key);
+        } catch (elephantdb.generated.DomainNotFoundException dnfe) {
+          result.dnfe = dnfe;
+        } catch (elephantdb.generated.HostsDownException hde) {
+          result.hde = hde;
+        } catch (elephantdb.generated.DomainNotLoadedException dnle) {
+          result.dnle = dnle;
         }
-      }
-
-      /**
-       * Find the _Fields constant that matches fieldId, or null if its not found.
-       */
-      public static _Fields findByThriftId(int fieldId) {
-        switch(fieldId) {
-          case 1: // DOMAIN
-            return DOMAIN;
-          default:
-            return null;
-        }
-      }
-
-      /**
-       * Find the _Fields constant that matches fieldId, throwing an exception
-       * if it is not found.
-       */
-      public static _Fields findByThriftIdOrThrow(int fieldId) {
-        _Fields fields = findByThriftId(fieldId);
-        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
-        return fields;
-      }
-
-      /**
-       * Find the _Fields constant that matches name, or null if its not found.
-       */
-      public static _Fields findByName(String name) {
-        return byName.get(name);
-      }
-
-      private final short _thriftId;
-      private final String _fieldName;
-
-      _Fields(short thriftId, String fieldName) {
-        _thriftId = thriftId;
-        _fieldName = fieldName;
-      }
-
-      public short getThriftFieldId() {
-        return _thriftId;
-      }
-
-      public String getFieldName() {
-        return _fieldName;
-      }
-    }
-
-    // isset id assignments
-
-    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
-    static {
-      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
-      tmpMap.put(_Fields.DOMAIN, new org.apache.thrift7.meta_data.FieldMetaData("domain", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
-      metaDataMap = Collections.unmodifiableMap(tmpMap);
-      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getRegistrations_args.class, metaDataMap);
-    }
-
-    public getRegistrations_args() {
-    }
-
-    public getRegistrations_args(
-      String domain)
-    {
-      this();
-      this.domain = domain;
-    }
-
-    /**
-     * Performs a deep copy on <i>other</i>.
-     */
-    public getRegistrations_args(getRegistrations_args other) {
-      if (other.is_set_domain()) {
-        this.domain = other.domain;
-      }
-    }
-
-    public getRegistrations_args deepCopy() {
-      return new getRegistrations_args(this);
-    }
-
-    @Override
-    public void clear() {
-      this.domain = null;
-    }
-
-    public String get_domain() {
-      return this.domain;
-    }
-
-    public void set_domain(String domain) {
-      this.domain = domain;
-    }
-
-    public void unset_domain() {
-      this.domain = null;
-    }
-
-    /** Returns true if field domain is set (has been assigned a value) and false otherwise */
-    public boolean is_set_domain() {
-      return this.domain != null;
-    }
-
-    public void set_domain_isSet(boolean value) {
-      if (!value) {
-        this.domain = null;
-      }
-    }
-
-    public void setFieldValue(_Fields field, Object value) {
-      switch (field) {
-      case DOMAIN:
-        if (value == null) {
-          unset_domain();
-        } else {
-          set_domain((String)value);
-        }
-        break;
-
-      }
-    }
-
-    public Object getFieldValue(_Fields field) {
-      switch (field) {
-      case DOMAIN:
-        return get_domain();
-
-      }
-      throw new IllegalStateException();
-    }
-
-    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
-    public boolean isSet(_Fields field) {
-      if (field == null) {
-        throw new IllegalArgumentException();
-      }
-
-      switch (field) {
-      case DOMAIN:
-        return is_set_domain();
-      }
-      throw new IllegalStateException();
-    }
-
-    @Override
-    public boolean equals(Object that) {
-      if (that == null)
-        return false;
-      if (that instanceof getRegistrations_args)
-        return this.equals((getRegistrations_args)that);
-      return false;
-    }
-
-    public boolean equals(getRegistrations_args that) {
-      if (that == null)
-        return false;
-
-      boolean this_present_domain = true && this.is_set_domain();
-      boolean that_present_domain = true && that.is_set_domain();
-      if (this_present_domain || that_present_domain) {
-        if (!(this_present_domain && that_present_domain))
-          return false;
-        if (!this.domain.equals(that.domain))
-          return false;
-      }
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      HashCodeBuilder builder = new HashCodeBuilder();
-
-      boolean present_domain = true && (is_set_domain());
-      builder.append(present_domain);
-      if (present_domain)
-        builder.append(domain);
-
-      return builder.toHashCode();
-    }
-
-    public int compareTo(getRegistrations_args other) {
-      if (!getClass().equals(other.getClass())) {
-        return getClass().getName().compareTo(other.getClass().getName());
-      }
-
-      int lastComparison = 0;
-      getRegistrations_args typedOther = (getRegistrations_args)other;
-
-      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_domain()) {
-        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.domain, typedOther.domain);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      return 0;
-    }
-
-    public _Fields fieldForId(int fieldId) {
-      return _Fields.findByThriftId(fieldId);
-    }
-
-    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
-      org.apache.thrift7.protocol.TField field;
-      iprot.readStructBegin();
-      while (true)
-      {
-        field = iprot.readFieldBegin();
-        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
-          break;
-        }
-        switch (field.id) {
-          case 1: // DOMAIN
-            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
-              this.domain = iprot.readString();
-            } else { 
-              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-            }
-            break;
-          default:
-            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
-      }
-      iprot.readStructEnd();
-      validate();
-    }
-
-    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
-      validate();
-
-      oprot.writeStructBegin(STRUCT_DESC);
-      if (this.domain != null) {
-        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
-        oprot.writeString(this.domain);
-        oprot.writeFieldEnd();
-      }
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder("getRegistrations_args(");
-      boolean first = true;
-
-      sb.append("domain:");
-      if (this.domain == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.domain);
-      }
-      first = false;
-      sb.append(")");
-      return sb.toString();
-    }
-
-    public void validate() throws org.apache.thrift7.TException {
-      // check for required fields
-    }
-
-    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-      try {
-        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
-      } catch (org.apache.thrift7.TException te) {
-        throw new java.io.IOException(te);
-      }
-    }
-
-    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
-      try {
-        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
-      } catch (org.apache.thrift7.TException te) {
-        throw new java.io.IOException(te);
-      }
-    }
-
-  }
-
-  public static class getRegistrations_result implements org.apache.thrift7.TBase<getRegistrations_result, getRegistrations_result._Fields>, java.io.Serializable, Cloneable   {
-    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("getRegistrations_result");
-
-    private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.LIST, (short)0);
-
-    private List<KryoRegistration> success; // required
-
-    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
-      SUCCESS((short)0, "success");
-
-      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
-
-      static {
-        for (_Fields field : EnumSet.allOf(_Fields.class)) {
-          byName.put(field.getFieldName(), field);
-        }
-      }
-
-      /**
-       * Find the _Fields constant that matches fieldId, or null if its not found.
-       */
-      public static _Fields findByThriftId(int fieldId) {
-        switch(fieldId) {
-          case 0: // SUCCESS
-            return SUCCESS;
-          default:
-            return null;
-        }
-      }
-
-      /**
-       * Find the _Fields constant that matches fieldId, throwing an exception
-       * if it is not found.
-       */
-      public static _Fields findByThriftIdOrThrow(int fieldId) {
-        _Fields fields = findByThriftId(fieldId);
-        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
-        return fields;
-      }
-
-      /**
-       * Find the _Fields constant that matches name, or null if its not found.
-       */
-      public static _Fields findByName(String name) {
-        return byName.get(name);
-      }
-
-      private final short _thriftId;
-      private final String _fieldName;
-
-      _Fields(short thriftId, String fieldName) {
-        _thriftId = thriftId;
-        _fieldName = fieldName;
-      }
-
-      public short getThriftFieldId() {
-        return _thriftId;
-      }
-
-      public String getFieldName() {
-        return _fieldName;
-      }
-    }
-
-    // isset id assignments
-
-    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
-    static {
-      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
-      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
-              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, KryoRegistration.class))));
-      metaDataMap = Collections.unmodifiableMap(tmpMap);
-      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getRegistrations_result.class, metaDataMap);
-    }
-
-    public getRegistrations_result() {
-    }
-
-    public getRegistrations_result(
-      List<KryoRegistration> success)
-    {
-      this();
-      this.success = success;
-    }
-
-    /**
-     * Performs a deep copy on <i>other</i>.
-     */
-    public getRegistrations_result(getRegistrations_result other) {
-      if (other.is_set_success()) {
-        List<KryoRegistration> __this__success = new ArrayList<KryoRegistration>();
-        for (KryoRegistration other_element : other.success) {
-          __this__success.add(new KryoRegistration(other_element));
-        }
-        this.success = __this__success;
-      }
-    }
-
-    public getRegistrations_result deepCopy() {
-      return new getRegistrations_result(this);
-    }
-
-    @Override
-    public void clear() {
-      this.success = null;
-    }
-
-    public int get_success_size() {
-      return (this.success == null) ? 0 : this.success.size();
-    }
-
-    public java.util.Iterator<KryoRegistration> get_success_iterator() {
-      return (this.success == null) ? null : this.success.iterator();
-    }
-
-    public void add_to_success(KryoRegistration elem) {
-      if (this.success == null) {
-        this.success = new ArrayList<KryoRegistration>();
-      }
-      this.success.add(elem);
-    }
-
-    public List<KryoRegistration> get_success() {
-      return this.success;
-    }
-
-    public void set_success(List<KryoRegistration> success) {
-      this.success = success;
-    }
-
-    public void unset_success() {
-      this.success = null;
-    }
-
-    /** Returns true if field success is set (has been assigned a value) and false otherwise */
-    public boolean is_set_success() {
-      return this.success != null;
-    }
-
-    public void set_success_isSet(boolean value) {
-      if (!value) {
-        this.success = null;
-      }
-    }
-
-    public void setFieldValue(_Fields field, Object value) {
-      switch (field) {
-      case SUCCESS:
-        if (value == null) {
-          unset_success();
-        } else {
-          set_success((List<KryoRegistration>)value);
-        }
-        break;
-
-      }
-    }
-
-    public Object getFieldValue(_Fields field) {
-      switch (field) {
-      case SUCCESS:
-        return get_success();
-
-      }
-      throw new IllegalStateException();
-    }
-
-    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
-    public boolean isSet(_Fields field) {
-      if (field == null) {
-        throw new IllegalArgumentException();
-      }
-
-      switch (field) {
-      case SUCCESS:
-        return is_set_success();
-      }
-      throw new IllegalStateException();
-    }
-
-    @Override
-    public boolean equals(Object that) {
-      if (that == null)
-        return false;
-      if (that instanceof getRegistrations_result)
-        return this.equals((getRegistrations_result)that);
-      return false;
-    }
-
-    public boolean equals(getRegistrations_result that) {
-      if (that == null)
-        return false;
-
-      boolean this_present_success = true && this.is_set_success();
-      boolean that_present_success = true && that.is_set_success();
-      if (this_present_success || that_present_success) {
-        if (!(this_present_success && that_present_success))
-          return false;
-        if (!this.success.equals(that.success))
-          return false;
-      }
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      HashCodeBuilder builder = new HashCodeBuilder();
-
-      boolean present_success = true && (is_set_success());
-      builder.append(present_success);
-      if (present_success)
-        builder.append(success);
-
-      return builder.toHashCode();
-    }
-
-    public int compareTo(getRegistrations_result other) {
-      if (!getClass().equals(other.getClass())) {
-        return getClass().getName().compareTo(other.getClass().getName());
-      }
-
-      int lastComparison = 0;
-      getRegistrations_result typedOther = (getRegistrations_result)other;
-
-      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_success()) {
-        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.success, typedOther.success);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      return 0;
-    }
-
-    public _Fields fieldForId(int fieldId) {
-      return _Fields.findByThriftId(fieldId);
-    }
-
-    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
-      org.apache.thrift7.protocol.TField field;
-      iprot.readStructBegin();
-      while (true)
-      {
-        field = iprot.readFieldBegin();
-        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
-          break;
-        }
-        switch (field.id) {
-          case 0: // SUCCESS
-            if (field.type == org.apache.thrift7.protocol.TType.LIST) {
-              {
-                org.apache.thrift7.protocol.TList _list17 = iprot.readListBegin();
-                this.success = new ArrayList<KryoRegistration>(_list17.size);
-                for (int _i18 = 0; _i18 < _list17.size; ++_i18)
-                {
-                  KryoRegistration _elem19; // required
-                  _elem19 = new KryoRegistration();
-                  _elem19.read(iprot);
-                  this.success.add(_elem19);
-                }
-                iprot.readListEnd();
-              }
-            } else { 
-              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-            }
-            break;
-          default:
-            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
-      }
-      iprot.readStructEnd();
-      validate();
-    }
-
-    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
-      oprot.writeStructBegin(STRUCT_DESC);
-
-      if (this.is_set_success()) {
-        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-        {
-          oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (KryoRegistration _iter20 : this.success)
-          {
-            _iter20.write(oprot);
-          }
-          oprot.writeListEnd();
-        }
-        oprot.writeFieldEnd();
-      }
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder("getRegistrations_result(");
-      boolean first = true;
-
-      sb.append("success:");
-      if (this.success == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.success);
-      }
-      first = false;
-      sb.append(")");
-      return sb.toString();
-    }
-
-    public void validate() throws org.apache.thrift7.TException {
-      // check for required fields
-    }
-
-    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-      try {
-        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
-      } catch (org.apache.thrift7.TException te) {
-        throw new java.io.IOException(te);
-      }
-    }
-
-    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
-      try {
-        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
-      } catch (org.apache.thrift7.TException te) {
-        throw new java.io.IOException(te);
-      }
-    }
-
-  }
-
-  public static class kryoGet_args implements org.apache.thrift7.TBase<kryoGet_args, kryoGet_args._Fields>, java.io.Serializable, Cloneable   {
-    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("kryoGet_args");
-
-    private static final org.apache.thrift7.protocol.TField DOMAIN_FIELD_DESC = new org.apache.thrift7.protocol.TField("domain", org.apache.thrift7.protocol.TType.STRING, (short)1);
-    private static final org.apache.thrift7.protocol.TField KEY_FIELD_DESC = new org.apache.thrift7.protocol.TField("key", org.apache.thrift7.protocol.TType.STRING, (short)2);
-
-    private String domain; // required
-    private ByteBuffer key; // required
-
-    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
-      DOMAIN((short)1, "domain"),
-      KEY((short)2, "key");
-
-      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
-
-      static {
-        for (_Fields field : EnumSet.allOf(_Fields.class)) {
-          byName.put(field.getFieldName(), field);
-        }
-      }
-
-      /**
-       * Find the _Fields constant that matches fieldId, or null if its not found.
-       */
-      public static _Fields findByThriftId(int fieldId) {
-        switch(fieldId) {
-          case 1: // DOMAIN
-            return DOMAIN;
-          case 2: // KEY
-            return KEY;
-          default:
-            return null;
-        }
-      }
-
-      /**
-       * Find the _Fields constant that matches fieldId, throwing an exception
-       * if it is not found.
-       */
-      public static _Fields findByThriftIdOrThrow(int fieldId) {
-        _Fields fields = findByThriftId(fieldId);
-        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
-        return fields;
-      }
-
-      /**
-       * Find the _Fields constant that matches name, or null if its not found.
-       */
-      public static _Fields findByName(String name) {
-        return byName.get(name);
-      }
-
-      private final short _thriftId;
-      private final String _fieldName;
-
-      _Fields(short thriftId, String fieldName) {
-        _thriftId = thriftId;
-        _fieldName = fieldName;
-      }
-
-      public short getThriftFieldId() {
-        return _thriftId;
-      }
-
-      public String getFieldName() {
-        return _fieldName;
-      }
-    }
-
-    // isset id assignments
-
-    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
-    static {
-      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
-      tmpMap.put(_Fields.DOMAIN, new org.apache.thrift7.meta_data.FieldMetaData("domain", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
-      tmpMap.put(_Fields.KEY, new org.apache.thrift7.meta_data.FieldMetaData("key", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING          , true)));
-      metaDataMap = Collections.unmodifiableMap(tmpMap);
-      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(kryoGet_args.class, metaDataMap);
-    }
-
-    public kryoGet_args() {
-    }
-
-    public kryoGet_args(
-      String domain,
-      ByteBuffer key)
-    {
-      this();
-      this.domain = domain;
-      this.key = key;
-    }
-
-    /**
-     * Performs a deep copy on <i>other</i>.
-     */
-    public kryoGet_args(kryoGet_args other) {
-      if (other.is_set_domain()) {
-        this.domain = other.domain;
-      }
-      if (other.is_set_key()) {
-        this.key = org.apache.thrift7.TBaseHelper.copyBinary(other.key);
-;
-      }
-    }
-
-    public kryoGet_args deepCopy() {
-      return new kryoGet_args(this);
-    }
-
-    @Override
-    public void clear() {
-      this.domain = null;
-      this.key = null;
-    }
-
-    public String get_domain() {
-      return this.domain;
-    }
-
-    public void set_domain(String domain) {
-      this.domain = domain;
-    }
-
-    public void unset_domain() {
-      this.domain = null;
-    }
-
-    /** Returns true if field domain is set (has been assigned a value) and false otherwise */
-    public boolean is_set_domain() {
-      return this.domain != null;
-    }
-
-    public void set_domain_isSet(boolean value) {
-      if (!value) {
-        this.domain = null;
-      }
-    }
-
-    public byte[] get_key() {
-      set_key(org.apache.thrift7.TBaseHelper.rightSize(key));
-      return key == null ? null : key.array();
-    }
-
-    public ByteBuffer buffer_for_key() {
-      return key;
-    }
-
-    public void set_key(byte[] key) {
-      set_key(key == null ? (ByteBuffer)null : ByteBuffer.wrap(key));
-    }
-
-    public void set_key(ByteBuffer key) {
-      this.key = key;
-    }
-
-    public void unset_key() {
-      this.key = null;
-    }
-
-    /** Returns true if field key is set (has been assigned a value) and false otherwise */
-    public boolean is_set_key() {
-      return this.key != null;
-    }
-
-    public void set_key_isSet(boolean value) {
-      if (!value) {
-        this.key = null;
-      }
-    }
-
-    public void setFieldValue(_Fields field, Object value) {
-      switch (field) {
-      case DOMAIN:
-        if (value == null) {
-          unset_domain();
-        } else {
-          set_domain((String)value);
-        }
-        break;
-
-      case KEY:
-        if (value == null) {
-          unset_key();
-        } else {
-          set_key((ByteBuffer)value);
-        }
-        break;
-
-      }
-    }
-
-    public Object getFieldValue(_Fields field) {
-      switch (field) {
-      case DOMAIN:
-        return get_domain();
-
-      case KEY:
-        return get_key();
-
-      }
-      throw new IllegalStateException();
-    }
-
-    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
-    public boolean isSet(_Fields field) {
-      if (field == null) {
-        throw new IllegalArgumentException();
-      }
-
-      switch (field) {
-      case DOMAIN:
-        return is_set_domain();
-      case KEY:
-        return is_set_key();
-      }
-      throw new IllegalStateException();
-    }
-
-    @Override
-    public boolean equals(Object that) {
-      if (that == null)
-        return false;
-      if (that instanceof kryoGet_args)
-        return this.equals((kryoGet_args)that);
-      return false;
-    }
-
-    public boolean equals(kryoGet_args that) {
-      if (that == null)
-        return false;
-
-      boolean this_present_domain = true && this.is_set_domain();
-      boolean that_present_domain = true && that.is_set_domain();
-      if (this_present_domain || that_present_domain) {
-        if (!(this_present_domain && that_present_domain))
-          return false;
-        if (!this.domain.equals(that.domain))
-          return false;
-      }
-
-      boolean this_present_key = true && this.is_set_key();
-      boolean that_present_key = true && that.is_set_key();
-      if (this_present_key || that_present_key) {
-        if (!(this_present_key && that_present_key))
-          return false;
-        if (!this.key.equals(that.key))
-          return false;
-      }
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      HashCodeBuilder builder = new HashCodeBuilder();
-
-      boolean present_domain = true && (is_set_domain());
-      builder.append(present_domain);
-      if (present_domain)
-        builder.append(domain);
-
-      boolean present_key = true && (is_set_key());
-      builder.append(present_key);
-      if (present_key)
-        builder.append(key);
-
-      return builder.toHashCode();
-    }
-
-    public int compareTo(kryoGet_args other) {
-      if (!getClass().equals(other.getClass())) {
-        return getClass().getName().compareTo(other.getClass().getName());
-      }
-
-      int lastComparison = 0;
-      kryoGet_args typedOther = (kryoGet_args)other;
-
-      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_domain()) {
-        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.domain, typedOther.domain);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = Boolean.valueOf(is_set_key()).compareTo(typedOther.is_set_key());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_key()) {
-        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.key, typedOther.key);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      return 0;
-    }
-
-    public _Fields fieldForId(int fieldId) {
-      return _Fields.findByThriftId(fieldId);
-    }
-
-    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
-      org.apache.thrift7.protocol.TField field;
-      iprot.readStructBegin();
-      while (true)
-      {
-        field = iprot.readFieldBegin();
-        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
-          break;
-        }
-        switch (field.id) {
-          case 1: // DOMAIN
-            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
-              this.domain = iprot.readString();
-            } else { 
-              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-            }
-            break;
-          case 2: // KEY
-            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
-              this.key = iprot.readBinary();
-            } else { 
-              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-            }
-            break;
-          default:
-            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
-      }
-      iprot.readStructEnd();
-      validate();
-    }
-
-    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
-      validate();
-
-      oprot.writeStructBegin(STRUCT_DESC);
-      if (this.domain != null) {
-        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
-        oprot.writeString(this.domain);
-        oprot.writeFieldEnd();
-      }
-      if (this.key != null) {
-        oprot.writeFieldBegin(KEY_FIELD_DESC);
-        oprot.writeBinary(this.key);
-        oprot.writeFieldEnd();
-      }
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder("kryoGet_args(");
-      boolean first = true;
-
-      sb.append("domain:");
-      if (this.domain == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.domain);
-      }
-      first = false;
-      if (!first) sb.append(", ");
-      sb.append("key:");
-      if (this.key == null) {
-        sb.append("null");
-      } else {
-        org.apache.thrift7.TBaseHelper.toString(this.key, sb);
-      }
-      first = false;
-      sb.append(")");
-      return sb.toString();
-    }
-
-    public void validate() throws org.apache.thrift7.TException {
-      // check for required fields
-    }
-
-    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-      try {
-        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
-      } catch (org.apache.thrift7.TException te) {
-        throw new java.io.IOException(te);
-      }
-    }
-
-    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
-      try {
-        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
-      } catch (org.apache.thrift7.TException te) {
-        throw new java.io.IOException(te);
-      }
-    }
-
-  }
-
-  public static class kryoGet_result implements org.apache.thrift7.TBase<kryoGet_result, kryoGet_result._Fields>, java.io.Serializable, Cloneable   {
-    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("kryoGet_result");
-
-    private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.STRUCT, (short)0);
-
-    private Value success; // required
-
-    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
-      SUCCESS((short)0, "success");
-
-      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
-
-      static {
-        for (_Fields field : EnumSet.allOf(_Fields.class)) {
-          byName.put(field.getFieldName(), field);
-        }
-      }
-
-      /**
-       * Find the _Fields constant that matches fieldId, or null if its not found.
-       */
-      public static _Fields findByThriftId(int fieldId) {
-        switch(fieldId) {
-          case 0: // SUCCESS
-            return SUCCESS;
-          default:
-            return null;
-        }
-      }
-
-      /**
-       * Find the _Fields constant that matches fieldId, throwing an exception
-       * if it is not found.
-       */
-      public static _Fields findByThriftIdOrThrow(int fieldId) {
-        _Fields fields = findByThriftId(fieldId);
-        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
-        return fields;
-      }
-
-      /**
-       * Find the _Fields constant that matches name, or null if its not found.
-       */
-      public static _Fields findByName(String name) {
-        return byName.get(name);
-      }
-
-      private final short _thriftId;
-      private final String _fieldName;
-
-      _Fields(short thriftId, String fieldName) {
-        _thriftId = thriftId;
-        _fieldName = fieldName;
-      }
-
-      public short getThriftFieldId() {
-        return _thriftId;
-      }
-
-      public String getFieldName() {
-        return _fieldName;
-      }
-    }
-
-    // isset id assignments
-
-    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
-    static {
-      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
-      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
-      metaDataMap = Collections.unmodifiableMap(tmpMap);
-      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(kryoGet_result.class, metaDataMap);
-    }
-
-    public kryoGet_result() {
-    }
-
-    public kryoGet_result(
-      Value success)
-    {
-      this();
-      this.success = success;
-    }
-
-    /**
-     * Performs a deep copy on <i>other</i>.
-     */
-    public kryoGet_result(kryoGet_result other) {
-      if (other.is_set_success()) {
-        this.success = new Value(other.success);
-      }
-    }
-
-    public kryoGet_result deepCopy() {
-      return new kryoGet_result(this);
-    }
-
-    @Override
-    public void clear() {
-      this.success = null;
-    }
-
-    public Value get_success() {
-      return this.success;
-    }
-
-    public void set_success(Value success) {
-      this.success = success;
-    }
-
-    public void unset_success() {
-      this.success = null;
-    }
-
-    /** Returns true if field success is set (has been assigned a value) and false otherwise */
-    public boolean is_set_success() {
-      return this.success != null;
-    }
-
-    public void set_success_isSet(boolean value) {
-      if (!value) {
-        this.success = null;
-      }
-    }
-
-    public void setFieldValue(_Fields field, Object value) {
-      switch (field) {
-      case SUCCESS:
-        if (value == null) {
-          unset_success();
-        } else {
-          set_success((Value)value);
-        }
-        break;
-
-      }
-    }
-
-    public Object getFieldValue(_Fields field) {
-      switch (field) {
-      case SUCCESS:
-        return get_success();
-
-      }
-      throw new IllegalStateException();
-    }
-
-    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
-    public boolean isSet(_Fields field) {
-      if (field == null) {
-        throw new IllegalArgumentException();
-      }
-
-      switch (field) {
-      case SUCCESS:
-        return is_set_success();
-      }
-      throw new IllegalStateException();
-    }
-
-    @Override
-    public boolean equals(Object that) {
-      if (that == null)
-        return false;
-      if (that instanceof kryoGet_result)
-        return this.equals((kryoGet_result)that);
-      return false;
-    }
-
-    public boolean equals(kryoGet_result that) {
-      if (that == null)
-        return false;
-
-      boolean this_present_success = true && this.is_set_success();
-      boolean that_present_success = true && that.is_set_success();
-      if (this_present_success || that_present_success) {
-        if (!(this_present_success && that_present_success))
-          return false;
-        if (!this.success.equals(that.success))
-          return false;
-      }
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      HashCodeBuilder builder = new HashCodeBuilder();
-
-      boolean present_success = true && (is_set_success());
-      builder.append(present_success);
-      if (present_success)
-        builder.append(success);
-
-      return builder.toHashCode();
-    }
-
-    public int compareTo(kryoGet_result other) {
-      if (!getClass().equals(other.getClass())) {
-        return getClass().getName().compareTo(other.getClass().getName());
-      }
-
-      int lastComparison = 0;
-      kryoGet_result typedOther = (kryoGet_result)other;
-
-      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_success()) {
-        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.success, typedOther.success);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      return 0;
-    }
-
-    public _Fields fieldForId(int fieldId) {
-      return _Fields.findByThriftId(fieldId);
-    }
-
-    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
-      org.apache.thrift7.protocol.TField field;
-      iprot.readStructBegin();
-      while (true)
-      {
-        field = iprot.readFieldBegin();
-        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
-          break;
-        }
-        switch (field.id) {
-          case 0: // SUCCESS
-            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.success = new Value();
-              this.success.read(iprot);
-            } else { 
-              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-            }
-            break;
-          default:
-            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
-      }
-      iprot.readStructEnd();
-      validate();
-    }
-
-    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
-      oprot.writeStructBegin(STRUCT_DESC);
-
-      if (this.is_set_success()) {
-        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-        this.success.write(oprot);
-        oprot.writeFieldEnd();
-      }
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder("kryoGet_result(");
-      boolean first = true;
-
-      sb.append("success:");
-      if (this.success == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.success);
-      }
-      first = false;
-      sb.append(")");
-      return sb.toString();
-    }
-
-    public void validate() throws org.apache.thrift7.TException {
-      // check for required fields
-    }
-
-    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-      try {
-        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
-      } catch (org.apache.thrift7.TException te) {
-        throw new java.io.IOException(te);
-      }
-    }
-
-    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
-      try {
-        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
-      } catch (org.apache.thrift7.TException te) {
-        throw new java.io.IOException(te);
+        return result;
       }
     }
 
@@ -2872,10 +1469,10 @@ public class ElephantDB {
     private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
     private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private Value success; // required
-    private DomainNotFoundException dnfe; // required
-    private HostsDownException hde; // required
-    private DomainNotLoadedException dnle; // required
+    private elephantdb.generated.Value success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -2950,7 +1547,7 @@ public class ElephantDB {
     static {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class)));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
@@ -2965,10 +1562,10 @@ public class ElephantDB {
     }
 
     public get_result(
-      Value success,
-      DomainNotFoundException dnfe,
-      HostsDownException hde,
-      DomainNotLoadedException dnle)
+      elephantdb.generated.Value success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
@@ -2982,16 +1579,16 @@ public class ElephantDB {
      */
     public get_result(get_result other) {
       if (other.is_set_success()) {
-        this.success = new Value(other.success);
+        this.success = new elephantdb.generated.Value(other.success);
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
       }
       if (other.is_set_hde()) {
-        this.hde = new HostsDownException(other.hde);
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -3007,11 +1604,11 @@ public class ElephantDB {
       this.dnle = null;
     }
 
-    public Value get_success() {
+    public elephantdb.generated.Value get_success() {
       return this.success;
     }
 
-    public void set_success(Value success) {
+    public void set_success(elephantdb.generated.Value success) {
       this.success = success;
     }
 
@@ -3030,11 +1627,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -3053,11 +1650,11 @@ public class ElephantDB {
       }
     }
 
-    public HostsDownException get_hde() {
+    public elephantdb.generated.HostsDownException get_hde() {
       return this.hde;
     }
 
-    public void set_hde(HostsDownException hde) {
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
       this.hde = hde;
     }
 
@@ -3076,11 +1673,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -3105,7 +1702,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((Value)value);
+          set_success((elephantdb.generated.Value)value);
         }
         break;
 
@@ -3113,7 +1710,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
         }
         break;
 
@@ -3121,7 +1718,7 @@ public class ElephantDB {
         if (value == null) {
           unset_hde();
         } else {
-          set_hde((HostsDownException)value);
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -3129,7 +1726,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -3319,7 +1916,7 @@ public class ElephantDB {
         switch (field.id) {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.success = new Value();
+              this.success = new elephantdb.generated.Value();
               this.success.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -3327,7 +1924,7 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -3335,7 +1932,7 @@ public class ElephantDB {
             break;
           case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.hde = new HostsDownException();
+              this.hde = new elephantdb.generated.HostsDownException();
               this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -3343,7 +1940,7 @@ public class ElephantDB {
             break;
           case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
               this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -3846,10 +2443,10 @@ public class ElephantDB {
     private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
     private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private Value success; // required
-    private DomainNotFoundException dnfe; // required
-    private HostsDownException hde; // required
-    private DomainNotLoadedException dnle; // required
+    private elephantdb.generated.Value success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -3924,7 +2521,7 @@ public class ElephantDB {
     static {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class)));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
@@ -3939,10 +2536,10 @@ public class ElephantDB {
     }
 
     public getString_result(
-      Value success,
-      DomainNotFoundException dnfe,
-      HostsDownException hde,
-      DomainNotLoadedException dnle)
+      elephantdb.generated.Value success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
@@ -3956,16 +2553,16 @@ public class ElephantDB {
      */
     public getString_result(getString_result other) {
       if (other.is_set_success()) {
-        this.success = new Value(other.success);
+        this.success = new elephantdb.generated.Value(other.success);
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
       }
       if (other.is_set_hde()) {
-        this.hde = new HostsDownException(other.hde);
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -3981,11 +2578,11 @@ public class ElephantDB {
       this.dnle = null;
     }
 
-    public Value get_success() {
+    public elephantdb.generated.Value get_success() {
       return this.success;
     }
 
-    public void set_success(Value success) {
+    public void set_success(elephantdb.generated.Value success) {
       this.success = success;
     }
 
@@ -4004,11 +2601,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -4027,11 +2624,11 @@ public class ElephantDB {
       }
     }
 
-    public HostsDownException get_hde() {
+    public elephantdb.generated.HostsDownException get_hde() {
       return this.hde;
     }
 
-    public void set_hde(HostsDownException hde) {
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
       this.hde = hde;
     }
 
@@ -4050,11 +2647,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -4079,7 +2676,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((Value)value);
+          set_success((elephantdb.generated.Value)value);
         }
         break;
 
@@ -4087,7 +2684,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
         }
         break;
 
@@ -4095,7 +2692,7 @@ public class ElephantDB {
         if (value == null) {
           unset_hde();
         } else {
-          set_hde((HostsDownException)value);
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -4103,7 +2700,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -4293,7 +2890,7 @@ public class ElephantDB {
         switch (field.id) {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.success = new Value();
+              this.success = new elephantdb.generated.Value();
               this.success.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -4301,7 +2898,7 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -4309,7 +2906,7 @@ public class ElephantDB {
             break;
           case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.hde = new HostsDownException();
+              this.hde = new elephantdb.generated.HostsDownException();
               this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -4317,7 +2914,7 @@ public class ElephantDB {
             break;
           case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
               this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -4820,10 +3417,10 @@ public class ElephantDB {
     private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
     private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private Value success; // required
-    private DomainNotFoundException dnfe; // required
-    private HostsDownException hde; // required
-    private DomainNotLoadedException dnle; // required
+    private elephantdb.generated.Value success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -4898,7 +3495,7 @@ public class ElephantDB {
     static {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class)));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
@@ -4913,10 +3510,10 @@ public class ElephantDB {
     }
 
     public getInt_result(
-      Value success,
-      DomainNotFoundException dnfe,
-      HostsDownException hde,
-      DomainNotLoadedException dnle)
+      elephantdb.generated.Value success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
@@ -4930,16 +3527,16 @@ public class ElephantDB {
      */
     public getInt_result(getInt_result other) {
       if (other.is_set_success()) {
-        this.success = new Value(other.success);
+        this.success = new elephantdb.generated.Value(other.success);
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
       }
       if (other.is_set_hde()) {
-        this.hde = new HostsDownException(other.hde);
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -4955,11 +3552,11 @@ public class ElephantDB {
       this.dnle = null;
     }
 
-    public Value get_success() {
+    public elephantdb.generated.Value get_success() {
       return this.success;
     }
 
-    public void set_success(Value success) {
+    public void set_success(elephantdb.generated.Value success) {
       this.success = success;
     }
 
@@ -4978,11 +3575,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -5001,11 +3598,11 @@ public class ElephantDB {
       }
     }
 
-    public HostsDownException get_hde() {
+    public elephantdb.generated.HostsDownException get_hde() {
       return this.hde;
     }
 
-    public void set_hde(HostsDownException hde) {
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
       this.hde = hde;
     }
 
@@ -5024,11 +3621,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -5053,7 +3650,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((Value)value);
+          set_success((elephantdb.generated.Value)value);
         }
         break;
 
@@ -5061,7 +3658,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
         }
         break;
 
@@ -5069,7 +3666,7 @@ public class ElephantDB {
         if (value == null) {
           unset_hde();
         } else {
-          set_hde((HostsDownException)value);
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -5077,7 +3674,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -5267,7 +3864,7 @@ public class ElephantDB {
         switch (field.id) {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.success = new Value();
+              this.success = new elephantdb.generated.Value();
               this.success.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -5275,7 +3872,7 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -5283,7 +3880,7 @@ public class ElephantDB {
             break;
           case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.hde = new HostsDownException();
+              this.hde = new elephantdb.generated.HostsDownException();
               this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -5291,7 +3888,7 @@ public class ElephantDB {
             break;
           case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
               this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -5794,10 +4391,10 @@ public class ElephantDB {
     private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
     private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private Value success; // required
-    private DomainNotFoundException dnfe; // required
-    private HostsDownException hde; // required
-    private DomainNotLoadedException dnle; // required
+    private elephantdb.generated.Value success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -5872,7 +4469,7 @@ public class ElephantDB {
     static {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class)));
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class)));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
@@ -5887,10 +4484,10 @@ public class ElephantDB {
     }
 
     public getLong_result(
-      Value success,
-      DomainNotFoundException dnfe,
-      HostsDownException hde,
-      DomainNotLoadedException dnle)
+      elephantdb.generated.Value success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
@@ -5904,16 +4501,16 @@ public class ElephantDB {
      */
     public getLong_result(getLong_result other) {
       if (other.is_set_success()) {
-        this.success = new Value(other.success);
+        this.success = new elephantdb.generated.Value(other.success);
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
       }
       if (other.is_set_hde()) {
-        this.hde = new HostsDownException(other.hde);
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -5929,11 +4526,11 @@ public class ElephantDB {
       this.dnle = null;
     }
 
-    public Value get_success() {
+    public elephantdb.generated.Value get_success() {
       return this.success;
     }
 
-    public void set_success(Value success) {
+    public void set_success(elephantdb.generated.Value success) {
       this.success = success;
     }
 
@@ -5952,11 +4549,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -5975,11 +4572,11 @@ public class ElephantDB {
       }
     }
 
-    public HostsDownException get_hde() {
+    public elephantdb.generated.HostsDownException get_hde() {
       return this.hde;
     }
 
-    public void set_hde(HostsDownException hde) {
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
       this.hde = hde;
     }
 
@@ -5998,11 +4595,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -6027,7 +4624,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((Value)value);
+          set_success((elephantdb.generated.Value)value);
         }
         break;
 
@@ -6035,7 +4632,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
         }
         break;
 
@@ -6043,7 +4640,7 @@ public class ElephantDB {
         if (value == null) {
           unset_hde();
         } else {
-          set_hde((HostsDownException)value);
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -6051,7 +4648,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -6241,7 +4838,7 @@ public class ElephantDB {
         switch (field.id) {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.success = new Value();
+              this.success = new elephantdb.generated.Value();
               this.success.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -6249,7 +4846,7 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -6257,7 +4854,7 @@ public class ElephantDB {
             break;
           case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.hde = new HostsDownException();
+              this.hde = new elephantdb.generated.HostsDownException();
               this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -6265,7 +4862,7 @@ public class ElephantDB {
             break;
           case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
               this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -6705,13 +5302,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list21 = iprot.readListBegin();
-                this.key = new ArrayList<ByteBuffer>(_list21.size);
-                for (int _i22 = 0; _i22 < _list21.size; ++_i22)
+                org.apache.thrift7.protocol.TList _list0 = iprot.readListBegin();
+                this.key = new ArrayList<ByteBuffer>(_list0.size);
+                for (int _i1 = 0; _i1 < _list0.size; ++_i1)
                 {
-                  ByteBuffer _elem23; // required
-                  _elem23 = iprot.readBinary();
-                  this.key.add(_elem23);
+                  ByteBuffer _elem2; // required
+                  _elem2 = iprot.readBinary();
+                  this.key.add(_elem2);
                 }
                 iprot.readListEnd();
               }
@@ -6741,9 +5338,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (ByteBuffer _iter24 : this.key)
+          for (ByteBuffer _iter3 : this.key)
           {
-            oprot.writeBinary(_iter24);
+            oprot.writeBinary(_iter3);
           }
           oprot.writeListEnd();
         }
@@ -6807,10 +5404,10 @@ public class ElephantDB {
     private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
     private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private List<Value> success; // required
-    private DomainNotFoundException dnfe; // required
-    private HostsDownException hde; // required
-    private DomainNotLoadedException dnle; // required
+    private List<elephantdb.generated.Value> success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -6886,7 +5483,7 @@ public class ElephantDB {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
-              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class))));
+              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class))));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
@@ -6901,10 +5498,10 @@ public class ElephantDB {
     }
 
     public multiGet_result(
-      List<Value> success,
-      DomainNotFoundException dnfe,
-      HostsDownException hde,
-      DomainNotLoadedException dnle)
+      List<elephantdb.generated.Value> success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
@@ -6918,20 +5515,20 @@ public class ElephantDB {
      */
     public multiGet_result(multiGet_result other) {
       if (other.is_set_success()) {
-        List<Value> __this__success = new ArrayList<Value>();
-        for (Value other_element : other.success) {
-          __this__success.add(new Value(other_element));
+        List<elephantdb.generated.Value> __this__success = new ArrayList<elephantdb.generated.Value>();
+        for (elephantdb.generated.Value other_element : other.success) {
+          __this__success.add(new elephantdb.generated.Value(other_element));
         }
         this.success = __this__success;
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
       }
       if (other.is_set_hde()) {
-        this.hde = new HostsDownException(other.hde);
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -6951,22 +5548,22 @@ public class ElephantDB {
       return (this.success == null) ? 0 : this.success.size();
     }
 
-    public java.util.Iterator<Value> get_success_iterator() {
+    public java.util.Iterator<elephantdb.generated.Value> get_success_iterator() {
       return (this.success == null) ? null : this.success.iterator();
     }
 
-    public void add_to_success(Value elem) {
+    public void add_to_success(elephantdb.generated.Value elem) {
       if (this.success == null) {
-        this.success = new ArrayList<Value>();
+        this.success = new ArrayList<elephantdb.generated.Value>();
       }
       this.success.add(elem);
     }
 
-    public List<Value> get_success() {
+    public List<elephantdb.generated.Value> get_success() {
       return this.success;
     }
 
-    public void set_success(List<Value> success) {
+    public void set_success(List<elephantdb.generated.Value> success) {
       this.success = success;
     }
 
@@ -6985,11 +5582,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -7008,11 +5605,11 @@ public class ElephantDB {
       }
     }
 
-    public HostsDownException get_hde() {
+    public elephantdb.generated.HostsDownException get_hde() {
       return this.hde;
     }
 
-    public void set_hde(HostsDownException hde) {
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
       this.hde = hde;
     }
 
@@ -7031,11 +5628,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -7060,7 +5657,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((List<Value>)value);
+          set_success((List<elephantdb.generated.Value>)value);
         }
         break;
 
@@ -7068,7 +5665,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
         }
         break;
 
@@ -7076,7 +5673,7 @@ public class ElephantDB {
         if (value == null) {
           unset_hde();
         } else {
-          set_hde((HostsDownException)value);
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -7084,7 +5681,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -7275,14 +5872,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list25 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list25.size);
-                for (int _i26 = 0; _i26 < _list25.size; ++_i26)
+                org.apache.thrift7.protocol.TList _list4 = iprot.readListBegin();
+                this.success = new ArrayList<elephantdb.generated.Value>(_list4.size);
+                for (int _i5 = 0; _i5 < _list4.size; ++_i5)
                 {
-                  Value _elem27; // required
-                  _elem27 = new Value();
-                  _elem27.read(iprot);
-                  this.success.add(_elem27);
+                  elephantdb.generated.Value _elem6; // required
+                  _elem6 = new elephantdb.generated.Value();
+                  _elem6.read(iprot);
+                  this.success.add(_elem6);
                 }
                 iprot.readListEnd();
               }
@@ -7292,7 +5889,7 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -7300,7 +5897,7 @@ public class ElephantDB {
             break;
           case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.hde = new HostsDownException();
+              this.hde = new elephantdb.generated.HostsDownException();
               this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -7308,7 +5905,7 @@ public class ElephantDB {
             break;
           case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
               this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -7330,9 +5927,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter28 : this.success)
+          for (elephantdb.generated.Value _iter7 : this.success)
           {
-            _iter28.write(oprot);
+            _iter7.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -7753,13 +6350,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list29 = iprot.readListBegin();
-                this.key = new ArrayList<String>(_list29.size);
-                for (int _i30 = 0; _i30 < _list29.size; ++_i30)
+                org.apache.thrift7.protocol.TList _list8 = iprot.readListBegin();
+                this.key = new ArrayList<String>(_list8.size);
+                for (int _i9 = 0; _i9 < _list8.size; ++_i9)
                 {
-                  String _elem31; // required
-                  _elem31 = iprot.readString();
-                  this.key.add(_elem31);
+                  String _elem10; // required
+                  _elem10 = iprot.readString();
+                  this.key.add(_elem10);
                 }
                 iprot.readListEnd();
               }
@@ -7789,9 +6386,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (String _iter32 : this.key)
+          for (String _iter11 : this.key)
           {
-            oprot.writeString(_iter32);
+            oprot.writeString(_iter11);
           }
           oprot.writeListEnd();
         }
@@ -7855,10 +6452,10 @@ public class ElephantDB {
     private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
     private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private List<Value> success; // required
-    private DomainNotFoundException dnfe; // required
-    private HostsDownException hde; // required
-    private DomainNotLoadedException dnle; // required
+    private List<elephantdb.generated.Value> success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -7934,7 +6531,7 @@ public class ElephantDB {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
-              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class))));
+              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class))));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
@@ -7949,10 +6546,10 @@ public class ElephantDB {
     }
 
     public multiGetString_result(
-      List<Value> success,
-      DomainNotFoundException dnfe,
-      HostsDownException hde,
-      DomainNotLoadedException dnle)
+      List<elephantdb.generated.Value> success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
@@ -7966,20 +6563,20 @@ public class ElephantDB {
      */
     public multiGetString_result(multiGetString_result other) {
       if (other.is_set_success()) {
-        List<Value> __this__success = new ArrayList<Value>();
-        for (Value other_element : other.success) {
-          __this__success.add(new Value(other_element));
+        List<elephantdb.generated.Value> __this__success = new ArrayList<elephantdb.generated.Value>();
+        for (elephantdb.generated.Value other_element : other.success) {
+          __this__success.add(new elephantdb.generated.Value(other_element));
         }
         this.success = __this__success;
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
       }
       if (other.is_set_hde()) {
-        this.hde = new HostsDownException(other.hde);
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -7999,22 +6596,22 @@ public class ElephantDB {
       return (this.success == null) ? 0 : this.success.size();
     }
 
-    public java.util.Iterator<Value> get_success_iterator() {
+    public java.util.Iterator<elephantdb.generated.Value> get_success_iterator() {
       return (this.success == null) ? null : this.success.iterator();
     }
 
-    public void add_to_success(Value elem) {
+    public void add_to_success(elephantdb.generated.Value elem) {
       if (this.success == null) {
-        this.success = new ArrayList<Value>();
+        this.success = new ArrayList<elephantdb.generated.Value>();
       }
       this.success.add(elem);
     }
 
-    public List<Value> get_success() {
+    public List<elephantdb.generated.Value> get_success() {
       return this.success;
     }
 
-    public void set_success(List<Value> success) {
+    public void set_success(List<elephantdb.generated.Value> success) {
       this.success = success;
     }
 
@@ -8033,11 +6630,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -8056,11 +6653,11 @@ public class ElephantDB {
       }
     }
 
-    public HostsDownException get_hde() {
+    public elephantdb.generated.HostsDownException get_hde() {
       return this.hde;
     }
 
-    public void set_hde(HostsDownException hde) {
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
       this.hde = hde;
     }
 
@@ -8079,11 +6676,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -8108,7 +6705,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((List<Value>)value);
+          set_success((List<elephantdb.generated.Value>)value);
         }
         break;
 
@@ -8116,7 +6713,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
         }
         break;
 
@@ -8124,7 +6721,7 @@ public class ElephantDB {
         if (value == null) {
           unset_hde();
         } else {
-          set_hde((HostsDownException)value);
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -8132,7 +6729,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -8323,14 +6920,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list33 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list33.size);
-                for (int _i34 = 0; _i34 < _list33.size; ++_i34)
+                org.apache.thrift7.protocol.TList _list12 = iprot.readListBegin();
+                this.success = new ArrayList<elephantdb.generated.Value>(_list12.size);
+                for (int _i13 = 0; _i13 < _list12.size; ++_i13)
                 {
-                  Value _elem35; // required
-                  _elem35 = new Value();
-                  _elem35.read(iprot);
-                  this.success.add(_elem35);
+                  elephantdb.generated.Value _elem14; // required
+                  _elem14 = new elephantdb.generated.Value();
+                  _elem14.read(iprot);
+                  this.success.add(_elem14);
                 }
                 iprot.readListEnd();
               }
@@ -8340,7 +6937,7 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -8348,7 +6945,7 @@ public class ElephantDB {
             break;
           case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.hde = new HostsDownException();
+              this.hde = new elephantdb.generated.HostsDownException();
               this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -8356,7 +6953,7 @@ public class ElephantDB {
             break;
           case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
               this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -8378,9 +6975,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter36 : this.success)
+          for (elephantdb.generated.Value _iter15 : this.success)
           {
-            _iter36.write(oprot);
+            _iter15.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -8801,13 +7398,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list37 = iprot.readListBegin();
-                this.key = new ArrayList<Integer>(_list37.size);
-                for (int _i38 = 0; _i38 < _list37.size; ++_i38)
+                org.apache.thrift7.protocol.TList _list16 = iprot.readListBegin();
+                this.key = new ArrayList<Integer>(_list16.size);
+                for (int _i17 = 0; _i17 < _list16.size; ++_i17)
                 {
-                  int _elem39; // required
-                  _elem39 = iprot.readI32();
-                  this.key.add(_elem39);
+                  int _elem18; // required
+                  _elem18 = iprot.readI32();
+                  this.key.add(_elem18);
                 }
                 iprot.readListEnd();
               }
@@ -8837,9 +7434,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.I32, this.key.size()));
-          for (int _iter40 : this.key)
+          for (int _iter19 : this.key)
           {
-            oprot.writeI32(_iter40);
+            oprot.writeI32(_iter19);
           }
           oprot.writeListEnd();
         }
@@ -8903,10 +7500,10 @@ public class ElephantDB {
     private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
     private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private List<Value> success; // required
-    private DomainNotFoundException dnfe; // required
-    private HostsDownException hde; // required
-    private DomainNotLoadedException dnle; // required
+    private List<elephantdb.generated.Value> success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -8982,7 +7579,7 @@ public class ElephantDB {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
-              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class))));
+              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class))));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
@@ -8997,10 +7594,10 @@ public class ElephantDB {
     }
 
     public multiGetInt_result(
-      List<Value> success,
-      DomainNotFoundException dnfe,
-      HostsDownException hde,
-      DomainNotLoadedException dnle)
+      List<elephantdb.generated.Value> success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
@@ -9014,20 +7611,20 @@ public class ElephantDB {
      */
     public multiGetInt_result(multiGetInt_result other) {
       if (other.is_set_success()) {
-        List<Value> __this__success = new ArrayList<Value>();
-        for (Value other_element : other.success) {
-          __this__success.add(new Value(other_element));
+        List<elephantdb.generated.Value> __this__success = new ArrayList<elephantdb.generated.Value>();
+        for (elephantdb.generated.Value other_element : other.success) {
+          __this__success.add(new elephantdb.generated.Value(other_element));
         }
         this.success = __this__success;
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
       }
       if (other.is_set_hde()) {
-        this.hde = new HostsDownException(other.hde);
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -9047,22 +7644,22 @@ public class ElephantDB {
       return (this.success == null) ? 0 : this.success.size();
     }
 
-    public java.util.Iterator<Value> get_success_iterator() {
+    public java.util.Iterator<elephantdb.generated.Value> get_success_iterator() {
       return (this.success == null) ? null : this.success.iterator();
     }
 
-    public void add_to_success(Value elem) {
+    public void add_to_success(elephantdb.generated.Value elem) {
       if (this.success == null) {
-        this.success = new ArrayList<Value>();
+        this.success = new ArrayList<elephantdb.generated.Value>();
       }
       this.success.add(elem);
     }
 
-    public List<Value> get_success() {
+    public List<elephantdb.generated.Value> get_success() {
       return this.success;
     }
 
-    public void set_success(List<Value> success) {
+    public void set_success(List<elephantdb.generated.Value> success) {
       this.success = success;
     }
 
@@ -9081,11 +7678,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -9104,11 +7701,11 @@ public class ElephantDB {
       }
     }
 
-    public HostsDownException get_hde() {
+    public elephantdb.generated.HostsDownException get_hde() {
       return this.hde;
     }
 
-    public void set_hde(HostsDownException hde) {
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
       this.hde = hde;
     }
 
@@ -9127,11 +7724,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -9156,7 +7753,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((List<Value>)value);
+          set_success((List<elephantdb.generated.Value>)value);
         }
         break;
 
@@ -9164,7 +7761,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
         }
         break;
 
@@ -9172,7 +7769,7 @@ public class ElephantDB {
         if (value == null) {
           unset_hde();
         } else {
-          set_hde((HostsDownException)value);
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -9180,7 +7777,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -9371,14 +7968,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list41 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list41.size);
-                for (int _i42 = 0; _i42 < _list41.size; ++_i42)
+                org.apache.thrift7.protocol.TList _list20 = iprot.readListBegin();
+                this.success = new ArrayList<elephantdb.generated.Value>(_list20.size);
+                for (int _i21 = 0; _i21 < _list20.size; ++_i21)
                 {
-                  Value _elem43; // required
-                  _elem43 = new Value();
-                  _elem43.read(iprot);
-                  this.success.add(_elem43);
+                  elephantdb.generated.Value _elem22; // required
+                  _elem22 = new elephantdb.generated.Value();
+                  _elem22.read(iprot);
+                  this.success.add(_elem22);
                 }
                 iprot.readListEnd();
               }
@@ -9388,7 +7985,7 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -9396,7 +7993,7 @@ public class ElephantDB {
             break;
           case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.hde = new HostsDownException();
+              this.hde = new elephantdb.generated.HostsDownException();
               this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -9404,7 +8001,7 @@ public class ElephantDB {
             break;
           case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
               this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -9426,9 +8023,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter44 : this.success)
+          for (elephantdb.generated.Value _iter23 : this.success)
           {
-            _iter44.write(oprot);
+            _iter23.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -9849,13 +8446,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list45 = iprot.readListBegin();
-                this.key = new ArrayList<Long>(_list45.size);
-                for (int _i46 = 0; _i46 < _list45.size; ++_i46)
+                org.apache.thrift7.protocol.TList _list24 = iprot.readListBegin();
+                this.key = new ArrayList<Long>(_list24.size);
+                for (int _i25 = 0; _i25 < _list24.size; ++_i25)
                 {
-                  long _elem47; // required
-                  _elem47 = iprot.readI64();
-                  this.key.add(_elem47);
+                  long _elem26; // required
+                  _elem26 = iprot.readI64();
+                  this.key.add(_elem26);
                 }
                 iprot.readListEnd();
               }
@@ -9885,9 +8482,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.I64, this.key.size()));
-          for (long _iter48 : this.key)
+          for (long _iter27 : this.key)
           {
-            oprot.writeI64(_iter48);
+            oprot.writeI64(_iter27);
           }
           oprot.writeListEnd();
         }
@@ -9951,10 +8548,10 @@ public class ElephantDB {
     private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
     private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private List<Value> success; // required
-    private DomainNotFoundException dnfe; // required
-    private HostsDownException hde; // required
-    private DomainNotLoadedException dnle; // required
+    private List<elephantdb.generated.Value> success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -10030,7 +8627,7 @@ public class ElephantDB {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
-              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class))));
+              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class))));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
@@ -10045,10 +8642,10 @@ public class ElephantDB {
     }
 
     public multiGetLong_result(
-      List<Value> success,
-      DomainNotFoundException dnfe,
-      HostsDownException hde,
-      DomainNotLoadedException dnle)
+      List<elephantdb.generated.Value> success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
@@ -10062,20 +8659,20 @@ public class ElephantDB {
      */
     public multiGetLong_result(multiGetLong_result other) {
       if (other.is_set_success()) {
-        List<Value> __this__success = new ArrayList<Value>();
-        for (Value other_element : other.success) {
-          __this__success.add(new Value(other_element));
+        List<elephantdb.generated.Value> __this__success = new ArrayList<elephantdb.generated.Value>();
+        for (elephantdb.generated.Value other_element : other.success) {
+          __this__success.add(new elephantdb.generated.Value(other_element));
         }
         this.success = __this__success;
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
       }
       if (other.is_set_hde()) {
-        this.hde = new HostsDownException(other.hde);
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -10095,22 +8692,22 @@ public class ElephantDB {
       return (this.success == null) ? 0 : this.success.size();
     }
 
-    public java.util.Iterator<Value> get_success_iterator() {
+    public java.util.Iterator<elephantdb.generated.Value> get_success_iterator() {
       return (this.success == null) ? null : this.success.iterator();
     }
 
-    public void add_to_success(Value elem) {
+    public void add_to_success(elephantdb.generated.Value elem) {
       if (this.success == null) {
-        this.success = new ArrayList<Value>();
+        this.success = new ArrayList<elephantdb.generated.Value>();
       }
       this.success.add(elem);
     }
 
-    public List<Value> get_success() {
+    public List<elephantdb.generated.Value> get_success() {
       return this.success;
     }
 
-    public void set_success(List<Value> success) {
+    public void set_success(List<elephantdb.generated.Value> success) {
       this.success = success;
     }
 
@@ -10129,11 +8726,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -10152,11 +8749,11 @@ public class ElephantDB {
       }
     }
 
-    public HostsDownException get_hde() {
+    public elephantdb.generated.HostsDownException get_hde() {
       return this.hde;
     }
 
-    public void set_hde(HostsDownException hde) {
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
       this.hde = hde;
     }
 
@@ -10175,11 +8772,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -10204,7 +8801,7 @@ public class ElephantDB {
         if (value == null) {
           unset_success();
         } else {
-          set_success((List<Value>)value);
+          set_success((List<elephantdb.generated.Value>)value);
         }
         break;
 
@@ -10212,7 +8809,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
         }
         break;
 
@@ -10220,7 +8817,7 @@ public class ElephantDB {
         if (value == null) {
           unset_hde();
         } else {
-          set_hde((HostsDownException)value);
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -10228,7 +8825,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -10419,14 +9016,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list49 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list49.size);
-                for (int _i50 = 0; _i50 < _list49.size; ++_i50)
+                org.apache.thrift7.protocol.TList _list28 = iprot.readListBegin();
+                this.success = new ArrayList<elephantdb.generated.Value>(_list28.size);
+                for (int _i29 = 0; _i29 < _list28.size; ++_i29)
                 {
-                  Value _elem51; // required
-                  _elem51 = new Value();
-                  _elem51.read(iprot);
-                  this.success.add(_elem51);
+                  elephantdb.generated.Value _elem30; // required
+                  _elem30 = new elephantdb.generated.Value();
+                  _elem30.read(iprot);
+                  this.success.add(_elem30);
                 }
                 iprot.readListEnd();
               }
@@ -10436,7 +9033,7 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -10444,7 +9041,7 @@ public class ElephantDB {
             break;
           case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.hde = new HostsDownException();
+              this.hde = new elephantdb.generated.HostsDownException();
               this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -10452,7 +9049,7 @@ public class ElephantDB {
             break;
           case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
               this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
@@ -10474,9 +9071,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter52 : this.success)
+          for (elephantdb.generated.Value _iter31 : this.success)
           {
-            _iter52.write(oprot);
+            _iter31.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -10899,13 +9496,13 @@ public class ElephantDB {
           case 2: // KEY
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list53 = iprot.readListBegin();
-                this.key = new ArrayList<ByteBuffer>(_list53.size);
-                for (int _i54 = 0; _i54 < _list53.size; ++_i54)
+                org.apache.thrift7.protocol.TList _list32 = iprot.readListBegin();
+                this.key = new ArrayList<ByteBuffer>(_list32.size);
+                for (int _i33 = 0; _i33 < _list32.size; ++_i33)
                 {
-                  ByteBuffer _elem55; // required
-                  _elem55 = iprot.readBinary();
-                  this.key.add(_elem55);
+                  ByteBuffer _elem34; // required
+                  _elem34 = iprot.readBinary();
+                  this.key.add(_elem34);
                 }
                 iprot.readListEnd();
               }
@@ -10935,9 +9532,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(KEY_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
-          for (ByteBuffer _iter56 : this.key)
+          for (ByteBuffer _iter35 : this.key)
           {
-            oprot.writeBinary(_iter56);
+            oprot.writeBinary(_iter35);
           }
           oprot.writeListEnd();
         }
@@ -10998,20 +9595,20 @@ public class ElephantDB {
 
     private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.LIST, (short)0);
     private static final org.apache.thrift7.protocol.TField DNFE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnfe", org.apache.thrift7.protocol.TType.STRUCT, (short)1);
-    private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
-    private static final org.apache.thrift7.protocol.TField WHE_FIELD_DESC = new org.apache.thrift7.protocol.TField("whe", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
+    private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
+    private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
 
-    private List<Value> success; // required
-    private DomainNotFoundException dnfe; // required
-    private DomainNotLoadedException dnle; // required
-    private WrongHostException whe; // required
+    private List<elephantdb.generated.Value> success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
       SUCCESS((short)0, "success"),
       DNFE((short)1, "dnfe"),
-      DNLE((short)2, "dnle"),
-      WHE((short)3, "whe");
+      HDE((short)2, "hde"),
+      DNLE((short)3, "dnle");
 
       private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -11030,10 +9627,10 @@ public class ElephantDB {
             return SUCCESS;
           case 1: // DNFE
             return DNFE;
-          case 2: // DNLE
+          case 2: // HDE
+            return HDE;
+          case 3: // DNLE
             return DNLE;
-          case 3: // WHE
-            return WHE;
           default:
             return null;
         }
@@ -11080,12 +9677,12 @@ public class ElephantDB {
       Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
-              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, Value.class))));
+              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class))));
       tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
-      tmpMap.put(_Fields.DNLE, new org.apache.thrift7.meta_data.FieldMetaData("dnle", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+      tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
-      tmpMap.put(_Fields.WHE, new org.apache.thrift7.meta_data.FieldMetaData("whe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+      tmpMap.put(_Fields.DNLE, new org.apache.thrift7.meta_data.FieldMetaData("dnle", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(directMultiGet_result.class, metaDataMap);
@@ -11095,16 +9692,16 @@ public class ElephantDB {
     }
 
     public directMultiGet_result(
-      List<Value> success,
-      DomainNotFoundException dnfe,
-      DomainNotLoadedException dnle,
-      WrongHostException whe)
+      List<elephantdb.generated.Value> success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
     {
       this();
       this.success = success;
       this.dnfe = dnfe;
+      this.hde = hde;
       this.dnle = dnle;
-      this.whe = whe;
     }
 
     /**
@@ -11112,20 +9709,20 @@ public class ElephantDB {
      */
     public directMultiGet_result(directMultiGet_result other) {
       if (other.is_set_success()) {
-        List<Value> __this__success = new ArrayList<Value>();
-        for (Value other_element : other.success) {
-          __this__success.add(new Value(other_element));
+        List<elephantdb.generated.Value> __this__success = new ArrayList<elephantdb.generated.Value>();
+        for (elephantdb.generated.Value other_element : other.success) {
+          __this__success.add(new elephantdb.generated.Value(other_element));
         }
         this.success = __this__success;
       }
       if (other.is_set_dnfe()) {
-        this.dnfe = new DomainNotFoundException(other.dnfe);
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
+      }
+      if (other.is_set_hde()) {
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
       }
       if (other.is_set_dnle()) {
-        this.dnle = new DomainNotLoadedException(other.dnle);
-      }
-      if (other.is_set_whe()) {
-        this.whe = new WrongHostException(other.whe);
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
       }
     }
 
@@ -11137,30 +9734,30 @@ public class ElephantDB {
     public void clear() {
       this.success = null;
       this.dnfe = null;
+      this.hde = null;
       this.dnle = null;
-      this.whe = null;
     }
 
     public int get_success_size() {
       return (this.success == null) ? 0 : this.success.size();
     }
 
-    public java.util.Iterator<Value> get_success_iterator() {
+    public java.util.Iterator<elephantdb.generated.Value> get_success_iterator() {
       return (this.success == null) ? null : this.success.iterator();
     }
 
-    public void add_to_success(Value elem) {
+    public void add_to_success(elephantdb.generated.Value elem) {
       if (this.success == null) {
-        this.success = new ArrayList<Value>();
+        this.success = new ArrayList<elephantdb.generated.Value>();
       }
       this.success.add(elem);
     }
 
-    public List<Value> get_success() {
+    public List<elephantdb.generated.Value> get_success() {
       return this.success;
     }
 
-    public void set_success(List<Value> success) {
+    public void set_success(List<elephantdb.generated.Value> success) {
       this.success = success;
     }
 
@@ -11179,11 +9776,11 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotFoundException get_dnfe() {
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
       return this.dnfe;
     }
 
-    public void set_dnfe(DomainNotFoundException dnfe) {
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
       this.dnfe = dnfe;
     }
 
@@ -11202,11 +9799,34 @@ public class ElephantDB {
       }
     }
 
-    public DomainNotLoadedException get_dnle() {
+    public elephantdb.generated.HostsDownException get_hde() {
+      return this.hde;
+    }
+
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
+      this.hde = hde;
+    }
+
+    public void unset_hde() {
+      this.hde = null;
+    }
+
+    /** Returns true if field hde is set (has been assigned a value) and false otherwise */
+    public boolean is_set_hde() {
+      return this.hde != null;
+    }
+
+    public void set_hde_isSet(boolean value) {
+      if (!value) {
+        this.hde = null;
+      }
+    }
+
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
       return this.dnle;
     }
 
-    public void set_dnle(DomainNotLoadedException dnle) {
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
       this.dnle = dnle;
     }
 
@@ -11225,36 +9845,13 @@ public class ElephantDB {
       }
     }
 
-    public WrongHostException get_whe() {
-      return this.whe;
-    }
-
-    public void set_whe(WrongHostException whe) {
-      this.whe = whe;
-    }
-
-    public void unset_whe() {
-      this.whe = null;
-    }
-
-    /** Returns true if field whe is set (has been assigned a value) and false otherwise */
-    public boolean is_set_whe() {
-      return this.whe != null;
-    }
-
-    public void set_whe_isSet(boolean value) {
-      if (!value) {
-        this.whe = null;
-      }
-    }
-
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case SUCCESS:
         if (value == null) {
           unset_success();
         } else {
-          set_success((List<Value>)value);
+          set_success((List<elephantdb.generated.Value>)value);
         }
         break;
 
@@ -11262,7 +9859,15 @@ public class ElephantDB {
         if (value == null) {
           unset_dnfe();
         } else {
-          set_dnfe((DomainNotFoundException)value);
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
+        }
+        break;
+
+      case HDE:
+        if (value == null) {
+          unset_hde();
+        } else {
+          set_hde((elephantdb.generated.HostsDownException)value);
         }
         break;
 
@@ -11270,15 +9875,7 @@ public class ElephantDB {
         if (value == null) {
           unset_dnle();
         } else {
-          set_dnle((DomainNotLoadedException)value);
-        }
-        break;
-
-      case WHE:
-        if (value == null) {
-          unset_whe();
-        } else {
-          set_whe((WrongHostException)value);
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
         }
         break;
 
@@ -11293,11 +9890,11 @@ public class ElephantDB {
       case DNFE:
         return get_dnfe();
 
+      case HDE:
+        return get_hde();
+
       case DNLE:
         return get_dnle();
-
-      case WHE:
-        return get_whe();
 
       }
       throw new IllegalStateException();
@@ -11314,10 +9911,10 @@ public class ElephantDB {
         return is_set_success();
       case DNFE:
         return is_set_dnfe();
+      case HDE:
+        return is_set_hde();
       case DNLE:
         return is_set_dnle();
-      case WHE:
-        return is_set_whe();
       }
       throw new IllegalStateException();
     }
@@ -11353,21 +9950,21 @@ public class ElephantDB {
           return false;
       }
 
+      boolean this_present_hde = true && this.is_set_hde();
+      boolean that_present_hde = true && that.is_set_hde();
+      if (this_present_hde || that_present_hde) {
+        if (!(this_present_hde && that_present_hde))
+          return false;
+        if (!this.hde.equals(that.hde))
+          return false;
+      }
+
       boolean this_present_dnle = true && this.is_set_dnle();
       boolean that_present_dnle = true && that.is_set_dnle();
       if (this_present_dnle || that_present_dnle) {
         if (!(this_present_dnle && that_present_dnle))
           return false;
         if (!this.dnle.equals(that.dnle))
-          return false;
-      }
-
-      boolean this_present_whe = true && this.is_set_whe();
-      boolean that_present_whe = true && that.is_set_whe();
-      if (this_present_whe || that_present_whe) {
-        if (!(this_present_whe && that_present_whe))
-          return false;
-        if (!this.whe.equals(that.whe))
           return false;
       }
 
@@ -11388,15 +9985,15 @@ public class ElephantDB {
       if (present_dnfe)
         builder.append(dnfe);
 
+      boolean present_hde = true && (is_set_hde());
+      builder.append(present_hde);
+      if (present_hde)
+        builder.append(hde);
+
       boolean present_dnle = true && (is_set_dnle());
       builder.append(present_dnle);
       if (present_dnle)
         builder.append(dnle);
-
-      boolean present_whe = true && (is_set_whe());
-      builder.append(present_whe);
-      if (present_whe)
-        builder.append(whe);
 
       return builder.toHashCode();
     }
@@ -11429,22 +10026,22 @@ public class ElephantDB {
           return lastComparison;
         }
       }
+      lastComparison = Boolean.valueOf(is_set_hde()).compareTo(typedOther.is_set_hde());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_hde()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.hde, typedOther.hde);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
       lastComparison = Boolean.valueOf(is_set_dnle()).compareTo(typedOther.is_set_dnle());
       if (lastComparison != 0) {
         return lastComparison;
       }
       if (is_set_dnle()) {
         lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.dnle, typedOther.dnle);
-        if (lastComparison != 0) {
-          return lastComparison;
-        }
-      }
-      lastComparison = Boolean.valueOf(is_set_whe()).compareTo(typedOther.is_set_whe());
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-      if (is_set_whe()) {
-        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.whe, typedOther.whe);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -11469,14 +10066,14 @@ public class ElephantDB {
           case 0: // SUCCESS
             if (field.type == org.apache.thrift7.protocol.TType.LIST) {
               {
-                org.apache.thrift7.protocol.TList _list57 = iprot.readListBegin();
-                this.success = new ArrayList<Value>(_list57.size);
-                for (int _i58 = 0; _i58 < _list57.size; ++_i58)
+                org.apache.thrift7.protocol.TList _list36 = iprot.readListBegin();
+                this.success = new ArrayList<elephantdb.generated.Value>(_list36.size);
+                for (int _i37 = 0; _i37 < _list36.size; ++_i37)
                 {
-                  Value _elem59; // required
-                  _elem59 = new Value();
-                  _elem59.read(iprot);
-                  this.success.add(_elem59);
+                  elephantdb.generated.Value _elem38; // required
+                  _elem38 = new elephantdb.generated.Value();
+                  _elem38.read(iprot);
+                  this.success.add(_elem38);
                 }
                 iprot.readListEnd();
               }
@@ -11486,24 +10083,24 @@ public class ElephantDB {
             break;
           case 1: // DNFE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnfe = new DomainNotFoundException();
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
               this.dnfe.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
             }
             break;
-          case 2: // DNLE
+          case 2: // HDE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.dnle = new DomainNotLoadedException();
-              this.dnle.read(iprot);
+              this.hde = new elephantdb.generated.HostsDownException();
+              this.hde.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
             }
             break;
-          case 3: // WHE
+          case 3: // DNLE
             if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
-              this.whe = new WrongHostException();
-              this.whe.read(iprot);
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
+              this.dnle.read(iprot);
             } else { 
               org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
             }
@@ -11524,9 +10121,9 @@ public class ElephantDB {
         oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
-          for (Value _iter60 : this.success)
+          for (elephantdb.generated.Value _iter39 : this.success)
           {
-            _iter60.write(oprot);
+            _iter39.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -11535,13 +10132,13 @@ public class ElephantDB {
         oprot.writeFieldBegin(DNFE_FIELD_DESC);
         this.dnfe.write(oprot);
         oprot.writeFieldEnd();
+      } else if (this.is_set_hde()) {
+        oprot.writeFieldBegin(HDE_FIELD_DESC);
+        this.hde.write(oprot);
+        oprot.writeFieldEnd();
       } else if (this.is_set_dnle()) {
         oprot.writeFieldBegin(DNLE_FIELD_DESC);
         this.dnle.write(oprot);
-        oprot.writeFieldEnd();
-      } else if (this.is_set_whe()) {
-        oprot.writeFieldBegin(WHE_FIELD_DESC);
-        this.whe.write(oprot);
         oprot.writeFieldEnd();
       }
       oprot.writeFieldStop();
@@ -11569,6 +10166,14 @@ public class ElephantDB {
       }
       first = false;
       if (!first) sb.append(", ");
+      sb.append("hde:");
+      if (this.hde == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.hde);
+      }
+      first = false;
+      if (!first) sb.append(", ");
       sb.append("dnle:");
       if (this.dnle == null) {
         sb.append("null");
@@ -11576,12 +10181,1054 @@ public class ElephantDB {
         sb.append(this.dnle);
       }
       first = false;
-      if (!first) sb.append(", ");
-      sb.append("whe:");
-      if (this.whe == null) {
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class directKryoMultiGet_args implements org.apache.thrift7.TBase<directKryoMultiGet_args, directKryoMultiGet_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("directKryoMultiGet_args");
+
+    private static final org.apache.thrift7.protocol.TField DOMAIN_FIELD_DESC = new org.apache.thrift7.protocol.TField("domain", org.apache.thrift7.protocol.TType.STRING, (short)1);
+    private static final org.apache.thrift7.protocol.TField KEY_FIELD_DESC = new org.apache.thrift7.protocol.TField("key", org.apache.thrift7.protocol.TType.LIST, (short)2);
+
+    private String domain; // required
+    private List<ByteBuffer> key; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      DOMAIN((short)1, "domain"),
+      KEY((short)2, "key");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // DOMAIN
+            return DOMAIN;
+          case 2: // KEY
+            return KEY;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.DOMAIN, new org.apache.thrift7.meta_data.FieldMetaData("domain", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      tmpMap.put(_Fields.KEY, new org.apache.thrift7.meta_data.FieldMetaData("key", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
+              new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING              , true))));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(directKryoMultiGet_args.class, metaDataMap);
+    }
+
+    public directKryoMultiGet_args() {
+    }
+
+    public directKryoMultiGet_args(
+      String domain,
+      List<ByteBuffer> key)
+    {
+      this();
+      this.domain = domain;
+      this.key = key;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public directKryoMultiGet_args(directKryoMultiGet_args other) {
+      if (other.is_set_domain()) {
+        this.domain = other.domain;
+      }
+      if (other.is_set_key()) {
+        List<ByteBuffer> __this__key = new ArrayList<ByteBuffer>();
+        for (ByteBuffer other_element : other.key) {
+          ByteBuffer temp_binary_element = org.apache.thrift7.TBaseHelper.copyBinary(other_element);
+;
+          __this__key.add(temp_binary_element);
+        }
+        this.key = __this__key;
+      }
+    }
+
+    public directKryoMultiGet_args deepCopy() {
+      return new directKryoMultiGet_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.domain = null;
+      this.key = null;
+    }
+
+    public String get_domain() {
+      return this.domain;
+    }
+
+    public void set_domain(String domain) {
+      this.domain = domain;
+    }
+
+    public void unset_domain() {
+      this.domain = null;
+    }
+
+    /** Returns true if field domain is set (has been assigned a value) and false otherwise */
+    public boolean is_set_domain() {
+      return this.domain != null;
+    }
+
+    public void set_domain_isSet(boolean value) {
+      if (!value) {
+        this.domain = null;
+      }
+    }
+
+    public int get_key_size() {
+      return (this.key == null) ? 0 : this.key.size();
+    }
+
+    public java.util.Iterator<ByteBuffer> get_key_iterator() {
+      return (this.key == null) ? null : this.key.iterator();
+    }
+
+    public void add_to_key(ByteBuffer elem) {
+      if (this.key == null) {
+        this.key = new ArrayList<ByteBuffer>();
+      }
+      this.key.add(elem);
+    }
+
+    public List<ByteBuffer> get_key() {
+      return this.key;
+    }
+
+    public void set_key(List<ByteBuffer> key) {
+      this.key = key;
+    }
+
+    public void unset_key() {
+      this.key = null;
+    }
+
+    /** Returns true if field key is set (has been assigned a value) and false otherwise */
+    public boolean is_set_key() {
+      return this.key != null;
+    }
+
+    public void set_key_isSet(boolean value) {
+      if (!value) {
+        this.key = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case DOMAIN:
+        if (value == null) {
+          unset_domain();
+        } else {
+          set_domain((String)value);
+        }
+        break;
+
+      case KEY:
+        if (value == null) {
+          unset_key();
+        } else {
+          set_key((List<ByteBuffer>)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return get_domain();
+
+      case KEY:
+        return get_key();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case DOMAIN:
+        return is_set_domain();
+      case KEY:
+        return is_set_key();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof directKryoMultiGet_args)
+        return this.equals((directKryoMultiGet_args)that);
+      return false;
+    }
+
+    public boolean equals(directKryoMultiGet_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_domain = true && this.is_set_domain();
+      boolean that_present_domain = true && that.is_set_domain();
+      if (this_present_domain || that_present_domain) {
+        if (!(this_present_domain && that_present_domain))
+          return false;
+        if (!this.domain.equals(that.domain))
+          return false;
+      }
+
+      boolean this_present_key = true && this.is_set_key();
+      boolean that_present_key = true && that.is_set_key();
+      if (this_present_key || that_present_key) {
+        if (!(this_present_key && that_present_key))
+          return false;
+        if (!this.key.equals(that.key))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_domain = true && (is_set_domain());
+      builder.append(present_domain);
+      if (present_domain)
+        builder.append(domain);
+
+      boolean present_key = true && (is_set_key());
+      builder.append(present_key);
+      if (present_key)
+        builder.append(key);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(directKryoMultiGet_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      directKryoMultiGet_args typedOther = (directKryoMultiGet_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_domain()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.domain, typedOther.domain);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_key()).compareTo(typedOther.is_set_key());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_key()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.key, typedOther.key);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // DOMAIN
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.domain = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // KEY
+            if (field.type == org.apache.thrift7.protocol.TType.LIST) {
+              {
+                org.apache.thrift7.protocol.TList _list40 = iprot.readListBegin();
+                this.key = new ArrayList<ByteBuffer>(_list40.size);
+                for (int _i41 = 0; _i41 < _list40.size; ++_i41)
+                {
+                  ByteBuffer _elem42; // required
+                  _elem42 = iprot.readBinary();
+                  this.key.add(_elem42);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.domain != null) {
+        oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
+        oprot.writeString(this.domain);
+        oprot.writeFieldEnd();
+      }
+      if (this.key != null) {
+        oprot.writeFieldBegin(KEY_FIELD_DESC);
+        {
+          oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRING, this.key.size()));
+          for (ByteBuffer _iter43 : this.key)
+          {
+            oprot.writeBinary(_iter43);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("directKryoMultiGet_args(");
+      boolean first = true;
+
+      sb.append("domain:");
+      if (this.domain == null) {
         sb.append("null");
       } else {
-        sb.append(this.whe);
+        sb.append(this.domain);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("key:");
+      if (this.key == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.key);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class directKryoMultiGet_result implements org.apache.thrift7.TBase<directKryoMultiGet_result, directKryoMultiGet_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("directKryoMultiGet_result");
+
+    private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.LIST, (short)0);
+    private static final org.apache.thrift7.protocol.TField DNFE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnfe", org.apache.thrift7.protocol.TType.STRUCT, (short)1);
+    private static final org.apache.thrift7.protocol.TField HDE_FIELD_DESC = new org.apache.thrift7.protocol.TField("hde", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
+    private static final org.apache.thrift7.protocol.TField DNLE_FIELD_DESC = new org.apache.thrift7.protocol.TField("dnle", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
+
+    private List<elephantdb.generated.Value> success; // required
+    private elephantdb.generated.DomainNotFoundException dnfe; // required
+    private elephantdb.generated.HostsDownException hde; // required
+    private elephantdb.generated.DomainNotLoadedException dnle; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      DNFE((short)1, "dnfe"),
+      HDE((short)2, "hde"),
+      DNLE((short)3, "dnle");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // DNFE
+            return DNFE;
+          case 2: // HDE
+            return HDE;
+          case 3: // DNLE
+            return DNLE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
+              new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, elephantdb.generated.Value.class))));
+      tmpMap.put(_Fields.DNFE, new org.apache.thrift7.meta_data.FieldMetaData("dnfe", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      tmpMap.put(_Fields.HDE, new org.apache.thrift7.meta_data.FieldMetaData("hde", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      tmpMap.put(_Fields.DNLE, new org.apache.thrift7.meta_data.FieldMetaData("dnle", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(directKryoMultiGet_result.class, metaDataMap);
+    }
+
+    public directKryoMultiGet_result() {
+    }
+
+    public directKryoMultiGet_result(
+      List<elephantdb.generated.Value> success,
+      elephantdb.generated.DomainNotFoundException dnfe,
+      elephantdb.generated.HostsDownException hde,
+      elephantdb.generated.DomainNotLoadedException dnle)
+    {
+      this();
+      this.success = success;
+      this.dnfe = dnfe;
+      this.hde = hde;
+      this.dnle = dnle;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public directKryoMultiGet_result(directKryoMultiGet_result other) {
+      if (other.is_set_success()) {
+        List<elephantdb.generated.Value> __this__success = new ArrayList<elephantdb.generated.Value>();
+        for (elephantdb.generated.Value other_element : other.success) {
+          __this__success.add(new elephantdb.generated.Value(other_element));
+        }
+        this.success = __this__success;
+      }
+      if (other.is_set_dnfe()) {
+        this.dnfe = new elephantdb.generated.DomainNotFoundException(other.dnfe);
+      }
+      if (other.is_set_hde()) {
+        this.hde = new elephantdb.generated.HostsDownException(other.hde);
+      }
+      if (other.is_set_dnle()) {
+        this.dnle = new elephantdb.generated.DomainNotLoadedException(other.dnle);
+      }
+    }
+
+    public directKryoMultiGet_result deepCopy() {
+      return new directKryoMultiGet_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+      this.dnfe = null;
+      this.hde = null;
+      this.dnle = null;
+    }
+
+    public int get_success_size() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    public java.util.Iterator<elephantdb.generated.Value> get_success_iterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void add_to_success(elephantdb.generated.Value elem) {
+      if (this.success == null) {
+        this.success = new ArrayList<elephantdb.generated.Value>();
+      }
+      this.success.add(elem);
+    }
+
+    public List<elephantdb.generated.Value> get_success() {
+      return this.success;
+    }
+
+    public void set_success(List<elephantdb.generated.Value> success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public elephantdb.generated.DomainNotFoundException get_dnfe() {
+      return this.dnfe;
+    }
+
+    public void set_dnfe(elephantdb.generated.DomainNotFoundException dnfe) {
+      this.dnfe = dnfe;
+    }
+
+    public void unset_dnfe() {
+      this.dnfe = null;
+    }
+
+    /** Returns true if field dnfe is set (has been assigned a value) and false otherwise */
+    public boolean is_set_dnfe() {
+      return this.dnfe != null;
+    }
+
+    public void set_dnfe_isSet(boolean value) {
+      if (!value) {
+        this.dnfe = null;
+      }
+    }
+
+    public elephantdb.generated.HostsDownException get_hde() {
+      return this.hde;
+    }
+
+    public void set_hde(elephantdb.generated.HostsDownException hde) {
+      this.hde = hde;
+    }
+
+    public void unset_hde() {
+      this.hde = null;
+    }
+
+    /** Returns true if field hde is set (has been assigned a value) and false otherwise */
+    public boolean is_set_hde() {
+      return this.hde != null;
+    }
+
+    public void set_hde_isSet(boolean value) {
+      if (!value) {
+        this.hde = null;
+      }
+    }
+
+    public elephantdb.generated.DomainNotLoadedException get_dnle() {
+      return this.dnle;
+    }
+
+    public void set_dnle(elephantdb.generated.DomainNotLoadedException dnle) {
+      this.dnle = dnle;
+    }
+
+    public void unset_dnle() {
+      this.dnle = null;
+    }
+
+    /** Returns true if field dnle is set (has been assigned a value) and false otherwise */
+    public boolean is_set_dnle() {
+      return this.dnle != null;
+    }
+
+    public void set_dnle_isSet(boolean value) {
+      if (!value) {
+        this.dnle = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((List<elephantdb.generated.Value>)value);
+        }
+        break;
+
+      case DNFE:
+        if (value == null) {
+          unset_dnfe();
+        } else {
+          set_dnfe((elephantdb.generated.DomainNotFoundException)value);
+        }
+        break;
+
+      case HDE:
+        if (value == null) {
+          unset_hde();
+        } else {
+          set_hde((elephantdb.generated.HostsDownException)value);
+        }
+        break;
+
+      case DNLE:
+        if (value == null) {
+          unset_dnle();
+        } else {
+          set_dnle((elephantdb.generated.DomainNotLoadedException)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case DNFE:
+        return get_dnfe();
+
+      case HDE:
+        return get_hde();
+
+      case DNLE:
+        return get_dnle();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case DNFE:
+        return is_set_dnfe();
+      case HDE:
+        return is_set_hde();
+      case DNLE:
+        return is_set_dnle();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof directKryoMultiGet_result)
+        return this.equals((directKryoMultiGet_result)that);
+      return false;
+    }
+
+    public boolean equals(directKryoMultiGet_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_dnfe = true && this.is_set_dnfe();
+      boolean that_present_dnfe = true && that.is_set_dnfe();
+      if (this_present_dnfe || that_present_dnfe) {
+        if (!(this_present_dnfe && that_present_dnfe))
+          return false;
+        if (!this.dnfe.equals(that.dnfe))
+          return false;
+      }
+
+      boolean this_present_hde = true && this.is_set_hde();
+      boolean that_present_hde = true && that.is_set_hde();
+      if (this_present_hde || that_present_hde) {
+        if (!(this_present_hde && that_present_hde))
+          return false;
+        if (!this.hde.equals(that.hde))
+          return false;
+      }
+
+      boolean this_present_dnle = true && this.is_set_dnle();
+      boolean that_present_dnle = true && that.is_set_dnle();
+      if (this_present_dnle || that_present_dnle) {
+        if (!(this_present_dnle && that_present_dnle))
+          return false;
+        if (!this.dnle.equals(that.dnle))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      boolean present_dnfe = true && (is_set_dnfe());
+      builder.append(present_dnfe);
+      if (present_dnfe)
+        builder.append(dnfe);
+
+      boolean present_hde = true && (is_set_hde());
+      builder.append(present_hde);
+      if (present_hde)
+        builder.append(hde);
+
+      boolean present_dnle = true && (is_set_dnle());
+      builder.append(present_dnle);
+      if (present_dnle)
+        builder.append(dnle);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(directKryoMultiGet_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      directKryoMultiGet_result typedOther = (directKryoMultiGet_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnfe()).compareTo(typedOther.is_set_dnfe());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnfe()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.dnfe, typedOther.dnfe);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_hde()).compareTo(typedOther.is_set_hde());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_hde()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.hde, typedOther.hde);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_dnle()).compareTo(typedOther.is_set_dnle());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_dnle()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.dnle, typedOther.dnle);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 0: // SUCCESS
+            if (field.type == org.apache.thrift7.protocol.TType.LIST) {
+              {
+                org.apache.thrift7.protocol.TList _list44 = iprot.readListBegin();
+                this.success = new ArrayList<elephantdb.generated.Value>(_list44.size);
+                for (int _i45 = 0; _i45 < _list44.size; ++_i45)
+                {
+                  elephantdb.generated.Value _elem46; // required
+                  _elem46 = new elephantdb.generated.Value();
+                  _elem46.read(iprot);
+                  this.success.add(_elem46);
+                }
+                iprot.readListEnd();
+              }
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 1: // DNFE
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.dnfe = new elephantdb.generated.DomainNotFoundException();
+              this.dnfe.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // HDE
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.hde = new elephantdb.generated.HostsDownException();
+              this.hde.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 3: // DNLE
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.dnle = new elephantdb.generated.DomainNotLoadedException();
+              this.dnle.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_success()) {
+        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+        {
+          oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.success.size()));
+          for (elephantdb.generated.Value _iter47 : this.success)
+          {
+            _iter47.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnfe()) {
+        oprot.writeFieldBegin(DNFE_FIELD_DESC);
+        this.dnfe.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_hde()) {
+        oprot.writeFieldBegin(HDE_FIELD_DESC);
+        this.hde.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_dnle()) {
+        oprot.writeFieldBegin(DNLE_FIELD_DESC);
+        this.dnle.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("directKryoMultiGet_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnfe:");
+      if (this.dnfe == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnfe);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("hde:");
+      if (this.hde == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.hde);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("dnle:");
+      if (this.dnle == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.dnle);
       }
       first = false;
       sb.append(")");

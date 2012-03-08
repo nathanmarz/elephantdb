@@ -1,4 +1,4 @@
-from genpy.elephantdb import ElephantDB
+from genpy.keyval.elephantdb import ElephantDB
 
 from thrift import Thrift
 from thrift.transport import TSocket

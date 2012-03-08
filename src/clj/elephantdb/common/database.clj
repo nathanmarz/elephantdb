@@ -98,18 +98,18 @@
 
 (defrecord Database [local-root port domains options]
   Preparable
-  (prepare [{:keys [local-root domains] :as database}]
+  (prepare [this]
     (log/info "Preparing database...")
-    (u/register-shutdown-hook #(.shutdown database))
+    (u/register-shutdown-hook #(.shutdown this))
     (future
       (purge-unused-domains! local-root (keys domains))
       (doseq [domain (vals domains)]
         (domain/boot-domain! domain))))
 
   Shutdownable
-  (shutdown [this]
+  (shutdown [_]
     (log/info "ElephantDB received shutdown notice...")
-    (doseq [^Shutdownable domain (vals (:domains this))]
+    (doseq [^Shutdownable domain (vals domains)]
       (.shutdown domain))))
 
 (defn build-database
