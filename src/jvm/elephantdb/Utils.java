@@ -1,5 +1,6 @@
 package elephantdb;
 
+import cascading.kryo.KryoFactory;
 import elephantdb.persistence.Coordinator;
 import elephantdb.serialize.KryoSerializer;
 import elephantdb.serialize.SerializationWrapper;
@@ -15,6 +16,8 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class Utils {
@@ -146,13 +149,33 @@ public class Utils {
         return ret;
     }
 
+    public static Iterable<KryoFactory.ClassPair> buildClassPairs(List<List<String>> stringPairs) {
+
+        List<KryoFactory.ClassPair> retPairs = new ArrayList<KryoFactory.ClassPair>();
+        for(List<String> pair: stringPairs) {
+            Class klass = Utils.classForName(pair.get(0));
+
+            String serializerName = pair.get(1);
+            KryoFactory.ClassPair classPair;
+            if (serializerName == null)
+                classPair = new KryoFactory.ClassPair(klass);
+            else
+                classPair = new KryoFactory.ClassPair(klass, Utils.classForName(serializerName));
+
+            retPairs.add(classPair);
+        }
+
+        return retPairs;
+    }
+
     /**
      * Returns a KryoSerializer object with the same serializations registered as the supplied DomainSpec.
      * @param spec
      * @return
      */
     public static Serializer makeSerializer(DomainSpec spec) {
-        return new KryoSerializer(spec.getKryoPairs());
+        List<List<String>> pairs = spec.getKryoPairs();
+        return new KryoSerializer(buildClassPairs(pairs));
     }
 
     /**
@@ -164,7 +187,7 @@ public class Utils {
     public static void prepSerializationWrapper(SerializationWrapper wrapper, DomainSpec spec) {
         KryoSerializer buf = (KryoSerializer) wrapper.getSerializer();
 
-        if (buf == null || buf.getKryoPairs() != spec.getKryoPairs())
+        if (buf == null || buf.getKryoPairs() != buildClassPairs(spec.getKryoPairs()))
             wrapper.setSerializer(makeSerializer(spec));
     }
 }

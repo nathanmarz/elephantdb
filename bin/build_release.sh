@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RELEASE=`head -1 project.clj | awk '{print $3}' | sed -e 's/\"//' | sed -e 's/\"//'`
+RELEASE=`cat project.clj | grep defproject | awk '{print $3}' | sed -e 's/\"//' | sed -e 's/\"//'`
 
 echo Generating release $RELEASE
 
@@ -14,6 +14,7 @@ mkdir -p $DIR
 mkdir $DIR/lib
 cp elephantdb*jar $DIR/
 cp lib/*.jar $DIR/lib
+cp lib/dev/*.jar $DIR/lib
 
 echo $RELEASE > $DIR/RELEASE
 

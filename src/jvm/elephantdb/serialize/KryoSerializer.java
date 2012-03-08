@@ -3,10 +3,10 @@ package elephantdb.serialize;
 import cascading.kryo.KryoFactory;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.ObjectBuffer;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * User: sritchie
@@ -17,26 +17,28 @@ public class KryoSerializer implements Serializer {
     public static final Logger LOG = Logger.getLogger(KryoSerializer.class);
 
     private transient ObjectBuffer objectBuffer;
-    private List<List<String>> kryoPairs = new ArrayList<List<String>>();
+    private Iterable<KryoFactory.ClassPair> kryoPairs = new ArrayList<KryoFactory.ClassPair>();
 
     public KryoSerializer() {
     }
 
-    public KryoSerializer(List<List<String>> kryoPairs) {
+    public KryoSerializer(Iterable<KryoFactory.ClassPair> kryoPairs) {
         setKryoPairs(kryoPairs);
     }
 
     private ObjectBuffer makeObjectBuffer() {
         Kryo k = new Kryo();
-        KryoFactory.populateKryo(k, getKryoPairs(), false, true);
+        KryoFactory factory = new KryoFactory(new Configuration());
+        k.setRegistrationOptional(true);
+        factory.registerBasic(k, getKryoPairs());
         return KryoFactory.newBuffer(k);
     }
 
-    public void setKryoPairs(List<List<String>> pairs) {
+    public void setKryoPairs(Iterable<KryoFactory.ClassPair> pairs) {
         kryoPairs = pairs;
     }
 
-    public List<List<String>> getKryoPairs() {
+    public Iterable<KryoFactory.ClassPair> getKryoPairs() {
         return kryoPairs;
     }
 

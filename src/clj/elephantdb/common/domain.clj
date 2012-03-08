@@ -401,7 +401,8 @@
       (doto domain
         (status/to-loading)
         (transfer-version! version)
-        (load-version! version)))))
+        (load-version! version)
+        (cleanup-domain! domain)))))
 
 (defn attempt-update!
   "If the supplied domain isn't currently updating, returns a future
