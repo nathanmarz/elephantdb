@@ -11,7 +11,7 @@
            [elephantdb.partition HashModScheme]
            [elephantdb.persistence Persistence KeyValPersistence Coordinator]
            [org.apache.hadoop.io IntWritable]
-           [org.apache.thrift7 TException]
+           [org.apache.thrift TException]
            [elephantdb.serialize KryoSerializer SerializationWrapper]
            [elephantdb.document KeyValDocument]))
 

@@ -3,9 +3,9 @@
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
             [elephantdb.common.status :as status])
-  (:import [org.apache.thrift7.protocol TBinaryProtocol$Factory]
-           [org.apache.thrift7.server THsHaServer THsHaServer$Args]
-           [org.apache.thrift7.transport TTransport
+  (:import [org.apache.thrift.protocol TBinaryProtocol$Factory]
+           [org.apache.thrift.server THsHaServer THsHaServer$Options]
+           [org.apache.thrift.transport TTransport
             TFramedTransport TSocket TNonblockingServerSocket]          
            [elephantdb.common.database Database]
            [elephantdb.generated Value DomainStatus$_Fields Status
@@ -109,12 +109,12 @@
 
 (defn thrift-server
   [processor port]
-  (let [args (-> (TNonblockingServerSocket. port)
-                 (THsHaServer$Args.)
-                 (.workerThreads 64)
-                 (.protocolFactory (TBinaryProtocol$Factory.))
-                 (.processor processor))]
-    (THsHaServer. args)))
+  (let [options (THsHaServer$Options.)]
+    (set! (.maxWorkerThreads options) 64)
+    (THsHaServer. processor
+                  (TNonblockingServerSocket. port)
+                  (TBinaryProtocol$Factory.)
+                  options)))
 
 (defn launch-server!
   "Accepts a function that takes in a service and returns a processor,

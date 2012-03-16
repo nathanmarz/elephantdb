@@ -58,6 +58,11 @@ exception InvalidConfigurationException {
 exception WrongHostException {
 }
 
+service ElephantService {
+  string get(1: string key) throws(1: DomainNotLoadedException ex)
+  void put(1: string key, 2: string value)
+ }
+
 service ElephantDBShared {
   DomainStatus getDomainStatus(1: string domain);
   list<string> getDomains();

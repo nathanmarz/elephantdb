@@ -1,18 +1,20 @@
-(defproject elephantdb/elephantdb "0.2.0-wip1"
+(defproject elephantdb/elephantdb "0.2.0-wip2"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
   :jvm-opts ["-Xmx768m" "-server"]
-  :repositories {"oracle" "http://download.oracle.com/maven"
-                 "releases" "http://artifactory.local.twitter.com/libs-releases-local"}
+  :repositories {"oracle"  "http://download.oracle.com/maven"
+                 "twitter" "http://maven.twttr.com"}
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [jvyaml "1.0.0"]
                  [org.yaml/snakeyaml "1.9"]
                  [commons-io "1.4"]
-                 [storm/libthrift7 "0.7.0"]
-
-                 ;; do we need this?
-                 ;; [org.slf4j/slf4j-api "1.6.1"]
+                 [commons-logging "1.1.1"]
+                 [com.twitter/finagle-thrift "2.0.1"]
+                 [com.twitter/ostrich "5.0.0"]
+                 [commons-lang/commons-lang "2.5"]
+                 [org.slf4j/slf4j-log4j12 "1.6.4"]
+                 [org.slf4j/slf4j-api "1.6.1"]
                  [edb/kryonet "1.0.4"]
                  [jackknife "0.1.2"]
                  [hadoop-util "0.2.7"]

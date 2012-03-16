@@ -10,9 +10,9 @@
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom])
   (:import [java.nio ByteBuffer]
-           [org.apache.thrift7.protocol TBinaryProtocol]
-           [org.apache.thrift7.transport TTransport]
-           [org.apache.thrift7 TException]
+           [org.apache.thrift.protocol TBinaryProtocol]
+           [org.apache.thrift.transport TTransport]
+           [org.apache.thrift TException]
            [elephantdb.common.database Database]
            [elephantdb.common.domain Domain]
            [elephantdb.generated DomainNotFoundException
