@@ -10,9 +10,8 @@
                  [org.yaml/snakeyaml "1.9"]
                  [commons-io "1.4"]
                  [storm/libthrift7 "0.7.0"]
-
-                 ;; do we need this?
-                 ;; [org.slf4j/slf4j-api "1.6.1"]
+                 [org.slf4j/slf4j-log4j12 "1.6.4"]
+                 [org.slf4j/slf4j-api "1.6.1"]
                  [edb/kryonet "1.0.4"]
                  [jackknife "0.1.2"]
                  [hadoop-util "0.2.7"]
