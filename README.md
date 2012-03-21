@@ -261,3 +261,9 @@ Does the user need to know about current replication?
 getString, etc, all of that is for the particular USER to figure out.
 
 The actual "Domain Data" is a collection of LocalPersistence objects.
+
+
+### TODO
+
+* Implement Ostrich's [service interface](https://github.com/twitter/ostrich/blob/master/src/main/scala/com/twitter/ostrich/admin/Service.scala)
+* [Register with Ostrich](https://github.com/twitter/ostrich/blob/master/src/main/scala/com/twitter/ostrich/admin/config/ServerConfig.scala#L31)
