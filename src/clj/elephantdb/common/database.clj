@@ -112,9 +112,12 @@
     (doseq [^Shutdownable domain (vals domains)]
       (.shutdown domain))))
 
+;; TODO: Fix default port here.
 (defn build-database
   "Returns a database linking to a bunch of read-only domains."
-  [{:keys [domains port local-root] :as conf-map}]
+  [{:keys [domains port local-root hosts]
+    :or {port 3578}
+    :as conf-map}]
   (let [throttle (domain/throttle (:download-rate-limit conf-map))
         options   (select-keys conf-map [:hosts :replication :hdfs-conf
                                          :remote-path :throttle])

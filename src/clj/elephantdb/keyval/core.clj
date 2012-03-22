@@ -2,14 +2,19 @@
   "Functions for connecting the an ElephantDB (key-value) service via
   Thrift."
   (:use [elephantdb.common.domain :only (loaded?)])
-  (:require [jackknife.core :as u]
+  (:require [clojure.string :as s]
+            [elephantdb.keyval.finagle :as f]
+            [jackknife.core :as u]
             [jackknife.logging :as log]
+            [jackknife.seq :as  seq]
             [elephantdb.common.database :as db]
+            [elephantdb.common.shard :as shard]
             [elephantdb.common.status :as status]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom])
-  (:import [java.nio ByteBuffer]
+  (:import [com.twitter.util Future]
+           [java.nio ByteBuffer]
            [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory]
            [org.apache.thrift.protocol ]
            [org.apache.thrift.transport TTransport]
@@ -19,7 +24,7 @@
            [elephantdb.generated DomainNotFoundException
             DomainNotLoadedException WrongHostException]
            [elephantdb.generated.keyval ElephantDB$Client 
-            ElephantDB$Iface ElephantDB$Processor ElephantDB$Service])
+            ElephantDB$ServiceIface ElephantDB$Processor ElephantDB$Service])
   (:gen-class))
 
 ;; ## Thrift Connection
@@ -45,7 +50,7 @@
 (defn try-direct-multi-get
   "Attempts a direct multi-get to the supplied service for each of the
   keys in the supplied `key-seq`."
-  [^ElephantDB$Iface service domain-name error-suffix key-seq]
+  [^ElephantDB$ServiceIface service domain-name error-suffix key-seq]
   (try (.directMultiGet service domain-name key-seq)
        (catch TException e
          (log/error e "Thrift exception on " error-suffix)) ;; try next host
@@ -62,7 +67,7 @@
 (defn try-kryo-multi-get
   "Attempts a direct multi-get to the supplied service for each of the
   keys in the supplied `key-seq`."
-  [^ElephantDB$Iface service database domain-name error-suffix key-seq]
+  [^ElephantDB$ServiceIface service database domain-name error-suffix key-seq]
   (try (let [^Domain dom (db/domain-get database domain-name)
              serializer  (.serializer dom)
              key-seq     (map (fn [x]
@@ -157,6 +162,7 @@
             results    (->> (vals successful)
                             (apply concat results))
             fail-map   (apply dissoc host-map (keys successful))]
+        
         (if (empty? fail-map)
           (map :value (sort-by :index results))
           (recur results
@@ -175,113 +181,113 @@
 
 ;; TODO: Catch errors if we're not dealing specifically with a byte array.
 
-(defn kv-service [database]
-  (reify ElephantDB$Iface    
-    (directKryoMultiGet [_ domain-name keys]
-      (thrift/assert-domain database domain-name)
-      (try (let [^Domain dom (db/domain-get database domain-name)
-                 serializer (.serializer dom)
-                 key-seq    (map (fn [^ByteBuffer x]
-                                   (let [ret (byte-array (.remaining x))]
-                                     (.get x ret)
-                                     (.deserialize serializer ret)))
-                                 keys)]
-             (if-let [val-seq (direct-multiget database domain-name key-seq)]
-               (doall (map thrift/mk-value val-seq))
-               (throw (thrift/domain-not-loaded-ex))))
-           (catch RuntimeException e
-             (log/error e "Thrown by directKryoMultiGet.")
-             (throw (thrift/wrong-host-ex)))))
+(deftype KeyValDatabase [database]
+  ElephantDB$ServiceIface
+  (directKryoMultiGet [_ domain-name keys]
+    (thrift/assert-domain database domain-name)
+    (try (let [^Domain dom (db/domain-get database domain-name)
+               serializer (.serializer dom)
+               key-seq    (map (fn [^ByteBuffer x]
+                                 (let [ret (byte-array (.remaining x))]
+                                   (.get x ret)
+                                   (.deserialize serializer ret)))
+                               keys)]
+           (if-let [val-seq (direct-multiget database domain-name key-seq)]
+             (Future/value (doall (map thrift/mk-value val-seq)))
+             (throw (thrift/domain-not-loaded-ex))))
+         (catch RuntimeException e
+           (log/error e "Thrown by directKryoMultiGet.")
+           (throw (thrift/wrong-host-ex)))))
 
-    (directMultiGet [_ domain-name keys]
-      (thrift/assert-domain database domain-name)
-      (try (if-let [val-seq (direct-multiget database domain-name keys)]
-             (doall (map thrift/mk-value val-seq))
-             (throw (thrift/domain-not-loaded-ex)))
-           (catch RuntimeException _
-             (throw (thrift/wrong-host-ex)))))
+  (directMultiGet [_ domain-name keys]
+    (thrift/assert-domain database domain-name)
+    (try (if-let [val-seq (direct-multiget database domain-name keys)]
+           (Future/value (doall (map thrift/mk-value val-seq)))
+           (throw (thrift/domain-not-loaded-ex)))
+         (catch RuntimeException _
+           (throw (thrift/wrong-host-ex)))))
 
-    (multiGet [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn
-                   database
-                   domain-name
-                   (map (fn [^ByteBuffer x] (.array x))
-                        key-seq))))
+  (multiGet [this domain-name key-seq]
+    (thrift/assert-domain database domain-name)
+    (let [get-fn (kv-get-fn this domain-name database)]
+      (multi-get get-fn
+                 database
+                 domain-name
+                 (map (fn [^ByteBuffer x] (.array x))
+                      key-seq))))
 
-    (multiGetInt [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
+  (multiGetInt [this domain-name key-seq]
+    (thrift/assert-domain database domain-name)
+    (let [get-fn (kv-get-fn this domain-name database)]
+      (multi-get get-fn database domain-name key-seq)))
 
-    (multiGetLong [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
-    
-    (multiGetString [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
+  (multiGetLong [this domain-name key-seq]
+    (thrift/assert-domain database domain-name)
+    (let [get-fn (kv-get-fn this domain-name database)]
+      (multi-get get-fn database domain-name key-seq)))
+  
+  (multiGetString [this domain-name key-seq]
+    (thrift/assert-domain database domain-name)
+    (let [get-fn (kv-get-fn this domain-name database)]
+      (multi-get get-fn database domain-name key-seq)))
 
-    (get [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [(.array key)]))))
-    
-    (getInt [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
+  (get [this domain-name key]
+    (thrift/assert-domain database domain-name)
+    (let [get-fn (kv-get-fn this domain-name database)]
+      (first (multi-get get-fn database domain-name [(.array key)]))))
+  
+  (getInt [this domain-name key]
+    (thrift/assert-domain database domain-name)
+    (let [get-fn (kv-get-fn this domain-name database)]
+      (first (multi-get get-fn database domain-name [key]))))
 
-    (getLong [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
+  (getLong [this domain-name key]
+    (thrift/assert-domain database domain-name)
+    (let [get-fn (kv-get-fn this domain-name database)]
+      (first (multi-get get-fn database domain-name [key]))))
 
-    (getString [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
-    
-    (getDomainStatus [_ domain-name]
-      "Returns the thrift status of the supplied domain-name."
-      (thrift/assert-domain database domain-name)
-      (-> (db/domain-get database domain-name)
-          (status/get-status)
-          (thrift/to-thrift)))
-    
-    (getDomains [_]
-      "Returns a sequence of all domain names being served."
-      (db/domain-names database))
+  (getString [this domain-name key]
+    (thrift/assert-domain database domain-name)
+    (let [get-fn (kv-get-fn this domain-name database)]
+      (first (multi-get get-fn database domain-name [key]))))
+  
+  (getDomainStatus [_ domain-name]
+    "Returns the thrift status of the supplied domain-name."
+    (thrift/assert-domain database domain-name)
+    (-> (db/domain-get database domain-name)
+        (status/get-status)
+        (thrift/to-thrift)))
+  
+  (getDomains [_]
+    "Returns a sequence of all domain names being served."
+    (db/domain-names database))
 
-    (getStatus [_]
-      "Returns a map of domain-name->status for each domain."
-      (thrift/elephant-status
-       (u/update-vals (db/domain->status database)
-                      (fn [_ status] (thrift/to-thrift status)))))
+  (getStatus [_]
+    "Returns a map of domain-name->status for each domain."
+    (thrift/elephant-status
+     (u/update-vals (db/domain->status database)
+                    (fn [_ status] (thrift/to-thrift status)))))
 
-    (isFullyLoaded [_]
-      "Are all domains loaded properly?"
-      (db/fully-loaded? database))
+  (isFullyLoaded [_]
+    "Are all domains loaded properly?"
+    (db/fully-loaded? database))
 
-    (isUpdating [_]
-      "Is some domain currently updating?"
-      (db/some-loading? database))
+  (isUpdating [_]
+    "Is some domain currently updating?"
+    (db/some-loading? database))
 
-    (update [_ domain-name]
-      "If an update is available, updates the named domain and
+  (update [_ domain-name]
+    "If an update is available, updates the named domain and
          hotswaps the new version."
-      (thrift/assert-domain database domain-name)
-      (u/with-ret true
-        (db/attempt-update! database domain-name)))
+    (thrift/assert-domain database domain-name)
+    (u/with-ret true
+      (db/attempt-update! database domain-name)))
 
-    (updateAll [_]
-      "If an update is available on any domain, updates the domain's
+  (updateAll [_]
+    "If an update is available on any domain, updates the domain's
          shards from its remote store and hotswaps in the new versions."
-      (u/with-ret true
-        (db/update-all! database)))))
+    (u/with-ret true
+      (db/update-all! database))))
 
 ;; # Main Access
 ;;
@@ -306,7 +312,7 @@
                                                 local-config)
         conf-map (merge global-config local-config)
         database (db/build-database conf-map)
-        service  (ElephantDB$Service. (kv-service database)
+        service  (ElephantDB$Service. (KeyValDatabase. database)
                                       (TBinaryProtocol$Factory.))]
     (doto database
       (db/prepare)
@@ -316,3 +322,74 @@
 
 
 ;; ## Experimental Code
+
+(comment
+  (use 'elephantdb.test.keyval)
+  (use 'elephantdb.test.common)
+
+  (with-domain [my-domain (berkeley-spec 2)
+                {1 2, 3 4}
+                :version 5]
+    (for [idx (-> my-domain .localStore .getSpec .getNumShards range)]
+      idx))
+
+  (mk-kv-domain (berkeley-spec 4) "/tmp/domain1"
+                {1 (byte-array 10)
+                 3 (byte-array 10)
+                 5 (byte-array 10)
+                 7 (byte-array 10)
+                 9 (byte-array 10)})
+  (def db
+    (db/build-database
+     {:local-root "/tmp/dbroot"
+      :domains {"clicks" "/tmp/domain1"}}))
+
+  ;; This bitch shows how to create multiple services on a single
+  ;; machine.
+  (let [database (doto (db/build-database
+                        {:local-root "/tmp/dbroot"
+                         :domains {"clicks" "/tmp/domain1"}})
+                   (db/update-all!))
+        server-a  (-> (KeyValDatabase. database)
+                      (ElephantDB$Service. (TBinaryProtocol$Factory.))
+                      (thrift/launch-server! 3500))
+        server-b  (-> (KeyValDatabase. database)
+                      (ElephantDB$Service. (TBinaryProtocol$Factory.))
+                      (thrift/launch-server! 3600))]
+    (try  (prn server-a ", " server-b)
+          (finally (elephantdb.keyval.finagle/kill! server-a)
+                   (elephantdb.keyval.finagle/kill! server-b))))
+
+  (def db
+    "Returns an example database on my filesystem."
+    (doto (db/build-database
+           {:local-root "/tmp/dbroot"
+            :domains {"clicks" "/tmp/domain1"}})
+      (db/update-all!)))
+
+  (def hosts->clients
+    "Returns a map from a particular set of hosts to a client tuned to
+    access those hosts."
+    (let [localhost (u/local-hostname)]
+      (->> (for [domain-name (db/domain-names db)
+                 :let [dom   (db/domain-get db domain-name)]
+                 [_ host-seq]   (shard/shards->hosts (.shardIndex dom))]
+             host-seq)
+           (distinct)
+           (map (fn [host-set]
+                  (let [host-seq (->> (shuffle host-set)
+                                      (seq/prioritize #{localhost}))
+                        host-str (s/join "," (map #(str % ":" (:port db)) host-seq))]
+                    [host-set (f/create-client host-str)])))
+           (into {}))))
+
+  (defn shard->client [client-map domain shard-idx]
+    (get client-map
+         (shard/host-set (.shardIndex domain)
+                         shard-idx)))
+
+  (defn db-shard->client
+    [client-map db domain-name shard-idx]
+    (let [domain (db/domain-get db domain-name)]
+      (shard->client client-map domain shard-idx)))
+  )

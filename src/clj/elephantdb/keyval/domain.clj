@@ -45,4 +45,3 @@
   (for [[idx key] (map-indexed vector key-seq)
         :let [hosts (dom/prioritize-hosts domain key)]]
     {:index idx, :key key, :hosts hosts, :all-hosts hosts}))
-

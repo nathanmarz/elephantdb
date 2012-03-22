@@ -37,7 +37,7 @@
 ;; idiomatic integration of ostrich; I'm going to leave that for the
 ;; next round of coding.
 
-(deftype ElephantServer [state-atom]
+(deftype ElephantServer [state-atom msg]
   com.twitter.ostrich.admin.Service
   (start [_])
   (shutdown [_])
@@ -48,15 +48,19 @@
   ;; ElephantDB proper.
   ElephantService$ServiceIface
   (get [_ key]
+    (println "Getting from " msg ".")
     (if-let [ret (get @state-atom key)]
-      (Future/value "hammer")
+      (Future/value ret)
       (Future/exception (WrongHostException.))))
   (put [_ key val]
+    (println "Putting to " msg ".")
     (swap! state-atom assoc key val)
     (Future/void)))
 
-(def my-server
-  (ElephantServer. (atom {})))
+
+(defn mk-server [msg]
+  (ElephantServer. (atom {}) msg))
+
 
 (defn ostrich-conf
   ""
@@ -75,28 +79,28 @@
   ([service timeout-ms]
      (.close service (Duration. (* 1e6 timeout-ms)))))
 
-(defn create-server [server]
+(defn create-service [server port]
   (let [server  (ElephantService$Service. server (TBinaryProtocol$Factory.))
         builder (-> (ServerBuilder/get)
                     (.codec (ThriftServerFramedCodec/get))
                     (.name "ElephantDBServer")
-                    (.bindTo (InetSocketAddress. 5378)))]
+                    (.bindTo (InetSocketAddress. port)))]
     (ServerBuilder/safeBuild server builder)))
 
-(defn create-client []
+(defn create-client [host-str & {:keys [conn-limit]}]
   (let [transport (-> (ClientBuilder/get)
-                      (.hosts (InetSocketAddress. 5378))
+                      (.hosts host-str)
                       (.codec (ThriftClientFramedCodec/get))
-                      (.hostConnectionLimit 100))]
+                      (.hostConnectionLimit (or conn-limit 100)))]
     (ElephantService$ServiceToClient. (ClientBuilder/safeBuild transport)
                                       (TBinaryProtocol$Factory.))))
 
 (defn run-test
   "Creates an example client and server, places a value and
   asynchronously gets it a bunch of times."
-  []
-  (let [server (create-server my-server)
-        client (create-client)]
+  [server]
+  (let [server (create-service server)
+        client (create-client "localhost:5378")]
     (.apply (.put client "x" "fancy"))
     (try (let [futures (for [x (range 100)]
                          (-> (.get client "x")

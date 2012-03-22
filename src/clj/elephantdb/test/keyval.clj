@@ -8,6 +8,7 @@
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.database :as db])
   (:import [elephantdb  DomainSpec]
+           [elephantdb.keyval.core KeyValDatabase]
            [elephantdb.partition HashModScheme]
            [elephantdb.persistence Persistence KeyValPersistence Coordinator]
            [org.apache.hadoop.io IntWritable]
@@ -136,10 +137,10 @@
   "Unlike with-domain, with-presharded-domain accepts a map of
    shard->key-val sequence.
 
-   (with-domain [my-domain domain-spec
-                {0 [[1 2] [3 4]]
-                 3 [[4 5]]}
-                 :version 100]
+   (with-presharded-domain [my-domain domain-spec
+                           {0 [[1 2] [3 4]]
+                            3 [[4 5]]}
+                           :version 100]
           (seq my-domain))"
   [[sym spec shard-map & {:keys [version]}] & body]
   `(with-log-level :off
@@ -160,7 +161,7 @@
 
 (defn mk-service-handler [database]
   (db/prepare database)
-  (let [handler  (doto (kv/kv-service database)
+  (let [handler  (doto (KeyValDatabase. database)
                    (.updateAll))]
     (loop [times 20]
       (if (pos? times)

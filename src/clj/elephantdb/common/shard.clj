@@ -40,16 +40,22 @@
      ::shards->hosts (->> (u/reverse-multimap hosts->shards)
                           (u/val-map set))}))
 
+(defn hosts->shards [shard-index]
+  (::hosts->shards shard-index))
+
+(defn shards->hosts [shard-index]
+  (::shards->hosts shard-index))
+
 (defn shard-set
   "Returns the set of shards located on the supplied host."
   [shard-index host]
-  (-> (::hosts->shards shard-index)
+  (-> (hosts->shards shard-index)
       (get host)))
 
 (defn host-set
   "Returns the set of hosts responsible for the supplied shard."
   [shard-index shard]
-  (-> (::shards->hosts shard-index)
+  (-> (shards->hosts shard-index)
       (get shard)))
 
 (defn prioritize-hosts
