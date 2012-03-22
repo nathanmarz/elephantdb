@@ -400,9 +400,10 @@
     (when (transfer-possible? domain version)
       (doto domain
         (status/to-loading)
+        (cleanup-domain!)
         (transfer-version! version)
         (load-version! version)
-        (cleanup-domain! domain)))))
+        (cleanup-domain!)))))
 
 (defn attempt-update!
   "If the supplied domain isn't currently updating, returns a future
