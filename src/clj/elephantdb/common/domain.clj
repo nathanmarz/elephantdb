@@ -400,6 +400,7 @@
     (when (transfer-possible? domain version)
       (doto domain
         (status/to-loading)
+        (cleanup-domain!)
         (transfer-version! version)
         (load-version! version)
         (cleanup-domain!)))))
