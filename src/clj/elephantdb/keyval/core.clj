@@ -10,7 +10,8 @@
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom])
   (:import [java.nio ByteBuffer]
-           [org.apache.thrift.protocol TBinaryProtocol]
+           [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory]
+           [org.apache.thrift.protocol ]
            [org.apache.thrift.transport TTransport]
            [org.apache.thrift TException]
            [elephantdb.common.database Database]
@@ -18,7 +19,7 @@
            [elephantdb.generated DomainNotFoundException
             DomainNotLoadedException WrongHostException]
            [elephantdb.generated.keyval ElephantDB$Client 
-            ElephantDB$Iface ElephantDB$Processor])
+            ElephantDB$Iface ElephantDB$Processor ElephantDB$Service])
   (:gen-class))
 
 ;; ## Thrift Connection
@@ -304,11 +305,14 @@
         global-config  (conf/read-global-config global-config-hdfs-path
                                                 local-config)
         conf-map (merge global-config local-config)
-        database (db/build-database conf-map)]
+        database (db/build-database conf-map)
+        service  (ElephantDB$Service. (kv-service database)
+                                      (TBinaryProtocol$Factory.))]
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
     (future (db/update-all! database))
-    (thrift/launch-server! kv-processor
-                           (kv-service database)
-                           (:port conf-map))))
+    (thrift/launch-server! service (:port conf-map))))
+
+
+;; ## Experimental Code

@@ -3,7 +3,11 @@
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
             [elephantdb.common.status :as status])
-  (:import [org.apache.thrift.protocol TBinaryProtocol$Factory]
+  (:import [java.net InetSocketAddress]
+           [com.twitter.util Duration]
+           [com.twitter.finagle.builder ServerBuilder ClientBuilder]
+           [com.twitter.finagle.thrift ThriftServerFramedCodec ThriftClientFramedCodec]
+           [org.apache.thrift.protocol TBinaryProtocol$Factory]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.transport TTransport
             TFramedTransport TSocket TNonblockingServerSocket]          
@@ -107,6 +111,9 @@
   [host port]
   (TFramedTransport. (TSocket. host port)))
 
+(defn create-server [server]
+  )
+
 (defn thrift-server
   [processor port]
   (let [options (THsHaServer$Options.)]
@@ -116,11 +123,23 @@
                   (TBinaryProtocol$Factory.)
                   options)))
 
+(defn stop!
+  "Closes the supplied service."
+  ([service]
+     (.close service (Duration/MaxValue)))
+  ([service timeout-ms]
+     (.close service (Duration. (* 1e6 timeout-ms)))))
+
 (defn launch-server!
   "Accepts a function that takes in a service and returns a processor,
   a thrift IFace implementation, a port and an updater interval."
-  [processor-fn service port]
-  (let [server  (thrift-server (processor-fn service) port)]
-    (u/register-shutdown-hook #(.stop server))
+  [service port & {:keys [name]
+                   :or {name "ElephantDBServer"}}]
+  (let [builder (-> (ServerBuilder/get)
+                    (.codec (ThriftServerFramedCodec/get))
+                    (.name name)
+                    (.bindTo (InetSocketAddress. port)))
+        server (ServerBuilder/safeBuild service builder)]
+    (u/register-shutdown-hook #(stop! server))
     (log/info "Starting ElephantDB server...")
-    (.serve server)))
+    server))
