@@ -86,7 +86,7 @@ public class ElephantDB {
   }
 
   public interface ServiceIface extends elephantdb.generated.ElephantDBShared.ServiceIface {
-
+      
     public Future<elephantdb.generated.Value> get(String domain, ByteBuffer key);
 
     public Future<elephantdb.generated.Value> getString(String domain, String key);
