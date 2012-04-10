@@ -122,7 +122,11 @@
            indexed-keys
            vals))))
   
-(defn multi-get [client-map db domain-name key-seq]
+(defn multi-get
+  "Executes a multiget by splitting a sequence up by shards, running a
+  multiget on each shard (with its specific client) and reconstituting
+  the results."
+  [client-map db domain-name key-seq]
   (let [dom (domain-get db domain-name)]
     (->>  (index-keys dom key-seq)
           (group-by #(key->shard dom (:key %)))
@@ -260,41 +264,13 @@
   (use 'elephantdb.test.keyval)
   (use 'elephantdb.test.common)
 
-  (with-domain [my-domain (berkeley-spec 2)
-                {1 2, 3 4}
-                :version 5]
-    (for [idx (-> my-domain .localStore .getSpec .getNumShards range)]
-      idx))
-
-  (mk-kv-domain (berkeley-spec 4) "/tmp/domain1"
+  (mk-kv-domain (berkeley-spec 4)
+                "/tmp/domain1"
                 {1 (byte-array 10)
                  3 (byte-array 10)
                  5 (byte-array 10)
                  7 (byte-array 10)
                  9 (byte-array 10)})
-  (def db
-    (db/build-database
-     {:local-root "/tmp/dbroot"
-      :domains {"clicks" "/tmp/domain1"}}))
-
-  ;; This bitch shows how to create multiple services on a single
-  ;; machine.
-  (let [database     (doto (db/build-database
-                            {:local-root "/tmp/dbroot"
-                             :domains {"clicks" "/tmp/domain1"}})
-                       (db/update-all!))
-        client-a-map (hosts->clients database :port 3500)
-        client-b-map (hosts->clients database :port 3600)
-        server-a     (-> (KeyValDatabase. database client-a-map)
-                         (ElephantDB$Service. (TBinaryProtocol$Factory.))
-                         (thrift/launch-server! 3500))
-        server-b     (-> (KeyValDatabase. database client-b-map)
-                         (ElephantDB$Service. (TBinaryProtocol$Factory.))
-                         (thrift/launch-server! 3600))
-        my-client    (create-client "localhost:3500,localhost:3600")]
-    (try (.isDefined (.getLong my-client "clicks" 1))
-         (finally (elephantdb.keyval.finagle/kill! server-a)
-                  (elephantdb.keyval.finagle/kill! server-b))))
 
   (def db
     "Returns an example database on my filesystem."
@@ -319,7 +295,7 @@
            (shard/host-set (.shardIndex domain)
                            shard-idx)))))
 
-(defn run-example []
+(defn run-example [f]
   (let [database     (doto (db/build-database
                             {:local-root "/tmp/dbroot"
                              :domains {"clicks" "/tmp/domain1"}})
@@ -333,6 +309,7 @@
                          (ElephantDB$Service. (TBinaryProtocol$Factory.))
                          (thrift/launch-server! 3600))
         my-client    (create-client "localhost:3500,localhost:3600")]
-    (try (.apply (.getLong my-client "clicks" 1))
-         (finally (elephantdb.keyval.finagle/kill! server-a)
+    (try (.apply (f my-client))
+         (finally (.shutdown database)
+                  (elephantdb.keyval.finagle/kill! server-a)
                   (elephantdb.keyval.finagle/kill! server-b)))))

@@ -40,7 +40,7 @@ public class VersionedStore {
     }
 
     public String versionPath(long version) {
-        return new Path(root, "" + version).toString();
+        return new Path(getRoot(), "" + version).toString();
     }
 
     public String mostRecentVersionPath() throws IOException {
@@ -67,8 +67,12 @@ public class VersionedStore {
         return null;
     }
 
+    public long newVersion() {
+        return System.currentTimeMillis();
+    }
+
     public String createVersion() throws IOException {
-        return createVersion(System.currentTimeMillis());
+        return createVersion(newVersion());
     }
 
     public String createVersion(long version) throws IOException {
@@ -126,7 +130,7 @@ public class VersionedStore {
 
         Path rootPath = new Path(getRoot());
         if (getFileSystem().exists(rootPath)) {
-            for(Path p: listDir(root)) {
+            for(Path p: listDir(getRoot())) {
                 if(p.getName().endsWith(FINISHED_VERSION_SUFFIX)) {
                     ret.add(validateAndGetVersion(p.toString()));
                 }
@@ -142,7 +146,7 @@ public class VersionedStore {
     }
 
     private String tokenPath(long version) {
-        return new Path(root, "" + version + FINISHED_VERSION_SUFFIX).toString();
+        return new Path(getRoot(), "" + version + FINISHED_VERSION_SUFFIX).toString();
     }
 
     private Path normalizePath(String p) {
@@ -150,8 +154,8 @@ public class VersionedStore {
     }
 
     private long validateAndGetVersion(String path) {
-        if(!normalizePath(path).getParent().equals(normalizePath(root))) {
-            throw new RuntimeException(path + " " + new Path(path).getParent() + " is not part of the versioned store located at " + root);
+        if(!normalizePath(path).getParent().equals(normalizePath(getRoot()))) {
+            throw new RuntimeException(path + " " + new Path(path).getParent() + " is not part of the versioned store located at " + getRoot());
         }
         Long v = parseVersion(path);
         if(v==null) throw new RuntimeException(path + " is not a valid version");
@@ -189,7 +193,6 @@ public class VersionedStore {
             }
         }
     }
-
 
     private List<Path> listDir(String dir) throws IOException {
         List<Path> ret = new ArrayList<Path>();
