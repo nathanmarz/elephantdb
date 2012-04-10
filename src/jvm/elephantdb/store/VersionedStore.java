@@ -1,17 +1,20 @@
 package elephantdb.store;
 
 import elephantdb.Utils;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 
 
 public class VersionedStore {
@@ -26,8 +29,12 @@ public class VersionedStore {
     
     public VersionedStore(FileSystem fs, String path) throws IOException {
       _fs = fs;
-      _root = path;
-      mkdirs(_root);
+        try {
+            _root = new URI(path).getPath();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        mkdirs(_root);
     }
 
     public FileSystem getFileSystem() {
