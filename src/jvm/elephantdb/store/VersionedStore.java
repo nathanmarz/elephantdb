@@ -10,6 +10,8 @@ import org.apache.hadoop.security.AccessControlException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,7 +29,13 @@ public class VersionedStore {
 
     public VersionedStore(FileSystem fs, String path) throws IOException {
         this.fs = fs;
-        root = path;
+
+        try {
+            root = new URI(path).getPath();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
         mkdirs(root);
     }
 

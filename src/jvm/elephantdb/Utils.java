@@ -7,13 +7,14 @@ import elephantdb.serialize.SerializationWrapper;
 import elephantdb.serialize.Serializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.StringUtils;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -126,7 +127,11 @@ public class Utils {
     }
 
     public static FileSystem getFS(String path, Configuration c) throws IOException {
-        return new Path(path).getFileSystem(c);
+        try {
+            return FileSystem.get(new URI(path), c);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Map<String, Object> getPersistenceOptions(Map<String, Map<String, Object>> opts, Coordinator fact) {
