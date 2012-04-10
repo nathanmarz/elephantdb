@@ -15,4 +15,4 @@
                      [swank-clojure "1.4.0-SNAPSHOT"]
                      [lein-marginalia "0.6.1"]]
   :aot [elephantdb.client elephantdb.main]
-  :main elephantdb.main)
+  :main ^{:skip-aot true} elephantdb.main)
