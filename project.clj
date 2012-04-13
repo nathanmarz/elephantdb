@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb "0.2.0-wip1"
+(defproject elephantdb/elephantdb "0.2.0-wip2"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
@@ -14,7 +14,7 @@
                  [org.slf4j/slf4j-api "1.6.1"]
                  [edb/kryonet "1.0.4"]
                  [jackknife "0.1.2"]
-                 [hadoop-util "0.2.7"]
+                 [hadoop-util "0.2.8"]
                  [cascading.kryo "0.2.1"]
                  [cascalog/carbonite "1.1.0"]
                  [com.sleepycat/je "5.0.34"]
