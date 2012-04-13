@@ -1,6 +1,8 @@
 (ns elephantdb.util
+  (:use [hadoop-util.core :only (configuration)])
   (:import [java.net InetAddress]
-           [java.util.concurrent.locks ReentrantReadWriteLock]))
+           [java.util.concurrent.locks ReentrantReadWriteLock]
+           [org.apache.hadoop.fs FileSystem]))
 
 (defn sleep [len]
   (when (pos? len)
@@ -101,6 +103,11 @@
 (defmacro with-ret [val & body]
   `(with-ret-bound [ret# ~val]
      ~@body))
+
+(defn get-fs
+  ([uri] (get-fs {}))
+  ([uri conf-map]
+     (FileSystem/get (configuration conf-map))))
 
 ;; ## Error Handlers
 

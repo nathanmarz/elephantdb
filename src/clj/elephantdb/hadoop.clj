@@ -38,7 +38,8 @@
 (declare copy-local*)
 
 (defn- copy-file-local
-  [^FileSystem fs ^Path path ^String target-local-path ^bytes buffer ^ShardState state]
+  [^FileSystem fs ^Path path ^String target-local-path
+   ^bytes buffer ^ShardState state]
   (let [downloaded-kb (:downloaded-kb state)
         sleep-interval (:sleep-interval state)]
     (with-open [is (.open fs path)

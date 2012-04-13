@@ -3,7 +3,8 @@
 
 (ns elephantdb.config
   (:use elephantdb.hadoop
-        hadoop-util.core)
+        hadoop-util.core
+        [elephantdb.util :only (get-fs)])
   (:import [elephantdb DomainSpec Utils]
            [elephantdb.persistence LocalPersistenceFactory]))
 
@@ -91,5 +92,6 @@
 (defn read-global-config
   [global-config-path local-config]
   (merge DEFAULT-GLOBAL-CONFIG
-         (read-clj-config (filesystem (:blob-conf local-config))
+         (read-clj-config (get-fs global-config-path
+                                  (:blob-conf local-config))
                           global-config-path)))

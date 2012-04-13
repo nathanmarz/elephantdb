@@ -4,7 +4,7 @@
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
   :repositories {"oracle" "http://download.oracle.com/maven"}
-  :dependencies [[org.clojure/clojure "1.3.0"]
+  :dependencies [[org.clojure/clojure "1.2.1"]
                  [org.clojure/tools.logging "0.2.3"]
                  [jvyaml "1.0.0"]
                  [backtype/thriftjava "1.0.0"]

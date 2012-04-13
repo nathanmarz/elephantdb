@@ -41,13 +41,14 @@
 (defn shard-domains
   "TODO: Test that we don't get a FAILURE if the domain-spec doesn't
   exist."
-  [fs domains hosts replication]
+  [conf domains hosts replication]
   (let [sharder (partial shard-domain hosts replication)]
     (log-message "Sharding domains...")
     (update-vals domains
                  (fn [domain remote-location]
                    (let [{shards :num-shards :as domain-spec}
-                         (read-domain-spec fs remote-location)]
+                         (read-domain-spec (get-fs remote-location conf)
+                                           remote-location)]
                      (sharder shards domain))))))
 
 (defn host-shards [index host]

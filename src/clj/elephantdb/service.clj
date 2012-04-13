@@ -6,6 +6,7 @@
             [elephantdb.thrift :as thrift]
             [elephantdb.shard :as shard])
   (:import [java.io File]
+           [org.apache.hadoop.fs FileSystem]
            [org.apache.thrift.server THsHaServer THsHaServer$Options]
            [org.apache.thrift.protocol TBinaryProtocol$Factory]
            [org.apache.thrift.transport TNonblockingServerSocket]
@@ -29,8 +30,8 @@
                                     :shards-to-hosts <map>}
                       :domain-status <status-atom>
                       :domain-data <data-atom>}}"
-  [fs {:keys [domains hosts replication]}]
-  (let [domain-shards (shard/shard-domains fs domains hosts replication)]
+  [conf {:keys [domains hosts replication]}]
+  (let [domain-shards (shard/shard-domains conf domains hosts replication)]
     (update-vals domains
                  (fn [k _]
                    (-> k domain-shards domain/init-domain-info)))))
@@ -116,8 +117,6 @@
   [edb-config rw-lock domains-info loader-state]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
         remote-path-map (:domains edb-config)
-        remote-fs (filesystem hdfs-conf)
-        
         ;; Do we throttle? TODO: Use this arg.
         throttle? (->> (vals domains-info)
                        (map domain/domain-status)
@@ -127,6 +126,7 @@
                 (thrift/ready-status :loading? true)
                 (fn [domain info]
                   (let [remote-path (get remote-path-map domain)
+                        remote-fs (get-fs remote-path hdfs-conf)
                         remote-vs (try-domain-store remote-fs remote-path)]
                     (when remote-vs
                       (let [local-domain-root (str (path local-dir domain))
@@ -146,16 +146,16 @@
 (defn load-cached-domains!
   [edb-config rw-lock domains-info]
   (let [{:keys [hdfs-conf local-dir local-db-conf]} edb-config
-        remote-path-map (:domains edb-config)
-        remote-fs (filesystem hdfs-conf)]
+        remote-path-map (:domains edb-config)]
     (try-thrift domains-info
                 local-dir
                 (thrift/loading-status)
                 (fn [domain info]
-                  (let [remote-path  (get remote-path-map domain)
-                        remote-vs (DomainStore. remote-fs remote-path)
-                        local-path (str (path local-dir domain))
-                        local-vs (mk-local-vs remote-vs local-path)]  
+                  (let [remote-path (get remote-path-map domain)
+                        remote-fs   (get-fs remote-path hdfs-conf)
+                        remote-vs   (DomainStore. remote-fs remote-path)
+                        local-path  (str (path local-dir domain))
+                        local-vs    (mk-local-vs remote-vs local-path)]  
                     (when-let [new-data (and (domain-has-data? local-vs)
                                              (open-domain local-db-conf
                                                           local-path
@@ -250,13 +250,13 @@
 ;; inside of prepare-local-domain, and could decide whether or not to
 ;; throttle the thing.
 
+
 (defn edb-proxy
   "See `src/elephantdb.thrift` for more information on the methods we
   implement."
   [client {:keys [hdfs-conf local-dir] :as edb-config}]
   (let [^ReentrantReadWriteLock rw-lock (mk-rw-lock)
-        domains-info (-> (filesystem hdfs-conf)
-                         (init-domain-info-map edb-config))
+        domains-info (init-domain-info-map hdfs-conf edb-config)
         download-supervisor (atom nil)]
     (prepare-local-domains! domains-info edb-config rw-lock)
     (proxy [ElephantDB$Iface Shutdownable] []
