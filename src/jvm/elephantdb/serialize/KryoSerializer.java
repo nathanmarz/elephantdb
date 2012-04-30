@@ -2,7 +2,8 @@ package elephantdb.serialize;
 
 import cascading.kryo.KryoFactory;
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.ObjectBuffer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -16,7 +17,18 @@ import java.util.ArrayList;
 public class KryoSerializer implements Serializer {
     public static final Logger LOG = Logger.getLogger(KryoSerializer.class);
 
-    private transient ObjectBuffer objectBuffer;
+    /**
+     * Initial capacity of the Kryo object buffer.
+     */
+    private static final int INIT_CAPACITY = 2000;
+
+    /**
+     * Maximum capacity of the Kryo object buffer.
+     */
+    private static final int FINAL_CAPACITY = 2000000000;
+
+    private transient Output output;
+    private transient Kryo kryo;
     private Iterable<KryoFactory.ClassPair> kryoPairs = new ArrayList<KryoFactory.ClassPair>();
 
     public KryoSerializer() {
@@ -26,12 +38,12 @@ public class KryoSerializer implements Serializer {
         setKryoPairs(kryoPairs);
     }
 
-    private ObjectBuffer makeObjectBuffer() {
+    private Kryo freshKryo() {
         Kryo k = new Kryo();
         KryoFactory factory = new KryoFactory(new Configuration());
-        k.setRegistrationOptional(true);
+        k.setRegistrationRequired(false);
         factory.registerBasic(k, getKryoPairs());
-        return KryoFactory.newBuffer(k);
+        return k;
     }
 
     public void setKryoPairs(Iterable<KryoFactory.ClassPair> pairs) {
@@ -42,23 +54,33 @@ public class KryoSerializer implements Serializer {
         return kryoPairs;
     }
 
-    private ObjectBuffer getKryoBuffer() {
-        if (objectBuffer == null)
-            objectBuffer = makeObjectBuffer();
+    public Kryo getKryo() {
+        if (kryo == null)
+            kryo = freshKryo();
 
-        return objectBuffer;
+        return kryo;
+    }
+
+    public Output getOutput() {
+        if (output == null)
+            output = new Output(INIT_CAPACITY, FINAL_CAPACITY);
+
+        return output;
     }
 
     public byte[] serialize(Object o) {
         LOG.debug("Serializing object: " + o);
-        return getKryoBuffer().writeClassAndObject(o);
+        Output output = getOutput();
+        output.clear();
+        freshKryo().writeClassAndObject(output, o);
+        return output.toBytes();
     }
 
     public Object deserialize(byte[] bytes) {
-        return getKryoBuffer().readClassAndObject(bytes);
+        return freshKryo().readClassAndObject(new Input(bytes));
     }
 
     public <T> T deserialize(byte[] bytes, Class<T> klass) {
-        return getKryoBuffer().readObject(bytes, klass);
+        return freshKryo().readObject(new Input(bytes), klass);
     }
 }
