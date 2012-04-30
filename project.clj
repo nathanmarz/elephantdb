@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb "0.2.0-wip2"
+(defproject elephantdb/elephantdb "0.2.0-wip3"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
@@ -12,11 +12,10 @@
                  [org.apache.thrift/libthrift "0.8.0"]
                  [org.slf4j/slf4j-log4j12 "1.6.4"]
                  [org.slf4j/slf4j-api "1.6.1"]
-                 [edb/kryonet "1.0.4"]
                  [jackknife "0.1.2"]
                  [hadoop-util "0.2.8"]
-                 [cascading.kryo "0.2.1"]
-                 [cascalog/carbonite "1.1.0"]
+                 [cascading.kryo "0.3.1"]
+                 [cascalog/carbonite "1.2.1"]
                  [com.sleepycat/je "5.0.34"]
                  [org.apache.lucene/lucene-core "3.0.3"]
                  [org.apache.lucene/lucene-queries "3.0.3"]
