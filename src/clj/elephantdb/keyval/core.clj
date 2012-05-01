@@ -206,7 +206,10 @@
         (multi-get get-fn
                    database
                    domain-name
-                   (map (fn [^ByteBuffer x] (.array x))
+                   (map (fn [^ByteBuffer x]
+                          (let [ret (byte-array (.remaining x))]
+                            (.get x ret)
+                            ret))
                         key-seq))))
 
     (multiGetInt [this domain-name key-seq]
@@ -226,8 +229,10 @@
 
     (get [this domain-name key]
       (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [(.array key)]))))
+      (let [get-fn (kv-get-fn this domain-name database)
+            ret (byte-array (.remaining key))]
+        (.get key ret)
+        (first (multi-get get-fn database domain-name [ret]))))
     
     (getInt [this domain-name key]
       (thrift/assert-domain database domain-name)
