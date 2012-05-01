@@ -9,7 +9,7 @@
                  [jvyaml "1.0.0"]
                  [org.yaml/snakeyaml "1.9"]
                  [commons-io "1.4"]
-                 [storm/libthrift7 "0.7.0"]
+                 [org.apache.thrift/libthrift "0.8.0"]
                  [org.slf4j/slf4j-log4j12 "1.6.4"]
                  [org.slf4j/slf4j-api "1.6.1"]
                  [edb/kryonet "1.0.4"]
