@@ -6,7 +6,7 @@
   :repositories {"oracle" "http://download.oracle.com/maven"
                  "cloudera" "https://repository.cloudera.com/artifactory/cloudera-repos"
                  "conjars.org" "http://conjars.org/repo"}
-  :dependencies [[org.clojure/clojure "1.3.0"]
+  :dependencies [[org.clojure/clojure "1.4.0"]
                  [jvyaml "1.0.0"]
                  [org.yaml/snakeyaml "1.9"]
                  [commons-io "1.4"]
