@@ -4,7 +4,8 @@
   :javac-options {:debug "true" :fork "true"}
   :jvm-opts ["-Xmx768m" "-server"]
   :repositories {"oracle" "http://download.oracle.com/maven"
-                 "releases" "http://artifactory.local.twitter.com/libs-releases-local"}
+                 "releases" "http://artifactory.local.twitter.com/libs-releases-local"
+                 "conjars" "http://conjars.org/repo/"}
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [jvyaml "1.0.0"]
                  [org.yaml/snakeyaml "1.9"]
