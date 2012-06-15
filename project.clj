@@ -1,4 +1,4 @@
-(defproject yieldbot/elephantdb "0.2.0-wip5"
+(defproject yieldbot/elephantdb "0.2.0-wip6"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
