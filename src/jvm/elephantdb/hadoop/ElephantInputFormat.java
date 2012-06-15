@@ -177,7 +177,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         for (int i = 0; i < spec.getNumShards(); i++) {
             String shardPath = versionPath + "/" + i;
             if (fs.exists(new Path(shardPath))) {
-                ret.add(new ElephantInputSplit(shardPath, spec, jc));
+                ret.add(new ElephantInputSplit(new Path(shardPath).makeQualified(fs).toString(), spec, jc));
             }
         }
         return ret.toArray(new InputSplit[ret.size()]);
