@@ -1,4 +1,4 @@
-(defproject yieldbot/elephantdb "0.2.0-wip6"
+(defproject yieldbot/elephantdb "0.2.0-wip7"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
@@ -20,7 +20,7 @@
                  [com.sleepycat/je "5.0.34"]
                  [org.apache.lucene/lucene-core "3.0.3"]
                  [org.apache.lucene/lucene-queries "3.0.3"]
-                 [org.apache.hadoop/hadoop-core "0.20.2-cdh3u4"]]
+                 [org.apache.hadoop/hadoop-core "0.20.2-dev"]]
   :dev-dependencies [[midje "1.3.1" :exclusions [org.clojure/clojure]]
                      [lein-midje "1.0.8"]]
   :main elephantdb.keyval.core)
