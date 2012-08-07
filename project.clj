@@ -1,10 +1,9 @@
-(defproject yieldbot/elephantdb "0.2.0-wip7"
+(defproject yieldbot/elephantdb "0.2.0-wip8"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
   :jvm-opts ["-Xmx768m" "-server"]
   :repositories {"oracle" "http://download.oracle.com/maven"
-                 "cloudera" "https://repository.cloudera.com/artifactory/cloudera-repos"
                  "conjars.org" "http://conjars.org/repo"}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [jvyaml "1.0.0"]
@@ -15,7 +14,7 @@
                  [org.slf4j/slf4j-api "1.6.1"]
                  [jackknife "0.1.2"]
                  [hadoop-util "0.2.8"]
-                 [cascading.kryo "0.3.1"]
+                 [cascading.kryo "0.4.0"]
                  [cascalog/carbonite "1.2.1"]
                  [com.sleepycat/je "5.0.34"]
                  [org.apache.lucene/lucene-core "3.0.3"]
