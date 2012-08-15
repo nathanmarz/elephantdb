@@ -17,18 +17,18 @@ import java.util.ArrayList;
 public class KryoSerializer implements Serializer {
     public static final Logger LOG = Logger.getLogger(KryoSerializer.class);
 
-    /**
-     * Initial capacity of the Kryo object buffer.
-     */
-    private static final int INIT_CAPACITY = 2000;
+    private static final int OUTPUT_BUFFER_SIZE = 1<<12;
+    private static final int MAX_OUTPUT_BUFFER_SIZE = 1<<24;
 
-    /**
-     * Maximum capacity of the Kryo object buffer.
-     */
-    private static final int FINAL_CAPACITY = 2000000000;
+    private static final int TIDY_FACTOR = 1<<4;
+
+    private static final int SWITCH_LIMIT = Math.max(MAX_OUTPUT_BUFFER_SIZE, MAX_OUTPUT_BUFFER_SIZE / TIDY_FACTOR);
 
     private transient Output output;
     private transient Kryo kryo;
+
+    private int prevPosition;
+
     private Iterable<KryoFactory.ClassPair> kryoPairs = new ArrayList<KryoFactory.ClassPair>();
 
     public KryoSerializer() {
@@ -36,6 +36,19 @@ public class KryoSerializer implements Serializer {
 
     public KryoSerializer(Iterable<KryoFactory.ClassPair> kryoPairs) {
         setKryoPairs(kryoPairs);
+    }
+
+    public void tidyBuffer() {
+        int currentPosition = output.position();
+
+        // If the previous serialized object was large (greater than the switch size) and the current
+        // object falls below the switch size, reset the buffer to be small again. If both objects
+        // are small (or large), no reallocation occurs.
+        if (prevPosition > SWITCH_LIMIT && currentPosition <= SWITCH_LIMIT)
+            output.setBuffer(new byte[OUTPUT_BUFFER_SIZE], MAX_OUTPUT_BUFFER_SIZE);
+
+        prevPosition = currentPosition;
+        output.clear();
     }
 
     private Kryo freshKryo() {
@@ -63,7 +76,9 @@ public class KryoSerializer implements Serializer {
 
     public Output getOutput() {
         if (output == null)
-            output = new Output(INIT_CAPACITY, FINAL_CAPACITY);
+            output = new Output(OUTPUT_BUFFER_SIZE, MAX_OUTPUT_BUFFER_SIZE);
+
+        tidyBuffer();
 
         return output;
     }
@@ -71,9 +86,9 @@ public class KryoSerializer implements Serializer {
     public byte[] serialize(Object o) {
         LOG.debug("Serializing object: " + o);
         Output output = getOutput();
-        output.clear();
         freshKryo().writeClassAndObject(output, o);
         return output.toBytes();
+
     }
 
     public Object deserialize(byte[] bytes) {
