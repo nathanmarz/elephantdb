@@ -15,6 +15,7 @@
                  [jackknife "0.1.2"]
                  [hadoop-util "0.2.8"]
                  [cascading.kryo "0.4.5"]
+                 [com.esotericsoftware.kryo/kryo "2.19"]
                  [com.twitter/carbonite "1.3.1"]
                  [com.sleepycat/je "5.0.34"]
                  [org.apache.lucene/lucene-core "3.0.3"]
