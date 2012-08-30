@@ -56,7 +56,7 @@
   [coordinator path & kv-pairs]
   (with-open [db (.openPersistenceForAppend coordinator path {})]
     (doseq [[k v] kv-pairs]
-      (index db k v))))
+      (.index db (KeyValDocument. k v)))))
 
 (defn create-pairs
   "Creates a persistence at the supplied path by indexing the supplied

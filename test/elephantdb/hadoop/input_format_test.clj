@@ -40,13 +40,14 @@
              [(barr 8) (barr 9 9 9 1)]
              [(barr 9) (barr 9 9 2)]
              [(barr 10) (barr 3)]]]
-  (fact "The record reader should produce what's been added to the
+  (future-fact "The record reader should produce what's been added to the
         domain."
-    (with-sharded-domain [dpath
-                          {:num-shards 6
-                           :coordinator (JavaBerkDB.)
-                           :shard-scheme (HashModScheme.)}
-                          pairs]
-      (read-domain dpath) => pairs)))
+               ;; TODO: write with-sharded-domain
+               (with-sharded-domain [dpath
+                                     {:num-shards 6
+                                      :coordinator (JavaBerkDB.)
+                                      :shard-scheme (HashModScheme.)}
+                                     pairs]
+                 (read-domain dpath) => pairs)))
 
 ;; TODO: test read specific version vs read most recent
