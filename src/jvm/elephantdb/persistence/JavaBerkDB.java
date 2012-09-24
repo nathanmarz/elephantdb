@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.Map;
 
 public class JavaBerkDB implements SerializationWrapper, Coordinator {
-    public static Logger LOG = Logger.getLogger(File.class);
+    public static Logger LOG = Logger.getLogger(JavaBerkDB.class);
     private Serializer serializer;
 
     public JavaBerkDB() {
@@ -84,6 +84,7 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
                 byte[] valBytes = chrysalis.getData();
                 return (V) kvSerializer.deserialize(valBytes);
             } else {
+                LOG.debug("Lookup failed: " + stat);
                 return null;
             }
         }
