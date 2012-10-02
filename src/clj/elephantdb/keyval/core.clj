@@ -66,7 +66,6 @@
   (try (let [^Domain dom (db/domain-get database domain-name)
              serializer  (.serializer dom)
              key-seq     (map (fn [x]
-                                (log/debug "Wrapping " (alength x) " bytes into buffer.")
                                 (ByteBuffer/wrap
                                  ;; (.serialize serializer x)
                                  x
@@ -182,13 +181,10 @@
   (reify ElephantDB$Iface    
     (directKryoMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
-      (log/debug "directKryoMultiGet keys: " (pr-str keys))
       (try (let [^Domain dom (db/domain-get database domain-name)
                  serializer (.serializer dom)
                  key-seq    (map (fn [^ByteBuffer x]
-                                   (log/info "working on bytebuffer: " x)
                                    (let [ret (byte-array (.remaining x))]
-                                     (log/debug "Reading " (alength ret) " bytes out of buffer.")
                                      (.get x ret)
                                      ;; (.deserialize serializer ret)
                                      ret
@@ -211,7 +207,6 @@
 
     (multiGet [this domain-name key-seq]
       (thrift/assert-domain database domain-name)
-      (log/debug "multiGet keys: " (pr-str key-seq))
       (let [get-fn (kv-get-fn this domain-name database)]
         (multi-get get-fn
                    database

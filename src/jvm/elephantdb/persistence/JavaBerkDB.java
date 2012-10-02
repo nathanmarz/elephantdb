@@ -82,6 +82,7 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
             OperationStatus stat = db.get(null, new DatabaseEntry(k), chrysalis, LockMode.READ_UNCOMMITTED);
             if (stat == OperationStatus.SUCCESS) {
                 byte[] valBytes = chrysalis.getData();
+                LOG.debug("Sending " + valBytes.length + " bytes into deserialize");
                 return (V) kvSerializer.deserialize(valBytes);
             } else {
                 LOG.debug("Lookup failed: " + stat);

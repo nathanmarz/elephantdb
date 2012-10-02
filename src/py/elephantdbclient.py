@@ -62,6 +62,9 @@ class ElephantDBClient:
     def isFullyLoaded(self):
         return self._exec(lambda client: client.isFullyLoaded())
 
+    def isUpdating(self):
+        return self._exec(lambda client: client.isUpdating())
+
     def updateAll(self):
         return self._exec(lambda client: client.updateAll())
 
