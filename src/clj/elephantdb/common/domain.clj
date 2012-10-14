@@ -346,6 +346,27 @@
 (defalias throttle transfer/throttle
   "Returns a throttling agent for use in throttling domain updates.")
 
+(defn try-times*
+  "Executes thunk. If an exception is thrown, will retry. At most n retries
+  are done. If still some exception is thrown it is bubbled upwards in
+  the call chain."
+  [n thunk]
+  (loop [n n]
+    (if-let [result (try
+                      [(thunk)]
+                      (catch Exception e
+                        (when (zero? n)
+                          (throw e))))]
+      (result 0)
+      (recur (dec n)))))
+
+(defmacro try-times
+  "Executes body. If an exception is thrown, will retry. At most n retries
+  are done. If still some exception is thrown it is bubbled upwards in
+  the call chain."
+  [n & body]
+  `(try-times* ~n (fn [] ~@body)))
+
 (defn transfer-shard!
   "Transfers the supplied shard (specified by `idx`) from the supplied
   remote version's remote store to the appropriate path on the local
@@ -359,8 +380,9 @@
         local-path   (.shardPath local-store idx version)]
     (if (.exists remote-fs (h/path remote-path))
       (do (log/info (format "Copying %s to %s." remote-path local-path))
-          (transfer/rcopy remote-fs remote-path local-path
-                          :throttle throttle)
+          (try-times 3
+                     (transfer/rcopy remote-fs remote-path local-path
+                                     :throttle throttle))
           (log/info (format "Copied %s to %s." remote-path local-path)))
       (do (log/info "Shard doesn't exist. Creating shard # " idx)
           (.createShard local-store idx version)))))
