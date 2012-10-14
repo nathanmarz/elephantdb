@@ -64,6 +64,7 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
             // TODO: Loop through options, setConfigParam for each one.
             envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "80");
             envConf.setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
+            envConf.setConfigParam(EnvironmentConfig.LOG_FILE_MAX, "104857600"); // 100 MB
 
             env = new Environment(new File(root), envConf);
             
