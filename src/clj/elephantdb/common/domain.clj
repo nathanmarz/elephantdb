@@ -364,8 +364,13 @@
   "Executes body. If an exception is thrown, will retry. At most n retries
   are done. If still some exception is thrown it is bubbled upwards in
   the call chain."
-  [n & body]
+  [[n] & body]
   `(try-times* ~n (fn [] ~@body)))
+
+(defmacro with-timeout
+  [[ms] & body]
+  `(let [^java.util.concurrent.Future f# (future ~@body)]
+     (.get f# ~ms java.util.concurrent.TimeUnit/MILLISECONDS)))
 
 (defn transfer-shard!
   "Transfers the supplied shard (specified by `idx`) from the supplied
@@ -377,12 +382,18 @@
         remote-store (.remoteStore domain)
         remote-fs    (.getFileSystem remote-store)
         remote-path  (.shardPath remote-store idx version)
-        local-path   (.shardPath local-store idx version)]
+        local-path   (.shardPath local-store idx version)
+        timeout-ms (* 6 60 1000)]
     (if (.exists remote-fs (h/path remote-path))
       (do (log/info (format "Copying %s to %s." remote-path local-path))
-          (try-times 3
-                     (transfer/rcopy remote-fs remote-path local-path
-                                     :throttle throttle))
+          (try
+            (try-times [3]
+                       (with-timeout [timeout-ms]
+                         (transfer/rcopy remote-fs remote-path local-path
+                                         :throttle throttle)))
+            (catch Exception e
+              (log/error e)
+              (throw e)))
           (log/info (format "Copied %s to %s." remote-path local-path)))
       (do (log/info "Shard doesn't exist. Creating shard # " idx)
           (.createShard local-store idx version)))))
