@@ -5,6 +5,7 @@
             [hadoop-util.transfer :as transfer]
             [jackknife.core :as u]
             [jackknife.logging :as log]
+            [clojure.java.io :as io]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf]
             [elephantdb.common.status :as status])
@@ -346,32 +347,6 @@
 (defalias throttle transfer/throttle
   "Returns a throttling agent for use in throttling domain updates.")
 
-(defn try-times*
-  "Executes thunk. If an exception is thrown, will retry. At most n retries
-  are done. If still some exception is thrown it is bubbled upwards in
-  the call chain."
-  [n thunk]
-  (loop [n n]
-    (if-let [result (try
-                      [(thunk)]
-                      (catch Exception e
-                        (when (zero? n)
-                          (throw e))))]
-      (result 0)
-      (recur (dec n)))))
-
-(defmacro try-times
-  "Executes body. If an exception is thrown, will retry. At most n retries
-  are done. If still some exception is thrown it is bubbled upwards in
-  the call chain."
-  [[n] & body]
-  `(try-times* ~n (fn [] ~@body)))
-
-(defmacro with-timeout
-  [[ms] & body]
-  `(let [^java.util.concurrent.Future f# (future ~@body)]
-     (.get f# ~ms java.util.concurrent.TimeUnit/MILLISECONDS)))
-
 (defn transfer-shard!
   "Transfers the supplied shard (specified by `idx`) from the supplied
   remote version's remote store to the appropriate path on the local
@@ -382,19 +357,17 @@
         remote-store (.remoteStore domain)
         remote-fs    (.getFileSystem remote-store)
         remote-path  (.shardPath remote-store idx version)
-        local-path   (.shardPath local-store idx version)
-        timeout-ms (* 6 60 1000)]
+        local-path   (.shardPath local-store idx version)]
     (if (.exists remote-fs (h/path remote-path))
-      (do (log/info (format "Copying %s to %s." remote-path local-path))
-          (try
-            (try-times [3]
-                       (with-timeout [timeout-ms]
-                         (transfer/rcopy remote-fs remote-path local-path
-                                         :throttle throttle)))
-            (catch Exception e
-              (log/error e)
-              (throw e)))
-          (log/info (format "Copied %s to %s." remote-path local-path)))
+      (do
+        (try
+          (log/info (format "Copying %s to %s." remote-path local-path))
+          (transfer/rcopy remote-fs remote-path local-path
+                          :throttle throttle)
+          (log/info (format "Copied %s to %s." remote-path local-path))
+          (catch Exception e
+            (log/error (format "Error copying %s to %s: %s" remote-path local-path e))
+            (throw e))))
       (do (log/info "Shard doesn't exist. Creating shard # " idx)
           (.createShard local-store idx version)))))
 
