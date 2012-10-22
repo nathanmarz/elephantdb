@@ -62,10 +62,13 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
             envConf.setTransactional(false);
 
             // TODO: Loop through options, setConfigParam for each one.
-            envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "50");
+            envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "10");
             envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_FILE_UTILIZATION, "5");
             envConf.setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
             envConf.setConfigParam(EnvironmentConfig.LOG_FILE_MAX, "104857600"); // 100 MB
+
+            envConf.setConfigParam(EnvironmentConfig.FILE_LOGGING_LEVEL, "FINEST");
+            envConf.setConfigParam(EnvironmentConfig.CONSOLE_LOGGING_LEVEL, "FINEST");
 
             env = new Environment(new File(root), envConf);
             
@@ -73,6 +76,8 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
             dbConf.setAllowCreate(allowCreate);
             dbConf.setReadOnly(readOnly);
             dbConf.setDeferredWrite(true);
+            
+            dbConf.setNodeMaxEntries(512);
 
             db = env.openDatabase(null, DATABASE_NAME, dbConf);
         }
