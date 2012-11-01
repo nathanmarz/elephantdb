@@ -22,7 +22,11 @@
   (when-let [^KeyValPersistence shard (dom/retrieve-shard domain key)]
     (log/debug (format "Direct get: key %s at shard %s" key shard))
     (u/with-read-lock (.rwLock domain)
-      (.get shard key))))
+      (try
+        (.get shard key)
+        (catch Exception e
+          (log/error "kv-get failed: " e)
+          (throw e))))))
 
 (defn to-map
   "Returns a persistent map containing all kv pairs in the supplied

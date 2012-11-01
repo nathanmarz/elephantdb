@@ -67,9 +67,7 @@
              serializer  (.serializer dom)
              key-seq     (map (fn [x]
                                 (ByteBuffer/wrap
-                                 ;; (.serialize serializer x)
-                                 x
-                                 ))
+                                 (.serialize serializer x)))
                               key-seq)]
          (.directKryoMultiGet service domain-name key-seq))
        (catch TException e
@@ -186,9 +184,7 @@
                  key-seq    (map (fn [^ByteBuffer x]
                                    (let [ret (byte-array (.remaining x))]
                                      (.get x ret)
-                                     ;; (.deserialize serializer ret)
-                                     ret
-                                     ))
+                                     (.deserialize serializer ret)))
                                  keys)]
              (if-let [val-seq (direct-multiget database domain-name key-seq)]
                (doall (map thrift/mk-value val-seq))
@@ -318,7 +314,7 @@
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
-    (future (db/update-all! database))
     (thrift/launch-server! kv-processor
                            (kv-service database)
                            (:port conf-map))))
+

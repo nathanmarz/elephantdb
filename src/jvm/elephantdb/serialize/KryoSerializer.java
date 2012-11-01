@@ -25,8 +25,8 @@ public class KryoSerializer implements Serializer {
 
     private static final int SWITCH_LIMIT = Math.max(MAX_OUTPUT_BUFFER_SIZE, MAX_OUTPUT_BUFFER_SIZE / TIDY_FACTOR);
 
-    private transient Output output;
-    private transient Kryo kryo;
+    private static final ThreadLocal<Output> output = new ThreadLocal<Output>();
+    private static final ThreadLocal<Kryo> kryo = new ThreadLocal<Kryo>();
 
     private int prevPosition;
 
@@ -40,17 +40,17 @@ public class KryoSerializer implements Serializer {
     }
 
     public void tidyBuffer() {
-        int currentPosition = output.position();
+        int currentPosition = getOutput().position();
 
         // If the previous serialized object was large (greater than the switch size) and the current
         // object falls below the switch size, reset the buffer to be small again. If both objects
         // are small (or large), no reallocation occurs.
         if (prevPosition > SWITCH_LIMIT && currentPosition <= SWITCH_LIMIT) {
-            output.setBuffer(new byte[OUTPUT_BUFFER_SIZE], MAX_OUTPUT_BUFFER_SIZE);
+            getOutput().setBuffer(new byte[OUTPUT_BUFFER_SIZE], MAX_OUTPUT_BUFFER_SIZE);
         }
 
         prevPosition = currentPosition;
-        output.clear();
+        getOutput().clear();
     }
 
     private Kryo freshKryo() {
@@ -72,21 +72,22 @@ public class KryoSerializer implements Serializer {
     }
 
     public Kryo getKryo() {
-        if (kryo == null)
-            kryo = freshKryo();
+        if (kryo.get() == null)
+            kryo.set(freshKryo());
 
-        return kryo;
+        return kryo.get();
     }
 
     public Output getOutput() {
-        if (output == null)
-            output = new Output(OUTPUT_BUFFER_SIZE, MAX_OUTPUT_BUFFER_SIZE);
+        if (output.get() == null)
+            output.set(new Output(OUTPUT_BUFFER_SIZE, MAX_OUTPUT_BUFFER_SIZE));
 
-        return output;
+        return output.get();
     }
 
     public byte[] serialize(Object o) {
         LOG.debug("Serializing object: " + o);
+        LOG.debug("Registration for " + o + " is: " + getKryo().getRegistration(o.getClass()));
         Output output = getOutput();
         getKryo().writeClassAndObject(output, o);
         byte[] bytes =  output.toBytes();

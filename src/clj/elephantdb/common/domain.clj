@@ -170,13 +170,21 @@
   with the supplied index."
   [domain-store shard-idx version & {:keys [allow-writes]}]
   (let [fs (.getFileSystem domain-store)]
-    (log/info "Opening shard #: " shard-idx)
+    (log/info "Opening shard #: " shard-idx " at " (.getRoot domain-store))
     (when-not (.exists fs (h/path (.shardPath domain-store shard-idx)))
       (log/info "Shard doesn't exist. Creating shard # " shard-idx)
       (.createShard domain-store shard-idx))
     (u/with-ret (if allow-writes
-                  (.openShardForAppend domain-store shard-idx)
-                  (.openShardForRead domain-store shard-idx))
+                  (try
+                    (.openShardForAppend domain-store shard-idx)
+                    (catch java.io.IOException t
+                      (log/error t)
+                      (throw t)))
+                  (try
+                    (.openShardForRead domain-store shard-idx)
+                    (catch java.io.IOException t
+                      (log/error t)
+                      (throw t))))
       (log/info "Opened shard #: " shard-idx))))
 
 (defn retrieve-shards!
