@@ -1,10 +1,4 @@
-(defproject yieldbot/elephantdb "0.2.0-SNAPSHOT"
-  :source-path "src/clj"
-  :java-source-path "src/jvm"
-  :javac-options {:debug "true" :fork "true"}
-  :jvm-opts ["-Xmx768m" "-server"]
-  :repositories {"oracle" "http://download.oracle.com/maven"
-                 "conjars.org" "http://conjars.org/repo"}
+(defproject yieldbot/elephantdb "0.2.0-SNAPSHOT" 
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [jvyaml "1.0.0"]
                  [org.yaml/snakeyaml "1.9"]
@@ -21,7 +15,15 @@
                  [org.apache.lucene/lucene-core "3.0.3"]
                  [org.apache.lucene/lucene-queries "3.0.3"]
                  [org.apache.hadoop/hadoop-core "0.20.2-dev"]]
-  :dev-dependencies [[midje "1.3.1" :exclusions [org.clojure/clojure]]
-                     [lein-midje "1.0.8"]]
-  :main elephantdb.keyval.core)
-
+  :source-paths ["src/clj"]
+  :profiles {:dev
+             {:dependencies
+              [[midje "1.4.0" :exclusions [org.clojure/clojure]]]}}
+  :repositories {"oracle" "http://download.oracle.com/maven",
+                 "conjars.org" "http://conjars.org/repo"}
+  :java-source-paths ["src/jvm"]
+  :main elephantdb.keyval.core
+  :min-lein-version "2.0.0"
+  :javac-options ["-g"]
+  :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
+  :plugins [[lein-midje "2.0.0-SNAPSHOT"]])
