@@ -6033,7 +6033,7 @@ public class ElephantDB {
                   struct.key = new ArrayList<ByteBuffer>(_list0.size);
                   for (int _i1 = 0; _i1 < _list0.size; ++_i1)
                   {
-                    ByteBuffer _elem2; // optional
+                    ByteBuffer _elem2; // required
                     _elem2 = iprot.readBinary();
                     struct.key.add(_elem2);
                   }
@@ -6127,7 +6127,7 @@ public class ElephantDB {
             struct.key = new ArrayList<ByteBuffer>(_list5.size);
             for (int _i6 = 0; _i6 < _list5.size; ++_i6)
             {
-              ByteBuffer _elem7; // optional
+              ByteBuffer _elem7; // required
               _elem7 = iprot.readBinary();
               struct.key.add(_elem7);
             }
@@ -6700,7 +6700,7 @@ public class ElephantDB {
                   struct.success = new ArrayList<elephantdb.generated.Value>(_list8.size);
                   for (int _i9 = 0; _i9 < _list8.size; ++_i9)
                   {
-                    elephantdb.generated.Value _elem10; // optional
+                    elephantdb.generated.Value _elem10; // required
                     _elem10 = new elephantdb.generated.Value();
                     _elem10.read(iprot);
                     struct.success.add(_elem10);
@@ -6840,7 +6840,7 @@ public class ElephantDB {
             struct.success = new ArrayList<elephantdb.generated.Value>(_list13.size);
             for (int _i14 = 0; _i14 < _list13.size; ++_i14)
             {
-              elephantdb.generated.Value _elem15; // optional
+              elephantdb.generated.Value _elem15; // required
               _elem15 = new elephantdb.generated.Value();
               _elem15.read(iprot);
               struct.success.add(_elem15);
@@ -7275,7 +7275,7 @@ public class ElephantDB {
                   struct.key = new ArrayList<String>(_list16.size);
                   for (int _i17 = 0; _i17 < _list16.size; ++_i17)
                   {
-                    String _elem18; // optional
+                    String _elem18; // required
                     _elem18 = iprot.readString();
                     struct.key.add(_elem18);
                   }
@@ -7369,7 +7369,7 @@ public class ElephantDB {
             struct.key = new ArrayList<String>(_list21.size);
             for (int _i22 = 0; _i22 < _list21.size; ++_i22)
             {
-              String _elem23; // optional
+              String _elem23; // required
               _elem23 = iprot.readString();
               struct.key.add(_elem23);
             }
@@ -7942,7 +7942,7 @@ public class ElephantDB {
                   struct.success = new ArrayList<elephantdb.generated.Value>(_list24.size);
                   for (int _i25 = 0; _i25 < _list24.size; ++_i25)
                   {
-                    elephantdb.generated.Value _elem26; // optional
+                    elephantdb.generated.Value _elem26; // required
                     _elem26 = new elephantdb.generated.Value();
                     _elem26.read(iprot);
                     struct.success.add(_elem26);
@@ -8082,7 +8082,7 @@ public class ElephantDB {
             struct.success = new ArrayList<elephantdb.generated.Value>(_list29.size);
             for (int _i30 = 0; _i30 < _list29.size; ++_i30)
             {
-              elephantdb.generated.Value _elem31; // optional
+              elephantdb.generated.Value _elem31; // required
               _elem31 = new elephantdb.generated.Value();
               _elem31.read(iprot);
               struct.success.add(_elem31);
@@ -8517,7 +8517,7 @@ public class ElephantDB {
                   struct.key = new ArrayList<Integer>(_list32.size);
                   for (int _i33 = 0; _i33 < _list32.size; ++_i33)
                   {
-                    int _elem34; // optional
+                    int _elem34; // required
                     _elem34 = iprot.readI32();
                     struct.key.add(_elem34);
                   }
@@ -8611,7 +8611,7 @@ public class ElephantDB {
             struct.key = new ArrayList<Integer>(_list37.size);
             for (int _i38 = 0; _i38 < _list37.size; ++_i38)
             {
-              int _elem39; // optional
+              int _elem39; // required
               _elem39 = iprot.readI32();
               struct.key.add(_elem39);
             }
@@ -9184,7 +9184,7 @@ public class ElephantDB {
                   struct.success = new ArrayList<elephantdb.generated.Value>(_list40.size);
                   for (int _i41 = 0; _i41 < _list40.size; ++_i41)
                   {
-                    elephantdb.generated.Value _elem42; // optional
+                    elephantdb.generated.Value _elem42; // required
                     _elem42 = new elephantdb.generated.Value();
                     _elem42.read(iprot);
                     struct.success.add(_elem42);
@@ -9324,7 +9324,7 @@ public class ElephantDB {
             struct.success = new ArrayList<elephantdb.generated.Value>(_list45.size);
             for (int _i46 = 0; _i46 < _list45.size; ++_i46)
             {
-              elephantdb.generated.Value _elem47; // optional
+              elephantdb.generated.Value _elem47; // required
               _elem47 = new elephantdb.generated.Value();
               _elem47.read(iprot);
               struct.success.add(_elem47);
@@ -9759,7 +9759,7 @@ public class ElephantDB {
                   struct.key = new ArrayList<Long>(_list48.size);
                   for (int _i49 = 0; _i49 < _list48.size; ++_i49)
                   {
-                    long _elem50; // optional
+                    long _elem50; // required
                     _elem50 = iprot.readI64();
                     struct.key.add(_elem50);
                   }
@@ -9853,7 +9853,7 @@ public class ElephantDB {
             struct.key = new ArrayList<Long>(_list53.size);
             for (int _i54 = 0; _i54 < _list53.size; ++_i54)
             {
-              long _elem55; // optional
+              long _elem55; // required
               _elem55 = iprot.readI64();
               struct.key.add(_elem55);
             }
@@ -10426,7 +10426,7 @@ public class ElephantDB {
                   struct.success = new ArrayList<elephantdb.generated.Value>(_list56.size);
                   for (int _i57 = 0; _i57 < _list56.size; ++_i57)
                   {
-                    elephantdb.generated.Value _elem58; // optional
+                    elephantdb.generated.Value _elem58; // required
                     _elem58 = new elephantdb.generated.Value();
                     _elem58.read(iprot);
                     struct.success.add(_elem58);
@@ -10566,7 +10566,7 @@ public class ElephantDB {
             struct.success = new ArrayList<elephantdb.generated.Value>(_list61.size);
             for (int _i62 = 0; _i62 < _list61.size; ++_i62)
             {
-              elephantdb.generated.Value _elem63; // optional
+              elephantdb.generated.Value _elem63; // required
               _elem63 = new elephantdb.generated.Value();
               _elem63.read(iprot);
               struct.success.add(_elem63);
@@ -11003,7 +11003,7 @@ public class ElephantDB {
                   struct.key = new ArrayList<ByteBuffer>(_list64.size);
                   for (int _i65 = 0; _i65 < _list64.size; ++_i65)
                   {
-                    ByteBuffer _elem66; // optional
+                    ByteBuffer _elem66; // required
                     _elem66 = iprot.readBinary();
                     struct.key.add(_elem66);
                   }
@@ -11097,7 +11097,7 @@ public class ElephantDB {
             struct.key = new ArrayList<ByteBuffer>(_list69.size);
             for (int _i70 = 0; _i70 < _list69.size; ++_i70)
             {
-              ByteBuffer _elem71; // optional
+              ByteBuffer _elem71; // required
               _elem71 = iprot.readBinary();
               struct.key.add(_elem71);
             }
@@ -11670,7 +11670,7 @@ public class ElephantDB {
                   struct.success = new ArrayList<elephantdb.generated.Value>(_list72.size);
                   for (int _i73 = 0; _i73 < _list72.size; ++_i73)
                   {
-                    elephantdb.generated.Value _elem74; // optional
+                    elephantdb.generated.Value _elem74; // required
                     _elem74 = new elephantdb.generated.Value();
                     _elem74.read(iprot);
                     struct.success.add(_elem74);
@@ -11810,7 +11810,7 @@ public class ElephantDB {
             struct.success = new ArrayList<elephantdb.generated.Value>(_list77.size);
             for (int _i78 = 0; _i78 < _list77.size; ++_i78)
             {
-              elephantdb.generated.Value _elem79; // optional
+              elephantdb.generated.Value _elem79; // required
               _elem79 = new elephantdb.generated.Value();
               _elem79.read(iprot);
               struct.success.add(_elem79);
@@ -12247,7 +12247,7 @@ public class ElephantDB {
                   struct.key = new ArrayList<ByteBuffer>(_list80.size);
                   for (int _i81 = 0; _i81 < _list80.size; ++_i81)
                   {
-                    ByteBuffer _elem82; // optional
+                    ByteBuffer _elem82; // required
                     _elem82 = iprot.readBinary();
                     struct.key.add(_elem82);
                   }
@@ -12341,7 +12341,7 @@ public class ElephantDB {
             struct.key = new ArrayList<ByteBuffer>(_list85.size);
             for (int _i86 = 0; _i86 < _list85.size; ++_i86)
             {
-              ByteBuffer _elem87; // optional
+              ByteBuffer _elem87; // required
               _elem87 = iprot.readBinary();
               struct.key.add(_elem87);
             }
@@ -12914,7 +12914,7 @@ public class ElephantDB {
                   struct.success = new ArrayList<elephantdb.generated.Value>(_list88.size);
                   for (int _i89 = 0; _i89 < _list88.size; ++_i89)
                   {
-                    elephantdb.generated.Value _elem90; // optional
+                    elephantdb.generated.Value _elem90; // required
                     _elem90 = new elephantdb.generated.Value();
                     _elem90.read(iprot);
                     struct.success.add(_elem90);
@@ -13054,7 +13054,7 @@ public class ElephantDB {
             struct.success = new ArrayList<elephantdb.generated.Value>(_list93.size);
             for (int _i94 = 0; _i94 < _list93.size; ++_i94)
             {
-              elephantdb.generated.Value _elem95; // optional
+              elephantdb.generated.Value _elem95; // required
               _elem95 = new elephantdb.generated.Value();
               _elem95.read(iprot);
               struct.success.add(_elem95);

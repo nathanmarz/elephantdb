@@ -3294,7 +3294,7 @@ public class ElephantDBSet {
                   struct.success = new ArrayList<String>(_list0.size);
                   for (int _i1 = 0; _i1 < _list0.size; ++_i1)
                   {
-                    String _elem2; // optional
+                    String _elem2; // required
                     _elem2 = iprot.readString();
                     struct.success.add(_elem2);
                   }
@@ -3373,7 +3373,7 @@ public class ElephantDBSet {
             struct.success = new ArrayList<String>(_list5.size);
             for (int _i6 = 0; _i6 < _list5.size; ++_i6)
             {
-              String _elem7; // optional
+              String _elem7; // required
               _elem7 = iprot.readString();
               struct.success.add(_elem7);
             }
@@ -4268,7 +4268,7 @@ public class ElephantDBSet {
                   struct.success = new ArrayList<String>(_list8.size);
                   for (int _i9 = 0; _i9 < _list8.size; ++_i9)
                   {
-                    String _elem10; // optional
+                    String _elem10; // required
                     _elem10 = iprot.readString();
                     struct.success.add(_elem10);
                   }
@@ -4347,7 +4347,7 @@ public class ElephantDBSet {
             struct.success = new ArrayList<String>(_list13.size);
             for (int _i14 = 0; _i14 < _list13.size; ++_i14)
             {
-              String _elem15; // optional
+              String _elem15; // required
               _elem15 = iprot.readString();
               struct.success.add(_elem15);
             }
@@ -5242,7 +5242,7 @@ public class ElephantDBSet {
                   struct.success = new ArrayList<String>(_list16.size);
                   for (int _i17 = 0; _i17 < _list16.size; ++_i17)
                   {
-                    String _elem18; // optional
+                    String _elem18; // required
                     _elem18 = iprot.readString();
                     struct.success.add(_elem18);
                   }
@@ -5321,7 +5321,7 @@ public class ElephantDBSet {
             struct.success = new ArrayList<String>(_list21.size);
             for (int _i22 = 0; _i22 < _list21.size; ++_i22)
             {
-              String _elem23; // optional
+              String _elem23; // required
               _elem23 = iprot.readString();
               struct.success.add(_elem23);
             }
@@ -6644,7 +6644,7 @@ public class ElephantDBSet {
                   struct.setVals = new ArrayList<String>(_list24.size);
                   for (int _i25 = 0; _i25 < _list24.size; ++_i25)
                   {
-                    String _elem26; // optional
+                    String _elem26; // required
                     _elem26 = iprot.readString();
                     struct.setVals.add(_elem26);
                   }
@@ -6753,7 +6753,7 @@ public class ElephantDBSet {
             struct.setVals = new ArrayList<String>(_list29.size);
             for (int _i30 = 0; _i30 < _list29.size; ++_i30)
             {
-              String _elem31; // optional
+              String _elem31; // required
               _elem31 = iprot.readString();
               struct.setVals.add(_elem31);
             }
@@ -7083,7 +7083,7 @@ public class ElephantDBSet {
                   struct.success = new ArrayList<elephantdb.generated.Value>(_list32.size);
                   for (int _i33 = 0; _i33 < _list32.size; ++_i33)
                   {
-                    elephantdb.generated.Value _elem34; // optional
+                    elephantdb.generated.Value _elem34; // required
                     _elem34 = new elephantdb.generated.Value();
                     _elem34.read(iprot);
                     struct.success.add(_elem34);
@@ -7163,7 +7163,7 @@ public class ElephantDBSet {
             struct.success = new ArrayList<elephantdb.generated.Value>(_list37.size);
             for (int _i38 = 0; _i38 < _list37.size; ++_i38)
             {
-              elephantdb.generated.Value _elem39; // optional
+              elephantdb.generated.Value _elem39; // required
               _elem39 = new elephantdb.generated.Value();
               _elem39.read(iprot);
               struct.success.add(_elem39);

@@ -2582,7 +2582,7 @@ public class ElephantDBDoc {
                   struct.fields = new ArrayList<String>(_list0.size);
                   for (int _i1 = 0; _i1 < _list0.size; ++_i1)
                   {
-                    String _elem2; // optional
+                    String _elem2; // required
                     _elem2 = iprot.readString();
                     struct.fields.add(_elem2);
                   }
@@ -2691,7 +2691,7 @@ public class ElephantDBDoc {
             struct.fields = new ArrayList<String>(_list5.size);
             for (int _i6 = 0; _i6 < _list5.size; ++_i6)
             {
-              String _elem7; // optional
+              String _elem7; // required
               _elem7 = iprot.readString();
               struct.fields.add(_elem7);
             }

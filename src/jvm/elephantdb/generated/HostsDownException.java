@@ -350,7 +350,7 @@ public class HostsDownException extends Exception implements org.apache.thrift.T
                 struct.hosts = new ArrayList<String>(_list10.size);
                 for (int _i11 = 0; _i11 < _list10.size; ++_i11)
                 {
-                  String _elem12; // optional
+                  String _elem12; // required
                   _elem12 = iprot.readString();
                   struct.hosts.add(_elem12);
                 }
@@ -420,7 +420,7 @@ public class HostsDownException extends Exception implements org.apache.thrift.T
         struct.hosts = new ArrayList<String>(_list15.size);
         for (int _i16 = 0; _i16 < _list15.size; ++_i16)
         {
-          String _elem17; // optional
+          String _elem17; // required
           _elem17 = iprot.readString();
           struct.hosts.add(_elem17);
         }

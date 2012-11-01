@@ -517,7 +517,7 @@ public class InvalidConfigurationException extends Exception implements org.apac
                 struct.mismatched_domains = new ArrayList<String>(_list18.size);
                 for (int _i19 = 0; _i19 < _list18.size; ++_i19)
                 {
-                  String _elem20; // optional
+                  String _elem20; // required
                   _elem20 = iprot.readString();
                   struct.mismatched_domains.add(_elem20);
                 }
@@ -611,7 +611,7 @@ public class InvalidConfigurationException extends Exception implements org.apac
         struct.mismatched_domains = new ArrayList<String>(_list23.size);
         for (int _i24 = 0; _i24 < _list23.size; ++_i24)
         {
-          String _elem25; // optional
+          String _elem25; // required
           _elem25 = iprot.readString();
           struct.mismatched_domains.add(_elem25);
         }

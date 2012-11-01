@@ -1896,7 +1896,7 @@ public class ElephantDBShared {
                   struct.success = new ArrayList<String>(_list26.size);
                   for (int _i27 = 0; _i27 < _list26.size; ++_i27)
                   {
-                    String _elem28; // optional
+                    String _elem28; // required
                     _elem28 = iprot.readString();
                     struct.success.add(_elem28);
                   }
@@ -1975,7 +1975,7 @@ public class ElephantDBShared {
             struct.success = new ArrayList<String>(_list31.size);
             for (int _i32 = 0; _i32 < _list31.size; ++_i32)
             {
-              String _elem33; // optional
+              String _elem33; // required
               _elem33 = iprot.readString();
               struct.success.add(_elem33);
             }
@@ -3102,8 +3102,6 @@ public class ElephantDBShared {
 
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
       try {
-        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-        __isset_bit_vector = new BitSet(1);
         read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
       } catch (org.apache.thrift.TException te) {
         throw new java.io.IOException(te);
@@ -3703,8 +3701,6 @@ public class ElephantDBShared {
 
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
       try {
-        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-        __isset_bit_vector = new BitSet(1);
         read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
       } catch (org.apache.thrift.TException te) {
         throw new java.io.IOException(te);
@@ -4416,8 +4412,6 @@ public class ElephantDBShared {
 
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
       try {
-        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-        __isset_bit_vector = new BitSet(1);
         read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
       } catch (org.apache.thrift.TException te) {
         throw new java.io.IOException(te);
@@ -5098,8 +5092,6 @@ public class ElephantDBShared {
 
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
       try {
-        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
-        __isset_bit_vector = new BitSet(1);
         read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
       } catch (org.apache.thrift.TException te) {
         throw new java.io.IOException(te);
