@@ -16,6 +16,7 @@
            [org.apache.thrift TException]
            [elephantdb.common.database Database]
            [elephantdb.common.domain Domain]
+           [elephantdb.serialize Serializer KryoSerializer]
            [elephantdb.generated DomainNotFoundException
             DomainNotLoadedException WrongHostException]
            [elephantdb.generated.keyval ElephantDB$Client 
@@ -64,7 +65,7 @@
   keys in the supplied `key-seq`."
   [^ElephantDB$Iface service database domain-name error-suffix key-seq]
   (try (let [^Domain dom (db/domain-get database domain-name)
-             serializer  (.serializer dom)
+             ^Serializer serializer  (.serializer dom)
              key-seq     (map (fn [x]
                                 (ByteBuffer/wrap
                                  (.serialize serializer x)))
@@ -180,7 +181,7 @@
     (directKryoMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
       (try (let [^Domain dom (db/domain-get database domain-name)
-                 serializer (.serializer dom)
+                 ^Serializer serializer (.serializer dom)
                  key-seq    (map (fn [^ByteBuffer x]
                                    (let [ret (byte-array (.remaining x))]
                                      (.get x ret)

@@ -87,7 +87,7 @@
   (let [stream (.create fs (h/path path-str) false)]
     (spit stream conf)))
 
-(defn convert-java-domain-spec [spec]
+(defn convert-java-domain-spec [^DomainSpec spec]
   {:coordinator  (.getCoordinator spec)
    :shard-scheme (.getShardScheme spec)
    :num-shards   (.getNumShards spec)})
