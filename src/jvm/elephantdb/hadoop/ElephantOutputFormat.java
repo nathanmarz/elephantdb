@@ -117,12 +117,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
         
         public void close() throws IOException {
-            try {
-                close(null);
-            } catch(IOException e) {
-                LOG.error("Caught IOException: " + e.getMessage());
-                throw(e);
-            }
+            close(null);
         }
 
         public void close(Reporter reporter) throws IOException {
