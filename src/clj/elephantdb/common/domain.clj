@@ -175,16 +175,8 @@
       (log/info "Shard doesn't exist. Creating shard # " shard-idx)
       (.createShard domain-store shard-idx))
     (u/with-ret (if allow-writes
-                  (try
-                    (.openShardForAppend domain-store shard-idx)
-                    (catch java.io.IOException t
-                      (log/error t)
-                      (throw t)))
-                  (try
-                    (.openShardForRead domain-store shard-idx)
-                    (catch java.io.IOException t
-                      (log/error t)
-                      (throw t))))
+                  (.openShardForAppend domain-store shard-idx)
+                  (.openShardForRead domain-store shard-idx))
       (log/info "Opened shard #: " shard-idx))))
 
 (defn retrieve-shards!
@@ -195,8 +187,12 @@
   (let [local-store (.localStore domain)
         shards      (shard-set domain)
         open!       (fn [idx]
-                      (open-shard! local-store idx version
-                                   :allow-writes (.allowWrites domain)))]
+                      (try
+                        (open-shard! local-store idx version
+                                     :allow-writes (.allowWrites domain))
+                        (catch Exception e
+                          (log/error e)
+                          (throw e))))]
     (assert (has-version? local-store version)
             (str version "  doesn't exist."))
     (u/with-ret (->> (doall (map open! shards))
