@@ -14,13 +14,15 @@
                  [com.sleepycat/je "5.0.58"]
                  [org.apache.lucene/lucene-core "3.0.3"]
                  [org.apache.lucene/lucene-queries "3.0.3"]
-                 [org.apache.hadoop/hadoop-core "0.20.2-dev"]]
+                 [org.apache.hadoop/hadoop-core "0.20.2-dev"]
+                 [org.fusesource.leveldbjni/leveldbjni-all "1.1"]]
   :source-paths ["src/clj"]
   :profiles {:dev
              {:dependencies
               [[midje "1.4.0" :exclusions [org.clojure/clojure]]]}}
-  :repositories {"oracle" "http://download.oracle.com/maven",
-                 "conjars.org" "http://conjars.org/repo"}
+  :repositories {"oracle" "http://download.oracle.com/maven"
+                 "conjars.org" "http://conjars.org/repo"
+                 "fusesource.nexus.snapshot" "http://repo.fusesource.com/nexus/content/groups/public-snapshots"}
   :java-source-paths ["src/jvm"]
   :main elephantdb.keyval.core
   :min-lein-version "2.0.0"
