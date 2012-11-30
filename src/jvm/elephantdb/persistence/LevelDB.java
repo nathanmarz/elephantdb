@@ -1,9 +1,5 @@
-package elephantdb.leveldb.persistence;
+package elephantdb.persistence;
 
-import elephantdb.persistence.Coordinator;
-import elephantdb.persistence.Persistence;
-import elephantdb.persistence.KeyValPersistence;
-import elephantdb.persistence.CloseableIterator;
 import elephantdb.document.KeyValDocument;
 import elephantdb.serialize.SerializationWrapper;
 import elephantdb.serialize.Serializer;
