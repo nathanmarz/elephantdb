@@ -58,10 +58,14 @@ public class LevelDB implements SerializationWrapper, Coordinator {
 
             dboptions = new Options();
             dboptions.createIfMissing(allowCreate);
-            // 100mb TODO: set this using the options map
-            dboptions.cacheSize(100 * 1048576);
+            // 5mb TODO: set this using the options map
+            dboptions.cacheSize(5 * 1024 * 1024);
+            dboptions.compressionType(CompressionType.SNAPPY);
 
             db = factory.open(new File(root), dboptions);
+
+            String stats = db.getProperty("leveldb.stats");
+            LOG.debug("\n" + stats);
         }
 
         public <K, V> V get(K key) throws IOException {
@@ -138,7 +142,11 @@ public class LevelDB implements SerializationWrapper, Coordinator {
 
                 public void close() {
                     if (cursor != null)
-                        cursor.close();
+                        try {
+                            cursor.close();
+                        } catch (IOException e) {
+                            throw new RuntimeException("Unable to close iterator: " + e);
+                        }
                 }
             };
         }

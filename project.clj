@@ -15,7 +15,7 @@
                  [org.apache.lucene/lucene-core "3.0.3"]
                  [org.apache.lucene/lucene-queries "3.0.3"]
                  [org.apache.hadoop/hadoop-core "0.20.2-dev"]
-                 [org.fusesource.leveldbjni/leveldbjni-all "1.1"]]
+                 [org.fusesource.leveldbjni/leveldbjni-all "1.4"]]
   :source-paths ["src/clj"]
   :profiles {:dev
              {:dependencies
@@ -26,6 +26,6 @@
   :java-source-paths ["src/jvm"]
   :main elephantdb.keyval.core
   :min-lein-version "2.0.0"
-  :javac-options ["-g"]
+  :javac-options ["-source" "1.6" "-target" "1.6"]
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
   :plugins [[lein-midje "2.0.0-SNAPSHOT"]])
