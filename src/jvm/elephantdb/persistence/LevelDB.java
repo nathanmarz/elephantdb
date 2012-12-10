@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 
 import org.iq80.leveldb.*;
 import static org.fusesource.leveldbjni.JniDBFactory.*;
+import org.fusesource.leveldbjni.internal.JniDB;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,25 +48,26 @@ public class LevelDB implements SerializationWrapper, Coordinator {
         Serializer kvSerializer;
         Options dboptions;
         DB db;
+        boolean readOnly;
         
-        public LevelDBPersistence(String root, Serializer serializer, Map options,
+        public LevelDBPersistence(String root, Serializer serializer, Map options, 
                                   boolean readOnly, boolean allowCreate) throws IOException {
             if (serializer == null)
                 throw new RuntimeException("LevelDBPersistence requires an initialized serializer.");
 
             this.kvSerializer = serializer;
+            this.readOnly = readOnly;
             new File(root).mkdirs();
 
             dboptions = new Options();
             dboptions.createIfMissing(allowCreate);
-            // 5mb TODO: set this using the options map
-            dboptions.cacheSize(5 * 1024 * 1024);
+            dboptions.paranoidChecks(true);
+            // 20mb TODO: set this using the options map
+            dboptions.cacheSize(20 * 1024 * 1024);
             dboptions.compressionType(CompressionType.SNAPPY);
 
             db = factory.open(new File(root), dboptions);
 
-            String stats = db.getProperty("leveldb.stats");
-            LOG.debug("\n" + stats);
         }
 
         public <K, V> V get(K key) throws IOException {
@@ -94,6 +96,16 @@ public class LevelDB implements SerializationWrapper, Coordinator {
         }
 
         public void close() throws IOException {
+            if(!readOnly) {
+                LOG.info("Compacting leveldb");
+                String stats = db.getProperty("leveldb.stats");
+                LOG.info(stats);
+                ((JniDB) db).compactRange(null,null);
+                LOG.info("Done compacting leveldb");
+                stats = db.getProperty("leveldb.stats");
+                LOG.info(stats);
+            }
+
             db.close();
         }
 
