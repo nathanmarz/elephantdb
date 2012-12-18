@@ -71,6 +71,9 @@ class ElephantDBClient:
     def updateDomain(self, domain):
         return self._exec(lambda client: client.updateDomain(domain))
 
+    def getCount(self, domain):
+        return self._exec(lambda client: client.getCount(domain))
+
     def close(self):
         if self._conn is not None:
             self._conn.close()
