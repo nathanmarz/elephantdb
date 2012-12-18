@@ -8,6 +8,11 @@
            [elephantdb.common.status IStateful]
            [elephantdb.persistence Shutdownable]))
 
+(defn kv-count
+  "Returns the count of kv pairs in the supplied domain."
+  [domain]
+  (count (seq domain)))
+
 (defn trim-hosts
     "Used within a multi-get's loop. Accepts a sequence of hosts + a
     sequence of hosts known to be bad, filters the bad hosts and drops

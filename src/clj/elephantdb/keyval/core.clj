@@ -287,7 +287,13 @@
       "If an update is available on any domain, updates the domain's
          shards from its remote store and hotswaps in the new versions."
       (u/with-ret true
-        (db/update-all! database)))))
+        (db/update-all! database)))
+    
+    (getCount [_ domain-name]
+      "Returns the total count of KeyValDocuments in the supplied domain-name."
+      (thrift/assert-domain database domain-name)
+      (-> (db/domain-get database domain-name)
+          (dom/kv-count)))))
 
 ;; # Main Access
 ;;
@@ -318,4 +324,3 @@
     (thrift/launch-server! kv-processor
                            (kv-service database)
                            (:port conf-map))))
-

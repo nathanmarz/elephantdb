@@ -355,7 +355,7 @@ public class Status implements org.apache.thrift.TBase<Status, Status._Fields>, 
                 struct.domain_statuses = new HashMap<String,DomainStatus>(2*_map0.size);
                 for (int _i1 = 0; _i1 < _map0.size; ++_i1)
                 {
-                  String _key2; // optional
+                  String _key2; // required
                   DomainStatus _val3; // required
                   _key2 = iprot.readString();
                   _val3 = new DomainStatus();

@@ -30,6 +30,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '  bool isUpdating()'
   print '  bool update(string domain)'
   print '  bool updateAll()'
+  print '  i64 getCount(string domain)'
   print ''
   sys.exit(0)
 
@@ -122,6 +123,12 @@ elif cmd == 'updateAll':
     print 'updateAll requires 0 args'
     sys.exit(1)
   pp.pprint(client.updateAll())
+
+elif cmd == 'getCount':
+  if len(args) != 1:
+    print 'getCount requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.getCount(args[0],))
 
 else:
   print 'Unrecognized method %s' % cmd
