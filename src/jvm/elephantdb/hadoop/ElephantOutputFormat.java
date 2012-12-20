@@ -134,17 +134,12 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
                     fileSystem.delete(new Path(remoteDir), true);
                     --deleteAttempt;
                 }
-                if (fileSystem.exists(new Path(remoteDir)) && deleteAttempt == 0)
+                if (fileSystem.exists(new Path(remoteDir)) && deleteAttempt == 0) {
                     throw new IOException("Failed to delete shard " + shard + " at " + remoteDir
                             + " after " + deleteAttempt + " attempts!");
-                else
+                } else {
                     LOG.info("Deleted existing shard " + shard + " at " + remoteDir);
-                  /* REMOVING TO ADDRESS ISSUE WHERE SHARD DIRECTORY ISN'T PROPERLY DELETED */
-//                if (fileSystem.exists(new Path(remoteDir))) {
-//                    LOG.info("Deleting existing shard " + shard + " at " + remoteDir);
-//                    fileSystem.delete(new Path(remoteDir), true);
-//                    LOG.info("Deleted existing shard " + shard + " at " + remoteDir);
-//                }
+                }
                 LOG.info("Copying " + lpDir + " to " + remoteDir);
                 fileSystem.copyFromLocalFile(new Path(lpDir), new Path(remoteDir));
                 LOG.info("Copied " + lpDir + " to " + remoteDir);
