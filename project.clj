@@ -28,4 +28,4 @@
   :min-lein-version "2.0.0"
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
-  :plugins [[lein-midje "2.0.0-SNAPSHOT"]])
+  :plugins [[lein-midje "2.0.3"]])
