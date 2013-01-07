@@ -33,7 +33,6 @@ public class KryoSerializer implements Serializer {
 
     private Kryo freshKryo() {
         Kryo k = new Kryo();
-        byteStream = new ByteArrayOutputStream();
         KryoFactory factory = new KryoFactory(new Configuration());
         k.setInstantiatorStrategy(new StdInstantiatorStrategy());
         k.setRegistrationRequired(false);
