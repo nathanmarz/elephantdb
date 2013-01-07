@@ -21,8 +21,8 @@ public class KryoSerializer implements Serializer {
     public static final Logger LOG = Logger.getLogger(KryoSerializer.class);
     
     private static final ThreadLocal<Kryo> kryo = new ThreadLocal<Kryo>();
+    private static final ThreadLocal<ByteArrayOutputStream> byteStream = new ThreadLocal<ByteArrayOutputStream>();
     private Iterable<KryoFactory.ClassPair> kryoPairs = new ArrayList<KryoFactory.ClassPair>();
-    private ByteArrayOutputStream byteStream;
 
     public KryoSerializer() {
     }
@@ -55,10 +55,17 @@ public class KryoSerializer implements Serializer {
 
         return kryo.get();
     }
+    
+    public ByteArrayOutputStream getByteStream() {
+        if (byteStream.get() == null)
+            byteStream.set(new ByteArrayOutputStream());
+
+        return byteStream.get();
+    }
 
     public byte[] serialize(Object o) {
-        byteStream.reset();
-        Output ko = new Output(byteStream);
+        getByteStream().reset();
+        Output ko = new Output(getByteStream());
         getKryo().writeClassAndObject(ko, o);
         ko.flush();
         byte[] bytes = ko.toBytes();
