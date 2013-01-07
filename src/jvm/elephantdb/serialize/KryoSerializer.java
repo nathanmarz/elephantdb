@@ -67,7 +67,7 @@ public class KryoSerializer implements Serializer {
         Output ko = new Output(getByteStream());
         getKryo().writeClassAndObject(ko, o);
         ko.flush();
-        byte[] bytes = ko.toBytes();
+        byte[] bytes = getByteStream().toByteArray();
         
         return bytes;
     }
