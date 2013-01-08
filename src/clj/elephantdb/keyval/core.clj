@@ -1,7 +1,8 @@
 (ns elephantdb.keyval.core
   "Functions for connecting the an ElephantDB (key-value) service via
   Thrift."
-  (:use [elephantdb.common.domain :only (loaded?)])
+  (:use [elephantdb.common.domain :only (loaded?)]
+        clojure.pprint)
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
@@ -10,11 +11,12 @@
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom])
   (:import [java.nio ByteBuffer]
-           [org.apache.thrift7.protocol TBinaryProtocol]
-           [org.apache.thrift7.transport TTransport]
-           [org.apache.thrift7 TException]
+           [org.apache.thrift.protocol TBinaryProtocol]
+           [org.apache.thrift.transport TTransport]
+           [org.apache.thrift TException]
            [elephantdb.common.database Database]
            [elephantdb.common.domain Domain]
+           [elephantdb.serialize Serializer KryoSerializer]
            [elephantdb.generated DomainNotFoundException
             DomainNotLoadedException WrongHostException]
            [elephantdb.generated.keyval ElephantDB$Client 
@@ -47,7 +49,7 @@
   [^ElephantDB$Iface service domain-name error-suffix key-seq]
   (try (.directMultiGet service domain-name key-seq)
        (catch TException e
-         (log/error e "Thrift exception on " error-suffix)) ;; try next host
+         (log/error e "Thrift exception on " error-suffix "trying next host")) ;; try next host
        (catch WrongHostException e
          (log/error e "Fatal exception on " error-suffix)
          (throw (TException. "Fatal exception when performing get" e)))
@@ -63,14 +65,14 @@
   keys in the supplied `key-seq`."
   [^ElephantDB$Iface service database domain-name error-suffix key-seq]
   (try (let [^Domain dom (db/domain-get database domain-name)
-             serializer  (.serializer dom)
+             ^Serializer serializer  (.serializer dom)
              key-seq     (map (fn [x]
                                 (ByteBuffer/wrap
                                  (.serialize serializer x)))
-                              key-seq)] 
+                              key-seq)]
          (.directKryoMultiGet service domain-name key-seq))
        (catch TException e
-         (log/error e "Thrift exception on " error-suffix)) ;; try next host
+         (log/error e "Thrift exception on " error-suffix " trying next host")) ;; try next host
        (catch WrongHostException e
          (log/error e "Fatal exception on " error-suffix)
          (throw (TException. "Fatal exception when performing get" e)))
@@ -179,7 +181,7 @@
     (directKryoMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
       (try (let [^Domain dom (db/domain-get database domain-name)
-                 serializer (.serializer dom)
+                 ^Serializer serializer (.serializer dom)
                  key-seq    (map (fn [^ByteBuffer x]
                                    (let [ret (byte-array (.remaining x))]
                                      (.get x ret)
@@ -285,7 +287,13 @@
       "If an update is available on any domain, updates the domain's
          shards from its remote store and hotswaps in the new versions."
       (u/with-ret true
-        (db/update-all! database)))))
+        (db/update-all! database)))
+    
+    (getCount [_ domain-name]
+      "Returns the total count of KeyValDocuments in the supplied domain-name."
+      (thrift/assert-domain database domain-name)
+      (-> (db/domain-get database domain-name)
+          (dom/kv-count)))))
 
 ;; # Main Access
 ;;
@@ -313,7 +321,6 @@
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
-    (future (db/update-all! database))
     (thrift/launch-server! kv-processor
                            (kv-service database)
                            (:port conf-map))))

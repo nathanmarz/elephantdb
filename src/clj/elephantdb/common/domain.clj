@@ -5,6 +5,7 @@
             [hadoop-util.transfer :as transfer]
             [jackknife.core :as u]
             [jackknife.logging :as log]
+            [clojure.java.io :as io]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf]
             [elephantdb.common.status :as status])
@@ -169,7 +170,7 @@
   with the supplied index."
   [domain-store shard-idx version & {:keys [allow-writes]}]
   (let [fs (.getFileSystem domain-store)]
-    (log/info "Opening shard #: " shard-idx)
+    (log/info "Opening shard #: " shard-idx " at " (.getRoot domain-store))
     (when-not (.exists fs (h/path (.shardPath domain-store shard-idx)))
       (log/info "Shard doesn't exist. Creating shard # " shard-idx)
       (.createShard domain-store shard-idx))
@@ -186,8 +187,12 @@
   (let [local-store (.localStore domain)
         shards      (shard-set domain)
         open!       (fn [idx]
-                      (open-shard! local-store idx version
-                                   :allow-writes (.allowWrites domain)))]
+                      (try
+                        (open-shard! local-store idx version
+                                     :allow-writes (.allowWrites domain))
+                        (catch Exception e
+                          (log/error e)
+                          (throw e))))]
     (assert (has-version? local-store version)
             (str version "  doesn't exist."))
     (u/with-ret (->> (doall (map open! shards))
@@ -358,10 +363,15 @@
         remote-path  (.shardPath remote-store idx version)
         local-path   (.shardPath local-store idx version)]
     (if (.exists remote-fs (h/path remote-path))
-      (do (log/info (format "Copying %s to %s." remote-path local-path))
+      (do
+        (try
+          (log/info (format "Copying %s to %s." remote-path local-path))
           (transfer/rcopy remote-fs remote-path local-path
                           :throttle throttle)
-          (log/info (format "Copied %s to %s." remote-path local-path)))
+          (log/info (format "Copied %s to %s." remote-path local-path))
+          (catch Exception e
+            (log/error (format "Error copying %s to %s: %s" remote-path local-path e))
+            (throw e))))
       (do (log/info "Shard doesn't exist. Creating shard # " idx)
           (.createShard local-store idx version)))))
 

@@ -79,9 +79,9 @@
                   (log/info "Starting updater process with an"
                             " interval of: " interval-secs " seconds.")
                   (while true
-                    (Thread/sleep interval-ms)
-                    (log/info "Updater process: firing update on all domains.")
-                    (update-all! database)))]
+                    (log/debug "Updater process: firing update on all domains.")
+                    (update-all! database)
+                    (Thread/sleep interval-ms)))]
     (u/register-shutdown-hook #(do (log/info "Killing updater...")
                                    (future-cancel updater)))
     updater))

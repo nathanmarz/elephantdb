@@ -20,3 +20,5 @@ docs/
 *.ipr
 *.iml
 *.zip
+target
+.lein-plugins

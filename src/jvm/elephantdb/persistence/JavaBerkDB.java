@@ -4,6 +4,7 @@ import com.sleepycat.je.*;
 import elephantdb.document.KeyValDocument;
 import elephantdb.serialize.SerializationWrapper;
 import elephantdb.serialize.Serializer;
+import elephantdb.Utils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -11,7 +12,7 @@ import java.io.IOException;
 import java.util.Map;
 
 public class JavaBerkDB implements SerializationWrapper, Coordinator {
-    public static Logger LOG = Logger.getLogger(File.class);
+    public static Logger LOG = Logger.getLogger(JavaBerkDB.class);
     private Serializer serializer;
 
     public JavaBerkDB() {
@@ -60,30 +61,45 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
             envConf.setReadOnly(readOnly);
             envConf.setLocking(false);
             envConf.setTransactional(false);
+            envConf.setSharedCache(true);
 
             // TODO: Loop through options, setConfigParam for each one.
-            envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "80");
+            envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_UTILIZATION, "10");
+            envConf.setConfigParam(EnvironmentConfig.CLEANER_MIN_FILE_UTILIZATION, "5");
             envConf.setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
+            envConf.setConfigParam(EnvironmentConfig.LOG_FILE_MAX, "104857600"); // 100 MB
 
+            envConf.setConfigParam(EnvironmentConfig.FILE_LOGGING_LEVEL, "ALL");
+            envConf.setConfigParam(EnvironmentConfig.CONSOLE_LOGGING_LEVEL, "ALL");
+            
             env = new Environment(new File(root), envConf);
             
             DatabaseConfig dbConf = new DatabaseConfig();
             dbConf.setAllowCreate(allowCreate);
             dbConf.setReadOnly(readOnly);
             dbConf.setDeferredWrite(true);
+            
+            dbConf.setNodeMaxEntries(512);
 
             db = env.openDatabase(null, DATABASE_NAME, dbConf);
         }
 
         public <K, V> V get(K key) throws IOException {
+            EnvironmentConfig envConf = env.getConfig();
+            LOG.debug(env.getHome() + " cache size: " + envConf.getCacheSize());
+            
+            // LOG.debug("Serializing key: " + Utils.bytesToHex((byte[]) key));
             DatabaseEntry chrysalis = new DatabaseEntry();
             byte[] k = kvSerializer.serialize(key);
 
+            LOG.debug("Serialized key: " + Utils.bytesToHex(k));
             OperationStatus stat = db.get(null, new DatabaseEntry(k), chrysalis, LockMode.READ_UNCOMMITTED);
             if (stat == OperationStatus.SUCCESS) {
                 byte[] valBytes = chrysalis.getData();
+                LOG.debug("Sending " + valBytes.length + " bytes into deserialize");
                 return (V) kvSerializer.deserialize(valBytes);
             } else {
+                LOG.debug("Lookup failed in " + env.getHome() + ": " + stat);
                 return null;
             }
         }
