@@ -3,9 +3,9 @@
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
             [elephantdb.common.status :as status])
-  (:import [org.apache.thrift7.protocol TBinaryProtocol$Factory]
-           [org.apache.thrift7.server THsHaServer THsHaServer$Args]
-           [org.apache.thrift7.transport TTransport
+  (:import [org.apache.thrift.protocol TBinaryProtocol$Factory]
+           [org.apache.thrift.server THsHaServer THsHaServer$Args]
+           [org.apache.thrift.transport TTransport
             TFramedTransport TSocket TNonblockingServerSocket]          
            [elephantdb.common.database Database]
            [elephantdb.generated Value DomainStatus$_Fields Status

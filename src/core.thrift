@@ -66,4 +66,5 @@ service ElephantDBShared {
   bool isUpdating();
   bool update(1: string domain); // is the supplied domain updating?
   bool updateAll() throws (1: InvalidConfigurationException ice);
+  i64 getCount(1: string domain);
 }

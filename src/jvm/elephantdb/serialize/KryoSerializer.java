@@ -4,10 +4,13 @@ import cascading.kryo.KryoFactory;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
  * User: sritchie
@@ -16,19 +19,9 @@ import java.util.ArrayList;
  */
 public class KryoSerializer implements Serializer {
     public static final Logger LOG = Logger.getLogger(KryoSerializer.class);
-
-    /**
-     * Initial capacity of the Kryo object buffer.
-     */
-    private static final int INIT_CAPACITY = 2000;
-
-    /**
-     * Maximum capacity of the Kryo object buffer.
-     */
-    private static final int FINAL_CAPACITY = 2000000000;
-
-    private transient Output output;
-    private transient Kryo kryo;
+    
+    private static final ThreadLocal<Kryo> kryo = new ThreadLocal<Kryo>();
+    private static final ThreadLocal<ByteArrayOutputStream> byteStream = new ThreadLocal<ByteArrayOutputStream>();
     private Iterable<KryoFactory.ClassPair> kryoPairs = new ArrayList<KryoFactory.ClassPair>();
 
     public KryoSerializer() {
@@ -41,6 +34,7 @@ public class KryoSerializer implements Serializer {
     private Kryo freshKryo() {
         Kryo k = new Kryo();
         KryoFactory factory = new KryoFactory(new Configuration());
+        k.setInstantiatorStrategy(new StdInstantiatorStrategy());
         k.setRegistrationRequired(false);
         factory.registerBasic(k, getKryoPairs());
         return k;
@@ -55,32 +49,34 @@ public class KryoSerializer implements Serializer {
     }
 
     public Kryo getKryo() {
-        if (kryo == null)
-            kryo = freshKryo();
+        if (kryo.get() == null)
+            kryo.set(freshKryo());
 
-        return kryo;
+        return kryo.get();
     }
+    
+    public ByteArrayOutputStream getByteStream() {
+        if (byteStream.get() == null)
+            byteStream.set(new ByteArrayOutputStream());
 
-    public Output getOutput() {
-        if (output == null)
-            output = new Output(INIT_CAPACITY, FINAL_CAPACITY);
-
-        return output;
+        return byteStream.get();
     }
 
     public byte[] serialize(Object o) {
-        LOG.debug("Serializing object: " + o);
-        Output output = getOutput();
-        output.clear();
-        freshKryo().writeClassAndObject(output, o);
-        return output.toBytes();
+        getByteStream().reset();
+        Output ko = new Output(getByteStream());
+        getKryo().writeClassAndObject(ko, o);
+        ko.flush();
+        byte[] bytes = getByteStream().toByteArray();
+        
+        return bytes;
     }
 
     public Object deserialize(byte[] bytes) {
-        return freshKryo().readClassAndObject(new Input(bytes));
+        return getKryo().readClassAndObject(new Input(bytes));
     }
 
     public <T> T deserialize(byte[] bytes, Class<T> klass) {
-        return freshKryo().readObject(new Input(bytes), klass);
+        return getKryo().readObject(new Input(bytes), klass);
     }
 }

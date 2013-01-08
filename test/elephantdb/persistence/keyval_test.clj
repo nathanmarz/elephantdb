@@ -2,6 +2,7 @@
   (:use midje.sweet
         elephantdb.test.common
         elephantdb.test.keyval)
+  (:require [hadoop-util.test :as t])
   (:import [elephantdb.document KeyValDocument]
            [elephantdb.persistence JavaBerkDB]))
 

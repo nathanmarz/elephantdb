@@ -8,6 +8,11 @@
            [elephantdb.common.status IStateful]
            [elephantdb.persistence Shutdownable]))
 
+(defn kv-count
+  "Returns the count of kv pairs in the supplied domain."
+  [domain]
+  (count (seq domain)))
+
 (defn trim-hosts
     "Used within a multi-get's loop. Accepts a sequence of hosts + a
     sequence of hosts known to be bad, filters the bad hosts and drops
@@ -22,7 +27,11 @@
   (when-let [^KeyValPersistence shard (dom/retrieve-shard domain key)]
     (log/debug (format "Direct get: key %s at shard %s" key shard))
     (u/with-read-lock (.rwLock domain)
-      (.get shard key))))
+      (try
+        (.get shard key)
+        (catch Exception e
+          (log/error "kv-get failed: " e)
+          (throw e))))))
 
 (defn to-map
   "Returns a persistent map containing all kv pairs in the supplied

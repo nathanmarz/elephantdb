@@ -48,7 +48,7 @@ public class VersionedStore {
     }
 
     public String versionPath(long version) {
-        return new Path(root, "" + version).makeQualified(fs).toString();
+        return new Path(root, "" + version).toString();
     }
 
     public String mostRecentVersionPath() throws IOException {
