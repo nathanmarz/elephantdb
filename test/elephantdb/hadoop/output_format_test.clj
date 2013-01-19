@@ -1,6 +1,7 @@
 (ns elephantdb.hadoop.output-format-test
   (:use midje.sweet
-        elephantdb.test.common)
+        elephantdb.test.common
+        elephantdb.test.keyval)
   (:require [hadoop-util.core :as h]
             [hadoop-util.test :as t]
             [jackknife.core :as u])
@@ -56,7 +57,8 @@
         (fact (count (.listStatus fs (h/path output-dir))) => 2)
         (check-shards fs lfs output-dir tmp2  data)))))
 
-(fact "Incremental update testing."
+(future-fact "Incremental update testing."
+  ;; TODO: write mk-presharded-domain
   (t/with-fs-tmp [fs dir1 dir2]
     (t/with-local-tmp [lfs ltmp1 ltmp2]
       (mk-presharded-domain fs dir1 (JavaBerkDB.)

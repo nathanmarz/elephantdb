@@ -128,9 +128,18 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
                 LOG.info("Closed LP for shard " + shard + " at " + lpDir);
                 progress();
                 String remoteDir = args.outputDirHdfs + "/" + shard;
-                if (fileSystem.exists(new Path(remoteDir))) {
+                
+                // Do all this stuff to ensure that S3 actually does delete
+                int deleteAttempt = 4;
+                while(fileSystem.exists(new Path(remoteDir)) && deleteAttempt > 0) {
                     LOG.info("Deleting existing shard " + shard + " at " + remoteDir);
                     fileSystem.delete(new Path(remoteDir), true);
+                    --deleteAttempt;
+                }
+                if (fileSystem.exists(new Path(remoteDir)) && deleteAttempt == 0) {
+                    throw new IOException("Failed to delete shard " + shard + " at " + remoteDir
+                            + " after " + deleteAttempt + " attempts!");
+                } else {
                     LOG.info("Deleted existing shard " + shard + " at " + remoteDir);
                 }
                 LOG.info("Copying " + lpDir + " to " + remoteDir);

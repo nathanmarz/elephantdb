@@ -97,6 +97,8 @@ public class LocalElephantManager {
     }
 
     private String selectAndFlagRoot(List<String> tmpDirs) throws IOException {
+        // TODO: We need better error reporting when none of the dirs in
+        // tmpDirs exist
         clearStaleFlags(tmpDirs);
         Map<String, Integer> flagCounts = new HashMap<String, Integer>();
         for (String tmp : tmpDirs) {
