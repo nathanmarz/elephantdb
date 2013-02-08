@@ -1,4 +1,4 @@
-(defproject elephantdb "0.2.0-SNAPSHOT"
+(defproject elephantdb "0.2.0"
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [jvyaml "1.0.0"]
