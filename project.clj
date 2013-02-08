@@ -18,18 +18,15 @@
   :source-paths ["src/clj"]
   :profiles {:dev
              {:dependencies
-              [[midje "1.4.0"
-                :exclusions [org.clojure/clojure]]]
-              :plugins [[lein-midje "2.0.3"]
-                        [lein-pedantic "0.0.5"]]}
+              [[midje "1.5-alpha9"]]
+              :plugins [[lein-midje "3.0-alpha4"]]}
              :provided
              {:dependencies
-              [[org.apache.hadoop/hadoop-core "1.0.3"]]}}
+              [[org.apache.hadoop/hadoop-core "0.20.2-dev"]]}}
   :repositories {"oracle" "http://download.oracle.com/maven"
                  "conjars.org" "http://conjars.org/repo"
                  "fusesource.nexus.snapshot" "http://repo.fusesource.com/nexus/content/groups/public-snapshots"}
   :java-source-paths ["src/jvm"]
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
-  :pedantic :warn
   :main elephantdb.keyval.core)
