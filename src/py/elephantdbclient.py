@@ -1,4 +1,4 @@
-from genpy.elephantdb import ElephantDB
+from genpy.keyval import ElephantDB
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -43,7 +43,7 @@ class ElephantDBClient:
 
     def multiGetInt(self, domain, keys):
         return self._exec(lambda client: client.multiGetInt(domain, keys))
-
+    
     def multiGetLong(self, domain, keys):
         return self._exec(lambda client: client.multiGetLong(domain, keys))
 
@@ -62,11 +62,17 @@ class ElephantDBClient:
     def isFullyLoaded(self):
         return self._exec(lambda client: client.isFullyLoaded())
 
+    def isUpdating(self):
+        return self._exec(lambda client: client.isUpdating())
+
     def updateAll(self):
         return self._exec(lambda client: client.updateAll())
 
     def updateDomain(self, domain):
         return self._exec(lambda client: client.updateDomain(domain))
+
+    def getCount(self, domain):
+        return self._exec(lambda client: client.getCount(domain))
 
     def close(self):
         if self._conn is not None:

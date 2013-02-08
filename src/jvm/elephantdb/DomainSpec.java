@@ -1,16 +1,8 @@
 package elephantdb;
 
-import elephantdb.persistence.LocalPersistenceFactory;
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import elephantdb.partition.ShardingScheme;
+import elephantdb.persistence.Coordinator;
+import elephantdb.serialize.SerializationWrapper;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -19,57 +11,120 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.jvyaml.YAML;
 
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DomainSpec implements Writable, Serializable {
-    private int _numShards;
-    private LocalPersistenceFactory _localFact;
+    public static final  String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
 
-    public static final String DOMAIN_SPEC_FILENAME = "domain-spec.yaml";
+    private static final String COORDINATOR_CONF = "coordinator";
+    private static final String SHARD_SCHEME_CONF = "shard_scheme";
+    private static final String SHARD_COUNT_CONF = "shard_count";
+    private static final String KRYO_PAIRS = "kryo_pairs";
+    private static final String PERSISTENCE_OPTS = "persistence_opts";
 
-    private static final String LOCAL_PERSISTENCE_CONF = "local_persistence";
-    private static final String NUM_SHARDS_CONF = "num_shards";
-    
+    // This gets serialized in via the conf.
+    public static class Args implements Serializable {
+        public List<List<String>> kryoPairs = new ArrayList<List<String>>();
+        public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
+    }
+
+    Args optionalArgs;
+
+    private int numShards;
+    private Coordinator coordinator;
+    private ShardingScheme shardingScheme;
 
     public DomainSpec() {
-        
     }
 
-    public DomainSpec(String factClass, int numShards) {
-        this(Utils.classForName(factClass), numShards);
-    }
-    
-    public DomainSpec(Class factClass, int numShards) {
-        this((LocalPersistenceFactory)Utils.newInstance(factClass), numShards);
-    }
-    
-    public DomainSpec(LocalPersistenceFactory localFact, int numShards) {
-        this._localFact = localFact;
-        this._numShards = numShards;
+    /**
+     * Here's the big daddy.
+     * @param factClass String name of the class we'll use to instantiate new persistences.
+     * @param numShards
+     */
+    public DomainSpec(String factClass, String shardSchemeClass, int numShards) {
+        this(factClass, shardSchemeClass, numShards, new Args());
     }
 
-    @Override
-    public String toString() {
-        return mapify().toString();
+    public DomainSpec(String factClass, String shardSchemeClass, int numShards, Args args) {
+        this(Utils.classForName(factClass), Utils.classForName(shardSchemeClass), numShards, args);
     }
-    
-    @Override
-    public boolean equals(Object other) {
-        DomainSpec o = (DomainSpec) other;
-        return mapify().equals(o.mapify());
+
+    public DomainSpec(Class factClass, Class shardSchemeClass, int numShards) {
+        this(factClass, shardSchemeClass, numShards, new Args());
     }
-    
-    @Override
-    public int hashCode() {
-        return mapify().hashCode();
+
+    public DomainSpec(Class factClass, Class shardSchemeClass, int numShards, Args args) {
+        this((Coordinator) Utils.newInstance(factClass),
+                (ShardingScheme)Utils.newInstance(shardSchemeClass),
+                numShards, args);
+    }
+
+    public DomainSpec(Coordinator coordinator, ShardingScheme shardingScheme, int numShards) {
+        this(coordinator, shardingScheme, numShards, new Args());
+    }
+
+    public DomainSpec(Coordinator coordinator, ShardingScheme shardingScheme, int numShards, Args args) {
+        if (numShards <= 0) {
+            throw new AssertionError();
+        }
+
+        this.numShards = numShards;
+        this.coordinator = coordinator;
+        this.shardingScheme = shardingScheme;
+        this.optionalArgs = args;
     }
 
     public int getNumShards() {
-        return _numShards;
+        return numShards;
     }
-    
-    public LocalPersistenceFactory getLPFactory() {
-        return _localFact;
-    }    
+
+    public List<List<String>> getKryoPairs() {
+        return optionalArgs.kryoPairs;
+    }
+
+    public Map<String, Object> getPersistenceOptions() {
+        return optionalArgs.persistenceOptions;
+    }
+
+    public Coordinator getCoordinator() {
+        if (coordinator instanceof SerializationWrapper) {
+            Utils.prepSerializationWrapper((SerializationWrapper) coordinator, this);
+        }
+
+        return coordinator;
+    }
+
+    public ShardingScheme getShardScheme() {
+        if (shardingScheme instanceof SerializationWrapper)
+            Utils.prepSerializationWrapper((SerializationWrapper) shardingScheme, this);
+
+        return shardingScheme;
+    }
+
+    @Override public String toString() {
+        return mapify().toString();
+    }
+
+    @Override public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+        if (obj == this)
+            return true;
+        if (obj.getClass() != getClass())
+            return false;
+
+        DomainSpec o = (DomainSpec) obj;
+        return mapify().equals(o.mapify());
+    }
+
+    @Override public int hashCode() {
+        return mapify().hashCode();
+    }
 
     public static DomainSpec readFromFileSystem(FileSystem fs, String dirpath) throws IOException {
         Path filePath = new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME);
@@ -82,7 +137,7 @@ public class DomainSpec implements Writable, Serializable {
         is.close();
         return ret;
     }
-    
+
     public static boolean exists(FileSystem fs, String dirpath) throws IOException {
         return fs.exists(new Path(dirpath + "/" + DOMAIN_SPEC_FILENAME));
     }
@@ -92,9 +147,17 @@ public class DomainSpec implements Writable, Serializable {
         return parseFromMap(format);
     }
 
+    @SuppressWarnings("unchecked")
     protected static DomainSpec parseFromMap(Map<String, Object> specmap) {
-        return new DomainSpec((String)specmap.get(LOCAL_PERSISTENCE_CONF),
-                               ((Long)specmap.get(NUM_SHARDS_CONF)).intValue());
+        String persistenceConf = (String)specmap.get(COORDINATOR_CONF);
+        String shardSchemeConf = (String)specmap.get(SHARD_SCHEME_CONF);
+        int numShards = ((Long)specmap.get(SHARD_COUNT_CONF)).intValue();
+
+        Args args = new Args();
+        args.persistenceOptions = (Map) specmap.get(PERSISTENCE_OPTS);
+        args.kryoPairs = (List<List<String>>) specmap.get(KRYO_PAIRS);
+
+        return new DomainSpec(persistenceConf, shardSchemeConf, numShards, args);
     }
 
     public void writeToStream(OutputStream os) {
@@ -103,8 +166,11 @@ public class DomainSpec implements Writable, Serializable {
 
     private Map<String, Object> mapify() {
         Map<String, Object> spec = new HashMap<String, Object>();
-        spec.put(LOCAL_PERSISTENCE_CONF, _localFact.getClass().getName());
-        spec.put(NUM_SHARDS_CONF, _numShards);
+        spec.put(COORDINATOR_CONF, coordinator.getClass().getName());
+        spec.put(SHARD_SCHEME_CONF, shardingScheme.getClass().getName());
+        spec.put(SHARD_COUNT_CONF, numShards);
+        spec.put(KRYO_PAIRS, getKryoPairs());
+        spec.put(PERSISTENCE_OPTS, getPersistenceOptions());
         return spec;
     }
 
@@ -121,8 +187,10 @@ public class DomainSpec implements Writable, Serializable {
     }
 
     public void readFields(DataInput di) throws IOException {
-        DomainSpec spec = parseFromMap((Map<String, Object>)YAML.load(WritableUtils.readString(di)));
-        this._numShards = spec._numShards;
-        this._localFact = spec._localFact;
+        DomainSpec spec = parseFromMap((Map<String, Object>) YAML.load(WritableUtils.readString(di)));
+        this.numShards = spec.numShards;
+        this.coordinator = spec.coordinator;
+        this.shardingScheme = spec.shardingScheme;
+        this.optionalArgs = spec.optionalArgs;
     }
 }

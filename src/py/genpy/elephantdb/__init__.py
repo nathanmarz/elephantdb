@@ -1,1 +1,1 @@
-__all__ = ['ttypes', 'constants', 'ElephantDB']
+__all__ = ['ttypes', 'constants', 'ElephantDBShared']

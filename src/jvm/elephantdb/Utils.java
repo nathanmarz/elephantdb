@@ -1,29 +1,25 @@
 package elephantdb;
 
-import elephantdb.persistence.LocalPersistenceFactory;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.math.BigInteger;
-import java.security.NoSuchAlgorithmException;
-import java.util.Map;
+import cascading.kryo.KryoFactory;
+import elephantdb.persistence.Coordinator;
+import elephantdb.serialize.KryoSerializer;
+import elephantdb.serialize.SerializationWrapper;
+import elephantdb.serialize.Serializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.StringUtils;
+
+import java.io.*;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class Utils {
 
@@ -35,6 +31,7 @@ public class Utils {
         }
     }
 
+    /** Resolves the supplied string into its class. Throws a runtime exception on failure. */
     public static Class classForName(String name) {
         try {
             return Class.forName(name);
@@ -43,6 +40,7 @@ public class Utils {
         }
     }
 
+    /** generates a new instance of the supplied class. */
     public static Object newInstance(Class klass) {
         try {
             return klass.newInstance();
@@ -50,11 +48,16 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
-    
+
+    /** Results the supplied class and returns a new instance. */
     public static Object newInstance(String klassname) {
         return newInstance(classForName(klassname));
     }
 
+    /**
+     * Accepts a byte array key and a total number of shards and returns the appropriate shard for
+     * the supplied key.
+     */
     public static int keyShard(byte[] key, int numShards) {
         BigInteger hash = new BigInteger(md5Hash(key));
         return hash.mod(new BigInteger("" + numShards)).intValue();
@@ -74,91 +77,13 @@ public class Utils {
         return sb.toString();
     }
 
-    public static byte[] serializeInt(int i) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(4);
-        DataOutputStream dos = new DataOutputStream(bos);
-        try {
-            dos.writeInt(i);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return bos.toByteArray();
-    }
-
-    public static int deserializeInt(byte[] ser) {
-        try {
-            return new DataInputStream(new ByteArrayInputStream(ser)).readInt();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static int deserializeInt(BytesWritable ser) {
-        try {
-            return new DataInputStream(new ByteArrayInputStream(ser.getBytes(), 0, ser.getLength())).readInt();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static byte[] serializeLong(long l) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(4);
-        DataOutputStream dos = new DataOutputStream(bos);
-        try {
-            dos.writeLong(l);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return bos.toByteArray();
-    }
-
-    public static long deserializeLong(byte[] ser) {
-        try {
-            return new DataInputStream(new ByteArrayInputStream(ser)).readLong();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static long deserializeLong(BytesWritable ser) {
-        try {
-            return new DataInputStream(new ByteArrayInputStream(ser.getBytes(), 0, ser.getLength())).readLong();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static byte[] serializeString(String s) {
-        try {
-            return s.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String deserializeString(byte[] ser) {
-        try {
-            return new String(ser, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String deserializeString(BytesWritable ser) {
-        try {
-            return new String(ser.getBytes(), 0, ser.getLength(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static void setObject(JobConf conf, String key, Object o) {
         conf.set(key, StringUtils.byteToHexString(serializeObject(o)));
     }
 
     public static Object getObject(JobConf conf, String key) {
         String s = conf.get(key);
-        if(s==null) return null;
+        if (s == null) { return null; }
         byte[] val = StringUtils.hexStringToByte(s);
         return deserializeObject(val);
     }
@@ -170,7 +95,7 @@ public class Utils {
             oos.writeObject(obj);
             oos.close();
             return bos.toByteArray();
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
     }
@@ -182,9 +107,9 @@ public class Utils {
             Object ret = ois.readObject();
             ois.close();
             return ret;
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new RuntimeException(ioe);
-        } catch(ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
@@ -202,20 +127,26 @@ public class Utils {
     }
 
     public static FileSystem getFS(String path, Configuration c) throws IOException {
-        return new Path(path).getFileSystem(c);
+        try {
+            return FileSystem.get(new URI(path), c);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static Map<String, Object> getPersistenceOptions(Map<String, Map<String, Object>> opts, LocalPersistenceFactory fact) {
+    public static Map<String, Object> getPersistenceOptions(Map<String, Map<String, Object>> opts, Coordinator fact) {
         return opts.get(fact.getClass().getName());
     }
 
     public static Object get(Map m, Object key, Object defaultVal) {
-        if(!m.containsKey(key))
-            return defaultVal;
-        else
-            return m.get(key);
+        return (!m.containsKey(key)) ? defaultVal : m.get(key);
     }
 
+    /**
+     * Returns a byte array containing the cargo of the supplied BytesWritable object.
+     * @param bw
+     * @return
+     */
     public static byte[] getBytes(BytesWritable bw) {
         byte[] padded = bw.getBytes();
         byte[] ret = new byte[bw.getLength()];
@@ -223,4 +154,58 @@ public class Utils {
         return ret;
     }
 
+    public static Iterable<KryoFactory.ClassPair> buildClassPairs(List<List<String>> stringPairs) {
+
+        List<KryoFactory.ClassPair> retPairs = new ArrayList<KryoFactory.ClassPair>();
+        for(List<String> pair: stringPairs) {
+            Class klass = Utils.classForName(pair.get(0));
+
+            String serializerName = pair.get(1);
+            KryoFactory.ClassPair classPair;
+            if (serializerName == null)
+                classPair = new KryoFactory.ClassPair(klass);
+            else
+                classPair = new KryoFactory.ClassPair(klass, Utils.classForName(serializerName));
+
+            retPairs.add(classPair);
+        }
+
+        return retPairs;
+    }
+
+    /**
+     * Returns a KryoSerializer object with the same serializations registered as the supplied DomainSpec.
+     * @param spec
+     * @return
+     */
+    public static Serializer makeSerializer(DomainSpec spec) {
+        List<List<String>> pairs = spec.getKryoPairs();
+        return new KryoSerializer(buildClassPairs(pairs));
+    }
+
+    /**
+     * If the supplied SerializationWrapper has the same kryoPairs, we ignore it. Else we replace the
+     * existing serializer with a new one that contains the serialization pairs in the supplied DomainSpec.
+     * @param wrapper
+     * @param spec
+     */
+    public static void prepSerializationWrapper(SerializationWrapper wrapper, DomainSpec spec) {
+        KryoSerializer buf = (KryoSerializer) wrapper.getSerializer();
+
+        if (buf == null || buf.getKryoPairs() != buildClassPairs(spec.getKryoPairs()))
+            wrapper.setSerializer(makeSerializer(spec));
+    }
+
+    public static String bytesToHex(byte[] bytes) {
+        final char[] hexArray = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+        char[] hexChars = new char[bytes.length * 2];
+        int v;
+        for ( int j = 0; j < bytes.length; j++ ) {
+            v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        
+        return new String(hexChars);
+    }
 }
