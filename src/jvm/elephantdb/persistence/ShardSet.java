@@ -2,11 +2,6 @@ package elephantdb.persistence;
 
 import java.io.IOException;
 
-/**
- * User: sritchie
- * Date: 12/16/11
- * Time: 3:09 PM
- */
 public interface ShardSet {
     int getNumShards();
     int shardIndex(Object shardKey);

@@ -99,11 +99,10 @@
                                             suffix
                                             key-seq)
                       (with-kv-connection hostname port remote-service
-                        (try-kryo-multi-get remote-service
-                                            database
-                                            domain-name
-                                            suffix
-                                            key-seq)))]
+                        (try-direct-multi-get remote-service
+                                              domain-name
+                                              suffix
+                                              key-seq)))]
       (map (fn [m v] (assoc m :value v))
            indexed-keys
            vals))))

@@ -1,19 +1,19 @@
 package elephantdb.document;
 
-/** User: sritchie Date: 12/6/11 Time: 10:30 AM */
-public class KeyValDocument<K, V> {
-    public K key;
-    public V value;
+public class KeyValDocument {
+    public byte[] key;
+    public byte[] value;
 
     public KeyValDocument() {
     }
 
-    public KeyValDocument(K key, V value) {
+    public KeyValDocument(byte[] key, byte[] value) {
         this.key = key;
         this.value = value;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj == null)
             return false;
         if (obj == this)
