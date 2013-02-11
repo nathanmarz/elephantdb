@@ -2,7 +2,6 @@ package elephantdb;
 
 import elephantdb.partition.ShardingScheme;
 import elephantdb.persistence.Coordinator;
-import elephantdb.serialize.SerializationWrapper;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -23,12 +22,10 @@ public class DomainSpec implements Writable, Serializable {
     private static final String COORDINATOR_CONF = "coordinator";
     private static final String SHARD_SCHEME_CONF = "shard_scheme";
     private static final String SHARD_COUNT_CONF = "shard_count";
-    private static final String KRYO_PAIRS = "kryo_pairs";
     private static final String PERSISTENCE_OPTS = "persistence_opts";
 
     // This gets serialized in via the conf.
     public static class Args implements Serializable {
-        public List<List<String>> kryoPairs = new ArrayList<List<String>>();
         public Map<String, Object> persistenceOptions = new HashMap<String, Object>();
     }
 
@@ -83,26 +80,15 @@ public class DomainSpec implements Writable, Serializable {
         return numShards;
     }
 
-    public List<List<String>> getKryoPairs() {
-        return optionalArgs.kryoPairs;
-    }
-
     public Map<String, Object> getPersistenceOptions() {
         return optionalArgs.persistenceOptions;
     }
 
     public Coordinator getCoordinator() {
-        if (coordinator instanceof SerializationWrapper) {
-            Utils.prepSerializationWrapper((SerializationWrapper) coordinator, this);
-        }
-
         return coordinator;
     }
 
     public ShardingScheme getShardScheme() {
-        if (shardingScheme instanceof SerializationWrapper)
-            Utils.prepSerializationWrapper((SerializationWrapper) shardingScheme, this);
-
         return shardingScheme;
     }
 
@@ -155,7 +141,6 @@ public class DomainSpec implements Writable, Serializable {
 
         Args args = new Args();
         args.persistenceOptions = (Map) specmap.get(PERSISTENCE_OPTS);
-        args.kryoPairs = (List<List<String>>) specmap.get(KRYO_PAIRS);
 
         return new DomainSpec(persistenceConf, shardSchemeConf, numShards, args);
     }
@@ -169,7 +154,6 @@ public class DomainSpec implements Writable, Serializable {
         spec.put(COORDINATOR_CONF, coordinator.getClass().getName());
         spec.put(SHARD_SCHEME_CONF, shardingScheme.getClass().getName());
         spec.put(SHARD_COUNT_CONF, numShards);
-        spec.put(KRYO_PAIRS, getKryoPairs());
         spec.put(PERSISTENCE_OPTS, getPersistenceOptions());
         return spec;
     }

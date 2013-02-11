@@ -9,7 +9,6 @@
                  [org.slf4j/slf4j-log4j12 "1.6.4"]
                  [jackknife "0.1.2"]
                  [hadoop-util "0.2.9"]
-                 [cascading.kryo "0.4.6"]
                  [com.twitter/carbonite "1.3.1"]
                  [com.sleepycat/je "5.0.58"]
                  [org.apache.lucene/lucene-core "3.0.3"]

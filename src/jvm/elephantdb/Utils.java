@@ -1,10 +1,6 @@
 package elephantdb;
 
-import cascading.kryo.KryoFactory;
 import elephantdb.persistence.Coordinator;
-import elephantdb.serialize.KryoSerializer;
-import elephantdb.serialize.SerializationWrapper;
-import elephantdb.serialize.Serializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.BytesWritable;
@@ -152,60 +148,5 @@ public class Utils {
         byte[] ret = new byte[bw.getLength()];
         System.arraycopy(padded, 0, ret, 0, ret.length);
         return ret;
-    }
-
-    public static Iterable<KryoFactory.ClassPair> buildClassPairs(List<List<String>> stringPairs) {
-
-        List<KryoFactory.ClassPair> retPairs = new ArrayList<KryoFactory.ClassPair>();
-        for(List<String> pair: stringPairs) {
-            Class klass = Utils.classForName(pair.get(0));
-
-            String serializerName = pair.get(1);
-            KryoFactory.ClassPair classPair;
-            if (serializerName == null)
-                classPair = new KryoFactory.ClassPair(klass);
-            else
-                classPair = new KryoFactory.ClassPair(klass, Utils.classForName(serializerName));
-
-            retPairs.add(classPair);
-        }
-
-        return retPairs;
-    }
-
-    /**
-     * Returns a KryoSerializer object with the same serializations registered as the supplied DomainSpec.
-     * @param spec
-     * @return
-     */
-    public static Serializer makeSerializer(DomainSpec spec) {
-        List<List<String>> pairs = spec.getKryoPairs();
-        return new KryoSerializer(buildClassPairs(pairs));
-    }
-
-    /**
-     * If the supplied SerializationWrapper has the same kryoPairs, we ignore it. Else we replace the
-     * existing serializer with a new one that contains the serialization pairs in the supplied DomainSpec.
-     * @param wrapper
-     * @param spec
-     */
-    public static void prepSerializationWrapper(SerializationWrapper wrapper, DomainSpec spec) {
-        KryoSerializer buf = (KryoSerializer) wrapper.getSerializer();
-
-        if (buf == null || buf.getKryoPairs() != buildClassPairs(spec.getKryoPairs()))
-            wrapper.setSerializer(makeSerializer(spec));
-    }
-
-    public static String bytesToHex(byte[] bytes) {
-        final char[] hexArray = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
-        char[] hexChars = new char[bytes.length * 2];
-        int v;
-        for ( int j = 0; j < bytes.length; j++ ) {
-            v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        
-        return new String(hexChars);
     }
 }

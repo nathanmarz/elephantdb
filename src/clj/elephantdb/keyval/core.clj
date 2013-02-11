@@ -16,7 +16,6 @@
            [org.apache.thrift TException]
            [elephantdb.common.database Database]
            [elephantdb.common.domain Domain]
-           [elephantdb.serialize Serializer KryoSerializer]
            [elephantdb.generated DomainNotFoundException
             DomainNotLoadedException WrongHostException]
            [elephantdb.generated.keyval ElephantDB$Client 
@@ -50,29 +49,6 @@
   (try (.directMultiGet service domain-name key-seq)
        (catch TException e
          (log/error e "Thrift exception on " error-suffix "trying next host")) ;; try next host
-       (catch WrongHostException e
-         (log/error e "Fatal exception on " error-suffix)
-         (throw (TException. "Fatal exception when performing get" e)))
-       (catch DomainNotFoundException e
-         (log/error e "Could not find domain when executing read on " error-suffix)
-         (throw e))
-       (catch DomainNotLoadedException e
-         (log/error e "Domain not loaded when executing read on " error-suffix)
-         (throw e))))
-
-(defn try-kryo-multi-get
-  "Attempts a direct multi-get to the supplied service for each of the
-  keys in the supplied `key-seq`."
-  [^ElephantDB$Iface service database domain-name error-suffix key-seq]
-  (try (let [^Domain dom (db/domain-get database domain-name)
-             ^Serializer serializer  (.serializer dom)
-             key-seq     (map (fn [x]
-                                (ByteBuffer/wrap
-                                 (.serialize serializer x)))
-                              key-seq)]
-         (.directKryoMultiGet service domain-name key-seq))
-       (catch TException e
-         (log/error e "Thrift exception on " error-suffix " trying next host")) ;; try next host
        (catch WrongHostException e
          (log/error e "Fatal exception on " error-suffix)
          (throw (TException. "Fatal exception when performing get" e)))
@@ -177,22 +153,6 @@
 
 (defn kv-service [database]
   (reify ElephantDB$Iface    
-    (directKryoMultiGet [_ domain-name keys]
-      (thrift/assert-domain database domain-name)
-      (try (let [^Domain dom (db/domain-get database domain-name)
-                 ^Serializer serializer (.serializer dom)
-                 key-seq    (map (fn [^ByteBuffer x]
-                                   (let [ret (byte-array (.remaining x))]
-                                     (.get x ret)
-                                     (.deserialize serializer ret)))
-                                 keys)]
-             (if-let [val-seq (direct-multiget database domain-name key-seq)]
-               (doall (map thrift/mk-value val-seq))
-               (throw (thrift/domain-not-loaded-ex))))
-           (catch RuntimeException e
-             (log/error e "Thrown by directKryoMultiGet.")
-             (throw (thrift/wrong-host-ex)))))
-
     (directMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
       (try (if-let [val-seq (direct-multiget database domain-name keys)]

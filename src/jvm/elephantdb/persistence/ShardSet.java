@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public interface ShardSet {
     int getNumShards();
-    int shardIndex(Object shardKey);
+    int shardIndex(byte[] shardKey);
     String shardPath(int shardIdx);
     Persistence openShardForAppend(int shardIdx) throws IOException;
     Persistence openShardForRead(int shardIdx) throws IOException;
