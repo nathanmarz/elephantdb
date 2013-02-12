@@ -2,8 +2,6 @@ package elephantdb.persistence;
 
 import com.sleepycat.je.*;
 import elephantdb.document.KeyValDocument;
-import elephantdb.serialize.SerializationWrapper;
-import elephantdb.serialize.Serializer;
 import elephantdb.Utils;
 import org.apache.log4j.Logger;
 
@@ -11,32 +9,23 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-public class JavaBerkDB implements SerializationWrapper, Coordinator {
+public class JavaBerkDB implements Coordinator {
     public static Logger LOG = Logger.getLogger(JavaBerkDB.class);
-    private Serializer serializer;
 
     public JavaBerkDB() {
         super();
     }
 
-    public void setSerializer(Serializer serializer) {
-        this.serializer = serializer;
-    }
-
-    public Serializer getSerializer() {
-        return serializer;
-    }
-
     public Persistence openPersistenceForRead(String root, Map options) throws IOException {
-        return new JavaBerkDBPersistence(root, getSerializer(), options, true, false);
+        return new JavaBerkDBPersistence(root, options, true, false);
     }
 
     public Persistence openPersistenceForAppend(String root, Map options) throws IOException {
-        return new JavaBerkDBPersistence(root, getSerializer(), options, false, false);
+        return new JavaBerkDBPersistence(root, options, false, false);
     }
 
     public Persistence createPersistence(String root, Map options) throws IOException {
-        JavaBerkDBPersistence ret = new JavaBerkDBPersistence(root, getSerializer(), options, false, true);
+        JavaBerkDBPersistence ret = new JavaBerkDBPersistence(root, options, false, true);
         ret.close();
         return ret;
     }
@@ -45,14 +34,8 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
         private static final String DATABASE_NAME = "elephant";
         Environment env;
         Database db;
-        Serializer kvSerializer;
-
-        public JavaBerkDBPersistence(String root, Serializer serializer, Map options,
+        public JavaBerkDBPersistence(String root, Map options,
                                      boolean readOnly, boolean allowCreate) {
-            if (serializer == null)
-                throw new RuntimeException("JavaBerkDBPersistence requires an initialized serializer.");
-
-            this.kvSerializer = serializer;
 
             new File(root).mkdirs();
             EnvironmentConfig envConf = new EnvironmentConfig();
@@ -84,28 +67,22 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
             db = env.openDatabase(null, DATABASE_NAME, dbConf);
         }
 
-        public <K, V> V get(K key) throws IOException {
+        public byte[] get(byte[] key) throws IOException {
             EnvironmentConfig envConf = env.getConfig();
-            LOG.debug(env.getHome() + " cache size: " + envConf.getCacheSize());
             
-            // LOG.debug("Serializing key: " + Utils.bytesToHex((byte[]) key));
             DatabaseEntry chrysalis = new DatabaseEntry();
-            byte[] k = kvSerializer.serialize(key);
 
-            LOG.debug("Serialized key: " + Utils.bytesToHex(k));
-            OperationStatus stat = db.get(null, new DatabaseEntry(k), chrysalis, LockMode.READ_UNCOMMITTED);
+            OperationStatus stat = db.get(null, new DatabaseEntry(key), chrysalis, LockMode.READ_UNCOMMITTED);
             if (stat == OperationStatus.SUCCESS) {
-                byte[] valBytes = chrysalis.getData();
-                LOG.debug("Sending " + valBytes.length + " bytes into deserialize");
-                return (V) kvSerializer.deserialize(valBytes);
+                return chrysalis.getData();
             } else {
                 LOG.debug("Lookup failed in " + env.getHome() + ": " + stat);
                 return null;
             }
         }
 
-        public <K, V> void put(K key, V value) throws IOException {
-            index(new KeyValDocument<K, V>(key, value));
+        public void put(byte[] key, byte[] value) throws IOException {
+            index(new KeyValDocument(key, value));
         }
 
         private void add(byte[] key, byte[] value) throws IOException {
@@ -113,9 +90,7 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
         }
 
         public void index(KeyValDocument document) throws IOException {
-            byte[] k = kvSerializer.serialize(document.key);
-            byte[] v = kvSerializer.serialize(document.value);
-            add(k, v);
+            add(document.key, document.value);
         }
 
         public void close() throws IOException {
@@ -155,10 +130,7 @@ public class JavaBerkDB implements SerializationWrapper, Coordinator {
                     // cursor stores the next key and value in the above mutable objects.
                     OperationStatus stat = cursor.getNext(key, val, LockMode.READ_UNCOMMITTED);
                     if (stat == OperationStatus.SUCCESS) {
-                        Object k = kvSerializer.deserialize(key.getData());
-                        Object v = kvSerializer.deserialize(val.getData());
-
-                        next = new KeyValDocument(k, v);
+                        next = new KeyValDocument(key.getData(), val.getData());
                     } else {
                         next = null;
                         close();

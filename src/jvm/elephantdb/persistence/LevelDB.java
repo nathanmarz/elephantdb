@@ -1,8 +1,6 @@
 package elephantdb.persistence;
 
 import elephantdb.document.KeyValDocument;
-import elephantdb.serialize.SerializationWrapper;
-import elephantdb.serialize.Serializer;
 import org.apache.log4j.Logger;
 
 import org.iq80.leveldb.*;
@@ -14,48 +12,34 @@ import java.io.IOException;
 
 import java.util.Map;
 
-public class LevelDB implements SerializationWrapper, Coordinator {
+public class LevelDB implements Coordinator {
     public static Logger LOG = Logger.getLogger(LevelDB.class);
-    public Serializer serializer;
 
     public LevelDB() {
         super();
     }
 
-    public void setSerializer(Serializer serializer) {
-        this.serializer = serializer;
-    }
-
-    public Serializer getSerializer() {
-        return serializer;
-    }
-
     public Persistence openPersistenceForRead(String root, Map options) throws IOException {
-        return new LevelDBPersistence(root, getSerializer(), options, true, false);
+        return new LevelDBPersistence(root, options, true, false);
     }
 
     public Persistence openPersistenceForAppend(String root, Map options) throws IOException {
-        return new LevelDBPersistence(root, getSerializer(), options, false, false);
+        return new LevelDBPersistence(root, options, false, false);
     }
 
     public Persistence createPersistence(String root, Map options) throws IOException {
-        LevelDBPersistence ret = new LevelDBPersistence(root, getSerializer(), options, false, true);
+        LevelDBPersistence ret = new LevelDBPersistence(root, options, false, true);
         ret.close();
         return ret;
     }
 
     public static class LevelDBPersistence implements KeyValPersistence {
-        Serializer kvSerializer;
         Options dboptions;
         DB db;
         boolean readOnly;
         
-        public LevelDBPersistence(String root, Serializer serializer, Map options, 
+        public LevelDBPersistence(String root, Map options, 
                                   boolean readOnly, boolean allowCreate) throws IOException {
-            if (serializer == null)
-                throw new RuntimeException("LevelDBPersistence requires an initialized serializer.");
-
-            this.kvSerializer = serializer;
             this.readOnly = readOnly;
             new File(root).mkdirs();
 
@@ -70,19 +54,12 @@ public class LevelDB implements SerializationWrapper, Coordinator {
 
         }
 
-        public <K, V> V get(K key) throws IOException {
-            byte[] k = kvSerializer.serialize(key);
-
-            byte[] valBytes = db.get(k);
-            if(valBytes != null) {
-                return (V) kvSerializer.deserialize(valBytes);
-            } else {
-                return null;
-            }
+        public byte[] get(byte[] key) throws IOException {
+            return db.get(key);
         }
 
-        public <K, V> void put(K key, V value) throws IOException {
-            index(new KeyValDocument<K, V>(key, value));
+        public void put(byte[] key, byte[] value) throws IOException {
+            index(new KeyValDocument(key, value));
         }
 
         private void add(byte[] key, byte[] value) throws IOException {
@@ -90,9 +67,7 @@ public class LevelDB implements SerializationWrapper, Coordinator {
         }
 
         public void index(KeyValDocument document) throws IOException {
-            byte[] k = kvSerializer.serialize(document.key);
-            byte[] v = kvSerializer.serialize(document.value);
-            add(k, v);
+            add(document.key, document.value);
         }
 
         public void close() throws IOException {
@@ -116,8 +91,8 @@ public class LevelDB implements SerializationWrapper, Coordinator {
                 
                 private void cacheNext() {
                     if (cursor.hasNext()) {
-                        Object k = kvSerializer.deserialize(cursor.peekNext().getKey());
-                        Object v = kvSerializer.deserialize(cursor.peekNext().getValue());
+                        byte[] k = cursor.peekNext().getKey();
+                        byte[] v = cursor.peekNext().getValue();
                     
                         next = new KeyValDocument(k, v);
                         cursor.next();

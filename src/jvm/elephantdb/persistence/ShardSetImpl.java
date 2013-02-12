@@ -66,7 +66,7 @@ public class ShardSetImpl implements ShardSet {
    The following functions deal with the shard scheme; when you access a shard scheme through the domain
    it becomes possible to wrap certain functionality.
     */
-    public int shardIndex(Object shardKey) {
+    public int shardIndex(byte[] shardKey) {
         return getShardScheme().shardIndex(shardKey, getNumShards());
     }
 }

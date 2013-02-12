@@ -274,7 +274,7 @@
 ;; ## Domain Type Definition
 
 (deftype Domain
-    [localStore remoteStore serializer throttle rwLock
+    [localStore remoteStore throttle rwLock
      hostname status domainData shardIndex allowWrites]
   clojure.lang.Seqable
   (seq [this]
@@ -336,7 +336,6 @@
                                     replication)]
     (doto (Domain. local-store
                    remote-store
-                   (Utils/makeSerializer local-spec)
                    throttle
                    (u/mk-rw-lock)
                    (u/local-hostname)
