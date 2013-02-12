@@ -4,11 +4,10 @@ import elephantdb.DomainSpec;
 import elephantdb.Utils;
 import elephantdb.persistence.CloseableIterator;
 import elephantdb.persistence.Persistence;
-import elephantdb.serialize.Serializer;
+import elephantdb.document.KeyValDocument;
 import elephantdb.store.DomainStore;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapred.*;
@@ -21,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ElephantInputFormat implements InputFormat<NullWritable, BytesWritable> {
+public class ElephantInputFormat implements InputFormat<NullWritable, ElephantRecordWritable> {
     public static final String ARGS_CONF = "elephant.input.args";
 
     public static class Args implements Serializable {
@@ -33,7 +32,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
         }
     }
 
-    public static class ElephantRecordReader implements RecordReader<NullWritable, BytesWritable> {
+    public static class ElephantRecordReader implements RecordReader<NullWritable, ElephantRecordWritable> {
         ElephantInputSplit split;
         Reporter reporter;
         Args args;
@@ -59,14 +58,11 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             iterator = lp.iterator();
         }
 
-        // Okay, this now adds the actual Document to the BytesWritable value and the
-        // shard index as an IntWritable key.
-        public boolean next(NullWritable k, BytesWritable v) throws IOException {
+        public boolean next(NullWritable k, ElephantRecordWritable v) throws IOException {
             if (iterator.hasNext()) {
                 Object pair = iterator.next();
 
-                byte[] crushed = split.getSerializer().serialize(pair);
-                v.set(new BytesWritable(crushed));
+                v = new ElephantRecordWritable(((KeyValDocument)pair).key, ((KeyValDocument)pair).value);
 
                 numRead++;
                 if (reporter != null) {
@@ -84,8 +80,8 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             return NullWritable.get();
         }
 
-        public BytesWritable createValue() {
-            return new BytesWritable();
+        public ElephantRecordWritable createValue() {
+            return new ElephantRecordWritable();
         }
 
         public long getPos() throws IOException {
@@ -115,7 +111,6 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
     public static class ElephantInputSplit implements InputSplit {
         private String shardPath;
         private DomainSpec spec;
-        private Serializer serializer;
         private JobConf conf;
 
         public ElephantInputSplit() {
@@ -127,13 +122,6 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
             this.conf = conf;
         }
         
-        public Serializer getSerializer() {
-            if (serializer == null)
-                serializer = Utils.makeSerializer(spec);
-
-            return serializer;
-        }
-
         // TODO: Store this result in a variable and use it to update the
         // percentage complete.
         public long getLength() throws IOException {
@@ -184,7 +172,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, BytesWrita
     }
 
 
-    public RecordReader<NullWritable, BytesWritable> getRecordReader(InputSplit is, JobConf jc,
+    public RecordReader<NullWritable, ElephantRecordWritable> getRecordReader(InputSplit is, JobConf jc,
                                                                      Reporter reporter) throws IOException {
         return new ElephantRecordReader((ElephantInputSplit) is, reporter);
     }

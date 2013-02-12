@@ -6,11 +6,10 @@ import elephantdb.index.IdentityIndexer;
 import elephantdb.index.Indexer;
 import elephantdb.persistence.Coordinator;
 import elephantdb.persistence.Persistence;
-import elephantdb.serialize.Serializer;
+import elephantdb.document.KeyValDocument;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.util.Progressable;
@@ -22,7 +21,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWritable> {
+public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantRecordWritable> {
 
     public static Logger LOG = Logger.getLogger(ElephantOutputFormat.class);
     public static final String ARGS_CONF = "elephant.output.args";
@@ -46,14 +45,13 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
     }
 
-    public class ElephantRecordWriter implements RecordWriter<IntWritable, BytesWritable>, Closeable {
+    public class ElephantRecordWriter implements RecordWriter<IntWritable, ElephantRecordWritable>, Closeable {
 
         FileSystem fileSystem;
         Args args;
         Map<Integer, Persistence> lps = new HashMap<Integer, Persistence>();
         Progressable progressable;
         LocalElephantManager localManager;
-        Serializer serializer;
 
         int numWritten = 0;
         long lastCheckpoint = System.currentTimeMillis();
@@ -63,7 +61,6 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             fileSystem = Utils.getFS(args.outputDirHdfs, conf);
             this.args = args;
 
-            this.serializer = Utils.makeSerializer(this.args.spec);
             this.progressable = progressable;
             localManager = new LocalElephantManager(fileSystem, args.spec, LocalElephantManager.getTmpDirs(conf));
         }
@@ -90,11 +87,12 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
             return lp;
         }
 
-        public void write(IntWritable shard, BytesWritable carrier) throws IOException {
+        public void write(IntWritable shard, ElephantRecordWritable carrier) throws IOException {
             Persistence lp = retrieveShard(shard.get());
 
-            // TODO: Change this behavior and get Cascading to serialize object.
-            Object doc = serializer.deserialize(Utils.getBytes(carrier));
+            // Note: hardcoding in KeyValDocument here. Do we still
+            // want the interfaces for specifying other types of Documents?
+            KeyValDocument doc = new KeyValDocument(carrier.key, carrier.value);
 
             if (args.indexer != null) {
                 args.indexer.index(lp, doc);
@@ -156,7 +154,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, BytesWrit
         }
     }
 
-    public RecordWriter<IntWritable, BytesWritable> getRecordWriter
+    public RecordWriter<IntWritable, ElephantRecordWritable> getRecordWriter
             (FileSystem fs,JobConf conf, String string, Progressable progressable)
             throws IOException {
         return new ElephantRecordWriter(conf, (Args) Utils.getObject(conf, ARGS_CONF), progressable);
