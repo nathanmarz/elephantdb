@@ -11,8 +11,6 @@
                  [hadoop-util "0.2.9"]
                  [com.twitter/carbonite "1.3.1"]
                  [com.sleepycat/je "5.0.58"]
-                 [org.apache.lucene/lucene-core "3.0.3"]
-                 [org.apache.lucene/lucene-queries "3.0.3"]
                  [org.fusesource.leveldbjni/leveldbjni-all "1.4"]]
   :source-paths ["src/clj"]
   :profiles {:dev
