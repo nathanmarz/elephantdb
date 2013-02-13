@@ -1,8 +1,7 @@
 (ns elephantdb.keyval.core
   "Functions for connecting the an ElephantDB (key-value) service via
   Thrift."
-  (:use [elephantdb.common.domain :only (loaded?)]
-        clojure.pprint)
+  (:use [elephantdb.common.domain :only (loaded?)])
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]

@@ -6,11 +6,12 @@
   (:import [elephantdb.persistence KeyValPersistence]
            [elephantdb.document KeyValDocument]
            [elephantdb.common.status IStateful]
-           [elephantdb.persistence Shutdownable]))
+           [elephantdb.persistence Shutdownable]
+           [elephantdb.common.domain Domain]))
 
 (defn kv-count
   "Returns the count of kv pairs in the supplied domain."
-  [domain]
+  [^Domain domain]
   (count (seq domain)))
 
 (defn trim-hosts
@@ -23,7 +24,7 @@
 
 (defn kv-get
   "key-value server specific get function."
-  [domain key]
+  [^Domain domain ^bytes key]
   (when-let [^KeyValPersistence shard (dom/retrieve-shard domain key)]
     (log/debug (format "Direct get: key %s at shard %s" key shard))
     (u/with-read-lock (.rwLock domain)
@@ -36,7 +37,7 @@
 (defn to-map
   "Returns a persistent map containing all kv pairs in the supplied
   domain."
-  [domain]
+  [^Domain domain]
   (into {} (for [^KeyValDocument doc (seq domain)]
              [(.key doc) (.value doc)])))
 
@@ -50,7 +51,7 @@
   :all-hosts - the same list as hosts, at first. As gets are attempted
   on each key, the recursion will drop names from `hosts` and keep
   them around in `:all-hosts` for error reporting."
-  [domain key-seq]
+  [^Domain domain key-seq]
   (for [[idx key] (map-indexed vector key-seq)
         :let [hosts (dom/prioritize-hosts domain key)]]
     {:index idx, :key key, :hosts hosts, :all-hosts hosts}))

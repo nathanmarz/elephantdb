@@ -90,8 +90,6 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         public void write(IntWritable shard, ElephantRecordWritable carrier) throws IOException {
             Persistence lp = retrieveShard(shard.get());
 
-            // Note: hardcoding in KeyValDocument here. Do we still
-            // want the interfaces for specifying other types of Documents?
             KeyValDocument doc = new KeyValDocument(carrier.key, carrier.value);
 
             if (args.indexer != null) {

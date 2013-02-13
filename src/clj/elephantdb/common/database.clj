@@ -5,7 +5,8 @@
             [jackknife.logging :as log]
             [elephantdb.common.domain :as domain]
             [elephantdb.common.status :as status])
-  (:import [elephantdb.persistence Shutdownable]))
+  (:import [elephantdb.persistence Shutdownable]
+           [java.io File]))
 
 ;; ## Database Manipulation Functions
 
@@ -61,11 +62,11 @@
    all directories with names that aren't present in the supplied
    `domains`."
   [local-root name-seq]
-  (letfn [(domain? [path]
+  (letfn [(domain? [^File path]
             (and (.isDirectory path)
                  (not (contains? (into #{} name-seq)
                                  (.getName path)))))]
-    (u/dofor [domain-path (-> local-root h/mk-local-path .listFiles)
+    (u/dofor [^File domain-path (-> local-root h/mk-local-path .listFiles)
               :when (domain? domain-path)]
              (log/info "Destroying un-served domain at: " domain-path)
              (h/delete (h/local-filesystem)

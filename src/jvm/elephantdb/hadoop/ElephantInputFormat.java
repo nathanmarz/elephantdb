@@ -60,9 +60,11 @@ public class ElephantInputFormat implements InputFormat<NullWritable, ElephantRe
 
         public boolean next(NullWritable k, ElephantRecordWritable v) throws IOException {
             if (iterator.hasNext()) {
-                Object pair = iterator.next();
+                Object document = iterator.next();
+                KeyValDocument doc = (KeyValDocument) document;
 
-                v = new ElephantRecordWritable(((KeyValDocument)pair).key, ((KeyValDocument)pair).value);
+                v.key = doc.key;
+                v.value = doc.value;
 
                 numRead++;
                 if (reporter != null) {
