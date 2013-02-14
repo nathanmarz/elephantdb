@@ -17,7 +17,7 @@
            [elephantdb.common.domain Domain]
            [elephantdb.generated DomainNotFoundException
             DomainNotLoadedException WrongHostException]
-           [elephantdb.generated.keyval ElephantDB$Client 
+           [elephantdb.generated.keyval ElephantDB$Client
             ElephantDB$Iface ElephantDB$Processor])
   (:gen-class))
 
@@ -151,7 +151,7 @@
 ;; TODO: Catch errors if we're not dealing specifically with a byte array.
 
 (defn kv-service [database]
-  (reify ElephantDB$Iface    
+  (reify ElephantDB$Iface
     (directMultiGet [_ domain-name keys]
       (thrift/assert-domain database domain-name)
       (try (if-let [val-seq (direct-multiget database domain-name keys)]
@@ -172,50 +172,20 @@
                             ret))
                         key-seq))))
 
-    (multiGetInt [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
-
-    (multiGetLong [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
-    
-    (multiGetString [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
-
     (get [this domain-name key]
       (thrift/assert-domain database domain-name)
       (let [get-fn (kv-get-fn this domain-name database)
             ret (byte-array (.remaining key))]
         (.get key ret)
         (first (multi-get get-fn database domain-name [ret]))))
-    
-    (getInt [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
 
-    (getLong [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
-
-    (getString [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
-    
     (getDomainStatus [_ domain-name]
       "Returns the thrift status of the supplied domain-name."
       (thrift/assert-domain database domain-name)
       (-> (db/domain-get database domain-name)
           (status/get-status)
           (thrift/to-thrift)))
-    
+
     (getDomains [_]
       "Returns a sequence of all domain names being served."
       (db/domain-names database))
@@ -246,7 +216,7 @@
          shards from its remote store and hotswaps in the new versions."
       (u/with-ret true
         (db/update-all! database)))
-    
+
     (getCount [_ domain-name]
       "Returns the total count of KeyValDocuments in the supplied domain-name."
       (thrift/assert-domain database domain-name)
