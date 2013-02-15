@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb-core "0.2.1-SNAPSHOT"
+(defproject elephantdb/elephantdb-core "0.4.0-SNAPSHOT"
   :min-lein-version "2.0.0"
   :repositories {"oracle" "http://download.oracle.com/maven"
                  "conjars.org" "http://conjars.org/repo"

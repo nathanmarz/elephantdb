@@ -1,10 +1,10 @@
-(defproject elephantdb/elephantdb-cascading "0.3.6-SNAPSHOT"
+(defproject elephantdb/elephantdb-cascading "0.4.0-SNAPSHOT"
   :min-lein-version "2.0.0"
   :java-source-paths ["src/jvm"]
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :jvm-opts ["-server" "-Xmx768m"]
   :repositories {"conjars" "http://conjars.org/repo"}
-  :dependencies [[elephantdb/elephantdb-core "0.2.1-SNAPSHOT"]
+  :dependencies [[elephantdb/elephantdb-core "0.4.0-SNAPSHOT"]
                  [cascading/cascading-hadoop "2.0.8"
                   :exclusions [org.codehaus.janino/janino
                                org.apache.hadoop/hadoop-core]]]
