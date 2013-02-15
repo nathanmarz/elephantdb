@@ -1,0 +1,14 @@
+target
+elephantdb-cascading.jar
+classes
+lib
+pom.xml
+*.jar
+.lein-failures
+.lein-deps-sum
+.DS_Store
+*.iml
+*.ipr
+*.iws
+.DS_Store
+target
