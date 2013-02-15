@@ -48,6 +48,9 @@
 
 ;; ## Byte Array Testing
 
+(defn str->barr [str]
+  (.getBytes str "UTF-8"))
+
 (defn barr [& xs]
   (when xs
     (byte-array (map byte xs))))

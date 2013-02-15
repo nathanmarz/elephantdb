@@ -8,8 +8,8 @@
 (defn count-equals [n]
   (chatty-checker [coll] (= n (count (seq coll)))))
 
-(t/with-database [db {"domain-a" {0 [(KeyValDocument. 1 2)]
-                                  1 [(KeyValDocument. 3 4) (KeyValDocument. 5 6)]}}]
+(t/with-database [db {"domain-a" {0 [(KeyValDocument. (t/str->barr "foo") (t/str->barr "bar"))]
+                                  1 [(KeyValDocument. (t/str->barr "lol") (t/str->barr "cat")) (KeyValDocument. (t/str->barr "oh") (t/str->barr "hai"))]}}]
   (facts "Domain-get should return nil when the domain doesn't exist."
     (domain-get db "random") => nil
     (domain-get db "domain-a") => domain/domain?
