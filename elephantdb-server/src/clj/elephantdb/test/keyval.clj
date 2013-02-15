@@ -7,12 +7,11 @@
             [elephantdb.keyval.core :as kv]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.database :as db])
-  (:import [elephantdb  DomainSpec]
+  (:import [elephantdb DomainSpec]
            [elephantdb.partition HashModScheme]
            [elephantdb.persistence Persistence KeyValPersistence Coordinator]
            [org.apache.hadoop.io IntWritable]
            [org.apache.thrift TException]
-           [elephantdb.serialize KryoSerializer SerializationWrapper]
            [elephantdb.document KeyValDocument]))
 
 ;; ## Key Value Testing
@@ -64,16 +63,6 @@
   [coordinator path & kv-pairs]
   (.createPersistence coordinator path {})
   (apply append-pairs coordinator path kv-pairs))
-
-(defn prep-coordinator
-  "If the supplied coordinator implements SerializationWrapper, sets
-  the proper serialization; else does nothing. In either case,
-  `prep-coordinator` returns the supplied coordinator."
-  [coordinator]
-  (if (instance? SerializationWrapper coordinator)
-    (doto coordinator
-      (.setSerializer (KryoSerializer.)))
-    coordinator))
 
 ;; ## DomainStore Level Testing
 
