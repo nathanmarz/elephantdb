@@ -2,8 +2,6 @@ package elephantdb.hadoop;
 
 import elephantdb.DomainSpec;
 import elephantdb.Utils;
-import elephantdb.index.IdentityIndexer;
-import elephantdb.index.Indexer;
 import elephantdb.persistence.Coordinator;
 import elephantdb.persistence.Persistence;
 import elephantdb.document.KeyValDocument;
@@ -33,12 +31,6 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         // Path to a version inside of a versioned store, perhaps?
         public String outputDirHdfs;
 
-        // Implements the Indexer interface.
-        public Indexer indexer = new IdentityIndexer();
-
-        // If this is set, the output format will go download it!
-        public String updateDirHdfs = null;
-
         public Args(DomainSpec spec, String outputDirHdfs) {
             this.spec = spec;
             this.outputDirHdfs = outputDirHdfs;
@@ -65,18 +57,13 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
             localManager = new LocalElephantManager(fileSystem, args.spec, LocalElephantManager.getTmpDirs(conf));
         }
 
-        private String remoteUpdateDirForShard(int shard) {
-            return (args.updateDirHdfs == null)? null : args.updateDirHdfs + "/" + shard;
-        }
-        
         private Persistence retrieveShard(int shardIdx) throws IOException {
             Persistence lp = null;
 
             if (lps.containsKey(shardIdx)) {
                 lp = lps.get(shardIdx);
             } else {
-                String updateDir = remoteUpdateDirForShard(shardIdx);
-                String localShard = localManager.downloadRemoteShard("" + shardIdx, updateDir);
+                String localShard = localManager.downloadRemoteShard("" + shardIdx, null);
 
                 Coordinator fact = args.spec.getCoordinator();
                 lp = fact.openPersistenceForAppend(localShard, args.spec.getPersistenceOptions());
@@ -92,11 +79,7 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
 
             KeyValDocument doc = new KeyValDocument(carrier.key, carrier.value);
 
-            if (args.indexer != null) {
-                args.indexer.index(lp, doc);
-            } else {
-                lp.index(doc);
-            }
+            lp.index(doc);
 
             bumpProgress();
         }
@@ -167,10 +150,6 @@ public class ElephantOutputFormat implements OutputFormat<IntWritable, ElephantR
         }
         if (fs.exists(new Path(args.outputDirHdfs))) {
             throw new InvalidJobConfException("Output dir already exists " + args.outputDirHdfs);
-        }
-        if (args.updateDirHdfs != null && !fs.exists(new Path(args.updateDirHdfs))) {
-            throw new InvalidJobConfException(
-                "Shards to update does not exist " + args.updateDirHdfs);
         }
     }
 }

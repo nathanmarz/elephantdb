@@ -12,8 +12,6 @@ import elephantdb.Utils;
 import elephantdb.hadoop.ElephantInputFormat;
 import elephantdb.hadoop.ElephantOutputFormat;
 import elephantdb.hadoop.LocalElephantManager;
-import elephantdb.index.IdentityIndexer;
-import elephantdb.index.Indexer;
 import elephantdb.store.DomainStore;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
@@ -44,8 +42,6 @@ public class ElephantDBTap extends Hfs {
 
         //sink specific
         public Fields sinkFields = Fields.ALL;
-        public Indexer indexer = new IdentityIndexer();
-        public boolean incremental = false;
     }
 
     String domainDir;
@@ -121,15 +117,6 @@ public class ElephantDBTap extends Hfs {
             LocalElephantManager.setTmpDirs(conf, args.tmpDirs);
         }
 
-        if (args.indexer != null)
-            eargs.indexer = args.indexer;
-
-
-        // If incremental is set to true, we go ahead and populate the
-        // update Dir. Else, we leave it blank.
-        if (args.incremental)
-            eargs.updateDirHdfs = dstore.mostRecentVersionPath();
-
         return eargs;
     }
 
@@ -140,6 +127,8 @@ public class ElephantDBTap extends Hfs {
     
     @Override
     public long getModifiedTime(JobConf conf) throws IOException {
+        // TODO: fix this to return 0 then used as a sink and latest
+        // version otherwise for cascading >= 2.1
         return System.currentTimeMillis();
     }
 
@@ -157,11 +146,6 @@ public class ElephantDBTap extends Hfs {
         try {
             DomainStore dstore = getDomainStore();
             dstore.getFileSystem().mkdirs(new Path(newVersionPath));
-            
-            // If the user wants to run a incremental, skip version synchronization.
-            if (args.incremental) {
-                dstore.synchronizeInProgressVersion(newVersionPath);
-            }
             
             dstore.succeedVersion(newVersionPath);
             
