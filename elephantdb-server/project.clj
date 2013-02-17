@@ -7,7 +7,8 @@
                  [elephantdb/elephantdb-core "0.4.0-SNAPSHOT"]]
   :profiles {:dev
              {:dependencies
-              [[midje "1.5-alpha9"]]
+              [[elephantdb/elephantdb-leveldb "0.4.0-SNAPSHOT"]
+               [midje "1.5-alpha9"]]
               :plugins [[lein-midje "3.0-alpha4"]]}
              :provided
              {:dependencies
