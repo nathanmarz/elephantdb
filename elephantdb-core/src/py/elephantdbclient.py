@@ -20,15 +20,6 @@ class ElephantDBClient:
     def get(self, domain, key):
         return self._exec(lambda client: client.get(domain, key))
 
-    def getString(self, domain, key):
-        return self._exec(lambda client: client.getString(domain, key))
-
-    def getInt(self, domain, key):
-        return self._exec(lambda client: client.getInt(domain, key))
-
-    def getLong(self, domain, key):
-        return self._exec(lambda client: client.getLong(domain, key))
-
     def getThrift(self, domain, key):
         return self._exec(lambda client: client.get(domain, serialize(key)))
 
@@ -37,15 +28,6 @@ class ElephantDBClient:
 
     def multiGet(self, domain, keys):
         return self._exec(lambda client: client.multiGet(domain, keys))
-
-    def multiGetString(self, domain, keys):
-        return self._exec(lambda client: client.multiGetString(domain, keys))
-
-    def multiGetInt(self, domain, keys):
-        return self._exec(lambda client: client.multiGetInt(domain, keys))
-    
-    def multiGetLong(self, domain, keys):
-        return self._exec(lambda client: client.multiGetLong(domain, keys))
 
     def multiGetThrift(self, domain, keys):
         return self._exec(lambda client: client.multiGet(domain, map(serialize, keys)))
