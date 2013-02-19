@@ -46,13 +46,12 @@
   maps with the following keys:
 
   :key   - the key.
-  :index - the index in the original key sequence.
   :hosts - A sequence of hosts at which the key can be found.
   :all-hosts - the same list as hosts, at first. As gets are attempted
   on each key, the recursion will drop names from `hosts` and keep
   them around in `:all-hosts` for error reporting."
   [^Domain domain key-seq]
-  (for [[idx key] (map-indexed vector key-seq)
+  (for [key key-seq
         :let [hosts (dom/prioritize-hosts domain key)]]
-    {:index idx, :key key, :hosts hosts, :all-hosts hosts}))
+    {:key key, :hosts hosts, :all-hosts hosts}))
 

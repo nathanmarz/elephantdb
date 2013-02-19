@@ -7,10 +7,10 @@
   :dependencies [[jvyaml "1.0.0"]
                  [org.yaml/snakeyaml "1.9"]
                  [commons-io "1.4"]
-                 [org.apache.thrift/libthrift "0.8.0"
-                  :exclusions [org.slf4j/slf4j-api]]
                  [jackknife "0.1.2"]
-                 [hadoop-util "0.2.9"]]
+                 [hadoop-util "0.2.9"]
+                 [elephantdb/elphantdb-thrift "0.4.0-SNAPSHOT"
+                  :exclusions [org.slf4j/slf4j-api]]]
   :profiles {:dev
              {:dependencies
               [[org.clojure/clojure "1.4.0"]
