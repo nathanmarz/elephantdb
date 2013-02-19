@@ -10,7 +10,6 @@
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom])
   (:import [java.nio ByteBuffer]
-           [java.util Set]
            [org.apache.thrift.protocol TBinaryProtocol]
            [org.apache.thrift.transport TTransport]
            [org.apache.thrift TException]
@@ -89,7 +88,7 @@
 (defn multi-get*
   [service domain-name database localhost hostname indexed-keys]
   (let [port     (:port database)
-        key-seq  (map :key indexed-keys)
+        key-seq (map :key indexed-keys)
         suffix   (format "%s:%s/%s" hostname domain-name key-seq)]
     (when-let [results-map (if (= localhost hostname)
                              (try-direct-multi-get service
@@ -101,9 +100,10 @@
                                                      domain-name
                                                      suffix
                                                      key-seq)))]
-      (map (fn [m v] (assoc m :value v))
-           indexed-keys
-           (vals results-map)))))
+
+      (->> (for [[k v] results-map]
+                  {:key k :value v})
+                (map (fn [m1 m2] (into m1 m2)) indexed-keys)))))
 
 ;; TODO: Fix this with a macro that lets us specify these behaviours
 ;; by default, but replace as necessary.
@@ -118,7 +118,8 @@
 (defn direct-multiget [database domain-name key-seq]
   (let [domain (db/domain-get database domain-name)]
     (when (loaded? domain)
-      (map (partial dom/kv-get domain) key-seq))))
+      (into {} (for [key key-seq]
+                    {key (thrift/mk-value (dom/kv-get domain key))})))))
 
 ;; ## MultiGet
 ;;
@@ -177,9 +178,8 @@
     (directMultiGet [_ domain-name key-set]
       (thrift/assert-domain database domain-name)
       (let [key-seq (byte-buffer-unwrap key-set)]
-        (try (if-let [val-seq (direct-multiget database domain-name key-seq)]
-               (let [val-seq (map thrift/mk-value val-seq)]
-                 (apply assoc {} (interleave key-set val-seq)))
+        (try (if-let [results-map (direct-multiget database domain-name key-seq)]
+               results-map
                (throw (thrift/domain-not-loaded-ex)))
              (catch RuntimeException _
                (throw (thrift/wrong-host-ex))))))
@@ -272,3 +272,22 @@
     (thrift/launch-server! kv-processor
                            (kv-service database)
                            (:port conf-map))))
+
+;; For debugging in the a repl
+
+(defn debug-database
+  "Main booting function for all of EDB. Pass in:
+
+  `global-config-hdfs-path`: the hdfs path of `global-config.clj`
+
+  `local-config-path`: the path to `local-config.clj` on this machine."
+  [global-config-hdfs-path local-config-path]
+  (log/configure-logging "log4j/log4j.properties")
+  (let [local-config   (conf/read-local-config  local-config-path)
+        global-config  (conf/read-global-config global-config-hdfs-path
+                                                local-config)
+        conf-map (merge global-config local-config)
+        database (db/build-database conf-map)]
+    (doto database
+      (db/prepare)
+      (db/launch-updater! (:update-interval-s conf-map)))))
