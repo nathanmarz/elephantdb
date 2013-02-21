@@ -231,9 +231,9 @@
 
 ;; TODO: Make this work with a sequence of keys!
 (defn key->shard
-  "Accepts a local store and a key (any object will do); returns the
+  "Accepts a local store and a key; returns the
   approprate shard number for the given key."
-  [domain key]
+  [domain ^bytes key]
   (when-let [version (current-version domain)]
     (let [^ShardSet shard-set (-> (.localStore domain)
                                   (.getShardSet version))]
@@ -243,7 +243,7 @@
   "If the supplied domain contains the given sharding key, returns the
    Persistence object to which the key has been sharded, else returns
    nil."
-  [domain key]
+  [domain ^bytes key]
   (when-let [shard-idx (key->shard domain key)]
     (get-in (domain-data domain)
             [:shards shard-idx])))
@@ -252,7 +252,7 @@
   "Accepts a domain and a sharding-key and returns a sequence of hosts
   to try when attempting to find the Document paired with the sharding
   key."
-  [domain key]
+  [domain ^bytes key]
   (shard/prioritize-hosts (.shardIndex domain)
                           (key->shard domain key)
                           #{(.hostname domain)}))

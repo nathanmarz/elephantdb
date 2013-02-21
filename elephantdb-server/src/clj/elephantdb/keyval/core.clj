@@ -17,7 +17,7 @@
            [elephantdb.common.domain Domain]
            [elephantdb.generated DomainNotFoundException
             DomainNotLoadedException WrongHostException]
-           [elephantdb.generated.keyval ElephantDB$Client 
+           [elephantdb.generated.keyval ElephantDB$Client
             ElephantDB$Iface ElephantDB$Processor])
   (:gen-class))
 
@@ -41,22 +41,44 @@
 
 ;; ## Service Handler
 
+(defn byte-buffer-wrap
+  "Wraps a collection of byte arrays in ByteBuffers."
+  [coll]
+  (map (fn [^bytes x]
+         (ByteBuffer/wrap x)) coll))
+
+(defn byte-buffer-unwrap
+  "Unwraps a collection of byte arrays from inside Byte Buffers."
+  [coll]
+  (map (fn [^ByteBuffer x]
+         (let [ret (byte-array (.remaining x))]
+           (.get x ret)
+           ret))
+       coll))
+
+(defn update-keys 
+  "Returns a map with f applied to the keys of amap."
+  [amap f]
+  (into {} (for [[k v] amap]
+             [(f k) v])))
+
 (defn try-direct-multi-get
   "Attempts a direct multi-get to the supplied service for each of the
   keys in the supplied `key-seq`."
   [^ElephantDB$Iface service domain-name error-suffix key-seq]
-  (try (.directMultiGet service domain-name key-seq)
-       (catch TException e
-         (log/error e "Thrift exception on " error-suffix "trying next host")) ;; try next host
-       (catch WrongHostException e
-         (log/error e "Fatal exception on " error-suffix)
-         (throw (TException. "Fatal exception when performing get" e)))
-       (catch DomainNotFoundException e
-         (log/error e "Could not find domain when executing read on " error-suffix)
-         (throw e))
-       (catch DomainNotLoadedException e
-         (log/error e "Domain not loaded when executing read on " error-suffix)
-         (throw e))))
+  (let [key-set (into #{} (byte-buffer-wrap key-seq))]
+    (try (.directMultiGet service domain-name key-set)
+         (catch TException e
+           (log/error e "Thrift exception on " error-suffix "trying next host")) ;; try next host
+         (catch WrongHostException e
+           (log/error e "Fatal exception on " error-suffix)
+           (throw (TException. "Fatal exception when performing get" e)))
+         (catch DomainNotFoundException e
+           (log/error e "Could not find domain when executing read on " error-suffix)
+           (throw e))
+         (catch DomainNotLoadedException e
+           (log/error e "Domain not loaded when executing read on " error-suffix)
+           (throw e)))))
 
 ;; multi-get* recieves a sequence of indexed-keys. Each of these is a
 ;; map with :index, :key and :host keys. On success, it returns the
@@ -66,21 +88,22 @@
 (defn multi-get*
   [service domain-name database localhost hostname indexed-keys]
   (let [port     (:port database)
-        key-seq  (map :key indexed-keys)
+        key-seq (map :key indexed-keys)
         suffix   (format "%s:%s/%s" hostname domain-name key-seq)]
-    (when-let [vals (if (= localhost hostname)
-                      (try-direct-multi-get service
-                                            domain-name
-                                            suffix
-                                            key-seq)
-                      (with-kv-connection hostname port remote-service
-                        (try-direct-multi-get remote-service
-                                              domain-name
-                                              suffix
-                                              key-seq)))]
-      (map (fn [m v] (assoc m :value v))
-           indexed-keys
-           vals))))
+    (when-let [results-map (if (= localhost hostname)
+                             (try-direct-multi-get service
+                                                   domain-name
+                                                   suffix
+                                                   key-seq)
+                             (with-kv-connection hostname port remote-service
+                               (try-direct-multi-get remote-service
+                                                     domain-name
+                                                     suffix
+                                                     key-seq)))]
+
+      (->> (for [[k v] results-map]
+                  {:key k :value v})
+                (map (fn [m1 m2] (into m1 m2)) indexed-keys)))))
 
 ;; TODO: Fix this with a macro that lets us specify these behaviours
 ;; by default, but replace as necessary.
@@ -95,8 +118,8 @@
 (defn direct-multiget [database domain-name key-seq]
   (let [domain (db/domain-get database domain-name)]
     (when (loaded? domain)
-      (map (partial dom/kv-get domain)
-           key-seq))))
+      (into {} (for [key key-seq]
+                    {key (thrift/mk-value (dom/kv-get domain key))})))))
 
 ;; ## MultiGet
 ;;
@@ -133,7 +156,7 @@
                             (apply concat results))
             fail-map   (apply dissoc host-map (keys successful))]
         (if (empty? fail-map)
-          (map :value (sort-by :index results))
+          (update-keys (into {} (map (juxt :key :value) results)) #(ByteBuffer/wrap %))
           (recur results
                  (map (fn [m]
                         (update-in m [:hosts]
@@ -151,41 +174,23 @@
 ;; TODO: Catch errors if we're not dealing specifically with a byte array.
 
 (defn kv-service [database]
-  (reify ElephantDB$Iface    
-    (directMultiGet [_ domain-name keys]
+  (reify ElephantDB$Iface
+    (directMultiGet [_ domain-name key-set]
       (thrift/assert-domain database domain-name)
-      (try (if-let [val-seq (direct-multiget database domain-name keys)]
-             (doall (map thrift/mk-value val-seq))
-             (throw (thrift/domain-not-loaded-ex)))
-           (catch RuntimeException _
-             (throw (thrift/wrong-host-ex)))))
+      (let [key-seq (byte-buffer-unwrap key-set)]
+        (try (if-let [results-map (direct-multiget database domain-name key-seq)]
+               results-map
+               (throw (thrift/domain-not-loaded-ex)))
+             (catch RuntimeException _
+               (throw (thrift/wrong-host-ex))))))
 
-    (multiGet [this domain-name key-seq]
+    (multiGet [this domain-name key-set]
       (thrift/assert-domain database domain-name)
       (let [get-fn (kv-get-fn this domain-name database)]
         (multi-get get-fn
                    database
                    domain-name
-                   (map (fn [^ByteBuffer x]
-                          (let [ret (byte-array (.remaining x))]
-                            (.get x ret)
-                            ret))
-                        key-seq))))
-
-    (multiGetInt [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
-
-    (multiGetLong [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
-    
-    (multiGetString [this domain-name key-seq]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn database domain-name key-seq)))
+                   (byte-buffer-unwrap key-set))))
 
     (get [this domain-name key]
       (thrift/assert-domain database domain-name)
@@ -193,29 +198,14 @@
             ret (byte-array (.remaining key))]
         (.get key ret)
         (first (multi-get get-fn database domain-name [ret]))))
-    
-    (getInt [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
 
-    (getLong [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
-
-    (getString [this domain-name key]
-      (thrift/assert-domain database domain-name)
-      (let [get-fn (kv-get-fn this domain-name database)]
-        (first (multi-get get-fn database domain-name [key]))))
-    
     (getDomainStatus [_ domain-name]
       "Returns the thrift status of the supplied domain-name."
       (thrift/assert-domain database domain-name)
       (-> (db/domain-get database domain-name)
           (status/get-status)
           (thrift/to-thrift)))
-    
+
     (getDomains [_]
       "Returns a sequence of all domain names being served."
       (db/domain-names database))
@@ -246,7 +236,7 @@
          shards from its remote store and hotswaps in the new versions."
       (u/with-ret true
         (db/update-all! database)))
-    
+
     (getCount [_ domain-name]
       "Returns the total count of KeyValDocuments in the supplied domain-name."
       (thrift/assert-domain database domain-name)
@@ -282,3 +272,22 @@
     (thrift/launch-server! kv-processor
                            (kv-service database)
                            (:port conf-map))))
+
+;; For debugging in the a repl
+
+(defn debug-database
+  "Main booting function for all of EDB. Pass in:
+
+  `global-config-hdfs-path`: the hdfs path of `global-config.clj`
+
+  `local-config-path`: the path to `local-config.clj` on this machine."
+  [global-config-hdfs-path local-config-path]
+  (log/configure-logging "log4j/log4j.properties")
+  (let [local-config   (conf/read-local-config  local-config-path)
+        global-config  (conf/read-global-config global-config-hdfs-path
+                                                local-config)
+        conf-map (merge global-config local-config)
+        database (db/build-database conf-map)]
+    (doto database
+      (db/prepare)
+      (db/launch-updater! (:update-interval-s conf-map)))))
