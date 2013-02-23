@@ -100,10 +100,7 @@
                                                      domain-name
                                                      suffix
                                                      key-seq)))]
-
-      (->> (for [[k v] results-map]
-                  {:key k :value v})
-                (map (fn [m1 m2] (into m1 m2)) indexed-keys)))))
+      results-map)))
 
 ;; TODO: Fix this with a macro that lets us specify these behaviours
 ;; by default, but replace as necessary.
@@ -142,26 +139,20 @@
 
 (defn multi-get
   [get-fn database domain-name key-seq]
-  (loop [results []
-         indexed-keys (-> (db/domain-get database domain-name)
-                          (dom/index-keys key-seq))]
+  (let [indexed-keys (-> (db/domain-get database domain-name)
+                         (dom/index-keys key-seq))]
     (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
       (throw (thrift/hosts-down-ex (:all-hosts bad-key)))
-      (let [host-map   (group-by (comp first :hosts) indexed-keys)
-            rets       (u/do-pmap (fn [[host indexed-keys]]
-                                    [host (get-fn host indexed-keys)])
-                                  host-map)
-            successful (into {} (filter second rets))
-            results    (->> (vals successful)
-                            (apply concat results))
-            fail-map   (apply dissoc host-map (keys successful))]
-        (if (empty? fail-map)
-          (update-keys (into {} (map (juxt :key :value) results)) #(ByteBuffer/wrap %))
-          (recur results
-                 (map (fn [m]
-                        (update-in m [:hosts]
-                                   dom/trim-hosts (keys fail-map)))
-                      (apply concat (vals fail-map)))))))))
+      (let [host-map (group-by :hosts indexed-keys)
+            promises (u/do-pmap
+                      (fn [[hosts indexed-keys]]
+                        (let [p (promise)]
+                          (u/do-pmap (fn [host]
+                                       (when-not (realized? p)
+                                         (deliver p (get-fn host indexed-keys)))) hosts)
+                          p))
+                      host-map)]
+        (update-keys (apply into {} (map deref promises)) #(ByteBuffer/wrap %))))))
 
 (defn kv-get-fn
   [service domain-name database]
@@ -178,7 +169,7 @@
     (directMultiGet [_ domain-name key-set]
       (thrift/assert-domain database domain-name)
       (let [key-seq (byte-buffer-unwrap key-set)]
-        (try (if-let [results-map (direct-multiget database domain-name key-seq)]
+()        (try (if-let [results-map (direct-multiget database domain-name key-seq)]
                results-map
                (throw (thrift/domain-not-loaded-ex)))
              (catch RuntimeException _
