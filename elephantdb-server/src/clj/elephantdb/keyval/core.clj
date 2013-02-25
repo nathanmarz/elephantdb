@@ -3,7 +3,8 @@
   Thrift."
   (:use [elephantdb.common.domain :only (loaded?)]
         [metrics.timers :only (timer time! time-fn!)]
-        [metrics.meters :only (meter mark!)])
+        [metrics.meters :only (meter mark!)]
+        [elephantdb.common.graphite :only (report-to-graphite)])
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
@@ -249,6 +250,9 @@
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
+    (when-let [graphite-conf (:graphite-conf local-config)]
+      (log/info "Graphite reporter started.")
+      (report-to-graphite (:host graphite-conf) (:port graphite-conf)))
     (thrift/launch-server! kv-processor
                            (kv-service database)
                            (:port conf-map))))
