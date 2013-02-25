@@ -1,7 +1,9 @@
 (ns elephantdb.keyval.core
   "Functions for connecting the an ElephantDB (key-value) service via
   Thrift."
-  (:use [elephantdb.common.domain :only (loaded?)])
+  (:use [elephantdb.common.domain :only (loaded?)]
+        [metrics.timers :only (timer time! time-fn!)]
+        [metrics.meters :only (meter mark!)])
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
@@ -20,6 +22,14 @@
            [elephantdb.generated.keyval ElephantDB$Client
             ElephantDB$Iface ElephantDB$Processor])
   (:gen-class))
+
+;; ## Metrics
+
+(def multi-get-response-time (timer ["elephantdb" "keyval" "multi-get-response-time"]))
+(def direct-get-response-time (timer ["elephantdb" "keyval" "direct-get-response-time"]))
+
+(def multi-get-requests (meter ["elephantdb" "keyval" "multi-get-requests"] "requests"))
+(def direct-get-requests (meter ["elephantdb" "keyval" "direct-get-requests"] "requests"))
 
 ;; ## Thrift Connection
 
@@ -102,13 +112,6 @@
                                                      key-seq)))]
       results-map)))
 
-;; TODO: Fix this with a macro that lets us specify these behaviours
-;; by default, but replace as necessary.
-
-(defmacro defservice []
-  "Something like this. Model the macro after defcache in
-  clojure.core.cache.")
-
 ;; TODO: Perfect example of a spot where we could throw a data
 ;; structure warning up with throw+ if the database isn't loaded.
 
@@ -119,23 +122,6 @@
                     {key (thrift/mk-value (dom/kv-get domain key))})))))
 
 ;; ## MultiGet
-;;
-;; Start out by indexing each key; this requires indexing each key
-;; into a map (see `index-keys` above). The loop first checks that
-;; every key has at least one host associated with it. If any key is
-;; lacking hosts, the multiGet throws an exception.
-;;
-;; If no exception is thrown, the system groups keys by the first host
-;; in the list (localhost, if any keys are located on the machine
-;; executing the call) and performs a directMultiGet on each for its
-;; keys.
-;;
-;; If any host has unsuccessful results (didn't return anything), the
-;; host is removed from the host lists of every key, and multiGet
-;; recurses.
-;;
-;; Once the multi-get loop completes without any failures the entire
-;; sequence of values is returned in order.
 
 (defn multi-get
   [get-fn database domain-name key-seq]
@@ -169,7 +155,8 @@
     (directMultiGet [_ domain-name key-set]
       (thrift/assert-domain database domain-name)
       (let [key-seq (byte-buffer-unwrap key-set)]
-()        (try (if-let [results-map (direct-multiget database domain-name key-seq)]
+        (mark! direct-get-requests)
+        (try (if-let [results-map (time! direct-get-response-time (direct-multiget database domain-name key-seq))]
                results-map
                (throw (thrift/domain-not-loaded-ex)))
              (catch RuntimeException _
@@ -178,10 +165,12 @@
     (multiGet [this domain-name key-set]
       (thrift/assert-domain database domain-name)
       (let [get-fn (kv-get-fn this domain-name database)]
-        (multi-get get-fn
-                   database
-                   domain-name
-                   (byte-buffer-unwrap key-set))))
+        (mark! multi-get-requests)
+        (time! multi-get-response-time
+               (multi-get get-fn
+                          database
+                          domain-name
+                          (byte-buffer-unwrap key-set)))))
 
     (get [this domain-name key]
       (thrift/assert-domain database domain-name)
