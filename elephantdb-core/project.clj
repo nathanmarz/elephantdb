@@ -9,6 +9,9 @@
                  [commons-io "1.4"]
                  [jackknife "0.1.2"]
                  [hadoop-util "0.2.9"]
+                 [com.yammer.metrics/metrics-core "2.2.0"]
+                 [metrics-clojure "0.9.2"
+                  :exclusions [com.yammer.metrics/metrics-core]]
                  [elephantdb/elphantdb-thrift "0.4.0-SNAPSHOT"
                   :exclusions [org.slf4j/slf4j-api]]]
   :profiles {:dev

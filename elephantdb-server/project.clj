@@ -4,8 +4,7 @@
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.slf4j/slf4j-log4j12 "1.6.4"]
-                 [metrics-clojure "0.9.2"]
-                 [com.yammer.metrics/metrics-graphite "2.0.1"]
+                 [com.yammer.metrics/metrics-graphite "2.2.0"]
                  [elephantdb/elephantdb-core "0.4.0-SNAPSHOT"]]
   :profiles {:dev
              {:dependencies
