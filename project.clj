@@ -1,15 +1,12 @@
-(defproject elephantdb "0.4.0-SNAPSHOT"
+(defproject elephantdb "0.4.0-RC1"
   :min-lein-version "2.0.0"
-  :dependencies [[elephantdb/elephantdb-thrift "0.4.0-SNAPSHOT"]
-                 [elephantdb/elephantdb-core "0.4.0-SNAPSHOT"]
-                 [elephantdb/elephantdb-bdb "0.4.0-SNAPSHOT"]
-                 [elephantdb/elephantdb-leveldb "0.4.0-SNAPSHOT"]
-                 [elephantdb/elephantdb-server "0.4.0-SNAPSHOT"]
-                 [elephantdb/elephantdb-cascading "0.4.0-SNAPSHOT"]]
+  :dependencies [[elephantdb/elephantdb-thrift "0.4.0-RC1"]
+                 [elephantdb/elephantdb-core "0.4.0-RC1"]
+                 [elephantdb/elephantdb-bdb "0.4.0-RC1"]
+                 [elephantdb/elephantdb-leveldb "0.4.0-RC1"]
+                 [elephantdb/elephantdb-server "0.4.0-RC1"]
+                 [elephantdb/elephantdb-cascading "0.4.0-RC1"]]
   :plugins [[lein-sub "0.2.1"]]
-  :profiles {:dev
-             {:dependencies [[midje "1.5-alpha9"]]
-              :plugins [[lein-midje "3.0-alpha4"]]}}
   :sub ["elephantdb-thrift"
         "elephantdb-core"
         "elephantdb-bdb"

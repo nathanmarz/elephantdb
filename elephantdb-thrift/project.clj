@@ -1,9 +1,9 @@
-(defproject elephantdb/elephantdb-thrift "0.4.0-SNAPSHOT"
+(defproject elephantdb/elephantdb-thrift "0.4.0-RC1"
   :min-lein-version "2.0.0"
   :java-source-paths ["src/jvm"]
   :dependencies [[org.apache.thrift/libthrift "0.8.0"]]
   :profiles {:dev
              {:dependencies
-              [[org.clojure/clojure "1.4.0"]
-               [midje "1.5-alpha9"]]
-              :plugins [[lein-midje "3.0-alpha4"]]}})
+              [[org.clojure/clojure "1.5.1"]
+               [midje "1.5.0"]]
+              :plugins [[lein-midje "3.0.0"]]}})
