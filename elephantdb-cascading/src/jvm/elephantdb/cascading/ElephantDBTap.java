@@ -133,6 +133,12 @@ public class ElephantDBTap extends Hfs {
     }
 
     @Override
+    public String getIdentifier() {
+        // TODO: could we do better here?
+        return UUID.randomUUID().toString();
+    }
+
+    @Override
     public boolean createResource(JobConf conf) throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
