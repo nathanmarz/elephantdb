@@ -30,6 +30,8 @@ import java.util.UUID;
 public class ElephantDBTap extends Hfs {
     public static final Logger LOG = Logger.getLogger(ElephantDBTap.class);
 
+    public static enum TapMode {SOURCE, SINK}
+
     public static class Args implements Serializable {
         //for source and sink
         public List<String> tmpDirs = null;
@@ -48,11 +50,13 @@ public class ElephantDBTap extends Hfs {
     DomainSpec spec;
     Args args;
     String newVersionPath;
+    TapMode mode;
 
-    public ElephantDBTap(String dir, DomainSpec spec, Args args) throws IOException {
+    public ElephantDBTap(String dir, DomainSpec spec, Args args, TapMode mode) throws IOException {
         domainDir = dir;
         this.args = args;
         this.spec = new DomainStore(dir, spec).getSpec();
+        this.mode = mode;
 
         setStringPath(domainDir);
         setScheme(new ElephantScheme(this.args.sourceFields,
@@ -127,15 +131,22 @@ public class ElephantDBTap extends Hfs {
     
     @Override
     public long getModifiedTime(JobConf conf) throws IOException {
-        // TODO: fix this to return 0 then used as a sink and latest
-        // version otherwise for cascading >= 2.1
-        return System.currentTimeMillis();
+        DomainStore dstore = getDomainStore();
+        return (mode == TapMode.SINK) ? 0 : dstore.mostRecentVersion();
     }
 
     @Override
     public String getIdentifier() {
-        // TODO: could we do better here?
-        return UUID.randomUUID().toString();
+        String versionString = "";
+        try {
+            DomainStore dstore = getDomainStore();
+            versionString = ((mode == TapMode.SINK) ? "LATEST" : "" + dstore.mostRecentVersion());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return "elephant"
+            + ((mode == TapMode.SINK) ? "sink" : "source")
+            + ":" + domainDir + ":" + versionString;
     }
 
     @Override
