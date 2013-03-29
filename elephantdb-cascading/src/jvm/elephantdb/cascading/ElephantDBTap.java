@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-
 public class ElephantDBTap extends Hfs {
     public static final Logger LOG = Logger.getLogger(ElephantDBTap.class);
 
@@ -36,7 +35,6 @@ public class ElephantDBTap extends Hfs {
         //for source and sink
         public List<String> tmpDirs = null;
         public int timeoutMs = 2 * 60 * 60 * 1000; // 2 hours
-        public KeyValGateway gateway = new KeyValGateway();
 
         //source specific
         public Fields sourceFields = Fields.ALL;
@@ -60,7 +58,7 @@ public class ElephantDBTap extends Hfs {
 
         setStringPath(domainDir);
         setScheme(new ElephantScheme(this.args.sourceFields,
-            this.args.sinkFields, this.spec, this.args.gateway));
+            this.args.sinkFields, this.spec));
     }
 
     public DomainStore getDomainStore() throws IOException {

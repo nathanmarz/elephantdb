@@ -22,12 +22,10 @@ import org.apache.hadoop.mapred.RecordReader;
 import java.io.IOException;
 
 public class ElephantScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
-    Gateway gateway;
 
-    public ElephantScheme(Fields sourceFields, Fields sinkFields, DomainSpec spec, Gateway gateway) {
+    public ElephantScheme(Fields sourceFields, Fields sinkFields, DomainSpec spec) {
         setSourceFields(sourceFields);
         setSinkFields(sinkFields);
-        this.gateway = gateway;
     }
 
     @Override public void sourceConfInit(FlowProcess<JobConf> flowProcess,
@@ -62,9 +60,7 @@ public class ElephantScheme extends Scheme<JobConf, RecordReader, OutputCollecto
         if (!result)
             return false;
 
-        KeyValDocument doc = new KeyValDocument(value.key, value.value);
-
-        sourceCall.getIncomingEntry().setTuple(gateway.toTuple(doc));
+        sourceCall.getIncomingEntry().setTuple(new Tuple(value.key, value.value));
         return true;
     }
 
@@ -73,8 +69,12 @@ public class ElephantScheme extends Scheme<JobConf, RecordReader, OutputCollecto
         Tuple tuple = sinkCall.getOutgoingEntry().getTuple();
 
         int shard = tuple.getInteger(0);
-        Object doc = gateway.fromTuple(tuple);
-        KeyValDocument pair = (KeyValDocument) doc;
+        Object f1 = tuple.getObject(1);
+        Object f2 = tuple.getObject(2);
+        
+        byte[] key = (byte[]) f1;
+        byte[] val = (byte[]) f2;
+        KeyValDocument pair = new KeyValDocument(key, val);
 
         sinkCall.getOutput().collect(new IntWritable(shard), new ElephantRecordWritable(pair.key, pair.value));
     }
