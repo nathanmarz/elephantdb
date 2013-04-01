@@ -12,7 +12,7 @@
            [elephantdb DomainSpec]
            [elephantdb.document KeyValDocument]
            [elephantdb.cascading ElephantDBTap
-            ElephantDBTap$Args ElephantDBTap$TapMode KeyValTailAssembly KeyValGateway]
+            ElephantDBTap$Args ElephantDBTap$TapMode KeyValTailAssembly]
            [org.apache.hadoop.mapred JobConf]))
 
 ;; ## Global Vars
