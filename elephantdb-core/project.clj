@@ -13,8 +13,9 @@
                  [metrics-clojure "1.0.1"]
                  [elephantdb/elephantdb-thrift "0.4.0-RC2"
                   :exclusions [org.slf4j/slf4j-api]]]
-  :profiles {:dev
+  :profiles {:provided
+             {:dependencies [[org.apache.hadoop/hadoop-core "0.20.2"]]}
+             :dev
              {:dependencies
-              [[midje "1.5.0"]
-               [org.apache.hadoop/hadoop-core "0.20.2"]]
+              [[midje "1.5.0"]]
               :plugins [[lein-midje "3.0.0"]]}})
