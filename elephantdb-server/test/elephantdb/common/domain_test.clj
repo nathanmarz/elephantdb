@@ -33,10 +33,10 @@
         (.getSpec local-store) => (.getSpec remote-store)))))
 
 (let [spec    (berkeley-spec 3)
-      doc-seq [[0 (KeyValDocument. (barr 1) (barr 2))]
-               [0 (KeyValDocument. (barr 3) (barr 4))]
-               [1 (KeyValDocument. (barr 5) (barr 6))]
-               [1 (KeyValDocument. (barr 7) (barr 8))]]]
+      doc-seq [[(barr 0) (KeyValDocument. (barr 1) (barr 2))]
+               [(barr 0) (KeyValDocument. (barr 3) (barr 4))]
+               [(barr 1) (KeyValDocument. (barr 5) (barr 6))]
+               [(barr 1) (KeyValDocument. (barr 7) (barr 8))]]]
   (with-basic-domain [domain spec doc-seq :version 10]
     (facts
       "Getting a seq on a domain should return the documents from ALL
@@ -63,7 +63,8 @@
       given temp file."
       (doseq [v (range 5)]
         (create-unsharded-domain! spec tmp doc-seq :version v))
-      (facts (version-seq domain) => [4 3 2 1 0]
+      (facts
+        (version-seq domain) => [4 3 2 1 0]
         (current-version domain) => nil
 
         "Domain's not ready..."

@@ -52,12 +52,14 @@
 ;; test battery. The tests rely on interfaces, making them appropriate
 ;; for any defined Coordinator.
 
-(facts
-  "Tests that BerkeleyDB is able to put and get tuples."
+(future-facts
+ "Tests that BerkeleyDB is able to put and get tuples.
+  TODO: move to persistence module."
   (test-get-put (JavaBerkDB.))
   (test-iterate (JavaBerkDB.)))
 
-(facts
-  "Tests that LevelDB is able to put and get tuples."
+(future-facts
+ "Tests that LevelDB is able to put and get tuples.
+  TODO: move to persistence module."
   (test-get-put (LevelDB.))
   (test-iterate (LevelDB.)))

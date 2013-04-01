@@ -19,4 +19,6 @@
         "elephantdb-bdb"
         "elephantdb-leveldb"
         "elephantdb-server"
-        "elephantdb-cascading"])
+        "elephantdb-cascading"]
+  :profiles {:dev {:dependencies [[midje "1.5.0"]]
+                   :plugins [[lein-midje "3.0.0"]]}})
