@@ -22,3 +22,6 @@ docs/
 *.zip
 target
 .lein-plugins
+*.asc
+.lein-repl-history
+TAGS
