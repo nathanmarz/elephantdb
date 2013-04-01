@@ -1,5 +1,7 @@
 package elephantdb.document;
 
+import java.util.Arrays;
+
 public class KeyValDocument {
     public byte[] key;
     public byte[] value;
@@ -22,6 +24,6 @@ public class KeyValDocument {
             return false;
 
         KeyValDocument other = (KeyValDocument) obj;
-        return (this.key.equals(other.key) && this.value.equals(other.value));
+        return (Arrays.equals(this.key, other.key) && Arrays.equals(this.value, other.value));
     }
 }
