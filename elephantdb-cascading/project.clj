@@ -8,12 +8,11 @@
                  [cascading/cascading-hadoop "2.0.8"
                   :exclusions [org.codehaus.janino/janino
                                org.apache.hadoop/hadoop-core]]]
-  :profiles {:provided
+  :profiles {:dev
              {:dependencies
-              [[org.apache.hadoop/hadoop-core "0.20.2"]]}
-             :dev
-             {:dependencies
-              [[hadoop-util "0.2.9"]
+              [[org.apache.hadoop/hadoop-core "0.20.2"]
+               [elephantdb/elephantdb-bdb "0.4.0-RC2"]
+               [hadoop-util "0.2.9"]
                [jackknife "0.1.2"]
                [midje "1.5.0"]]
               :plugins [[lein-midje "3.0.0"]]}})

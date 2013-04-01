@@ -1,23 +1,18 @@
 (ns elephantdb.cascading.integration-test
-  (:use midje.sweet
-        elephantdb.test.common)
-  (:require [elephantdb.test.keyval :as t]
-            [jackknife.logging :as log]
+  (:use midje.sweet)
+  (:require [jackknife.logging :as log]
             [hadoop-util.test :as test]
             [clojure.string :as s])
   (:import [cascading.pipe Pipe]
            [cascading.tuple Fields Tuple]
            [cascading.flow.hadoop HadoopFlowProcess HadoopFlowConnector]
            [cascading.tap.hadoop Hfs]
-           [elephantdb.persistence JavaBerkDB]
-           [elephantdb.document KeyValDocument]
            [elephantdb.partition HashModScheme]
            [elephantdb.persistence JavaBerkDB]
            [elephantdb DomainSpec]
-           [elephantdb.index StringAppendIndexer]
            [elephantdb.document KeyValDocument]
            [elephantdb.cascading ElephantDBTap
-            ElephantDBTap$Args KeyValTailAssembly KeyValGateway]
+            ElephantDBTap$Args ElephantDBTap$TapMode KeyValTailAssembly KeyValGateway]
            [org.apache.hadoop.mapred JobConf]))
 
 ;; ## Global Vars
@@ -46,17 +41,6 @@
   value."
   [path]
   (hfs-tap path "key" "value"))
-
-(defn kv-opts
-  "Returns an EDB argument object tuned"
-  [& {:keys [indexer incremental]
-      :or {incremental true}}]
-  (let [ret (ElephantDBTap$Args.)]
-    (set! (.gateway ret) (KeyValGateway.))
-    (set! (.incremental ret) incremental)
-    (when indexer
-      (set! (.indexer ret) indexer))
-    ret))
 
 (def defaults
   {"io.serializations"
@@ -101,10 +85,11 @@
   "Returns an ElephantDB Tap tuned to the supplied path and
   shard-count. Optionally, you can supply keyword arguments as
   specified by `kv-opts`."
-  [path shard-count & options]
+  [path shard-count tap-mode]
   (ElephantDBTap. path
                   (kv-spec shard-count)
-                  (apply kv-opts options)))
+                  (ElephantDBTap$Args.)
+                  tap-mode))
 
 (defn connect!
   "Connect the supplied source and sink with the supplied pipe."
@@ -182,68 +167,25 @@
 
   To change the configuration map used for the test, supply a map
   using the `:conf` keyword argument."
-  [[sym shard-count & opts] & body]
+  [[sym shard-count tap-mode & opts] & body]
   (let [opt-map   (apply hash-map opts)
         log-level (:log-level opt-map :off)
         conf      (:conf opt-map *default-conf*)]
     `(binding [*default-conf* (or ~conf {})]
        (log/with-log-level ~log-level
          (test/with-fs-tmp [fs# tmp#]
-           (let [~sym (elephant-tap tmp# ~shard-count ~@opts)]
+           (let [~sym (elephant-tap tmp# ~shard-count ~tap-mode)]
              ~@body))))))
 
 ;; ## Tests
 
 (tabular
- (fact
+ (future-fact
    "Tuples sunk into an ElephantDB tap and read back out should
     match. (A map acts as a sequence of 2-tuples, perfect for
     ElephantDB key-val tests.)"
-   (with-kv-tap [e-tap 4]
+   (with-kv-tap [e-tap 4 ElephantDBTap$TapMode/SINK]
      (populate-edb! e-tap ?tuples)
      e-tap => (produces ?tuples)))
  ?tuples
- {1 2, 3 4}
  {"key" "val", "ham" "burger"})
-
-(facts
-  "When incremental is set to false, ElephantDB should generate a
-     new domain completely independent of the old domain."
-  (with-kv-tap [sink 4 :incremental false]
-    (let [data {0 "zero"
-                1 "one"
-                2 "two"
-                3 "three"
-                4 "four"
-                5 "five"
-                6 "six"
-                7 "seven"
-                8 "eight"}
-          data2 {0 "zero!!"
-                 10 "ten"}]
-      (fact "Populating the sink with `data` produces `data`."
-        (populate-edb! sink data)
-        sink => (produces data))
-
-      (fact "Sinking data2 on top of data should knock out all old
-      values, leaving only data2."
-        (populate-edb! sink data2)
-        sink => (produces data2)))))
-
-(facts "Incremental defaults to `true`, bringing an updater into
-  play. For a key-value store, the default behavior on an incremental
-  update is for new kv-pairs to knock out existing kv-pairs."
-  (with-kv-tap [sink 2]
-    (let [data {0 "zero"
-                1 "one"
-                2 "two"}
-          data2 {0 "ZERO!"
-                 3 "THREE!"}]
-      (fact "Populating the sink with `data` produces `data`."
-        (populate-edb! sink data)
-        sink => (produces data))
-
-      (fact "Sinking `data2` on top of `data` produces the same set
-        of tuples as merging two clojure maps"
-        (populate-edb! sink data2)
-        sink => (produces (merge data data2))))))
