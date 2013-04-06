@@ -4,12 +4,12 @@
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
   :dependencies [[org.slf4j/slf4j-log4j12 "1.6.4"]
                  [com.yammer.metrics/metrics-graphite "2.2.0"]
-                 [elephantdb/elephantdb-core "0.4.0-RC2"]]
+                 [elephantdb/elephantdb-core "0.4.0-RC2"]
+                 [elephantdb/elephantdb-bdb "0.4.0-RC2"]
+                 [elephantdb/elephantdb-leveldb "0.4.0-RC2"]]
   :profiles {:dev
              {:dependencies
-              [[elephantdb/elephantdb-bdb "0.4.0-RC2"]
-               [elephantdb/elephantdb-leveldb "0.4.0-RC2"]
-               [midje "1.5.0"]]
+              [[midje "1.5.0"]]
               :plugins [[lein-midje "3.0.0"]]}
              :provided
              {:dependencies
