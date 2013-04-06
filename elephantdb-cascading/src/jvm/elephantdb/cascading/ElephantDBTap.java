@@ -133,6 +133,20 @@ public class ElephantDBTap extends Hfs {
         return (mode == TapMode.SINK) ? 0 : dstore.mostRecentVersion();
     }
 
+    // @Override
+    // public String getIdentifier() {
+    //     String versionString = "";
+    //     try {
+    //         DomainStore dstore = getDomainStore();
+    //         versionString = ((mode == TapMode.SINK) ? "LATEST" : "" + dstore.mostRecentVersion());
+    //     } catch (IOException e) {
+    //         throw new RuntimeException(e);
+    //     }
+    //     return "elephant"
+    //         + ((mode == TapMode.SINK) ? "sink" : "source")
+    //         + ":" + domainDir + ":" + versionString;
+    // }
+
     @Override
     public String getIdentifier() {
         String versionString = "";
@@ -142,9 +156,9 @@ public class ElephantDBTap extends Hfs {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return "elephant"
+        return domainDir + Path.SEPARATOR
             + ((mode == TapMode.SINK) ? "sink" : "source")
-            + ":" + domainDir + ":" + versionString;
+            + Path.SEPARATOR + versionString;
     }
 
     @Override
