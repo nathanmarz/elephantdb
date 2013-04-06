@@ -178,7 +178,6 @@
       (let [get-fn (kv-get-fn this domain-name database)
             ret (byte-array (.remaining key))]
         (.get key ret)
-        (prn "get: " (multi-get get-fn database domain-name [ret]))
         (first (vals (multi-get get-fn database domain-name [ret])))))
 
     (getDomainStatus [_ domain-name]
