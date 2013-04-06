@@ -119,8 +119,8 @@
 (defn direct-multiget [database domain-name key-seq]
   (let [domain (db/domain-get database domain-name)]
     (when (loaded? domain)
-      (into {} (for [key key-seq]
-                    {key (thrift/mk-value (dom/kv-get domain key))})))))
+      (into {} (map (fn [key]
+                      {(ByteBuffer/wrap key) (thrift/mk-value (dom/kv-get domain key))}) key-seq)))))
 
 ;; ## MultiGet
 
@@ -139,7 +139,7 @@
                                          (deliver p (get-fn host indexed-keys)))) hosts)
                           p))
                       host-map)]
-        (update-keys (apply into {} (map deref promises)) #(ByteBuffer/wrap %))))))
+        (into {} (map deref promises))))))
 
 (defn kv-get-fn
   [service domain-name database]
@@ -178,7 +178,7 @@
       (let [get-fn (kv-get-fn this domain-name database)
             ret (byte-array (.remaining key))]
         (.get key ret)
-        (first (multi-get get-fn database domain-name [ret]))))
+        (clojure.core/get (multi-get get-fn database domain-name [ret]) key)))
 
     (getDomainStatus [_ domain-name]
       "Returns the thrift status of the supplied domain-name."
