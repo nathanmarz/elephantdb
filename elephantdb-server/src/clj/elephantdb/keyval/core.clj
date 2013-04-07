@@ -31,6 +31,7 @@
 
 (def multi-get-requests (meter ["elephantdb" "keyval" "multi-get-requests"] "requests"))
 (def direct-get-requests (meter ["elephantdb" "keyval" "direct-get-requests"] "requests"))
+(def get-requests (meter ["elephantdb" "keyval" "get-requests"] "requests"))
 
 ;; ## Thrift Connection
 
@@ -177,6 +178,7 @@
       (thrift/assert-domain database domain-name)
       (let [get-fn (kv-get-fn this domain-name database)
             ret (byte-array (.remaining key))]
+        (mark! get-requests)
         (.get key ret)
         (first (vals (multi-get get-fn database domain-name [ret])))))
 
