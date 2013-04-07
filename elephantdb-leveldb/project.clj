@@ -1,9 +1,9 @@
-(defproject elephantdb/elephantdb-leveldb "0.4.0-RC2"
+(defproject elephantdb/elephantdb-leveldb "0.4.0"
   :min-lein-version "2.0.0"
   :java-source-paths ["src/jvm"]
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :repositories {"fusesource.nexus.snapshot" "http://repo.fusesource.com/nexus/content/groups/public-snapshots"}
-  :dependencies [[elephantdb/elephantdb-core "0.4.0-RC2"]
+  :dependencies [[elephantdb/elephantdb-core "0.4.0"]
                  [org.fusesource.leveldbjni/leveldbjni-all "1.5"]]
   :profiles {:dev
              {:dependencies
