@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.Reporter;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,11 +35,17 @@ public class LocalElephantManager {
     File dirFlag;
     String localRoot;
     DomainSpec spec;
+    Reporter reporter;
 
-    public LocalElephantManager(FileSystem fs, DomainSpec spec, List<String> tmpDirs) throws IOException {
+    public LocalElephantManager(FileSystem fs, DomainSpec spec, List<String> tmpDirs, Reporter reporter) throws IOException {
         localRoot = selectAndFlagRoot(tmpDirs);
         this.fs = fs;
         this.spec = spec;
+        this.reporter = reporter;
+    }
+
+    public LocalElephantManager(FileSystem fs, DomainSpec spec, List<String> tmpDirs) throws IOException {
+        this(fs, spec, tmpDirs, null);
     }
 
     /**
@@ -54,6 +61,7 @@ public class LocalElephantManager {
         String returnDir = localTmpDir(id);
         if (remotePath == null || !fs.exists(new Path(remotePath))) {
             coord.createPersistence(returnDir, this.spec.getPersistenceOptions());
+            if(reporter != null) reporter.progress();
         } else {
             fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
             Collection<File> crcs =
@@ -61,6 +69,7 @@ public class LocalElephantManager {
             for (File crc : crcs) {
                 FileUtils.forceDelete(crc);
             }
+            reporter.progress();
         }
         return returnDir;
     }
