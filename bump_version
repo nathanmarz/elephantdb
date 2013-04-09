@@ -1,0 +1,3 @@
+#!/bin/bash
+
+for f in `find . -name project.clj`; do gsed -i 's/$1/$2/g' $f; done
