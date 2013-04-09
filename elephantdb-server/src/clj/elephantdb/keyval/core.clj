@@ -4,6 +4,7 @@
   (:use [elephantdb.common.domain :only (loaded?)]
         [metrics.timers :only (timer time! time-fn!)]
         [metrics.meters :only (meter mark!)]
+        [metrics.core :only (report-to-console)]
         [elephantdb.common.graphite :only (report-to-graphite)])
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
@@ -253,8 +254,11 @@
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
     (when-let [graphite-conf (:graphite-conf local-config)]
-      (log/info "Graphite reporter started.")
+      (log/info "Metrics graphite reporter started.")
       (report-to-graphite (:host graphite-conf) (:port graphite-conf)))
+    (when-let [metrics-reporting-interval-s (:metrics-reporting-interval-s local-config)]
+      (log/info "Metrics console reporter started.")
+      (report-to-console metrics-reporting-interval-s))
     (thrift/launch-server! kv-processor
                            (kv-service database)
                            (:port conf-map))))

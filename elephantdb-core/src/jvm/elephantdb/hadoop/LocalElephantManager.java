@@ -4,8 +4,11 @@ import elephantdb.DomainSpec;
 import elephantdb.persistence.Coordinator;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +16,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public class LocalElephantManager {
+    public static Logger LOG = Logger.getLogger(LocalElephantManager.class);
     public static final String TMP_DIRS_CONF = "elephantdb.local.tmp.dirs";
 
     public static void setTmpDirs(Configuration conf, List<String> dirs) {
@@ -34,11 +38,17 @@ public class LocalElephantManager {
     File dirFlag;
     String localRoot;
     DomainSpec spec;
+    Reporter reporter;
 
-    public LocalElephantManager(FileSystem fs, DomainSpec spec, List<String> tmpDirs) throws IOException {
+    public LocalElephantManager(FileSystem fs, DomainSpec spec, List<String> tmpDirs, Reporter reporter) throws IOException {
         localRoot = selectAndFlagRoot(tmpDirs);
         this.fs = fs;
         this.spec = spec;
+        this.reporter = reporter;
+    }
+
+    public LocalElephantManager(FileSystem fs, DomainSpec spec, List<String> tmpDirs) throws IOException {
+        this(fs, spec, tmpDirs, null);
     }
 
     /**
@@ -54,8 +64,18 @@ public class LocalElephantManager {
         String returnDir = localTmpDir(id);
         if (remotePath == null || !fs.exists(new Path(remotePath))) {
             coord.createPersistence(returnDir, this.spec.getPersistenceOptions());
+            if(reporter != null)
+                reporter.progress();
         } else {
-            fs.copyToLocalFile(new Path(remotePath), new Path(returnDir));
+            // fs.copyToLocalFile(new Path(remotePath), new
+            // Path(returnDir));
+            LOG.info("" + new Path(remotePath) + " -> " + new Path(returnDir));
+            FileStatus[] statuses = fs.listStatus(new Path(remotePath));
+            for(FileStatus status: statuses) {
+                fs.copyToLocalFile(status.getPath(), new Path(returnDir + "/" + status.getPath().getName()));
+                if(reporter != null)
+                    reporter.progress();
+            }
             Collection<File> crcs =
                     FileUtils.listFiles(new File(returnDir), new String[]{"crc"}, true);
             for (File crc : crcs) {

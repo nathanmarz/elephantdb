@@ -49,7 +49,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, ElephantRe
             args = (Args) Utils.getObject(this.split.conf, ARGS_CONF);
             elephantManager = new LocalElephantManager(
                     Utils.getFS(this.split.shardPath, split.conf), this.split.spec,
-                    LocalElephantManager.getTmpDirs(this.split.conf));
+                    LocalElephantManager.getTmpDirs(this.split.conf), reporter);
             String localpath = elephantManager.downloadRemoteShard("shard", this.split.shardPath);
 
             Map<String, Object> opts = this.split.spec.getPersistenceOptions();
