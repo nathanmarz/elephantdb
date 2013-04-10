@@ -41,6 +41,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, ElephantRe
         CloseableIterator iterator;
         boolean finished = false;
         int numRead = 0;
+        boolean hasShard = false;
 
         public ElephantRecordReader(ElephantInputSplit split, Reporter reporter)
                 throws IOException {
@@ -49,16 +50,20 @@ public class ElephantInputFormat implements InputFormat<NullWritable, ElephantRe
             args = (Args) Utils.getObject(this.split.conf, ARGS_CONF);
             elephantManager = new LocalElephantManager(
                     Utils.getFS(this.split.shardPath, split.conf), this.split.spec,
-                    LocalElephantManager.getTmpDirs(this.split.conf), reporter);
-            String localpath = elephantManager.downloadRemoteShard("shard", this.split.shardPath);
-
-            Map<String, Object> opts = this.split.spec.getPersistenceOptions();
-            lp = this.split.spec.getCoordinator().openPersistenceForRead(localpath, opts);
-
-            iterator = lp.iterator();
+                    LocalElephantManager.getTmpDirs(this.split.conf), this.reporter);
         }
 
         public boolean next(NullWritable k, ElephantRecordWritable v) throws IOException {
+            if (!hasShard) {
+                String localpath = elephantManager.downloadRemoteShard("shard", split.shardPath);
+
+                Map<String, Object> opts = split.spec.getPersistenceOptions();
+                lp = split.spec.getCoordinator().openPersistenceForRead(localpath, opts);
+
+                iterator = lp.iterator();
+                hasShard = true;
+            }
+                
             if (iterator.hasNext()) {
                 Object document = iterator.next();
                 KeyValDocument doc = (KeyValDocument) document;
