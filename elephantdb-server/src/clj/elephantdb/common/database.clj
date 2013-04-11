@@ -1,4 +1,5 @@
 (ns elephantdb.common.database
+  (:use [metrics.timers :only (timer)])
   (:require [hadoop-util.core :as h]
             [jackknife.core :as u]
             [jackknife.seq :as seq]
@@ -97,7 +98,7 @@
 (defprotocol Preparable
   (prepare [_] "Perform preparatory steps."))
 
-(defrecord Database [local-root port domains options]
+(defrecord Database [local-root port domains metrics options]
   Preparable
   (prepare [this]
     (log/info "Preparing database...")
@@ -112,6 +113,14 @@
     (log/info "ElephantDB received shutdown notice...")
     (doseq [^Shutdownable domain (vals domains)]
       (.shutdown domain))))
+
+(defn build-meters [domain-name]
+  (let [prefix ["elephantdb" "domain"]]
+    {:direct-get-response-time (timer (conj prefix (str domain-name "-direct-get-response-time")))
+     :multi-get-response-time (timer (conj prefix (str domain-name "-multi-get-response-time")))}))
+
+(defn metrics-get [{:keys [metrics]} domain-name]
+  (get metrics domain-name))
 
 (defn build-database
   "Returns a database linking to a bunch of read-only domains."
@@ -129,6 +138,10 @@
                     (apply domain/build-domain local-path
                            :remote-path remote-path
                            (apply concat options)))))
+               (u/update-vals
+                domains
+                (fn [domain-name _]
+                  (build-meters domain-name)))
                (dissoc conf-map :domains :local-root :port))))
 
 ;; A full database ends up looking something like the commented out
