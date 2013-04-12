@@ -12,13 +12,15 @@
                  [elephantdb/elephantdb-bdb "0.4.2-SNAPSHOT"]
                  [elephantdb/elephantdb-leveldb "0.4.2-SNAPSHOT"]
                  [elephantdb/elephantdb-server "0.4.2-SNAPSHOT"]
-                 [elephantdb/elephantdb-cascading "0.4.2-SNAPSHOT"]]
+                 [elephantdb/elephantdb-cascading "0.4.2-SNAPSHOT"]
+                 [elephantdb/elephantdb-cascalog "0.4.2-SNAPSHOT"]]
   :plugins [[lein-sub "0.2.1"]]
   :sub ["elephantdb-thrift"
         "elephantdb-core"
         "elephantdb-bdb"
         "elephantdb-leveldb"
         "elephantdb-server"
-        "elephantdb-cascading"]
+        "elephantdb-cascading"
+        "elephantdb-cascalog"]
   :profiles {:dev {:dependencies [[midje "1.5.0"]]
                    :plugins [[lein-midje "3.0.0"]]}})
