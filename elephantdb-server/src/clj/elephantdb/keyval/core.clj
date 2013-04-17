@@ -67,12 +67,6 @@
            ret))
        coll))
 
-(defn update-keys 
-  "Returns a map with f applied to the keys of amap."
-  [amap f]
-  (into {} (for [[k v] amap]
-             [(f k) v])))
-
 (defn try-direct-multi-get
   "Attempts a direct multi-get to the supplied service for each of the
   keys in the supplied `key-seq`."
