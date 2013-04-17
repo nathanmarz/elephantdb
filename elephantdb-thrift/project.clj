@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb-thrift "0.4.2-SNAPSHOT"
+(defproject elephantdb/elephantdb-thrift "0.4.2"
   :min-lein-version "2.0.0"
   :java-source-paths ["src/jvm"]
   :dependencies [[org.apache.thrift/libthrift "0.8.0"]]
