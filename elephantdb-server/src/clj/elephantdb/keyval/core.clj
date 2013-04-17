@@ -5,7 +5,7 @@
         [metrics.timers :only (timer time! time-fn!)]
         [metrics.meters :only (meter mark!)]
         [metrics.core :only (report-to-console)]
-        [elephantdb.common.graphite :only (report-to-graphite)])
+        elephantdb.common.metrics)
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
@@ -246,9 +246,12 @@
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
-    (when-let [graphite-conf (:graphite-conf local-config)]
+    (when-let [graphite-conf (:graphite-reporter local-config)]
       (log/info "Metrics graphite reporter started.")
       (report-to-graphite (:host graphite-conf) (:port graphite-conf)))
+    (when-let [ganglia-conf (:ganglia-reporter local-config)]
+      (log/info "Metrics ganglia reporter started.")
+      (report-to-ganglia (:host ganglia-conf) (:port ganglia-conf)))
     (when-let [metrics-reporting-interval-s (:metrics-reporting-interval-s local-config)]
       (log/info "Metrics console reporter started.")
       (report-to-console metrics-reporting-interval-s))
