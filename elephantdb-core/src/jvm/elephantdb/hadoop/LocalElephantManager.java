@@ -63,12 +63,10 @@ public class LocalElephantManager {
         Coordinator coord = spec.getCoordinator();
         String returnDir = localTmpDir(id);
         if (remotePath == null || !fs.exists(new Path(remotePath))) {
-            coord.createPersistence(returnDir, this.spec.getPersistenceOptions());
+            coord.createPersistence(returnDir, spec.getPersistenceOptions());
             if(reporter != null)
                 reporter.progress();
         } else {
-            // fs.copyToLocalFile(new Path(remotePath), new
-            // Path(returnDir));
             LOG.info("" + new Path(remotePath) + " -> " + new Path(returnDir));
             FileStatus[] statuses = fs.listStatus(new Path(remotePath));
             for(FileStatus status: statuses) {

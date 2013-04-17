@@ -30,8 +30,6 @@
 (def multi-get-response-time (timer ["elephantdb" "keyval" "multi-get-response-time"]))
 (def direct-get-response-time (timer ["elephantdb" "keyval" "direct-get-response-time"]))
 
-(def multi-get-requests (meter ["elephantdb" "keyval" "multi-get-requests"] "requests"))
-(def direct-get-requests (meter ["elephantdb" "keyval" "direct-get-requests"] "requests"))
 (def get-requests (meter ["elephantdb" "keyval" "get-requests"] "requests"))
 
 ;; ## Thrift Connection
@@ -68,12 +66,6 @@
            (.get x ret)
            ret))
        coll))
-
-(defn update-keys 
-  "Returns a map with f applied to the keys of amap."
-  [amap f]
-  (into {} (for [[k v] amap]
-             [(f k) v])))
 
 (defn try-direct-multi-get
   "Attempts a direct multi-get to the supplied service for each of the
@@ -119,10 +111,12 @@
 ;; structure warning up with throw+ if the database isn't loaded.
 
 (defn direct-multiget [database domain-name key-seq]
-  (let [domain (db/domain-get database domain-name)]
+  (let [domain (db/domain-get database domain-name)
+        metrics (db/metrics-get database domain-name)]
     (when (loaded? domain)
-      (into {} (map (fn [key]
-                      {(ByteBuffer/wrap key) (thrift/mk-value (dom/kv-get domain key))}) key-seq)))))
+      (time! (:direct-get-response-time metrics)
+             (into {} (map (fn [key]
+                             {(ByteBuffer/wrap key) (thrift/mk-value (dom/kv-get domain key))}) key-seq))))))
 
 ;; ## MultiGet
 
@@ -140,8 +134,9 @@
                                        (when-not (realized? p)
                                          (deliver p (get-fn host indexed-keys)))) hosts)
                           p))
-                      host-map)]
-        (into {} (map deref promises))))))
+                      host-map)
+            metrics (db/metrics-get database domain-name)]
+        (time! (:multi-get-response-time metrics) (into {} (map deref promises)))))))
 
 (defn kv-get-fn
   [service domain-name database]
@@ -158,7 +153,6 @@
     (directMultiGet [_ domain-name key-set]
       (thrift/assert-domain database domain-name)
       (let [key-seq (byte-buffer-unwrap key-set)]
-        (mark! direct-get-requests)
         (try (if-let [results-map (time! direct-get-response-time (direct-multiget database domain-name key-seq))]
                results-map
                (throw (thrift/domain-not-loaded-ex)))
@@ -168,7 +162,6 @@
     (multiGet [this domain-name key-set]
       (thrift/assert-domain database domain-name)
       (let [get-fn (kv-get-fn this domain-name database)]
-        (mark! multi-get-requests)
         (time! multi-get-response-time
                (multi-get get-fn
                           database

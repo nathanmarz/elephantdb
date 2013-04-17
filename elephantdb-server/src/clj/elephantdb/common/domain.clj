@@ -191,7 +191,8 @@
                         (open-shard! local-store idx version
                                      :allow-writes (.allowWrites domain))
                         (catch Exception e
-                          (log/error e)
+                          (log/error (format "Error opening shard %s of version %s for domain %s: %s"
+                                             idx version domain e))
                           (throw e))))]
     (assert (has-version? local-store version)
             (str version "  doesn't exist."))
@@ -381,9 +382,14 @@
   [domain version]
   (let [local-store  (.localStore domain)
         version-path (.createVersion local-store version)]
-    (u/do-pmap (partial transfer-shard! domain version)
-               (shard-set domain))
-    (.succeedVersion local-store version-path)))
+    (try
+      (u/do-pmap (partial transfer-shard! domain version)
+                 (shard-set domain))
+      (.succeedVersion local-store version-path)
+      (catch Exception e
+        (.failVersion local-store version-path)
+        (log/error (format "Error transferring version %s: %s" version-path e))
+        (throw e)))))
 
 (defn transfer-possible?
   "Returns true if the remote store has the supplied version (and the
@@ -407,12 +413,17 @@
   [domain & {:keys [version]}]
   (let [version (or version (.mostRecentVersion (.remoteStore domain)))]
     (when (transfer-possible? domain version)
-      (doto domain
-        (status/to-loading)
-        (cleanup-domain!)
-        (transfer-version! version)
-        (load-version! version)
-        (cleanup-domain!)))))
+      (try
+        (doto domain
+          (status/to-loading)
+          (cleanup-domain!)
+          (transfer-version! version)
+          (load-version! version)
+          (cleanup-domain!))
+        (catch Exception e
+          (log/error (format "Error loading version %s: %s" version e))
+          (when-not (status/ready? domain)
+            (status/to-ready domain)))))))
 
 (defn attempt-update!
   "If the supplied domain isn't currently updating, returns a future
