@@ -10,6 +10,6 @@
 
 (defn report-to-ganglia
   ([host port]
-     (report-to-graphite 1 TimeUnit/MINUTES host port))
+     (report-to-ganglia 1 TimeUnit/MINUTES host port))
   ([period unit host port]
      (GangliaReporter/enable period unit host port)))
