@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/nathanmarz/elephantdb.png?branch=develop)](https://travis-ci.org/nathanmarz/elephantdb)
+
+# ElephantDB 0.4.3-SNAPSHOT
+
 # About
 
 ElephantDB is a database that specializes in exporting key/value data
