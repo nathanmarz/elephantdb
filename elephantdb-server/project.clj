@@ -3,6 +3,8 @@
   :source-paths ["src/clj"]
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
   :dependencies [[ch.qos.logback/logback-classic "1.0.11"]
+                 [org.slf4j/jul-to-slf4j "1.7.4"]
+                 [org.slf4j/jcl-over-slf4j "1.7.4"]
                  [org.slf4j/log4j-over-slf4j "1.7.4"]
                  [com.yammer.metrics/metrics-graphite "2.2.0"]
                  [com.yammer.metrics/metrics-ganglia "2.2.0"]
