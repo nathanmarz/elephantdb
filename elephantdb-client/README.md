@@ -13,6 +13,7 @@ arrays:
 ;; serialize strings to byte arrays
 (def keys (map #(.getBytes %) ["biggie" "tupac"]))
 
+;; deserialize the key/value pairs back to Strings
 (with-elephant "127.0.0.1" 3578 connection
    (let [results-map (multi-get connection "rappers" keys)]
        (into {} (for [[k v] results-map]
