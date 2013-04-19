@@ -76,3 +76,35 @@
                        (let [s (TSerializer.)]
                          (.serialize s key))) key-seq)]
     (multi-get connection domain key-seq)))
+
+(defn get-domains
+  "Get a list of domains available."
+  [connection]
+  (.getDomains connection))
+
+(defn get-status
+  "Get the status of all domains."
+  [connection]
+  (.getStatus connection))
+
+(defn fully-loaded?
+  "Check if all domains are fully loaded."
+  [connection]
+  (.isFullyLoaded connection))
+
+(defn updating?
+  "Are any domains currently updating."
+  [connection]
+  (.isUpdating connection))
+
+(defn update
+  "If an update is available, updates the named domain
+  and hotswap the new version."
+  [connection domain]
+  (.update connection domain))
+
+(defn update-all
+  "If an update is available on any domain, updates the domain's
+  and hotswaps in the new versions."
+  [connection]
+  (.updateAll connection))

@@ -19,7 +19,18 @@ arrays:
   (into {} (for [[k v] m]
              [(String. k) (String. v)])))
 
-;; deserialize the key/value pairs back to Strings
+;; are all domain fully loaded?
+(with-elephant "127.0.0.1" 3578 connection
+  (fully-loaded? connection))
+
+;; => true
+
+;; what domains are available?
+(with-elephant "127.0.0.1" 3578 connection
+  (get-domains connection))
+
+;; => ["rappers"]
+
 (with-elephant "127.0.0.1" 3578 connection
   (deserialize-strings (multi-get connection "rappers" (serialize-strings ["biggie" "tupac"])))
 
