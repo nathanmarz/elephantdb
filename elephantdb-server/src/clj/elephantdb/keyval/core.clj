@@ -52,13 +52,13 @@
 
 ;; ## Service Handler
 
-(defn byte-buffer-wrap
+(defn bytes->bytebuffers
   "Wraps a collection of byte arrays in ByteBuffers."
   [coll]
   (map (fn [^bytes x]
          (ByteBuffer/wrap x)) coll))
 
-(defn byte-buffer-unwrap
+(defn bytebuffers->bytes
   "Unwraps a collection of byte arrays from inside Byte Buffers."
   [coll]
   (map (fn [^ByteBuffer x]
@@ -71,7 +71,7 @@
   "Attempts a direct multi-get to the supplied service for each of the
   keys in the supplied `key-seq`."
   [^ElephantDB$Iface service domain-name error-suffix key-seq]
-  (let [key-set (into #{} (byte-buffer-wrap key-seq))]
+  (let [key-set (into #{} (bytes->bytebuffers key-seq))]
     (try (.directMultiGet service domain-name key-set)
          (catch TException e
            (log/error e "Thrift exception on " error-suffix "trying next host")) ;; try next host
@@ -152,7 +152,7 @@
   (reify ElephantDB$Iface
     (directMultiGet [_ domain-name key-set]
       (thrift/assert-domain database domain-name)
-      (let [key-seq (byte-buffer-unwrap key-set)]
+      (let [key-seq (bytebuffers->bytes key-set)]
         (try (if-let [results-map (time! direct-get-response-time (direct-multiget database domain-name key-seq))]
                results-map
                (throw (thrift/domain-not-loaded-ex)))
@@ -166,7 +166,7 @@
                (multi-get get-fn
                           database
                           domain-name
-                          (byte-buffer-unwrap key-set)))))
+                          (bytebuffers->bytes key-set)))))
 
     (get [this domain-name key]
       (thrift/assert-domain database domain-name)

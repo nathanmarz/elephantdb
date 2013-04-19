@@ -19,7 +19,7 @@
 (def ^{:private true} byte-array?
   (test-array byte-array))
 
-(defn to-byte-buffer
+(defn bytes->bytebuffer
   "Wraps a collection of byte arrays in ByteBuffers."
   [coll]
   (map (fn [^bytes x]
@@ -65,7 +65,7 @@
   "Makes a `multi-get` call to ElephantDB. The result map is transformed
    into a map of key and value byte array pairs."
   [connection domain key-seq]
-  (let [key-set (into #{} (to-byte-buffer key-seq))]
+  (let [key-set (into #{} (bytes->bytebuffer key-seq))]
     (when-let [results-map (.multiGet connection domain key-set)]
       (parse-results-map results-map))))
 
