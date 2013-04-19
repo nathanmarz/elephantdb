@@ -11,13 +11,17 @@ arrays:
 (use 'elephantdb.client)
 
 ;; serialize strings to byte arrays
-(def keys (map #(.getBytes %) ["biggie" "tupac"]))
+(defn serialize-strings [coll]
+  (map #(.getBytes %) coll))
+
+;; deserialize results map back to strings
+(defn deserialize-strings [m]
+  (into {} (for [[k v] m]
+             [(String. k) (String. v)])))
 
 ;; deserialize the key/value pairs back to Strings
 (with-elephant "127.0.0.1" 3578 connection
-   (let [results-map (multi-get connection "rappers" keys)]
-       (into {} (for [[k v] results-map]
-         [(String. k) (String. v)]))))
+  (deserialize-strings (multi-get connection "rappers" (serialize-strings ["biggie" "tupac"])))
 
 ;; => {"biggie" "east-coast", "tupac" "west-coast"}
 ```
