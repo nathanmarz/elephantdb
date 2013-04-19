@@ -27,10 +27,10 @@
 
 ;; ## Metrics
 
-(def multi-get-response-time (timer ["elephantdb" "keyval" "multi-get-response-time"]))
-(def direct-get-response-time (timer ["elephantdb" "keyval" "direct-get-response-time"]))
+(def multi-get-response-time (timer ["elephantdb" "keyval" "multi_get_response_time"]))
+(def direct-get-response-time (timer ["elephantdb" "keyval" "direct_get_response_time"]))
 
-(def get-requests (meter ["elephantdb" "keyval" "get-requests"] "requests"))
+(def get-requests (meter ["elephantdb" "keyval" "get_requests"] "requests"))
 
 ;; ## Thrift Connection
 
