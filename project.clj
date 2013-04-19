@@ -8,6 +8,7 @@
                  :post "elephantdb-user@googlegroups.com"}
   :min-lein-version "2.0.0"
   :dependencies [[elephantdb/elephantdb-thrift "0.4.3-SNAPSHOT"]
+                 [elephantdb/elephantdb-client "0.4.3-SNAPSHOT"]
                  [elephantdb/elephantdb-core "0.4.3-SNAPSHOT"]
                  [elephantdb/elephantdb-bdb "0.4.3-SNAPSHOT"]
                  [elephantdb/elephantdb-leveldb "0.4.3-SNAPSHOT"]
@@ -16,6 +17,7 @@
                  [elephantdb/elephantdb-cascalog "0.4.3-SNAPSHOT"]]
   :plugins [[lein-sub "0.2.1"]]
   :sub ["elephantdb-thrift"
+        "elephantdb-client"
         "elephantdb-core"
         "elephantdb-bdb"
         "elephantdb-leveldb"
