@@ -69,6 +69,13 @@
     (when-let [results-map (.multiGet connection domain key-set)]
       (parse-results-map results-map))))
 
+(defn get-thrift
+  "A convience wrapper around get for use with a thrift-based key."
+  [connection domain key]
+  (let [s (TSerializer.)
+        key (.serialize s key)]
+    (get connection domain key)))
+
 (defn multi-get-thrift
   "A convience wrapper around multi-get for use with thrift-based keys."
   [connection domain key-seq]
