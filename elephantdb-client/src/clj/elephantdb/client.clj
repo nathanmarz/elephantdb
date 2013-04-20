@@ -79,9 +79,8 @@
 (defn multi-get-thrift
   "A convience wrapper around multi-get for use with thrift-based keys."
   [connection domain key-seq]
-  (let [key-seq (map (fn [key]
-                       (let [s (TSerializer.)]
-                         (.serialize s key))) key-seq)]
+  (let [s (TSerializer.)
+        key-seq (map #(.serialize s %) key-seq)]
     (multi-get connection domain key-seq)))
 
 (defn get-domains
