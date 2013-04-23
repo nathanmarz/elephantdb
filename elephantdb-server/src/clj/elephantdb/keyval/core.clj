@@ -237,7 +237,6 @@
 
   `local-config-path`: the path to `local-config.clj` on this machine."
   [global-config-hdfs-path local-config-path]
-  (log/configure-logging "log4j/log4j.properties")
   (let [local-config   (conf/read-local-config  local-config-path)
         global-config  (conf/read-global-config global-config-hdfs-path
                                                 local-config)
