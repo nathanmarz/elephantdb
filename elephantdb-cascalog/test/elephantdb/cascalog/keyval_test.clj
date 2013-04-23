@@ -138,4 +138,9 @@
       "One more iteration should work just fine."
       (reshard! tmp-a tmp-b 5)
       [fs tmp-b] => (spec-has {:num-shards 5})
+      (deserialize-str (keyval-tap tmp-b)) => (produces pairs)
+
+      "Resharding into the same path should work."
+      (reshard! tmp-b tmp-b 6)
+      [fs tmp-b] => (spec-has {:num-shards 6})
       (deserialize-str (keyval-tap tmp-b)) => (produces pairs))))

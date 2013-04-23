@@ -43,7 +43,7 @@
 (defn keyval-tap
   "Returns a tap that can be used to source and sink key-value pairs
   to ElephantDB."
-  [root-path & {:keys [] :as args}]
+  [root-path & {:as args}]
   (let [args (merge {:source-fields ["key" "value"]}
                     args
                     {:sink-fn elephant<-})]
@@ -59,5 +59,5 @@
   (let [fs (Utils/getFS source-dir (Configuration.))
         spec (read-domain-spec fs source-dir)
         new-spec (assoc spec :num-shards shard-count)]
-    (?- (keyval-tap target-dir :spec new-spec)
+    (?- (keyval-tap target-dir :spec new-spec :ignore-spec true)
         (keyval-tap source-dir))))
