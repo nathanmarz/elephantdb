@@ -9,7 +9,7 @@
                  [org.yaml/snakeyaml "1.9"]
                  [commons-io "1.4"]
                  [jackknife "0.1.2"]
-                 [hadoop-util "0.2.9"]
+                 [hadoop-util "0.3.0"]
                  [metrics-clojure "1.0.1"]
                  [elephantdb/elephantdb-thrift "0.4.3-SNAPSHOT"
                   :exclusions [org.slf4j/slf4j-api]]]
