@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb-server "0.4.3"
+(defproject elephantdb/elephantdb-server "0.4.4-SNAPSHOT"
   :min-lein-version "2.0.0"
   :source-paths ["src/clj"]
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
@@ -8,9 +8,9 @@
                  [org.slf4j/log4j-over-slf4j "1.7.4"]
                  [com.yammer.metrics/metrics-graphite "2.2.0"]
                  [com.yammer.metrics/metrics-ganglia "2.2.0"]
-                 [elephantdb/elephantdb-core "0.4.3"]
-                 [elephantdb/elephantdb-bdb "0.4.3"]
-                 [elephantdb/elephantdb-leveldb "0.4.3"]]
+                 [elephantdb/elephantdb-core "0.4.4-SNAPSHOT"]
+                 [elephantdb/elephantdb-bdb "0.4.4-SNAPSHOT"]
+                 [elephantdb/elephantdb-leveldb "0.4.4-SNAPSHOT"]]
   :profiles {:provided
              {:dependencies
               [[org.apache.hadoop/hadoop-core "0.20.2"]]}
