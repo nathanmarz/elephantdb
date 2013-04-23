@@ -45,7 +45,8 @@
 
 (defmethod mk-local-store DomainStore
   [local-path remote-vs]
-  (DomainStore. local-path (.getSpec remote-vs)))
+  ;; Ignore a local spec if it's different than the remote spec.
+  (DomainStore. local-path (.getSpec remote-vs) true))
 
 (defmethod mk-local-store DomainSpec
   [local-path spec]
