@@ -5,7 +5,7 @@
         [metrics.timers :only (timer time! time-fn!)]
         [metrics.meters :only (meter mark!)]
         [metrics.core :only (report-to-console)]
-        [elephantdb.common.graphite :only (report-to-graphite)])
+        elephantdb.common.metrics)
   (:require [jackknife.core :as u]
             [jackknife.logging :as log]
             [elephantdb.common.database :as db]
@@ -27,10 +27,10 @@
 
 ;; ## Metrics
 
-(def multi-get-response-time (timer ["elephantdb" "keyval" "multi-get-response-time"]))
-(def direct-get-response-time (timer ["elephantdb" "keyval" "direct-get-response-time"]))
+(def multi-get-response-time (timer ["elephantdb" "keyval" "multi_get_response_time"]))
+(def direct-get-response-time (timer ["elephantdb" "keyval" "direct_get_response_time"]))
 
-(def get-requests (meter ["elephantdb" "keyval" "get-requests"] "requests"))
+(def get-requests (meter ["elephantdb" "keyval" "get_requests"] "requests"))
 
 ;; ## Thrift Connection
 
@@ -52,13 +52,13 @@
 
 ;; ## Service Handler
 
-(defn byte-buffer-wrap
+(defn bytes->bytebuffers
   "Wraps a collection of byte arrays in ByteBuffers."
   [coll]
   (map (fn [^bytes x]
          (ByteBuffer/wrap x)) coll))
 
-(defn byte-buffer-unwrap
+(defn bytebuffers->bytes
   "Unwraps a collection of byte arrays from inside Byte Buffers."
   [coll]
   (map (fn [^ByteBuffer x]
@@ -71,7 +71,7 @@
   "Attempts a direct multi-get to the supplied service for each of the
   keys in the supplied `key-seq`."
   [^ElephantDB$Iface service domain-name error-suffix key-seq]
-  (let [key-set (into #{} (byte-buffer-wrap key-seq))]
+  (let [key-set (into #{} (bytes->bytebuffers key-seq))]
     (try (.directMultiGet service domain-name key-set)
          (catch TException e
            (log/error e "Thrift exception on " error-suffix "trying next host")) ;; try next host
@@ -152,7 +152,7 @@
   (reify ElephantDB$Iface
     (directMultiGet [_ domain-name key-set]
       (thrift/assert-domain database domain-name)
-      (let [key-seq (byte-buffer-unwrap key-set)]
+      (let [key-seq (bytebuffers->bytes key-set)]
         (try (if-let [results-map (time! direct-get-response-time (direct-multiget database domain-name key-seq))]
                results-map
                (throw (thrift/domain-not-loaded-ex)))
@@ -166,7 +166,7 @@
                (multi-get get-fn
                           database
                           domain-name
-                          (byte-buffer-unwrap key-set)))))
+                          (bytebuffers->bytes key-set)))))
 
     (get [this domain-name key]
       (thrift/assert-domain database domain-name)
@@ -237,7 +237,6 @@
 
   `local-config-path`: the path to `local-config.clj` on this machine."
   [global-config-hdfs-path local-config-path]
-  (log/configure-logging "log4j/log4j.properties")
   (let [local-config   (conf/read-local-config  local-config-path)
         global-config  (conf/read-global-config global-config-hdfs-path
                                                 local-config)
@@ -246,9 +245,12 @@
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
-    (when-let [graphite-conf (:graphite-conf local-config)]
+    (when-let [graphite-conf (:graphite-reporter local-config)]
       (log/info "Metrics graphite reporter started.")
       (report-to-graphite (:host graphite-conf) (:port graphite-conf)))
+    (when-let [ganglia-conf (:ganglia-reporter local-config)]
+      (log/info "Metrics ganglia reporter started.")
+      (report-to-ganglia (:host ganglia-conf) (:port ganglia-conf)))
     (when-let [metrics-reporting-interval-s (:metrics-reporting-interval-s local-config)]
       (log/info "Metrics console reporter started.")
       (report-to-console metrics-reporting-interval-s))

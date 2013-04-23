@@ -71,16 +71,6 @@ public class LevelDB implements Coordinator {
         }
 
         public void close() throws IOException {
-            if(!readOnly) {
-                LOG.info("Compacting leveldb");
-                String stats = db.getProperty("leveldb.stats");
-                LOG.info(stats);
-                ((JniDB) db).compactRange(null,null);
-                LOG.info("Done compacting leveldb");
-                stats = db.getProperty("leveldb.stats");
-                LOG.info(stats);
-            }
-
             db.close();
         }
 

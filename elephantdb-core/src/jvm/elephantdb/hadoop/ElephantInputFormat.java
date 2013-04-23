@@ -11,6 +11,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapred.*;
+import org.apache.log4j.Logger;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ElephantInputFormat implements InputFormat<NullWritable, ElephantRecordWritable> {
+    public static Logger LOG = Logger.getLogger(LocalElephantManager.class);
     public static final String ARGS_CONF = "elephant.input.args";
 
     public static class Args implements Serializable {
@@ -55,6 +57,7 @@ public class ElephantInputFormat implements InputFormat<NullWritable, ElephantRe
 
         public boolean next(NullWritable k, ElephantRecordWritable v) throws IOException {
             if (!hasShard) {
+                LOG.info("Downloading remote shard at " + split.shardPath);
                 String localpath = elephantManager.downloadRemoteShard("shard", split.shardPath);
 
                 Map<String, Object> opts = split.spec.getPersistenceOptions();
@@ -116,6 +119,8 @@ public class ElephantInputFormat implements InputFormat<NullWritable, ElephantRe
      * shard.
      */
     public static class ElephantInputSplit implements InputSplit {
+        public static Logger LOG = Logger.getLogger(ElephantInputSplit.class);
+
         private String shardPath;
         private DomainSpec spec;
         private JobConf conf;
