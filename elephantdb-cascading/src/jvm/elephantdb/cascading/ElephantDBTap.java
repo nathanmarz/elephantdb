@@ -50,10 +50,10 @@ public class ElephantDBTap extends Hfs {
     String newVersionPath;
     TapMode mode;
 
-    public ElephantDBTap(String dir, DomainSpec spec, Args args, TapMode mode) throws IOException {
+    public ElephantDBTap(String dir, DomainSpec spec, Args args, TapMode mode, boolean ignoreSpec) throws IOException {
         domainDir = dir;
         this.args = args;
-        this.spec = new DomainStore(dir, spec).getSpec();
+        this.spec = new DomainStore(dir, spec, ignoreSpec).getSpec();
         this.mode = mode;
 
         setStringPath(domainDir);
