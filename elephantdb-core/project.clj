@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb-core "0.4.3-SNAPSHOT"
+(defproject elephantdb/elephantdb-core "0.4.3"
   :min-lein-version "2.0.0"
   :repositories {"conjars.org" "http://conjars.org/repo"}
   :java-source-paths ["src/jvm"]
@@ -11,7 +11,7 @@
                  [jackknife "0.1.2"]
                  [hadoop-util "0.3.0"]
                  [metrics-clojure "1.0.1"]
-                 [elephantdb/elephantdb-thrift "0.4.3-SNAPSHOT"
+                 [elephantdb/elephantdb-thrift "0.4.3"
                   :exclusions [org.slf4j/slf4j-api]]]
   :profiles {:provided
              {:dependencies [[org.apache.hadoop/hadoop-core "0.20.2"]]}
