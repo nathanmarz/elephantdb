@@ -2,7 +2,7 @@
   (:require [cascalog.workflow :as w])
   (:import [elephantdb DomainSpec DomainSpec$Args]
            [elephantdb.cascading ElephantDBTap$Args]
-           [java.util ArrayList]))
+           [java.util ArrayList HashMap]))
 
 (defn convert-java-domain-spec [^DomainSpec spec]
   {:coordinator  (.getCoordinator spec)
@@ -15,7 +15,7 @@
   {:pre [(and coordinator shard-scheme num-shards)]}
   (when persistence-options
     (let [args (DomainSpec$Args.)]
-      (set! (.persistenceOptions args) persistence-options)
+      (set! (.persistenceOptions args) (HashMap. persistence-options))
       (DomainSpec. coordinator shard-scheme num-shards args))))
 
 (defn read-domain-spec
