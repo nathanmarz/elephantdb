@@ -3,9 +3,8 @@
   :java-source-paths ["src/jvm"]
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :repositories {"oracle" "http://download.oracle.com/maven"}
-  :dependencies [[elephantdb/elephantdb-core "0.4.3"]
-                 [com.sleepycat/je "5.0.58"]
-                 [org.xerial.snappy/snappy-java "1.1.0-M3"]]
+  :dependencies [[elephantdb/elephantdb-core "0.4.4-SNAPSHOT"]
+                 [com.sleepycat/je "5.0.58"]]
   :profiles {:dev
              {:dependencies
               [[midje "1.5.0"]]
