@@ -7,7 +7,7 @@
         [midje sweet cascalog])
   (:require [hadoop-util.test :as test]
             [cascalog.ops :as c])
-  (:import [elephantdb.persistence SnappyJavaBerkDB]
+  (:import [elephantdb.persistence JavaBerkDB]
            [elephantdb.partition HashModScheme]))
 
 ;; ## Byte Array Testing
@@ -65,7 +65,7 @@
 
 (defn mk-spec [num-shards]
   {:num-shards  num-shards
-   :coordinator (SnappyJavaBerkDB.)
+   :coordinator (JavaBerkDB.)
    :shard-scheme (HashModScheme.)
    :persistence-options {"dummy" "value"}})
 
