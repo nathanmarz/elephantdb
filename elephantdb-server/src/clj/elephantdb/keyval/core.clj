@@ -13,6 +13,7 @@
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom]
+            [elephantdb.client :as c]
             [elephantdb.common.thread-pool :as t])
   (:import [java.nio ByteBuffer]
            [org.apache.thrift.protocol TBinaryProtocol]
@@ -37,21 +38,11 @@
 
 ;; ## Thrift Connection
 
-(defn kv-client [transport]
-  (ElephantDB$Client. (TBinaryProtocol. transport)))
-
 (defn kv-processor
   "Returns a key-value thrift processor suitable for passing into
   launch-server!"
   [service-handler]
   (ElephantDB$Processor. service-handler))
-
-(defmacro with-kv-connection
-  [host port client-sym & body]
-  `(with-open [^TTransport conn# (doto (thrift/thrift-transport ~host ~port)
-                                   (.open))]
-     (let [^ElephantDB$Client ~client-sym (kv-client conn#)]
-       ~@body)))
 
 ;; ## Service Handler
 
@@ -103,7 +94,7 @@
                                                    domain-name
                                                    suffix
                                                    key-seq)
-                             (with-kv-connection hostname port remote-service
+                             (c/with-elephant hostname port remote-service
                                (try-direct-multi-get remote-service
                                                      domain-name
                                                      suffix
@@ -133,10 +124,10 @@
             promises (map
                       (fn [[hosts indexed-keys]]
                         (let [p (promise)]
-                          (t/with-cached-executor
-                            (doall (map #(t/future+
-                                          (when-not (realized? p)
-                                            (deliver p (get-fn % indexed-keys)))) hosts)))
+                          (u/do-pmap
+                           (fn [host]
+                             (when-not (realized? p)
+                               (deliver p (get-fn host indexed-keys)))) hosts)
                           p)) host-map)
             metrics (db/metrics-get database domain-name)]
         (time! (:multi-get-response-time metrics) (into {} (map deref promises)))))))

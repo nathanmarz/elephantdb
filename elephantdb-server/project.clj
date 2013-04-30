@@ -9,6 +9,7 @@
                  [com.yammer.metrics/metrics-graphite "2.2.0"]
                  [com.yammer.metrics/metrics-ganglia "2.2.0"]
                  [elephantdb/elephantdb-core "0.4.4-SNAPSHOT"]
+                 [elephantdb/elephantdb-client "0.4.4-SNAPSHOT"]
                  [elephantdb/elephantdb-bdb "0.4.4-SNAPSHOT"]
                  [elephantdb/elephantdb-leveldb "0.4.4-SNAPSHOT"]]
   :profiles {:provided

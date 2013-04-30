@@ -383,11 +383,10 @@
   agent with the optional `:throttle` keyword argument."
   [domain version]
   (let [local-store  (.localStore domain)
-        version-path (.createVersion local-store version)
-        transfer-pool (t/with-cached-executor
-                        (doall (map #(t/future+ (transfer-shard! domain version %)) (shard-set domain))))]
+        version-path (.createVersion local-store version)]
     (try
-      (doall (map deref transfer-pool))
+      (u/do-pmap (partial transfer-shard! domain version)
+                 (shard-set domain))
       (.succeedVersion local-store version-path)
       (catch Throwable e
         (.failVersion local-store version-path)
@@ -424,7 +423,9 @@
           (load-version! version))
         (catch Throwable e
           (log/error (format "Error updating version %s: %s" version e))
+          (log/debug (format "Current status: %s" (status/get-status domain)))
           (when-not (status/ready? domain)
+            (log/debug "Resetting domain status to ready")
             (status/to-ready domain)))
         (finally
           (cleanup-domain! domain))))))

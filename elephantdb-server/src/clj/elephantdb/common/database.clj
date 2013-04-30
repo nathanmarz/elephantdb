@@ -9,6 +9,17 @@
   (:import [elephantdb.persistence Shutdownable]
            [java.io File]))
 
+;; ## Domain metrics
+
+(defn build-meters [domain-name]
+  (let [domain-name (clojure.string/replace domain-name #"-" "_")
+        hostname (clojure.string/replace (.getCanonicalHostName (java.net.InetAddress/getLocalHost)) #"\." "_")]
+    {:direct-get-response-time (timer [(str hostname ".elephantdb.domain") domain-name "direct_get_response_time"])
+     :multi-get-response-time (timer [(str hostname ".elephantdb.domain") domain-name "multi_get_response_time"])}))
+
+(defn metrics-get [{:keys [metrics]} domain-name]
+  (get metrics domain-name))
+
 ;; ## Database Manipulation Functions
 
 (defn- domain-path
@@ -113,15 +124,6 @@
     (log/info "ElephantDB received shutdown notice...")
     (doseq [^Shutdownable domain (vals domains)]
       (.shutdown domain))))
-
-(defn build-meters [domain-name]
-  (let [domain-name (clojure.string/replace domain-name #"-" "_")
-        hostname (clojure.string/replace (.getCanonicalHostName (java.net.InetAddress/getLocalHost)) #"\." "_")]
-    {:direct-get-response-time (timer [(str hostname ".elephantdb.domain") domain-name "direct_get_response_time"])
-     :multi-get-response-time (timer [(str hostname ".elephantdb.domain") domain-name "multi_get_response_time"])}))
-
-(defn metrics-get [{:keys [metrics]} domain-name]
-  (get metrics domain-name))
 
 (defn build-database
   "Returns a database linking to a bunch of read-only domains."
