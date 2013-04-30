@@ -12,7 +12,8 @@
             [elephantdb.common.status :as status]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.config :as conf]
-            [elephantdb.keyval.domain :as dom])
+            [elephantdb.keyval.domain :as dom]
+            [elephantdb.common.thread-pool :as t])
   (:import [java.nio ByteBuffer]
            [org.apache.thrift.protocol TBinaryProtocol]
            [org.apache.thrift.transport TTransport]
@@ -129,14 +130,14 @@
     (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
       (throw (thrift/hosts-down-ex (:all-hosts bad-key)))
       (let [host-map (group-by :hosts indexed-keys)
-            promises (u/do-pmap
+            promises (map
                       (fn [[hosts indexed-keys]]
                         (let [p (promise)]
-                          (u/do-pmap (fn [host]
-                                       (when-not (realized? p)
-                                         (deliver p (get-fn host indexed-keys)))) hosts)
-                          p))
-                      host-map)
+                          (t/with-cached-executor
+                            (doall (map #(t/future+
+                                          (when-not (realized? p)
+                                            (deliver p (get-fn % indexed-keys)))) hosts)))
+                          p)) host-map)
             metrics (db/metrics-get database domain-name)]
         (time! (:multi-get-response-time metrics) (into {} (map deref promises)))))))
 
