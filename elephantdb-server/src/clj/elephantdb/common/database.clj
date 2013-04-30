@@ -115,9 +115,10 @@
       (.shutdown domain))))
 
 (defn build-meters [domain-name]
-  (let [domain-name (clojure.string/replace domain-name #"-" "_")]
-    {:direct-get-response-time (timer ["elephantdb.domain" domain-name "direct_get_response_time"])
-     :multi-get-response-time (timer ["elephantdb.domain" domain-name "multi_get_response_time"])}))
+  (let [domain-name (clojure.string/replace domain-name #"-" "_")
+        hostname (clojure.string/replace (.getCanonicalHostName (java.net.InetAddress/getLocalHost)) #"\." "_")]
+    {:direct-get-response-time (timer [(str hostname ".elephantdb.domain") domain-name "direct_get_response_time"])
+     :multi-get-response-time (timer [(str hostname ".elephantdb.domain") domain-name "multi_get_response_time"])}))
 
 (defn metrics-get [{:keys [metrics]} domain-name]
   (get metrics domain-name))

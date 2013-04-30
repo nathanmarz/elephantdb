@@ -387,7 +387,7 @@
         transfer-pool (t/with-cached-executor
                         (doall (map #(t/future+ (transfer-shard! domain version %)) (shard-set domain))))]
     (try
-      (doall (map #(deref %) transfer-pool))
+      (doall (map deref transfer-pool))
       (.succeedVersion local-store version-path)
       (catch Throwable e
         (.failVersion local-store version-path)

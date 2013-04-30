@@ -27,10 +27,12 @@
 
 ;; ## Metrics
 
-(def multi-get-response-time (timer ["elephantdb" "keyval" "multi_get_response_time"]))
-(def direct-get-response-time (timer ["elephantdb" "keyval" "direct_get_response_time"]))
+(def hostname (clojure.string/replace (.getCanonicalHostName (java.net.InetAddress/getLocalHost)) #"\." "_"))
 
-(def get-requests (meter ["elephantdb" "keyval" "get_requests"] "requests"))
+(def multi-get-response-time (timer [(str hostname ".elephantdb") "keyval" "multi_get_response_time"]))
+(def direct-get-response-time (timer [(str hostname ".elephantdb") "keyval" "direct_get_response_time"]))
+
+(def get-requests (meter [(str hostname ".elephantdb") "keyval" "get_requests"] "requests"))
 
 ;; ## Thrift Connection
 
