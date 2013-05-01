@@ -389,7 +389,6 @@
                  (shard-set domain))
       (.succeedVersion local-store version-path)
       (catch Throwable e
-        (.failVersion local-store version-path)
         (log/error (format "Error transferring version %s: %s" version-path e))
         (throw e)))))
 
@@ -423,9 +422,12 @@
           (load-version! version))
         (catch Throwable e
           (log/error (format "Error updating version %s: %s" version e))
-          (log/debug (format "Current status: %s" (status/get-status domain)))
+          (let [local-store (.localStore domain)
+                version-path (.versionPath local-store version)]
+            (log/error (format "Failing version %s" version-path))
+            (.failVersion local-store version-path))
           (when-not (status/ready? domain)
-            (log/debug "Resetting domain status to ready")
+            (log/info "Resetting domain status to :ready")
             (status/to-ready domain)))
         (finally
           (cleanup-domain! domain))))))

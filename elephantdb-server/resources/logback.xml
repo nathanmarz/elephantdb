@@ -7,7 +7,7 @@
     </encoder>
   </appender>
   
-  <logger name="elephantdb" level="debug" />
+  <!-- <logger name="jackknife.logging" level="debug" /> -->
 
   <root level="info">
     <appender-ref ref="STDOUT" />
