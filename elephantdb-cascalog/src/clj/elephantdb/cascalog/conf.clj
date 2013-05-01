@@ -13,10 +13,11 @@
 (defn convert-clj-domain-spec
   [{:keys [coordinator shard-scheme num-shards persistence-options]}]
   {:pre [(and coordinator shard-scheme num-shards)]}
-  (when persistence-options
+  (if persistence-options
     (let [args (DomainSpec$Args.)]
       (set! (.persistenceOptions args) (HashMap. persistence-options))
-      (DomainSpec. coordinator shard-scheme num-shards args))))
+      (DomainSpec. coordinator shard-scheme num-shards args))
+    (DomainSpec. coordinator shard-scheme num-shards)))
 
 (defn read-domain-spec
   "A domain spec is stored with shards in the VersionedStore. Look to
