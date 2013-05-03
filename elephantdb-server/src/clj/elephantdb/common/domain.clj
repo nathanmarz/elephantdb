@@ -367,10 +367,10 @@
     (if (.exists remote-fs (h/path remote-path))
       (do
         (try
-          (log/info (format "Copying %s to %s." remote-path local-path))
+          (log/info (format "Copying %s to %s" remote-path local-path))
           (transfer/rcopy remote-fs remote-path local-path
                           :throttle throttle)
-          (log/info (format "Copied %s to %s." remote-path local-path))
+          (log/info (format "Copied %s to %s" remote-path local-path))
           (catch Throwable e
             (log/error (format "Error transferring shard %s to %s: %s" remote-path local-path e))
             (throw e))))
@@ -383,10 +383,15 @@
   agent with the optional `:throttle` keyword argument."
   [domain version]
   (let [local-store  (.localStore domain)
-        version-path (.createVersion local-store version)]
+        version-path (.createVersion local-store version)
+        shards (shard-set domain)]
+    (when (nil? shards)
+      (log/warning
+       (format
+        "shard-set returned nil; no shards to download. Verify that %s is included in the :hosts key of the global configuration map"
+        (.hostname domain))))
     (try
-      (u/do-pmap (partial transfer-shard! domain version)
-                 (shard-set domain))
+      (u/do-pmap (partial transfer-shard! domain version) shards)
       (.succeedVersion local-store version-path)
       (catch Throwable e
         (log/error (format "Error transferring version %s: %s" version-path e))
