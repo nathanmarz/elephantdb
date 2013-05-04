@@ -17,19 +17,16 @@
   (:gen-class))
 
 (def VERSION "0.4.4-SNAPSHOT")
-
 (def config (configurer (resources "ui_config.clj")))
 
-(def hosts (config :hosts))
-
 (defn nodes [host]
-  (c/with-elephant host 3578 c
+  (c/with-elephant host (config :port) c
     (cond (c/fully-loaded? c) [:span {:class "label label-success"} "Ready"]
           (c/updating? c) [:span {:class "label label-info"} "Updating"]
           :else [:span {:class "label label-error"} "Error"])))
 
 (defn domains [host]
-  (c/with-elephant host 3578 c
+  (c/with-elephant host (config :port) c
     (when-let [statuses (c/get-status c)]
       (for [[domain status] (.get_domain_statuses statuses)]
         [(link-to (str "/node/" host "/domain/" domain) domain) (domain-status->elem status)]))))
@@ -49,14 +46,14 @@
      body]]))
 
 (defn index []
-  (template "An ElephantDB Never Forgets"
+  (template "ElephantDB"
             [:ul.breadcrumb
              [:li.active "Cluster"]]
             [:div
              (table
               :styles [:condensed]
               :head ["Hostname" "Status"]
-              :body (for [h hosts]
+              :body (for [h (config :hosts)]
                       [(link-to (str "/node/" h) h) (nodes h)]))
              ]))
 
@@ -71,10 +68,28 @@
               :head ["Domain" "Status"]
               :body (domains id))]))
 
+;; TODO: Add thrift calls to fill this table 
+(defn domain [id domain]
+  (template (str "ElephantDB | " id " | " domain)
+            [:ul.breadcrumb
+             [:li (link-to "/" "Cluster") [:span.divider "/"]]
+             [:li (link-to (str "/node/" id) id) [:span.divider "/"]]
+             [:li.active domain]]
+            [:h2 (str domain "@" id)]
+            [:div
+             (table :styles [:condensed]
+                    :head ["Latest Remote Version"
+                           "Latest Local Version"
+                           "Shard Count"
+                           "Coordinator"
+                           "Persistence"
+                           "Persistence Options"] 
+                    :body [[]])]))
+
 (defroutes app-routes
   (GET "/" [] (index))
   (GET "/node/:id" [id] (node id))
-  (GET "/node/:id/domain/:domain" [id domain] (str "Detail for " domain " on " id))
+  (GET "/node/:id/domain/:d" [id d] (domain id d))
   (route/resources "/")
   (route/not-found "Not Found"))
 
@@ -85,5 +100,4 @@
   (run-jetty app {:port port :join? false}))
 
 (defn -main []
-  (prn (config :oh-hai))
-  (start-server (config :listen-port)))
+  (start-server (config :ui-port)))

@@ -513,13 +513,13 @@ public class InvalidConfigurationException extends Exception implements org.apac
           case 1: // MISMATCHED_DOMAINS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list28 = iprot.readListBegin();
-                struct.mismatched_domains = new ArrayList<String>(_list28.size);
-                for (int _i29 = 0; _i29 < _list28.size; ++_i29)
+                org.apache.thrift.protocol.TList _list18 = iprot.readListBegin();
+                struct.mismatched_domains = new ArrayList<String>(_list18.size);
+                for (int _i19 = 0; _i19 < _list18.size; ++_i19)
                 {
-                  String _elem30; // required
-                  _elem30 = iprot.readString();
-                  struct.mismatched_domains.add(_elem30);
+                  String _elem20; // required
+                  _elem20 = iprot.readString();
+                  struct.mismatched_domains.add(_elem20);
                 }
                 iprot.readListEnd();
               }
@@ -561,9 +561,9 @@ public class InvalidConfigurationException extends Exception implements org.apac
         oprot.writeFieldBegin(MISMATCHED_DOMAINS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, struct.mismatched_domains.size()));
-          for (String _iter31 : struct.mismatched_domains)
+          for (String _iter21 : struct.mismatched_domains)
           {
-            oprot.writeString(_iter31);
+            oprot.writeString(_iter21);
           }
           oprot.writeListEnd();
         }
@@ -594,9 +594,9 @@ public class InvalidConfigurationException extends Exception implements org.apac
       TTupleProtocol oprot = (TTupleProtocol) prot;
       {
         oprot.writeI32(struct.mismatched_domains.size());
-        for (String _iter32 : struct.mismatched_domains)
+        for (String _iter22 : struct.mismatched_domains)
         {
-          oprot.writeString(_iter32);
+          oprot.writeString(_iter22);
         }
       }
       oprot.writeBool(struct.port_changed);
@@ -607,13 +607,13 @@ public class InvalidConfigurationException extends Exception implements org.apac
     public void read(org.apache.thrift.protocol.TProtocol prot, InvalidConfigurationException struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
       {
-        org.apache.thrift.protocol.TList _list33 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-        struct.mismatched_domains = new ArrayList<String>(_list33.size);
-        for (int _i34 = 0; _i34 < _list33.size; ++_i34)
+        org.apache.thrift.protocol.TList _list23 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+        struct.mismatched_domains = new ArrayList<String>(_list23.size);
+        for (int _i24 = 0; _i24 < _list23.size; ++_i24)
         {
-          String _elem35; // required
-          _elem35 = iprot.readString();
-          struct.mismatched_domains.add(_elem35);
+          String _elem25; // required
+          _elem25 = iprot.readString();
+          struct.mismatched_domains.add(_elem25);
         }
       }
       struct.set_mismatched_domains_isSet(true);

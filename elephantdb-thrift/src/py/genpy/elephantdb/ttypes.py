@@ -455,181 +455,6 @@ class Status:
   def __ne__(self, other):
     return not (self == other)
 
-class DomainSpec:
-  """
-  Attributes:
-   - num_shards
-   - persistence
-   - coordinator
-   - persistence_opts
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.I32, 'num_shards', None, None, ), # 1
-    (2, TType.STRING, 'persistence', None, None, ), # 2
-    (3, TType.STRING, 'coordinator', None, None, ), # 3
-    (4, TType.STRING, 'persistence_opts', None, None, ), # 4
-  )
-
-  def __init__(self, num_shards=None, persistence=None, coordinator=None, persistence_opts=None,):
-    self.num_shards = num_shards
-    self.persistence = persistence
-    self.coordinator = coordinator
-    self.persistence_opts = persistence_opts
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.I32:
-          self.num_shards = iprot.readI32();
-        else:
-          iprot.skip(ftype)
-      elif fid == 2:
-        if ftype == TType.STRING:
-          self.persistence = iprot.readString().decode('utf-8')
-        else:
-          iprot.skip(ftype)
-      elif fid == 3:
-        if ftype == TType.STRING:
-          self.coordinator = iprot.readString().decode('utf-8')
-        else:
-          iprot.skip(ftype)
-      elif fid == 4:
-        if ftype == TType.STRING:
-          self.persistence_opts = iprot.readString().decode('utf-8')
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('DomainSpec')
-    if self.num_shards is not None:
-      oprot.writeFieldBegin('num_shards', TType.I32, 1)
-      oprot.writeI32(self.num_shards)
-      oprot.writeFieldEnd()
-    if self.persistence is not None:
-      oprot.writeFieldBegin('persistence', TType.STRING, 2)
-      oprot.writeString(self.persistence.encode('utf-8'))
-      oprot.writeFieldEnd()
-    if self.coordinator is not None:
-      oprot.writeFieldBegin('coordinator', TType.STRING, 3)
-      oprot.writeString(self.coordinator.encode('utf-8'))
-      oprot.writeFieldEnd()
-    if self.persistence_opts is not None:
-      oprot.writeFieldBegin('persistence_opts', TType.STRING, 4)
-      oprot.writeString(self.persistence_opts.encode('utf-8'))
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.num_shards is None:
-      raise TProtocol.TProtocolException(message='Required field num_shards is unset!')
-    if self.persistence is None:
-      raise TProtocol.TProtocolException(message='Required field persistence is unset!')
-    if self.coordinator is None:
-      raise TProtocol.TProtocolException(message='Required field coordinator is unset!')
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class Specs:
-  """
-  Attributes:
-   - domain_specs
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.MAP, 'domain_specs', (TType.STRING,None,TType.STRUCT,(DomainSpec, DomainSpec.thrift_spec)), None, ), # 1
-  )
-
-  def __init__(self, domain_specs=None,):
-    self.domain_specs = domain_specs
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.MAP:
-          self.domain_specs = {}
-          (_ktype10, _vtype11, _size9 ) = iprot.readMapBegin() 
-          for _i13 in xrange(_size9):
-            _key14 = iprot.readString().decode('utf-8')
-            _val15 = DomainSpec()
-            _val15.read(iprot)
-            self.domain_specs[_key14] = _val15
-          iprot.readMapEnd()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('Specs')
-    if self.domain_specs is not None:
-      oprot.writeFieldBegin('domain_specs', TType.MAP, 1)
-      oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.domain_specs))
-      for kiter16,viter17 in self.domain_specs.items():
-        oprot.writeString(kiter16.encode('utf-8'))
-        viter17.write(oprot)
-      oprot.writeMapEnd()
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.domain_specs is None:
-      raise TProtocol.TProtocolException(message='Required field domain_specs is unset!')
-    return
-
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
 class DomainNotFoundException(TException):
   """
   Attributes:
@@ -786,10 +611,10 @@ class HostsDownException(TException):
       if fid == 1:
         if ftype == TType.LIST:
           self.hosts = []
-          (_etype21, _size18) = iprot.readListBegin()
-          for _i22 in xrange(_size18):
-            _elem23 = iprot.readString().decode('utf-8')
-            self.hosts.append(_elem23)
+          (_etype12, _size9) = iprot.readListBegin()
+          for _i13 in xrange(_size9):
+            _elem14 = iprot.readString().decode('utf-8')
+            self.hosts.append(_elem14)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -806,8 +631,8 @@ class HostsDownException(TException):
     if self.hosts is not None:
       oprot.writeFieldBegin('hosts', TType.LIST, 1)
       oprot.writeListBegin(TType.STRING, len(self.hosts))
-      for iter24 in self.hosts:
-        oprot.writeString(iter24.encode('utf-8'))
+      for iter15 in self.hosts:
+        oprot.writeString(iter15.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -865,10 +690,10 @@ class InvalidConfigurationException(TException):
       if fid == 1:
         if ftype == TType.LIST:
           self.mismatched_domains = []
-          (_etype28, _size25) = iprot.readListBegin()
-          for _i29 in xrange(_size25):
-            _elem30 = iprot.readString().decode('utf-8')
-            self.mismatched_domains.append(_elem30)
+          (_etype19, _size16) = iprot.readListBegin()
+          for _i20 in xrange(_size16):
+            _elem21 = iprot.readString().decode('utf-8')
+            self.mismatched_domains.append(_elem21)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -895,8 +720,8 @@ class InvalidConfigurationException(TException):
     if self.mismatched_domains is not None:
       oprot.writeFieldBegin('mismatched_domains', TType.LIST, 1)
       oprot.writeListBegin(TType.STRING, len(self.mismatched_domains))
-      for iter31 in self.mismatched_domains:
-        oprot.writeString(iter31.encode('utf-8'))
+      for iter22 in self.mismatched_domains:
+        oprot.writeString(iter22.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.port_changed is not None:
