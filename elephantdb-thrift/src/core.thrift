@@ -34,6 +34,17 @@ struct Status {
   1: required map<string, DomainStatus> domain_statuses;
 }
 
+struct DomainSpec {
+  1: required i32 num_shards;
+  2: required string persistence;
+  3: required string coordinator;
+  4: optional string persistence_opts;
+}
+
+struct Specs {
+  1: required map<string, DomainSpec> domain_specs;
+}
+ 
 // Exceptions
 
 exception DomainNotFoundException {
@@ -67,4 +78,6 @@ service ElephantDBShared {
   bool update(1: string domain); // is the supplied domain updating?
   bool updateAll() throws (1: InvalidConfigurationException ice);
   i64 getCount(1: string domain);
+  // DomainSpec getDomainSpec(1: string domain);
+  // Specs getSpecs();
 }

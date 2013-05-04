@@ -589,10 +589,10 @@ class getDomains_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype26, _size23) = iprot.readListBegin()
-          for _i27 in xrange(_size23):
-            _elem28 = iprot.readString().decode('utf-8')
-            self.success.append(_elem28)
+          (_etype35, _size32) = iprot.readListBegin()
+          for _i36 in xrange(_size32):
+            _elem37 = iprot.readString().decode('utf-8')
+            self.success.append(_elem37)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -609,8 +609,8 @@ class getDomains_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter29 in self.success:
-        oprot.writeString(iter29.encode('utf-8'))
+      for iter38 in self.success:
+        oprot.writeString(iter38.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
