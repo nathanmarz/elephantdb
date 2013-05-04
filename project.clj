@@ -14,7 +14,8 @@
                  [elephantdb/elephantdb-leveldb "0.4.4-SNAPSHOT"]
                  [elephantdb/elephantdb-server "0.4.4-SNAPSHOT"]
                  [elephantdb/elephantdb-cascading "0.4.4-SNAPSHOT"]
-                 [elephantdb/elephantdb-cascalog "0.4.4-SNAPSHOT"]]
+                 [elephantdb/elephantdb-cascalog "0.4.4-SNAPSHOT"]
+                 [elephantdb/elephantdb-ui "0.4.4-SNAPSHOT"]]
   :plugins [[lein-sub "0.2.1"]]
   :sub ["elephantdb-thrift"
         "elephantdb-client"
@@ -23,6 +24,7 @@
         "elephantdb-leveldb"
         "elephantdb-server"
         "elephantdb-cascading"
-        "elephantdb-cascalog"]
+        "elephantdb-cascalog"
+        "elephantdb-ui"]
   :profiles {:dev {:dependencies [[midje "1.5.0"]]
                    :plugins [[lein-midje "3.0.0"]]}})

@@ -11,7 +11,6 @@
                  [ring/ring-jetty-adapter "1.1.8"]]
   :plugins [[lein-ring "0.8.3"]]
   :source-paths ["src/clj"]
-  :resource-paths ["etc" "resources"]
   :main elephantdb.ui.handler
   :ring {:handler elephantdb.ui.handler/app}
   :profiles
