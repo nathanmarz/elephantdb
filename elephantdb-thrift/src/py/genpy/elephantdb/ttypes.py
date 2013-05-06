@@ -455,6 +455,260 @@ class Status:
   def __ne__(self, other):
     return not (self == other)
 
+class DomainSpec:
+  """
+  Attributes:
+   - num_shards
+   - coordinator
+   - shard_scheme
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.I32, 'num_shards', None, None, ), # 1
+    (2, TType.STRING, 'coordinator', None, None, ), # 2
+    (3, TType.STRING, 'shard_scheme', None, None, ), # 3
+  )
+
+  def __init__(self, num_shards=None, coordinator=None, shard_scheme=None,):
+    self.num_shards = num_shards
+    self.coordinator = coordinator
+    self.shard_scheme = shard_scheme
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.I32:
+          self.num_shards = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.coordinator = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.shard_scheme = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('DomainSpec')
+    if self.num_shards is not None:
+      oprot.writeFieldBegin('num_shards', TType.I32, 1)
+      oprot.writeI32(self.num_shards)
+      oprot.writeFieldEnd()
+    if self.coordinator is not None:
+      oprot.writeFieldBegin('coordinator', TType.STRING, 2)
+      oprot.writeString(self.coordinator.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.shard_scheme is not None:
+      oprot.writeFieldBegin('shard_scheme', TType.STRING, 3)
+      oprot.writeString(self.shard_scheme.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.num_shards is None:
+      raise TProtocol.TProtocolException(message='Required field num_shards is unset!')
+    if self.coordinator is None:
+      raise TProtocol.TProtocolException(message='Required field coordinator is unset!')
+    if self.shard_scheme is None:
+      raise TProtocol.TProtocolException(message='Required field shard_scheme is unset!')
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class DomainMetaData:
+  """
+  Attributes:
+   - remote_version
+   - local_version
+   - domain_spec
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.I64, 'remote_version', None, None, ), # 1
+    (2, TType.I64, 'local_version', None, None, ), # 2
+    (3, TType.STRUCT, 'domain_spec', (DomainSpec, DomainSpec.thrift_spec), None, ), # 3
+  )
+
+  def __init__(self, remote_version=None, local_version=None, domain_spec=None,):
+    self.remote_version = remote_version
+    self.local_version = local_version
+    self.domain_spec = domain_spec
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.I64:
+          self.remote_version = iprot.readI64();
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.I64:
+          self.local_version = iprot.readI64();
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.domain_spec = DomainSpec()
+          self.domain_spec.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('DomainMetaData')
+    if self.remote_version is not None:
+      oprot.writeFieldBegin('remote_version', TType.I64, 1)
+      oprot.writeI64(self.remote_version)
+      oprot.writeFieldEnd()
+    if self.local_version is not None:
+      oprot.writeFieldBegin('local_version', TType.I64, 2)
+      oprot.writeI64(self.local_version)
+      oprot.writeFieldEnd()
+    if self.domain_spec is not None:
+      oprot.writeFieldBegin('domain_spec', TType.STRUCT, 3)
+      self.domain_spec.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.remote_version is None:
+      raise TProtocol.TProtocolException(message='Required field remote_version is unset!')
+    if self.local_version is None:
+      raise TProtocol.TProtocolException(message='Required field local_version is unset!')
+    if self.domain_spec is None:
+      raise TProtocol.TProtocolException(message='Required field domain_spec is unset!')
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class MetaData:
+  """
+  Attributes:
+   - domain_metadatas
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.MAP, 'domain_metadatas', (TType.STRING,None,TType.STRUCT,(DomainMetaData, DomainMetaData.thrift_spec)), None, ), # 1
+  )
+
+  def __init__(self, domain_metadatas=None,):
+    self.domain_metadatas = domain_metadatas
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.MAP:
+          self.domain_metadatas = {}
+          (_ktype10, _vtype11, _size9 ) = iprot.readMapBegin() 
+          for _i13 in xrange(_size9):
+            _key14 = iprot.readString().decode('utf-8')
+            _val15 = DomainMetaData()
+            _val15.read(iprot)
+            self.domain_metadatas[_key14] = _val15
+          iprot.readMapEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('MetaData')
+    if self.domain_metadatas is not None:
+      oprot.writeFieldBegin('domain_metadatas', TType.MAP, 1)
+      oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.domain_metadatas))
+      for kiter16,viter17 in self.domain_metadatas.items():
+        oprot.writeString(kiter16.encode('utf-8'))
+        viter17.write(oprot)
+      oprot.writeMapEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.domain_metadatas is None:
+      raise TProtocol.TProtocolException(message='Required field domain_metadatas is unset!')
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class DomainNotFoundException(TException):
   """
   Attributes:
@@ -611,10 +865,10 @@ class HostsDownException(TException):
       if fid == 1:
         if ftype == TType.LIST:
           self.hosts = []
-          (_etype12, _size9) = iprot.readListBegin()
-          for _i13 in xrange(_size9):
-            _elem14 = iprot.readString().decode('utf-8')
-            self.hosts.append(_elem14)
+          (_etype21, _size18) = iprot.readListBegin()
+          for _i22 in xrange(_size18):
+            _elem23 = iprot.readString().decode('utf-8')
+            self.hosts.append(_elem23)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -631,8 +885,8 @@ class HostsDownException(TException):
     if self.hosts is not None:
       oprot.writeFieldBegin('hosts', TType.LIST, 1)
       oprot.writeListBegin(TType.STRING, len(self.hosts))
-      for iter15 in self.hosts:
-        oprot.writeString(iter15.encode('utf-8'))
+      for iter24 in self.hosts:
+        oprot.writeString(iter24.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -690,10 +944,10 @@ class InvalidConfigurationException(TException):
       if fid == 1:
         if ftype == TType.LIST:
           self.mismatched_domains = []
-          (_etype19, _size16) = iprot.readListBegin()
-          for _i20 in xrange(_size16):
-            _elem21 = iprot.readString().decode('utf-8')
-            self.mismatched_domains.append(_elem21)
+          (_etype28, _size25) = iprot.readListBegin()
+          for _i29 in xrange(_size25):
+            _elem30 = iprot.readString().decode('utf-8')
+            self.mismatched_domains.append(_elem30)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -720,8 +974,8 @@ class InvalidConfigurationException(TException):
     if self.mismatched_domains is not None:
       oprot.writeFieldBegin('mismatched_domains', TType.LIST, 1)
       oprot.writeListBegin(TType.STRING, len(self.mismatched_domains))
-      for iter22 in self.mismatched_domains:
-        oprot.writeString(iter22.encode('utf-8'))
+      for iter31 in self.mismatched_domains:
+        oprot.writeString(iter31.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.port_changed is not None:

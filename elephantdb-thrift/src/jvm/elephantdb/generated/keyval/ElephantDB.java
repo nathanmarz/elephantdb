@@ -2759,7 +2759,7 @@ public class ElephantDB {
             struct.success = new HashMap<ByteBuffer,elephantdb.generated.Value>(2*_map14.size);
             for (int _i15 = 0; _i15 < _map14.size; ++_i15)
             {
-              ByteBuffer _key16; // required
+              ByteBuffer _key16; // optional
               elephantdb.generated.Value _val17; // required
               _key16 = iprot.readBinary();
               _val17 = new elephantdb.generated.Value();

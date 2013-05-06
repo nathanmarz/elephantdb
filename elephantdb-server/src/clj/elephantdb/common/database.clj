@@ -5,7 +5,8 @@
             [jackknife.seq :as seq]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as domain]
-            [elephantdb.common.status :as status])
+            [elephantdb.common.status :as status]
+            [elephantdb.common.metadata :as metadata])
   (:import [elephantdb.persistence Shutdownable]
            [java.io File]))
 
@@ -68,6 +69,11 @@
   "Returns a map of domain name -> status."
   [{:keys [domains]}]
   (u/val-map status/get-status domains))
+
+(defn domain->metadata
+  "Returns a map of domain name -> metadata."
+  [{:keys [domains]}]
+  (u/val-map metadata/get-metadata domains))
 
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting

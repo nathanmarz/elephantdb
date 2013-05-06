@@ -14,7 +14,7 @@
             [elephantdb.client :as c]
             [carica.core :refer [configurer
                                  resources]])
-  (:gen-class))
+  (:import [elephantdb.generated DomainMetaData DomainSpec]))
 
 (def VERSION "0.4.4-SNAPSHOT")
 (def config (configurer (resources "ui_config.clj")))
@@ -30,6 +30,11 @@
     (when-let [statuses (c/get-status c)]
       (for [[domain status] (.get_domain_statuses statuses)]
         [(link-to (str "/node/" host "/domain/" domain) domain) (domain-status->elem status)]))))
+
+(defn metadata [host domain]
+  (c/with-elephant host (config :port) c
+    (when-let [metadata (c/get-domain-metadata c domain)]
+      (expand-domain-metadata metadata))))
 
 (defn template [title & body]
   (html5
@@ -68,7 +73,6 @@
               :head ["Domain" "Status"]
               :body (domains id))]))
 
-;; TODO: Add thrift calls to fill this table 
 (defn domain [id domain]
   (template (str "ElephantDB | " id " | " domain)
             [:ul.breadcrumb
@@ -82,9 +86,8 @@
                            "Latest Local Version"
                            "Shard Count"
                            "Coordinator"
-                           "Persistence"
-                           "Persistence Options"] 
-                    :body [[]])]))
+                           "Shard Scheme"] 
+                    :body [(metadata id domain)])]))
 
 (defroutes app-routes
   (GET "/" [] (index))
@@ -95,9 +98,3 @@
 
 (def app
   (wrap-bootstrap-resources (handler/site app-routes)))
-
-(defn start-server [port]
-  (run-jetty app {:port port :join? false}))
-
-(defn -main []
-  (start-server (config :ui-port)))

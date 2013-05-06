@@ -34,6 +34,24 @@ struct Status {
   1: required map<string, DomainStatus> domain_statuses;
 }
 
+// Domain MetaData Structs
+
+struct DomainSpec {
+  1: required i32 num_shards;
+  2: required string coordinator;
+  3: required string shard_scheme;
+}
+
+struct DomainMetaData {
+  1: required i64 remote_version;
+  2: required i64 local_version;
+  3: required DomainSpec domain_spec;
+}
+
+struct MetaData {
+  1: required map<string, DomainMetaData> domain_metadatas;
+}
+
 // Exceptions
 
 exception DomainNotFoundException {
@@ -67,4 +85,6 @@ service ElephantDBShared {
   bool update(1: string domain); // is the supplied domain updating?
   bool updateAll() throws (1: InvalidConfigurationException ice);
   i64 getCount(1: string domain);
+  DomainMetaData getDomainMetaData(1: string domain);
+  MetaData getMetaData();
 }

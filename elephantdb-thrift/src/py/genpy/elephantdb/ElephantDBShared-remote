@@ -31,6 +31,8 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '  bool update(string domain)'
   print '  bool updateAll()'
   print '  i64 getCount(string domain)'
+  print '  DomainMetaData getDomainMetaData(string domain)'
+  print '  MetaData getMetaData()'
   print ''
   sys.exit(0)
 
@@ -129,6 +131,18 @@ elif cmd == 'getCount':
     print 'getCount requires 1 args'
     sys.exit(1)
   pp.pprint(client.getCount(args[0],))
+
+elif cmd == 'getDomainMetaData':
+  if len(args) != 1:
+    print 'getDomainMetaData requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.getDomainMetaData(args[0],))
+
+elif cmd == 'getMetaData':
+  if len(args) != 0:
+    print 'getMetaData requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.getMetaData())
 
 else:
   print 'Unrecognized method %s' % cmd

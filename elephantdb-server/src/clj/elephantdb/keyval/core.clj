@@ -14,7 +14,7 @@
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom]
             [elephantdb.client :as c]
-            [elephantdb.common.thread-pool :as t])
+            [elephantdb.common.metadata :as metadata])
   (:import [java.nio ByteBuffer]
            [org.apache.thrift.protocol TBinaryProtocol]
            [org.apache.thrift.transport TTransport]
@@ -212,7 +212,17 @@
       "Returns the total count of KeyValDocuments in the supplied domain-name."
       (thrift/assert-domain database domain-name)
       (-> (db/domain-get database domain-name)
-          (dom/kv-count)))))
+          (dom/kv-count)))
+
+    (getDomainMetaData [_ domain-name]
+      (thrift/assert-domain database domain-name)
+      (-> (db/domain-get database domain-name)
+          (metadata/get-metadata)))
+    
+    (getMetaData [_]
+      "Returns a map of domain-name->metadata for each domain."
+      (thrift/elephant-metadata
+       (db/domain->metadata database)))))
 
 ;; # Main Access
 ;;

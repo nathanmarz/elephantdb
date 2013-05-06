@@ -8,11 +8,11 @@
                  [sonian/carica "1.0.2"]
                  [clj-time "0.4.5"]
                  [ring/ring-core "1.1.8"]
-                 [ring/ring-jetty-adapter "1.1.8"]]
-  :plugins [[lein-ring "0.8.3"]]
+                 [ring/ring-jetty-adapter "1.1.8"]
+                 [ch.qos.logback/logback-classic "1.0.11"]]
+  :plugins [[lein-ring "0.8.5"]]
   :source-paths ["src/clj"]
-  :main elephantdb.ui.handler
   :ring {:handler elephantdb.ui.handler/app}
+  :main elephantdb.ui.core
   :profiles
-  {:dev {:dependencies [[ring-mock "0.1.3"]]}}
-  :aot :all)
+  {:dev {:dependencies [[ring-mock "0.1.3"]]}})
