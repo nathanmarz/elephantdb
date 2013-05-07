@@ -351,16 +351,16 @@ public class MetaData implements org.apache.thrift.TBase<MetaData, MetaData._Fie
           case 1: // DOMAIN_METADATAS
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map10 = iprot.readMapBegin();
-                struct.domain_metadatas = new HashMap<String,DomainMetaData>(2*_map10.size);
-                for (int _i11 = 0; _i11 < _map10.size; ++_i11)
+                org.apache.thrift.protocol.TMap _map18 = iprot.readMapBegin();
+                struct.domain_metadatas = new HashMap<String,DomainMetaData>(2*_map18.size);
+                for (int _i19 = 0; _i19 < _map18.size; ++_i19)
                 {
-                  String _key12; // optional
-                  DomainMetaData _val13; // required
-                  _key12 = iprot.readString();
-                  _val13 = new DomainMetaData();
-                  _val13.read(iprot);
-                  struct.domain_metadatas.put(_key12, _val13);
+                  String _key20; // optional
+                  DomainMetaData _val21; // required
+                  _key20 = iprot.readString();
+                  _val21 = new DomainMetaData();
+                  _val21.read(iprot);
+                  struct.domain_metadatas.put(_key20, _val21);
                 }
                 iprot.readMapEnd();
               }
@@ -386,10 +386,10 @@ public class MetaData implements org.apache.thrift.TBase<MetaData, MetaData._Fie
         oprot.writeFieldBegin(DOMAIN_METADATAS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, struct.domain_metadatas.size()));
-          for (Map.Entry<String, DomainMetaData> _iter14 : struct.domain_metadatas.entrySet())
+          for (Map.Entry<String, DomainMetaData> _iter22 : struct.domain_metadatas.entrySet())
           {
-            oprot.writeString(_iter14.getKey());
-            _iter14.getValue().write(oprot);
+            oprot.writeString(_iter22.getKey());
+            _iter22.getValue().write(oprot);
           }
           oprot.writeMapEnd();
         }
@@ -414,10 +414,10 @@ public class MetaData implements org.apache.thrift.TBase<MetaData, MetaData._Fie
       TTupleProtocol oprot = (TTupleProtocol) prot;
       {
         oprot.writeI32(struct.domain_metadatas.size());
-        for (Map.Entry<String, DomainMetaData> _iter15 : struct.domain_metadatas.entrySet())
+        for (Map.Entry<String, DomainMetaData> _iter23 : struct.domain_metadatas.entrySet())
         {
-          oprot.writeString(_iter15.getKey());
-          _iter15.getValue().write(oprot);
+          oprot.writeString(_iter23.getKey());
+          _iter23.getValue().write(oprot);
         }
       }
     }
@@ -426,16 +426,16 @@ public class MetaData implements org.apache.thrift.TBase<MetaData, MetaData._Fie
     public void read(org.apache.thrift.protocol.TProtocol prot, MetaData struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
       {
-        org.apache.thrift.protocol.TMap _map16 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.domain_metadatas = new HashMap<String,DomainMetaData>(2*_map16.size);
-        for (int _i17 = 0; _i17 < _map16.size; ++_i17)
+        org.apache.thrift.protocol.TMap _map24 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.domain_metadatas = new HashMap<String,DomainMetaData>(2*_map24.size);
+        for (int _i25 = 0; _i25 < _map24.size; ++_i25)
         {
-          String _key18; // optional
-          DomainMetaData _val19; // required
-          _key18 = iprot.readString();
-          _val19 = new DomainMetaData();
-          _val19.read(iprot);
-          struct.domain_metadatas.put(_key18, _val19);
+          String _key26; // optional
+          DomainMetaData _val27; // required
+          _key26 = iprot.readString();
+          _val27 = new DomainMetaData();
+          _val27.read(iprot);
+          struct.domain_metadatas.put(_key26, _val27);
         }
       }
       struct.set_domain_metadatas_isSet(true);

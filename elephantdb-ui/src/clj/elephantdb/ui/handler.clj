@@ -21,8 +21,8 @@
 
 (defn nodes [host]
   (c/with-elephant host (config :port) c
-    (cond (c/fully-loaded? c) [:span {:class "label label-success"} "Ready"]
-          (c/updating? c) [:span {:class "label label-info"} "Updating"]
+    (cond (c/updating? c) [:span {:class "label label-info"} "Loading"]
+          (c/fully-loaded? c) [:span {:class "label label-success"} "Ready"]
           :else [:span {:class "label label-error"} "Error"])))
 
 (defn domains [host]
@@ -84,6 +84,7 @@
              (table :styles [:condensed]
                     :head ["Latest Remote Version"
                            "Latest Local Version"
+                           "Shard Set"
                            "Shard Count"
                            "Coordinator"
                            "Shard Scheme"] 

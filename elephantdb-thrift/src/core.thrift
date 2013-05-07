@@ -45,7 +45,8 @@ struct DomainSpec {
 struct DomainMetaData {
   1: required i64 remote_version;
   2: required i64 local_version;
-  3: required DomainSpec domain_spec;
+  3: required set<i64> shard_set;
+  4: required DomainSpec domain_spec;
 }
 
 struct MetaData {

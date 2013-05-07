@@ -550,6 +550,7 @@ class DomainMetaData:
   Attributes:
    - remote_version
    - local_version
+   - shard_set
    - domain_spec
   """
 
@@ -557,12 +558,14 @@ class DomainMetaData:
     None, # 0
     (1, TType.I64, 'remote_version', None, None, ), # 1
     (2, TType.I64, 'local_version', None, None, ), # 2
-    (3, TType.STRUCT, 'domain_spec', (DomainSpec, DomainSpec.thrift_spec), None, ), # 3
+    (3, TType.SET, 'shard_set', (TType.I64,None), None, ), # 3
+    (4, TType.STRUCT, 'domain_spec', (DomainSpec, DomainSpec.thrift_spec), None, ), # 4
   )
 
-  def __init__(self, remote_version=None, local_version=None, domain_spec=None,):
+  def __init__(self, remote_version=None, local_version=None, shard_set=None, domain_spec=None,):
     self.remote_version = remote_version
     self.local_version = local_version
+    self.shard_set = shard_set
     self.domain_spec = domain_spec
 
   def read(self, iprot):
@@ -585,6 +588,16 @@ class DomainMetaData:
         else:
           iprot.skip(ftype)
       elif fid == 3:
+        if ftype == TType.SET:
+          self.shard_set = set()
+          (_etype12, _size9) = iprot.readSetBegin()
+          for _i13 in xrange(_size9):
+            _elem14 = iprot.readI64();
+            self.shard_set.add(_elem14)
+          iprot.readSetEnd()
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
         if ftype == TType.STRUCT:
           self.domain_spec = DomainSpec()
           self.domain_spec.read(iprot)
@@ -608,8 +621,15 @@ class DomainMetaData:
       oprot.writeFieldBegin('local_version', TType.I64, 2)
       oprot.writeI64(self.local_version)
       oprot.writeFieldEnd()
+    if self.shard_set is not None:
+      oprot.writeFieldBegin('shard_set', TType.SET, 3)
+      oprot.writeSetBegin(TType.I64, len(self.shard_set))
+      for iter15 in self.shard_set:
+        oprot.writeI64(iter15)
+      oprot.writeSetEnd()
+      oprot.writeFieldEnd()
     if self.domain_spec is not None:
-      oprot.writeFieldBegin('domain_spec', TType.STRUCT, 3)
+      oprot.writeFieldBegin('domain_spec', TType.STRUCT, 4)
       self.domain_spec.write(oprot)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -620,6 +640,8 @@ class DomainMetaData:
       raise TProtocol.TProtocolException(message='Required field remote_version is unset!')
     if self.local_version is None:
       raise TProtocol.TProtocolException(message='Required field local_version is unset!')
+    if self.shard_set is None:
+      raise TProtocol.TProtocolException(message='Required field shard_set is unset!')
     if self.domain_spec is None:
       raise TProtocol.TProtocolException(message='Required field domain_spec is unset!')
     return
@@ -662,12 +684,12 @@ class MetaData:
       if fid == 1:
         if ftype == TType.MAP:
           self.domain_metadatas = {}
-          (_ktype10, _vtype11, _size9 ) = iprot.readMapBegin() 
-          for _i13 in xrange(_size9):
-            _key14 = iprot.readString().decode('utf-8')
-            _val15 = DomainMetaData()
-            _val15.read(iprot)
-            self.domain_metadatas[_key14] = _val15
+          (_ktype17, _vtype18, _size16 ) = iprot.readMapBegin() 
+          for _i20 in xrange(_size16):
+            _key21 = iprot.readString().decode('utf-8')
+            _val22 = DomainMetaData()
+            _val22.read(iprot)
+            self.domain_metadatas[_key21] = _val22
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -684,9 +706,9 @@ class MetaData:
     if self.domain_metadatas is not None:
       oprot.writeFieldBegin('domain_metadatas', TType.MAP, 1)
       oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.domain_metadatas))
-      for kiter16,viter17 in self.domain_metadatas.items():
-        oprot.writeString(kiter16.encode('utf-8'))
-        viter17.write(oprot)
+      for kiter23,viter24 in self.domain_metadatas.items():
+        oprot.writeString(kiter23.encode('utf-8'))
+        viter24.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -865,10 +887,10 @@ class HostsDownException(TException):
       if fid == 1:
         if ftype == TType.LIST:
           self.hosts = []
-          (_etype21, _size18) = iprot.readListBegin()
-          for _i22 in xrange(_size18):
-            _elem23 = iprot.readString().decode('utf-8')
-            self.hosts.append(_elem23)
+          (_etype28, _size25) = iprot.readListBegin()
+          for _i29 in xrange(_size25):
+            _elem30 = iprot.readString().decode('utf-8')
+            self.hosts.append(_elem30)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -885,8 +907,8 @@ class HostsDownException(TException):
     if self.hosts is not None:
       oprot.writeFieldBegin('hosts', TType.LIST, 1)
       oprot.writeListBegin(TType.STRING, len(self.hosts))
-      for iter24 in self.hosts:
-        oprot.writeString(iter24.encode('utf-8'))
+      for iter31 in self.hosts:
+        oprot.writeString(iter31.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -944,10 +966,10 @@ class InvalidConfigurationException(TException):
       if fid == 1:
         if ftype == TType.LIST:
           self.mismatched_domains = []
-          (_etype28, _size25) = iprot.readListBegin()
-          for _i29 in xrange(_size25):
-            _elem30 = iprot.readString().decode('utf-8')
-            self.mismatched_domains.append(_elem30)
+          (_etype35, _size32) = iprot.readListBegin()
+          for _i36 in xrange(_size32):
+            _elem37 = iprot.readString().decode('utf-8')
+            self.mismatched_domains.append(_elem37)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -974,8 +996,8 @@ class InvalidConfigurationException(TException):
     if self.mismatched_domains is not None:
       oprot.writeFieldBegin('mismatched_domains', TType.LIST, 1)
       oprot.writeListBegin(TType.STRING, len(self.mismatched_domains))
-      for iter31 in self.mismatched_domains:
-        oprot.writeString(iter31.encode('utf-8'))
+      for iter38 in self.mismatched_domains:
+        oprot.writeString(iter38.encode('utf-8'))
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.port_changed is not None:

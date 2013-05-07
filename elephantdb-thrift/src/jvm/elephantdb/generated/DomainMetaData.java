@@ -33,7 +33,8 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
 
   private static final org.apache.thrift.protocol.TField REMOTE_VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("remote_version", org.apache.thrift.protocol.TType.I64, (short)1);
   private static final org.apache.thrift.protocol.TField LOCAL_VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("local_version", org.apache.thrift.protocol.TType.I64, (short)2);
-  private static final org.apache.thrift.protocol.TField DOMAIN_SPEC_FIELD_DESC = new org.apache.thrift.protocol.TField("domain_spec", org.apache.thrift.protocol.TType.STRUCT, (short)3);
+  private static final org.apache.thrift.protocol.TField SHARD_SET_FIELD_DESC = new org.apache.thrift.protocol.TField("shard_set", org.apache.thrift.protocol.TType.SET, (short)3);
+  private static final org.apache.thrift.protocol.TField DOMAIN_SPEC_FIELD_DESC = new org.apache.thrift.protocol.TField("domain_spec", org.apache.thrift.protocol.TType.STRUCT, (short)4);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -43,13 +44,15 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
 
   private long remote_version; // required
   private long local_version; // required
+  private Set<Long> shard_set; // required
   private DomainSpec domain_spec; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     REMOTE_VERSION((short)1, "remote_version"),
     LOCAL_VERSION((short)2, "local_version"),
-    DOMAIN_SPEC((short)3, "domain_spec");
+    SHARD_SET((short)3, "shard_set"),
+    DOMAIN_SPEC((short)4, "domain_spec");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -68,7 +71,9 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
           return REMOTE_VERSION;
         case 2: // LOCAL_VERSION
           return LOCAL_VERSION;
-        case 3: // DOMAIN_SPEC
+        case 3: // SHARD_SET
+          return SHARD_SET;
+        case 4: // DOMAIN_SPEC
           return DOMAIN_SPEC;
         default:
           return null;
@@ -120,6 +125,9 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
     tmpMap.put(_Fields.LOCAL_VERSION, new org.apache.thrift.meta_data.FieldMetaData("local_version", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
+    tmpMap.put(_Fields.SHARD_SET, new org.apache.thrift.meta_data.FieldMetaData("shard_set", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET, 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64))));
     tmpMap.put(_Fields.DOMAIN_SPEC, new org.apache.thrift.meta_data.FieldMetaData("domain_spec", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, DomainSpec.class)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
@@ -132,6 +140,7 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
   public DomainMetaData(
     long remote_version,
     long local_version,
+    Set<Long> shard_set,
     DomainSpec domain_spec)
   {
     this();
@@ -139,6 +148,7 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
     set_remote_version_isSet(true);
     this.local_version = local_version;
     set_local_version_isSet(true);
+    this.shard_set = shard_set;
     this.domain_spec = domain_spec;
   }
 
@@ -150,6 +160,13 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
     __isset_bit_vector.or(other.__isset_bit_vector);
     this.remote_version = other.remote_version;
     this.local_version = other.local_version;
+    if (other.is_set_shard_set()) {
+      Set<Long> __this__shard_set = new HashSet<Long>();
+      for (Long other_element : other.shard_set) {
+        __this__shard_set.add(other_element);
+      }
+      this.shard_set = __this__shard_set;
+    }
     if (other.is_set_domain_spec()) {
       this.domain_spec = new DomainSpec(other.domain_spec);
     }
@@ -165,6 +182,7 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
     this.remote_version = 0;
     set_local_version_isSet(false);
     this.local_version = 0;
+    this.shard_set = null;
     this.domain_spec = null;
   }
 
@@ -212,6 +230,44 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
     __isset_bit_vector.set(__LOCAL_VERSION_ISSET_ID, value);
   }
 
+  public int get_shard_set_size() {
+    return (this.shard_set == null) ? 0 : this.shard_set.size();
+  }
+
+  public java.util.Iterator<Long> get_shard_set_iterator() {
+    return (this.shard_set == null) ? null : this.shard_set.iterator();
+  }
+
+  public void add_to_shard_set(long elem) {
+    if (this.shard_set == null) {
+      this.shard_set = new HashSet<Long>();
+    }
+    this.shard_set.add(elem);
+  }
+
+  public Set<Long> get_shard_set() {
+    return this.shard_set;
+  }
+
+  public void set_shard_set(Set<Long> shard_set) {
+    this.shard_set = shard_set;
+  }
+
+  public void unset_shard_set() {
+    this.shard_set = null;
+  }
+
+  /** Returns true if field shard_set is set (has been assigned a value) and false otherwise */
+  public boolean is_set_shard_set() {
+    return this.shard_set != null;
+  }
+
+  public void set_shard_set_isSet(boolean value) {
+    if (!value) {
+      this.shard_set = null;
+    }
+  }
+
   public DomainSpec get_domain_spec() {
     return this.domain_spec;
   }
@@ -253,6 +309,14 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
       }
       break;
 
+    case SHARD_SET:
+      if (value == null) {
+        unset_shard_set();
+      } else {
+        set_shard_set((Set<Long>)value);
+      }
+      break;
+
     case DOMAIN_SPEC:
       if (value == null) {
         unset_domain_spec();
@@ -272,6 +336,9 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
     case LOCAL_VERSION:
       return Long.valueOf(get_local_version());
 
+    case SHARD_SET:
+      return get_shard_set();
+
     case DOMAIN_SPEC:
       return get_domain_spec();
 
@@ -290,6 +357,8 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
       return is_set_remote_version();
     case LOCAL_VERSION:
       return is_set_local_version();
+    case SHARD_SET:
+      return is_set_shard_set();
     case DOMAIN_SPEC:
       return is_set_domain_spec();
     }
@@ -327,6 +396,15 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
         return false;
     }
 
+    boolean this_present_shard_set = true && this.is_set_shard_set();
+    boolean that_present_shard_set = true && that.is_set_shard_set();
+    if (this_present_shard_set || that_present_shard_set) {
+      if (!(this_present_shard_set && that_present_shard_set))
+        return false;
+      if (!this.shard_set.equals(that.shard_set))
+        return false;
+    }
+
     boolean this_present_domain_spec = true && this.is_set_domain_spec();
     boolean that_present_domain_spec = true && that.is_set_domain_spec();
     if (this_present_domain_spec || that_present_domain_spec) {
@@ -352,6 +430,11 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
     builder.append(present_local_version);
     if (present_local_version)
       builder.append(local_version);
+
+    boolean present_shard_set = true && (is_set_shard_set());
+    builder.append(present_shard_set);
+    if (present_shard_set)
+      builder.append(shard_set);
 
     boolean present_domain_spec = true && (is_set_domain_spec());
     builder.append(present_domain_spec);
@@ -385,6 +468,16 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
     }
     if (is_set_local_version()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.local_version, typedOther.local_version);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_shard_set()).compareTo(typedOther.is_set_shard_set());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_shard_set()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.shard_set, typedOther.shard_set);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -427,6 +520,14 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
     sb.append(this.local_version);
     first = false;
     if (!first) sb.append(", ");
+    sb.append("shard_set:");
+    if (this.shard_set == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.shard_set);
+    }
+    first = false;
+    if (!first) sb.append(", ");
     sb.append("domain_spec:");
     if (this.domain_spec == null) {
       sb.append("null");
@@ -446,6 +547,10 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
 
     if (!is_set_local_version()) {
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'local_version' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_shard_set()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'shard_set' is unset! Struct:" + toString());
     }
 
     if (!is_set_domain_spec()) {
@@ -506,7 +611,25 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 3: // DOMAIN_SPEC
+          case 3: // SHARD_SET
+            if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
+              {
+                org.apache.thrift.protocol.TSet _set10 = iprot.readSetBegin();
+                struct.shard_set = new HashSet<Long>(2*_set10.size);
+                for (int _i11 = 0; _i11 < _set10.size; ++_i11)
+                {
+                  long _elem12; // required
+                  _elem12 = iprot.readI64();
+                  struct.shard_set.add(_elem12);
+                }
+                iprot.readSetEnd();
+              }
+              struct.set_shard_set_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 4: // DOMAIN_SPEC
             if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
               struct.domain_spec = new DomainSpec();
               struct.domain_spec.read(iprot);
@@ -534,6 +657,18 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
       oprot.writeFieldBegin(LOCAL_VERSION_FIELD_DESC);
       oprot.writeI64(struct.local_version);
       oprot.writeFieldEnd();
+      if (struct.shard_set != null) {
+        oprot.writeFieldBegin(SHARD_SET_FIELD_DESC);
+        {
+          oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, struct.shard_set.size()));
+          for (long _iter13 : struct.shard_set)
+          {
+            oprot.writeI64(_iter13);
+          }
+          oprot.writeSetEnd();
+        }
+        oprot.writeFieldEnd();
+      }
       if (struct.domain_spec != null) {
         oprot.writeFieldBegin(DOMAIN_SPEC_FIELD_DESC);
         struct.domain_spec.write(oprot);
@@ -558,6 +693,13 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
       TTupleProtocol oprot = (TTupleProtocol) prot;
       oprot.writeI64(struct.remote_version);
       oprot.writeI64(struct.local_version);
+      {
+        oprot.writeI32(struct.shard_set.size());
+        for (long _iter14 : struct.shard_set)
+        {
+          oprot.writeI64(_iter14);
+        }
+      }
       struct.domain_spec.write(oprot);
     }
 
@@ -568,6 +710,17 @@ public class DomainMetaData implements org.apache.thrift.TBase<DomainMetaData, D
       struct.set_remote_version_isSet(true);
       struct.local_version = iprot.readI64();
       struct.set_local_version_isSet(true);
+      {
+        org.apache.thrift.protocol.TSet _set15 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+        struct.shard_set = new HashSet<Long>(2*_set15.size);
+        for (int _i16 = 0; _i16 < _set15.size; ++_i16)
+        {
+          long _elem17; // required
+          _elem17 = iprot.readI64();
+          struct.shard_set.add(_elem17);
+        }
+      }
+      struct.set_shard_set_isSet(true);
       struct.domain_spec = new DomainSpec();
       struct.domain_spec.read(iprot);
       struct.set_domain_spec_isSet(true);
