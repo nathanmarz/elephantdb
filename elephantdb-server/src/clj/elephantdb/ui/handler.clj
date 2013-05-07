@@ -1,40 +1,46 @@
 (ns elephantdb.ui.handler
   (:use compojure.core
-        hiccup.bootstrap.middleware
-        hiccup.core
-        hiccup.page
-        hiccup.def
-        hiccup.element
-        hiccup.bootstrap.page
-        hiccup.bootstrap.element
-        elephantdb.ui.thrift
-        ring.adapter.jetty)
+        ring.adapter.jetty
+        [hiccup core page def element]
+        [hiccup.bootstrap middleware page element]
+        [elephantdb.ui thrift middleware])
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
-            [elephantdb.client :as c]
-            [carica.core :refer [configurer
-                                 resources]])
-  (:import [elephantdb.generated DomainMetaData DomainSpec]))
+            [elephantdb.client :as c]))
+
+(def conf-map {})
 
 (def VERSION "0.4.4-SNAPSHOT")
-(def config (configurer (resources "ui_config.clj")))
 
-(defn nodes [host]
-  (c/with-elephant host (config :port) c
+(defn nodes [host port]
+  (c/with-elephant host port c
     (cond (c/updating? c) [:span {:class "label label-info"} "Loading"]
           (c/fully-loaded? c) [:span {:class "label label-success"} "Ready"]
           :else [:span {:class "label label-error"} "Error"])))
 
-(defn domains [host]
-  (c/with-elephant host (config :port) c
+(defn domains [host port]
+  (c/with-elephant host port c
     (when-let [statuses (c/get-status c)]
       (for [[domain status] (.get_domain_statuses statuses)]
         [(link-to (str "/node/" host "/domain/" domain) domain) (domain-status->elem status)]))))
 
-(defn metadata [host domain]
-  (c/with-elephant host (config :port) c
+(defn metadata [host port domain]
+  (c/with-elephant host port c
     (when-let [metadata (c/get-domain-metadata c domain)]
-      (expand-domain-metadata metadata))))
+      ;(expand-domain-metadata metadata)
+      [:dl.dl-horizontal
+       [:dt "Latest Remote Version"]
+       [:dd (.get_remote_version metadata)]
+       [:dt "Latest Local Version"]
+       [:dd (.get_local_version metadata)]
+       [:dt "Shard Set"]
+       [:dd (.get_shard_set metadata)]
+       [:dt "Shard Count"]
+       [:dd (-> (.get_domain_spec metadata) (.get_num_shards))]
+       [:dt "Coordinator"]
+       [:dd  [:code (-> (.get_domain_spec metadata) (.get_coordinator))]]
+       [:dt "Shard Scheme"]
+       [:dd [:code (-> (.get_domain_spec metadata) (.get_shard_scheme))]]])))
 
 (defn template [title & body]
   (html5
@@ -50,7 +56,7 @@
     [:div.container {:id "content"}
      body]]))
 
-(defn index []
+(defn index [conf-map]
   (template "ElephantDB"
             [:ul.breadcrumb
              [:li.active "Cluster"]]
@@ -58,11 +64,11 @@
              (table
               :styles [:condensed]
               :head ["Hostname" "Status"]
-              :body (for [h (config :hosts)]
-                      [(link-to (str "/node/" h) h) (nodes h)]))
+              :body (for [h (:hosts conf-map)]
+                      [(link-to (str "/node/" h) h) (nodes h (:port conf-map))]))
              ]))
 
-(defn node [id]
+(defn node [conf-map id]
   (template (str "ElephantDB | " id)
             [:ul.breadcrumb
              [:li (link-to "/" "Cluster") [:span.divider "/"]]
@@ -71,9 +77,10 @@
              (table
               :styles [:condensed]
               :head ["Domain" "Status"]
-              :body (domains id))]))
+              :body (domains id (:port conf-map))
+              )]))
 
-(defn domain [id domain]
+(defn domain [conf-map id domain]
   (template (str "ElephantDB | " id " | " domain)
             [:ul.breadcrumb
              [:li (link-to "/" "Cluster") [:span.divider "/"]]
@@ -81,21 +88,18 @@
              [:li.active domain]]
             [:h2 (str domain "@" id)]
             [:div
-             (table :styles [:condensed]
-                    :head ["Latest Remote Version"
-                           "Latest Local Version"
-                           "Shard Set"
-                           "Shard Count"
-                           "Coordinator"
-                           "Shard Scheme"] 
-                    :body [(metadata id domain)])]))
+             (metadata id (:port conf-map) domain)]))
 
 (defroutes app-routes
-  (GET "/" [] (index))
-  (GET "/node/:id" [id] (node id))
-  (GET "/node/:id/domain/:d" [id d] (domain id d))
+  (GET "/"  {conf-map :conf-map} (index conf-map))
+  (GET "/node/:id" {conf-map :conf-map {id :id} :params} (node conf-map id))
+  (GET "/node/:id/domain/:d" {conf-map :conf-map {id :id d :d} :params} (domain conf-map id d))
   (route/resources "/")
   (route/not-found "Not Found"))
 
 (def app
   (wrap-bootstrap-resources (handler/site app-routes)))
+
+(defn start-server! [conf-map]
+  (let [port (:ui-port conf-map)]
+    (run-jetty (wrap-configuration app conf-map) {:port port})))

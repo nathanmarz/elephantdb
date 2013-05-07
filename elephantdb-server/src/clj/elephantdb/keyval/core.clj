@@ -14,7 +14,8 @@
             [elephantdb.common.config :as conf]
             [elephantdb.keyval.domain :as dom]
             [elephantdb.client :as c]
-            [elephantdb.common.metadata :as metadata])
+            [elephantdb.common.metadata :as metadata]
+            [elephantdb.ui.handler :as ui])
   (:import [java.nio ByteBuffer]
            [org.apache.thrift.protocol TBinaryProtocol]
            [org.apache.thrift.transport TTransport]
@@ -246,16 +247,18 @@
                                                 local-config)
         conf-map (merge global-config local-config)
         database (db/build-database conf-map)]
+    (when (:ui-port conf-map)
+      (db/launch-ui! conf-map))
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
-    (when-let [graphite-conf (:graphite-reporter local-config)]
+    (when-let [graphite-conf (:graphite-reporter conf-map)]
       (log/info "Metrics graphite reporter started.")
       (report-to-graphite (:host graphite-conf) (:port graphite-conf)))
-    (when-let [ganglia-conf (:ganglia-reporter local-config)]
+    (when-let [ganglia-conf (:ganglia-reporter conf-map)]
       (log/info "Metrics ganglia reporter started.")
       (report-to-ganglia (:host ganglia-conf) (:port ganglia-conf)))
-    (when-let [metrics-reporting-interval-s (:metrics-reporting-interval-s local-config)]
+    (when-let [metrics-reporting-interval-s (:metrics-reporting-interval-s conf-map)]
       (log/info "Metrics console reporter started.")
       (report-to-console metrics-reporting-interval-s))
     (thrift/launch-server! kv-processor
@@ -271,7 +274,6 @@
 
   `local-config-path`: the path to `local-config.clj` on this machine."
   [global-config-hdfs-path local-config-path]
-  (log/configure-logging "log4j/log4j.properties")
   (let [local-config   (conf/read-local-config  local-config-path)
         global-config  (conf/read-global-config global-config-hdfs-path
                                                 local-config)

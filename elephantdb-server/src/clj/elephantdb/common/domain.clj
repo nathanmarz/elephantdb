@@ -431,7 +431,7 @@
                 version-path (.versionPath local-store version)]
             (log/error (format "Failing version %s" version-path))
             (.failVersion local-store version-path))
-          (when-not (status/ready? domain)
+          (when (status/loading? domain)
             (log/info "Resetting domain status to :ready")
             (status/to-ready domain)))
         (finally

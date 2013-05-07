@@ -6,7 +6,8 @@
             [jackknife.logging :as log]
             [elephantdb.common.domain :as domain]
             [elephantdb.common.status :as status]
-            [elephantdb.common.metadata :as metadata])
+            [elephantdb.common.metadata :as metadata]
+            [elephantdb.ui.handler :as ui])
   (:import [elephantdb.persistence Shutdownable]
            [java.io File]))
 
@@ -104,6 +105,17 @@
     (u/register-shutdown-hook #(do (log/info "Killing updater...")
                                    (future-cancel updater)))
     updater))
+
+(defn launch-ui!
+  [conf-map]
+  (let [conf-map (dissoc conf-map :blob-conf :hdfs-conf)
+        ui-server (future
+                    (log/info (format "Starting UI server on port %s" (:ui-port conf-map)))
+                    (log/debug conf-map)
+                    (ui/start-server! conf-map))]
+    (u/register-shutdown-hook #(do (log/info "Killing UI server...")
+                                   (future-cancel ui-server)))
+    ui-server))
 
 ;; ## Database Creation
 ;;
