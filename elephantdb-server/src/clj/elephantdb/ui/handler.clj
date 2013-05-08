@@ -8,39 +8,35 @@
             [compojure.route :as route]
             [elephantdb.client :as c]))
 
-(def conf-map {})
-
 (def VERSION "0.4.4-SNAPSHOT")
 
-(defn nodes [host port]
+;; ## Thrift client functions
+
+(defn node-status [host port]
   (c/with-elephant host port c
     (cond (c/updating? c) [:span {:class "label label-info"} "Loading"]
           (c/fully-loaded? c) [:span {:class "label label-success"} "Ready"]
           :else [:span {:class "label label-error"} "Error"])))
 
-(defn domains [host port]
+(defn domain-status [host port]
   (c/with-elephant host port c
     (when-let [statuses (c/get-status c)]
       (for [[domain status] (.get_domain_statuses statuses)]
         [(link-to (str "/node/" host "/domain/" domain) domain) (domain-status->elem status)]))))
 
-(defn metadata [host port domain]
+(defn domain-metadata [host port domain]
   (c/with-elephant host port c
     (when-let [metadata (c/get-domain-metadata c domain)]
       ;(expand-domain-metadata metadata)
       [:dl.dl-horizontal
-       [:dt "Latest Remote Version"]
-       [:dd (.get_remote_version metadata)]
-       [:dt "Latest Local Version"]
-       [:dd (.get_local_version metadata)]
-       [:dt "Shard Set"]
-       [:dd (.get_shard_set metadata)]
-       [:dt "Shard Count"]
-       [:dd (-> (.get_domain_spec metadata) (.get_num_shards))]
-       [:dt "Coordinator"]
-       [:dd  [:code (-> (.get_domain_spec metadata) (.get_coordinator))]]
-       [:dt "Shard Scheme"]
-       [:dd [:code (-> (.get_domain_spec metadata) (.get_shard_scheme))]]])))
+       [:dt "Latest Remote Version"] [:dd (.get_remote_version metadata)]
+       [:dt "Latest Local Version"] [:dd (.get_local_version metadata)]
+       [:dt "Shard Set"] [:dd (.get_shard_set metadata)]
+       [:dt "Shard Count"] [:dd (-> (.get_domain_spec metadata) (.get_num_shards))]
+       [:dt "Coordinator"] [:dd  [:code (-> (.get_domain_spec metadata) (.get_coordinator))]]
+       [:dt "Shard Scheme"] [:dd [:code (-> (.get_domain_spec metadata) (.get_shard_scheme))]]])))
+
+;; ## Views
 
 (defn template [title & body]
   (html5
@@ -65,7 +61,15 @@
               :styles [:condensed]
               :head ["Hostname" "Status"]
               :body (for [h (:hosts conf-map)]
-                      [(link-to (str "/node/" h) h) (nodes h (:port conf-map))]))
+                      [(link-to (str "/node/" h) h) (node-status h (:port conf-map))]))
+             ]
+            [:div
+             [:p "Configuration"]
+             [:pre
+              "{\n"
+              (for [[k v] conf-map]
+                (str k " " v "\n"))
+              "}"]
              ]))
 
 (defn node [conf-map id]
@@ -77,7 +81,7 @@
              (table
               :styles [:condensed]
               :head ["Domain" "Status"]
-              :body (domains id (:port conf-map))
+              :body (domain-status id (:port conf-map))
               )]))
 
 (defn domain [conf-map id domain]
@@ -88,7 +92,9 @@
              [:li.active domain]]
             [:h2 (str domain "@" id)]
             [:div
-             (metadata id (:port conf-map) domain)]))
+             (domain-metadata id (:port conf-map) domain)]))
+
+;; ## Routes
 
 (defroutes app-routes
   (GET "/"  {conf-map :conf-map} (index conf-map))
