@@ -66,10 +66,9 @@
             [:div
              [:p "Configuration"]
              [:pre
-              "{\n"
-              (for [[k v] conf-map]
-                (str k " " v "\n"))
-              "}"]
+              (let [sw (java.io.StringWriter.)]
+                (clojure.pprint/pprint conf-map sw)
+                (str sw))]
              ]))
 
 (defn node [conf-map id]
