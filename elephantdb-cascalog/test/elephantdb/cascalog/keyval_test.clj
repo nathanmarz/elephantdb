@@ -66,7 +66,8 @@
 (defn mk-spec [num-shards]
   {:num-shards  num-shards
    :coordinator (JavaBerkDB.)
-   :shard-scheme (HashModScheme.)})
+   :shard-scheme (HashModScheme.)
+   :persistence-options {"dummy" "value"}})
 
 (defn vec-merge
   [a b]
@@ -119,9 +120,13 @@
       
       "Send the pairs into the initial tap."
       (?- tap (serialize-str pairs))
+
+      "The spec should have the persistence options stored"
+      [fs base-path] => (spec-has {:persistence-options {"dummy" "value"}})
       
       "The spec should have the proper number of shards,"
       [fs base-path] => (spec-has {:num-shards 3})
+
 
       "And the original path should produce pairs."
       (deserialize-str (keyval-tap base-path)) => (produces pairs)

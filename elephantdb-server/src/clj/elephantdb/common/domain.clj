@@ -8,7 +8,8 @@
             [clojure.java.io :as io]
             [elephantdb.common.shard :as shard]
             [elephantdb.common.config :as conf]
-            [elephantdb.common.status :as status])
+            [elephantdb.common.status :as status]
+            [elephantdb.common.thread-pool :as t])
   (:import [elephantdb Utils DomainSpec]
            [elephantdb.store DomainStore]
            [elephantdb.common.status IStateful IStatus KeywordStatus]
@@ -191,7 +192,7 @@
                       (try
                         (open-shard! local-store idx version
                                      :allow-writes (.allowWrites domain))
-                        (catch Exception e
+                        (catch Throwable e
                           (log/error (format "Error opening shard %s of version %s for domain %s: %s"
                                              idx version domain e))
                           (throw e))))]
@@ -366,12 +367,12 @@
     (if (.exists remote-fs (h/path remote-path))
       (do
         (try
-          (log/info (format "Copying %s to %s." remote-path local-path))
+          (log/info (format "Copying %s to %s" remote-path local-path))
           (transfer/rcopy remote-fs remote-path local-path
                           :throttle throttle)
-          (log/info (format "Copied %s to %s." remote-path local-path))
-          (catch Exception e
-            (log/error (format "Error copying %s to %s: %s" remote-path local-path e))
+          (log/info (format "Copied %s to %s" remote-path local-path))
+          (catch Throwable e
+            (log/error (format "Error transferring shard %s to %s: %s" remote-path local-path e))
             (throw e))))
       (do (log/info "Shard doesn't exist. Creating shard # " idx)
           (.createShard local-store idx version)))))
@@ -382,13 +383,17 @@
   agent with the optional `:throttle` keyword argument."
   [domain version]
   (let [local-store  (.localStore domain)
-        version-path (.createVersion local-store version)]
+        version-path (.createVersion local-store version)
+        shards (shard-set domain)]
+    (when (nil? shards)
+      (log/warning
+       (format
+        "shard-set returned nil; no shards to download. Verify that %s is included in the :hosts key of the global configuration map"
+        (.hostname domain))))
     (try
-      (u/do-pmap (partial transfer-shard! domain version)
-                 (shard-set domain))
+      (u/do-pmap (partial transfer-shard! domain version) shards)
       (.succeedVersion local-store version-path)
-      (catch Exception e
-        (.failVersion local-store version-path)
+      (catch Throwable e
         (log/error (format "Error transferring version %s: %s" version-path e))
         (throw e)))))
 
@@ -419,12 +424,18 @@
           (status/to-loading)
           (cleanup-domain!)
           (transfer-version! version)
-          (load-version! version)
-          (cleanup-domain!))
-        (catch Exception e
-          (log/error (format "Error loading version %s: %s" version e))
-          (when-not (status/ready? domain)
-            (status/to-ready domain)))))))
+          (load-version! version))
+        (catch Throwable e
+          (log/error (format "Error updating version %s: %s" version e))
+          (let [local-store (.localStore domain)
+                version-path (.versionPath local-store version)]
+            (log/error (format "Failing version %s" version-path))
+            (.failVersion local-store version-path))
+          (when (status/loading? domain)
+            (log/info "Resetting domain status to :ready")
+            (status/to-ready domain)))
+        (finally
+          (cleanup-domain! domain))))))
 
 (defn attempt-update!
   "If the supplied domain isn't currently updating, returns a future

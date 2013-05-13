@@ -5,9 +5,22 @@
             [jackknife.seq :as seq]
             [jackknife.logging :as log]
             [elephantdb.common.domain :as domain]
-            [elephantdb.common.status :as status])
+            [elephantdb.common.status :as status]
+            [elephantdb.common.metadata :as metadata]
+            [elephantdb.ui.handler :as ui])
   (:import [elephantdb.persistence Shutdownable]
            [java.io File]))
+
+;; ## Domain metrics
+
+(defn build-meters [domain-name]
+  (let [domain-name (clojure.string/replace domain-name #"-" "_")
+        hostname (clojure.string/replace (.getCanonicalHostName (java.net.InetAddress/getLocalHost)) #"\." "_")]
+    {:direct-get-response-time (timer [(str hostname ".elephantdb.domain") domain-name "direct_get_response_time"])
+     :multi-get-response-time (timer [(str hostname ".elephantdb.domain") domain-name "multi_get_response_time"])}))
+
+(defn metrics-get [{:keys [metrics]} domain-name]
+  (get metrics domain-name))
 
 ;; ## Database Manipulation Functions
 
@@ -58,6 +71,11 @@
   [{:keys [domains]}]
   (u/val-map status/get-status domains))
 
+(defn domain->metadata
+  "Returns a map of domain name -> metadata."
+  [{:keys [domains]}]
+  (u/val-map metadata/get-metadata domains))
+
 (defn purge-unused-domains!
   "Walks through the supplied local directory, recursively deleting
    all directories with names that aren't present in the supplied
@@ -88,6 +106,17 @@
                                    (future-cancel updater)))
     updater))
 
+(defn launch-ui!
+  [conf-map]
+  (let [conf-map (dissoc conf-map :blob-conf :hdfs-conf)
+        ui-server (future
+                    (log/info (format "Starting UI server on port %s" (:ui-port conf-map)))
+                    (log/debug conf-map)
+                    (ui/start-server! conf-map))]
+    (u/register-shutdown-hook #(do (log/info "Killing UI server...")
+                                   (future-cancel ui-server)))
+    ui-server))
+
 ;; ## Database Creation
 ;;
 ;; A "database" is the initial configuration map with much more detail
@@ -113,14 +142,6 @@
     (log/info "ElephantDB received shutdown notice...")
     (doseq [^Shutdownable domain (vals domains)]
       (.shutdown domain))))
-
-(defn build-meters [domain-name]
-  (let [domain-name (clojure.string/replace domain-name #"-" "_")]
-    {:direct-get-response-time (timer ["elephantdb.domain" domain-name "direct_get_response_time"])
-     :multi-get-response-time (timer ["elephantdb.domain" domain-name "multi_get_response_time"])}))
-
-(defn metrics-get [{:keys [metrics]} domain-name]
-  (get metrics domain-name))
 
 (defn build-database
   "Returns a database linking to a bunch of read-only domains."

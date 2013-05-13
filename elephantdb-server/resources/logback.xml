@@ -7,6 +7,8 @@
     </encoder>
   </appender>
   
+  <!-- <logger name="jackknife.logging" level="debug" /> -->
+
   <root level="info">
     <appender-ref ref="STDOUT" />
   </root>

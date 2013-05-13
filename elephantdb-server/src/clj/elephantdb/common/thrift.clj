@@ -12,7 +12,8 @@
             DomainNotFoundException DomainNotLoadedException
             HostsDownException WrongHostException
             DomainStatus LoadingStatus 
-            ReadyStatus FailedStatus ShutdownStatus]))
+            ReadyStatus FailedStatus ShutdownStatus
+            DomainMetaData MetaData]))
 
 ;; ## Status and Errors
 
@@ -124,3 +125,19 @@
     (u/register-shutdown-hook #(.stop server))
     (log/info "Starting ElephantDB server...")
     (.serve server)))
+
+;; ## Metadata
+
+(defn metadata-get
+  "Returns a DomainMetaData struct for the supplied domain."
+  [domain]
+  (let [local-store (.localStore domain)
+        remote-store (.remoteStore domain)
+        spec (.getSpec local-store)]
+    (doto (DomainMetaData.)
+      (.set_local_version (.mostRecentVersion local-store))
+      (.set_remote_version (.mostRecentVersion remote-store))
+      (.set_domain_spec spec))))
+
+(defn elephant-metadata [domain-metadata-map]
+  (MetaData. domain-metadata-map))

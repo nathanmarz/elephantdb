@@ -93,6 +93,11 @@
   [connection]
   (.getStatus connection))
 
+(defn get-domain-status
+  "Get the status of the supplied domain."
+  [connection domain]
+  (.getDomainStatus connection domain))
+
 (defn fully-loaded?
   "Check if all domains are fully loaded."
   [connection]
@@ -114,3 +119,13 @@
   and hotswaps in the new versions."
   [connection]
   (.updateAll connection))
+
+(defn get-domain-metadata
+  "Get metadata for the supplied domain."
+  [connection domain]
+  (.getDomainMetaData connection domain))
+
+(defn get-metadata
+  "Get metadata for all domains."
+  [connection]
+  (.getMetaData connection))

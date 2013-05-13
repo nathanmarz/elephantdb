@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/nathanmarz/elephantdb.png?branch=develop)](https://travis-ci.org/nathanmarz/elephantdb)
 
-# ElephantDB 0.4.3
+# ElephantDB 0.4.4
 
 # About
 

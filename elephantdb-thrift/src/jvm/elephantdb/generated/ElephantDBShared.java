@@ -48,6 +48,10 @@ public class ElephantDBShared {
 
     public long getCount(String domain) throws org.apache.thrift.TException;
 
+    public DomainMetaData getDomainMetaData(String domain) throws org.apache.thrift.TException;
+
+    public MetaData getMetaData() throws org.apache.thrift.TException;
+
   }
 
   public interface AsyncIface {
@@ -67,6 +71,10 @@ public class ElephantDBShared {
     public void updateAll(org.apache.thrift.async.AsyncMethodCallback<AsyncClient.updateAll_call> resultHandler) throws org.apache.thrift.TException;
 
     public void getCount(String domain, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.getCount_call> resultHandler) throws org.apache.thrift.TException;
+
+    public void getDomainMetaData(String domain, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.getDomainMetaData_call> resultHandler) throws org.apache.thrift.TException;
+
+    public void getMetaData(org.apache.thrift.async.AsyncMethodCallback<AsyncClient.getMetaData_call> resultHandler) throws org.apache.thrift.TException;
 
   }
 
@@ -270,6 +278,51 @@ public class ElephantDBShared {
         return result.success;
       }
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "getCount failed: unknown result");
+    }
+
+    public DomainMetaData getDomainMetaData(String domain) throws org.apache.thrift.TException
+    {
+      send_getDomainMetaData(domain);
+      return recv_getDomainMetaData();
+    }
+
+    public void send_getDomainMetaData(String domain) throws org.apache.thrift.TException
+    {
+      getDomainMetaData_args args = new getDomainMetaData_args();
+      args.set_domain(domain);
+      sendBase("getDomainMetaData", args);
+    }
+
+    public DomainMetaData recv_getDomainMetaData() throws org.apache.thrift.TException
+    {
+      getDomainMetaData_result result = new getDomainMetaData_result();
+      receiveBase(result, "getDomainMetaData");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "getDomainMetaData failed: unknown result");
+    }
+
+    public MetaData getMetaData() throws org.apache.thrift.TException
+    {
+      send_getMetaData();
+      return recv_getMetaData();
+    }
+
+    public void send_getMetaData() throws org.apache.thrift.TException
+    {
+      getMetaData_args args = new getMetaData_args();
+      sendBase("getMetaData", args);
+    }
+
+    public MetaData recv_getMetaData() throws org.apache.thrift.TException
+    {
+      getMetaData_result result = new getMetaData_result();
+      receiveBase(result, "getMetaData");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "getMetaData failed: unknown result");
     }
 
   }
@@ -531,6 +584,67 @@ public class ElephantDBShared {
       }
     }
 
+    public void getDomainMetaData(String domain, org.apache.thrift.async.AsyncMethodCallback<getDomainMetaData_call> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      getDomainMetaData_call method_call = new getDomainMetaData_call(domain, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class getDomainMetaData_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private String domain;
+      public getDomainMetaData_call(String domain, org.apache.thrift.async.AsyncMethodCallback<getDomainMetaData_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.domain = domain;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("getDomainMetaData", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        getDomainMetaData_args args = new getDomainMetaData_args();
+        args.set_domain(domain);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public DomainMetaData getResult() throws org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_getDomainMetaData();
+      }
+    }
+
+    public void getMetaData(org.apache.thrift.async.AsyncMethodCallback<getMetaData_call> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      getMetaData_call method_call = new getMetaData_call(resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class getMetaData_call extends org.apache.thrift.async.TAsyncMethodCall {
+      public getMetaData_call(org.apache.thrift.async.AsyncMethodCallback<getMetaData_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("getMetaData", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        getMetaData_args args = new getMetaData_args();
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public MetaData getResult() throws org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_getMetaData();
+      }
+    }
+
   }
 
   public static class Processor<I extends Iface> extends org.apache.thrift.TBaseProcessor<I> implements org.apache.thrift.TProcessor {
@@ -552,6 +666,8 @@ public class ElephantDBShared {
       processMap.put("update", new update());
       processMap.put("updateAll", new updateAll());
       processMap.put("getCount", new getCount());
+      processMap.put("getDomainMetaData", new getDomainMetaData());
+      processMap.put("getMetaData", new getMetaData());
       return processMap;
     }
 
@@ -688,6 +804,38 @@ public class ElephantDBShared {
         getCount_result result = new getCount_result();
         result.success = iface.getCount(args.domain);
         result.set_success_isSet(true);
+        return result;
+      }
+    }
+
+    private static class getDomainMetaData<I extends Iface> extends org.apache.thrift.ProcessFunction<I, getDomainMetaData_args> {
+      public getDomainMetaData() {
+        super("getDomainMetaData");
+      }
+
+      protected getDomainMetaData_args getEmptyArgsInstance() {
+        return new getDomainMetaData_args();
+      }
+
+      protected getDomainMetaData_result getResult(I iface, getDomainMetaData_args args) throws org.apache.thrift.TException {
+        getDomainMetaData_result result = new getDomainMetaData_result();
+        result.success = iface.getDomainMetaData(args.domain);
+        return result;
+      }
+    }
+
+    private static class getMetaData<I extends Iface> extends org.apache.thrift.ProcessFunction<I, getMetaData_args> {
+      public getMetaData() {
+        super("getMetaData");
+      }
+
+      protected getMetaData_args getEmptyArgsInstance() {
+        return new getMetaData_args();
+      }
+
+      protected getMetaData_result getResult(I iface, getMetaData_args args) throws org.apache.thrift.TException {
+        getMetaData_result result = new getMetaData_result();
+        result.success = iface.getMetaData();
         return result;
       }
     }
@@ -1969,13 +2117,13 @@ public class ElephantDBShared {
             case 0: // SUCCESS
               if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
                 {
-                  org.apache.thrift.protocol.TList _list26 = iprot.readListBegin();
-                  struct.success = new ArrayList<String>(_list26.size);
-                  for (int _i27 = 0; _i27 < _list26.size; ++_i27)
+                  org.apache.thrift.protocol.TList _list44 = iprot.readListBegin();
+                  struct.success = new ArrayList<String>(_list44.size);
+                  for (int _i45 = 0; _i45 < _list44.size; ++_i45)
                   {
-                    String _elem28; // required
-                    _elem28 = iprot.readString();
-                    struct.success.add(_elem28);
+                    String _elem46; // required
+                    _elem46 = iprot.readString();
+                    struct.success.add(_elem46);
                   }
                   iprot.readListEnd();
                 }
@@ -2001,9 +2149,9 @@ public class ElephantDBShared {
           oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, struct.success.size()));
-            for (String _iter29 : struct.success)
+            for (String _iter47 : struct.success)
             {
-              oprot.writeString(_iter29);
+              oprot.writeString(_iter47);
             }
             oprot.writeListEnd();
           }
@@ -2034,9 +2182,9 @@ public class ElephantDBShared {
         if (struct.is_set_success()) {
           {
             oprot.writeI32(struct.success.size());
-            for (String _iter30 : struct.success)
+            for (String _iter48 : struct.success)
             {
-              oprot.writeString(_iter30);
+              oprot.writeString(_iter48);
             }
           }
         }
@@ -2048,13 +2196,13 @@ public class ElephantDBShared {
         BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           {
-            org.apache.thrift.protocol.TList _list31 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-            struct.success = new ArrayList<String>(_list31.size);
-            for (int _i32 = 0; _i32 < _list31.size; ++_i32)
+            org.apache.thrift.protocol.TList _list49 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+            struct.success = new ArrayList<String>(_list49.size);
+            for (int _i50 = 0; _i50 < _list49.size; ++_i50)
             {
-              String _elem33; // required
-              _elem33 = iprot.readString();
-              struct.success.add(_elem33);
+              String _elem51; // required
+              _elem51 = iprot.readString();
+              struct.success.add(_elem51);
             }
           }
           struct.set_success_isSet(true);
@@ -5996,6 +6144,1326 @@ public class ElephantDBShared {
         BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           struct.success = iprot.readI64();
+          struct.set_success_isSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class getDomainMetaData_args implements org.apache.thrift.TBase<getDomainMetaData_args, getDomainMetaData_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("getDomainMetaData_args");
+
+    private static final org.apache.thrift.protocol.TField DOMAIN_FIELD_DESC = new org.apache.thrift.protocol.TField("domain", org.apache.thrift.protocol.TType.STRING, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new getDomainMetaData_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new getDomainMetaData_argsTupleSchemeFactory());
+    }
+
+    private String domain; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      DOMAIN((short)1, "domain");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // DOMAIN
+            return DOMAIN;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.DOMAIN, new org.apache.thrift.meta_data.FieldMetaData("domain", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getDomainMetaData_args.class, metaDataMap);
+    }
+
+    public getDomainMetaData_args() {
+    }
+
+    public getDomainMetaData_args(
+      String domain)
+    {
+      this();
+      this.domain = domain;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getDomainMetaData_args(getDomainMetaData_args other) {
+      if (other.is_set_domain()) {
+        this.domain = other.domain;
+      }
+    }
+
+    public getDomainMetaData_args deepCopy() {
+      return new getDomainMetaData_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.domain = null;
+    }
+
+    public String get_domain() {
+      return this.domain;
+    }
+
+    public void set_domain(String domain) {
+      this.domain = domain;
+    }
+
+    public void unset_domain() {
+      this.domain = null;
+    }
+
+    /** Returns true if field domain is set (has been assigned a value) and false otherwise */
+    public boolean is_set_domain() {
+      return this.domain != null;
+    }
+
+    public void set_domain_isSet(boolean value) {
+      if (!value) {
+        this.domain = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case DOMAIN:
+        if (value == null) {
+          unset_domain();
+        } else {
+          set_domain((String)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case DOMAIN:
+        return get_domain();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case DOMAIN:
+        return is_set_domain();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getDomainMetaData_args)
+        return this.equals((getDomainMetaData_args)that);
+      return false;
+    }
+
+    public boolean equals(getDomainMetaData_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_domain = true && this.is_set_domain();
+      boolean that_present_domain = true && that.is_set_domain();
+      if (this_present_domain || that_present_domain) {
+        if (!(this_present_domain && that_present_domain))
+          return false;
+        if (!this.domain.equals(that.domain))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_domain = true && (is_set_domain());
+      builder.append(present_domain);
+      if (present_domain)
+        builder.append(domain);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(getDomainMetaData_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      getDomainMetaData_args typedOther = (getDomainMetaData_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_domain()).compareTo(typedOther.is_set_domain());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_domain()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.domain, typedOther.domain);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("getDomainMetaData_args(");
+      boolean first = true;
+
+      sb.append("domain:");
+      if (this.domain == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.domain);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getDomainMetaData_argsStandardSchemeFactory implements SchemeFactory {
+      public getDomainMetaData_argsStandardScheme getScheme() {
+        return new getDomainMetaData_argsStandardScheme();
+      }
+    }
+
+    private static class getDomainMetaData_argsStandardScheme extends StandardScheme<getDomainMetaData_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, getDomainMetaData_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // DOMAIN
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+                struct.domain = iprot.readString();
+                struct.set_domain_isSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, getDomainMetaData_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.domain != null) {
+          oprot.writeFieldBegin(DOMAIN_FIELD_DESC);
+          oprot.writeString(struct.domain);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getDomainMetaData_argsTupleSchemeFactory implements SchemeFactory {
+      public getDomainMetaData_argsTupleScheme getScheme() {
+        return new getDomainMetaData_argsTupleScheme();
+      }
+    }
+
+    private static class getDomainMetaData_argsTupleScheme extends TupleScheme<getDomainMetaData_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, getDomainMetaData_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.is_set_domain()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.is_set_domain()) {
+          oprot.writeString(struct.domain);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, getDomainMetaData_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.domain = iprot.readString();
+          struct.set_domain_isSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class getDomainMetaData_result implements org.apache.thrift.TBase<getDomainMetaData_result, getDomainMetaData_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("getDomainMetaData_result");
+
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new getDomainMetaData_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new getDomainMetaData_resultTupleSchemeFactory());
+    }
+
+    private DomainMetaData success; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, DomainMetaData.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getDomainMetaData_result.class, metaDataMap);
+    }
+
+    public getDomainMetaData_result() {
+    }
+
+    public getDomainMetaData_result(
+      DomainMetaData success)
+    {
+      this();
+      this.success = success;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getDomainMetaData_result(getDomainMetaData_result other) {
+      if (other.is_set_success()) {
+        this.success = new DomainMetaData(other.success);
+      }
+    }
+
+    public getDomainMetaData_result deepCopy() {
+      return new getDomainMetaData_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+    }
+
+    public DomainMetaData get_success() {
+      return this.success;
+    }
+
+    public void set_success(DomainMetaData success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((DomainMetaData)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getDomainMetaData_result)
+        return this.equals((getDomainMetaData_result)that);
+      return false;
+    }
+
+    public boolean equals(getDomainMetaData_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(getDomainMetaData_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      getDomainMetaData_result typedOther = (getDomainMetaData_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("getDomainMetaData_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getDomainMetaData_resultStandardSchemeFactory implements SchemeFactory {
+      public getDomainMetaData_resultStandardScheme getScheme() {
+        return new getDomainMetaData_resultStandardScheme();
+      }
+    }
+
+    private static class getDomainMetaData_resultStandardScheme extends StandardScheme<getDomainMetaData_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, getDomainMetaData_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.success = new DomainMetaData();
+                struct.success.read(iprot);
+                struct.set_success_isSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, getDomainMetaData_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          struct.success.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getDomainMetaData_resultTupleSchemeFactory implements SchemeFactory {
+      public getDomainMetaData_resultTupleScheme getScheme() {
+        return new getDomainMetaData_resultTupleScheme();
+      }
+    }
+
+    private static class getDomainMetaData_resultTupleScheme extends TupleScheme<getDomainMetaData_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, getDomainMetaData_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.is_set_success()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.is_set_success()) {
+          struct.success.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, getDomainMetaData_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.success = new DomainMetaData();
+          struct.success.read(iprot);
+          struct.set_success_isSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class getMetaData_args implements org.apache.thrift.TBase<getMetaData_args, getMetaData_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("getMetaData_args");
+
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new getMetaData_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new getMetaData_argsTupleSchemeFactory());
+    }
+
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+;
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getMetaData_args.class, metaDataMap);
+    }
+
+    public getMetaData_args() {
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getMetaData_args(getMetaData_args other) {
+    }
+
+    public getMetaData_args deepCopy() {
+      return new getMetaData_args(this);
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getMetaData_args)
+        return this.equals((getMetaData_args)that);
+      return false;
+    }
+
+    public boolean equals(getMetaData_args that) {
+      if (that == null)
+        return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(getMetaData_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      getMetaData_args typedOther = (getMetaData_args)other;
+
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("getMetaData_args(");
+      boolean first = true;
+
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getMetaData_argsStandardSchemeFactory implements SchemeFactory {
+      public getMetaData_argsStandardScheme getScheme() {
+        return new getMetaData_argsStandardScheme();
+      }
+    }
+
+    private static class getMetaData_argsStandardScheme extends StandardScheme<getMetaData_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, getMetaData_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, getMetaData_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getMetaData_argsTupleSchemeFactory implements SchemeFactory {
+      public getMetaData_argsTupleScheme getScheme() {
+        return new getMetaData_argsTupleScheme();
+      }
+    }
+
+    private static class getMetaData_argsTupleScheme extends TupleScheme<getMetaData_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, getMetaData_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, getMetaData_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+      }
+    }
+
+  }
+
+  public static class getMetaData_result implements org.apache.thrift.TBase<getMetaData_result, getMetaData_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("getMetaData_result");
+
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new getMetaData_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new getMetaData_resultTupleSchemeFactory());
+    }
+
+    private MetaData success; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, MetaData.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getMetaData_result.class, metaDataMap);
+    }
+
+    public getMetaData_result() {
+    }
+
+    public getMetaData_result(
+      MetaData success)
+    {
+      this();
+      this.success = success;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getMetaData_result(getMetaData_result other) {
+      if (other.is_set_success()) {
+        this.success = new MetaData(other.success);
+      }
+    }
+
+    public getMetaData_result deepCopy() {
+      return new getMetaData_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+    }
+
+    public MetaData get_success() {
+      return this.success;
+    }
+
+    public void set_success(MetaData success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((MetaData)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getMetaData_result)
+        return this.equals((getMetaData_result)that);
+      return false;
+    }
+
+    public boolean equals(getMetaData_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(getMetaData_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      getMetaData_result typedOther = (getMetaData_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("getMetaData_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class getMetaData_resultStandardSchemeFactory implements SchemeFactory {
+      public getMetaData_resultStandardScheme getScheme() {
+        return new getMetaData_resultStandardScheme();
+      }
+    }
+
+    private static class getMetaData_resultStandardScheme extends StandardScheme<getMetaData_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, getMetaData_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.success = new MetaData();
+                struct.success.read(iprot);
+                struct.set_success_isSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, getMetaData_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          struct.success.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class getMetaData_resultTupleSchemeFactory implements SchemeFactory {
+      public getMetaData_resultTupleScheme getScheme() {
+        return new getMetaData_resultTupleScheme();
+      }
+    }
+
+    private static class getMetaData_resultTupleScheme extends TupleScheme<getMetaData_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, getMetaData_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.is_set_success()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.is_set_success()) {
+          struct.success.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, getMetaData_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.success = new MetaData();
+          struct.success.read(iprot);
           struct.set_success_isSet(true);
         }
       }

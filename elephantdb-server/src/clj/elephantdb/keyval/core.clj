@@ -12,7 +12,10 @@
             [elephantdb.common.status :as status]
             [elephantdb.common.thrift :as thrift]
             [elephantdb.common.config :as conf]
-            [elephantdb.keyval.domain :as dom])
+            [elephantdb.keyval.domain :as dom]
+            [elephantdb.client :as c]
+            [elephantdb.common.metadata :as metadata]
+            [elephantdb.ui.handler :as ui])
   (:import [java.nio ByteBuffer]
            [org.apache.thrift.protocol TBinaryProtocol]
            [org.apache.thrift.transport TTransport]
@@ -27,28 +30,20 @@
 
 ;; ## Metrics
 
-(def multi-get-response-time (timer ["elephantdb" "keyval" "multi_get_response_time"]))
-(def direct-get-response-time (timer ["elephantdb" "keyval" "direct_get_response_time"]))
+(def hostname (clojure.string/replace (.getCanonicalHostName (java.net.InetAddress/getLocalHost)) #"\." "_"))
 
-(def get-requests (meter ["elephantdb" "keyval" "get_requests"] "requests"))
+(def multi-get-response-time (timer [(str hostname ".elephantdb") "keyval" "multi_get_response_time"]))
+(def direct-get-response-time (timer [(str hostname ".elephantdb") "keyval" "direct_get_response_time"]))
+
+(def get-requests (meter [(str hostname ".elephantdb") "keyval" "get_requests"] "requests"))
 
 ;; ## Thrift Connection
-
-(defn kv-client [transport]
-  (ElephantDB$Client. (TBinaryProtocol. transport)))
 
 (defn kv-processor
   "Returns a key-value thrift processor suitable for passing into
   launch-server!"
   [service-handler]
   (ElephantDB$Processor. service-handler))
-
-(defmacro with-kv-connection
-  [host port client-sym & body]
-  `(with-open [^TTransport conn# (doto (thrift/thrift-transport ~host ~port)
-                                   (.open))]
-     (let [^ElephantDB$Client ~client-sym (kv-client conn#)]
-       ~@body)))
 
 ;; ## Service Handler
 
@@ -100,7 +95,7 @@
                                                    domain-name
                                                    suffix
                                                    key-seq)
-                             (with-kv-connection hostname port remote-service
+                             (c/with-elephant hostname port remote-service
                                (try-direct-multi-get remote-service
                                                      domain-name
                                                      suffix
@@ -127,14 +122,14 @@
     (if-let [bad-key (some (comp empty? :hosts) indexed-keys)]
       (throw (thrift/hosts-down-ex (:all-hosts bad-key)))
       (let [host-map (group-by :hosts indexed-keys)
-            promises (u/do-pmap
+            promises (map
                       (fn [[hosts indexed-keys]]
                         (let [p (promise)]
-                          (u/do-pmap (fn [host]
-                                       (when-not (realized? p)
-                                         (deliver p (get-fn host indexed-keys)))) hosts)
-                          p))
-                      host-map)
+                          (u/do-pmap
+                           (fn [host]
+                             (when-not (realized? p)
+                               (deliver p (get-fn host indexed-keys)))) hosts)
+                          p)) host-map)
             metrics (db/metrics-get database domain-name)]
         (time! (:multi-get-response-time metrics) (into {} (map deref promises)))))))
 
@@ -218,7 +213,17 @@
       "Returns the total count of KeyValDocuments in the supplied domain-name."
       (thrift/assert-domain database domain-name)
       (-> (db/domain-get database domain-name)
-          (dom/kv-count)))))
+          (dom/kv-count)))
+
+    (getDomainMetaData [_ domain-name]
+      (thrift/assert-domain database domain-name)
+      (-> (db/domain-get database domain-name)
+          (metadata/get-metadata)))
+    
+    (getMetaData [_]
+      "Returns a map of domain-name->metadata for each domain."
+      (thrift/elephant-metadata
+       (db/domain->metadata database)))))
 
 ;; # Main Access
 ;;
@@ -242,16 +247,18 @@
                                                 local-config)
         conf-map (merge global-config local-config)
         database (db/build-database conf-map)]
+    (when (:ui-port conf-map)
+      (db/launch-ui! conf-map))
     (doto database
       (db/prepare)
       (db/launch-updater! (:update-interval-s conf-map)))
-    (when-let [graphite-conf (:graphite-reporter local-config)]
+    (when-let [graphite-conf (:graphite-reporter conf-map)]
       (log/info "Metrics graphite reporter started.")
       (report-to-graphite (:host graphite-conf) (:port graphite-conf)))
-    (when-let [ganglia-conf (:ganglia-reporter local-config)]
+    (when-let [ganglia-conf (:ganglia-reporter conf-map)]
       (log/info "Metrics ganglia reporter started.")
       (report-to-ganglia (:host ganglia-conf) (:port ganglia-conf)))
-    (when-let [metrics-reporting-interval-s (:metrics-reporting-interval-s local-config)]
+    (when-let [metrics-reporting-interval-s (:metrics-reporting-interval-s conf-map)]
       (log/info "Metrics console reporter started.")
       (report-to-console metrics-reporting-interval-s))
     (thrift/launch-server! kv-processor
@@ -267,7 +274,6 @@
 
   `local-config-path`: the path to `local-config.clj` on this machine."
   [global-config-hdfs-path local-config-path]
-  (log/configure-logging "log4j/log4j.properties")
   (let [local-config   (conf/read-local-config  local-config-path)
         global-config  (conf/read-global-config global-config-hdfs-path
                                                 local-config)

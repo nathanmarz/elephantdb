@@ -43,4 +43,3 @@
   returns the new status."
   [status transition-fn & args]
   (apply swap! status transition-fn args))
-

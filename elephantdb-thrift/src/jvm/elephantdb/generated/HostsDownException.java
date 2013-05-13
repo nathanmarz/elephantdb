@@ -346,13 +346,13 @@ public class HostsDownException extends Exception implements org.apache.thrift.T
           case 1: // HOSTS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list10 = iprot.readListBegin();
-                struct.hosts = new ArrayList<String>(_list10.size);
-                for (int _i11 = 0; _i11 < _list10.size; ++_i11)
+                org.apache.thrift.protocol.TList _list28 = iprot.readListBegin();
+                struct.hosts = new ArrayList<String>(_list28.size);
+                for (int _i29 = 0; _i29 < _list28.size; ++_i29)
                 {
-                  String _elem12; // required
-                  _elem12 = iprot.readString();
-                  struct.hosts.add(_elem12);
+                  String _elem30; // required
+                  _elem30 = iprot.readString();
+                  struct.hosts.add(_elem30);
                 }
                 iprot.readListEnd();
               }
@@ -378,9 +378,9 @@ public class HostsDownException extends Exception implements org.apache.thrift.T
         oprot.writeFieldBegin(HOSTS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, struct.hosts.size()));
-          for (String _iter13 : struct.hosts)
+          for (String _iter31 : struct.hosts)
           {
-            oprot.writeString(_iter13);
+            oprot.writeString(_iter31);
           }
           oprot.writeListEnd();
         }
@@ -405,9 +405,9 @@ public class HostsDownException extends Exception implements org.apache.thrift.T
       TTupleProtocol oprot = (TTupleProtocol) prot;
       {
         oprot.writeI32(struct.hosts.size());
-        for (String _iter14 : struct.hosts)
+        for (String _iter32 : struct.hosts)
         {
-          oprot.writeString(_iter14);
+          oprot.writeString(_iter32);
         }
       }
     }
@@ -416,13 +416,13 @@ public class HostsDownException extends Exception implements org.apache.thrift.T
     public void read(org.apache.thrift.protocol.TProtocol prot, HostsDownException struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
       {
-        org.apache.thrift.protocol.TList _list15 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-        struct.hosts = new ArrayList<String>(_list15.size);
-        for (int _i16 = 0; _i16 < _list15.size; ++_i16)
+        org.apache.thrift.protocol.TList _list33 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+        struct.hosts = new ArrayList<String>(_list33.size);
+        for (int _i34 = 0; _i34 < _list33.size; ++_i34)
         {
-          String _elem17; // required
-          _elem17 = iprot.readString();
-          struct.hosts.add(_elem17);
+          String _elem35; // required
+          _elem35 = iprot.readString();
+          struct.hosts.add(_elem35);
         }
       }
       struct.set_hosts_isSet(true);
