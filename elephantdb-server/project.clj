@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb-server "0.4.4"
+(defproject elephantdb/elephantdb-server "0.4.5-SNAPSHOT"
   :min-lein-version "2.0.0"
   :source-paths ["src/clj"]
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
@@ -13,10 +13,10 @@
                  [hiccup-bootstrap "0.1.2"]
                  [ring/ring-core "1.1.8"]
                  [ring/ring-jetty-adapter "1.1.8"]
-                 [elephantdb/elephantdb-core "0.4.4"]
-                 [elephantdb/elephantdb-client "0.4.4"]
-                 [elephantdb/elephantdb-bdb "0.4.4"]
-                 [elephantdb/elephantdb-leveldb "0.4.4"]]
+                 [elephantdb/elephantdb-core "0.4.5-SNAPSHOT"]
+                 [elephantdb/elephantdb-client "0.4.5-SNAPSHOT"]
+                 [elephantdb/elephantdb-bdb "0.4.5-SNAPSHOT"]
+                 [elephantdb/elephantdb-leveldb "0.4.5-SNAPSHOT"]]
   :ring {:handler elephantdb.ui.handler/app}
   :plugins [[lein-ring "0.8.5"]]
   :profiles {:provided
