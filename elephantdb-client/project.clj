@@ -1,8 +1,8 @@
-(defproject elephantdb/elephantdb-client "0.4.4-SNAPSHOT"
+(defproject elephantdb/elephantdb-client "0.4.4"
   :description "A client interface to ElephantDB"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [ch.qos.logback/logback-classic "1.0.11"]
-                 [elephantdb/elephantdb-thrift "0.4.4-SNAPSHOT"
+                 [elephantdb/elephantdb-thrift "0.4.4"
                   :exclusions [org.slf4j/slf4j-api]]]
   :profiles {:dev
              {:dependencies [[midje "1.5.0"]]

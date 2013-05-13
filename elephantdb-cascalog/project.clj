@@ -1,4 +1,4 @@
-(defproject elephantdb/elephantdb-cascalog "0.4.4-SNAPSHOT"
+(defproject elephantdb/elephantdb-cascalog "0.4.4"
   :min-lein-version "2.0.0"
   :description "ElephantDB Integration for Cascalog."
   :license {:name "Eclipse Public License"
@@ -6,12 +6,12 @@
   :source-paths ["src/clj"]
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :jvm-opts ["-server" "-Xmx768m"]
-  :dependencies [[elephantdb/elephantdb-cascading "0.4.4-SNAPSHOT"]]
+  :dependencies [[elephantdb/elephantdb-cascading "0.4.4"]]
   :profiles {:1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}
              :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :provided {:dependencies [[cascalog/cascalog-core "1.10.2-SNAPSHOT"]]}
              :dev {:dependencies
-                   [[elephantdb/elephantdb-bdb "0.4.4-SNAPSHOT"]
+                   [[elephantdb/elephantdb-bdb "0.4.4"]
                     [org.apache.hadoop/hadoop-core "0.20.2"]
                     [cascalog/midje-cascalog "1.10.2-SNAPSHOT"]]
                    :plugins [[lein-midje "3.0.0"]]}})
