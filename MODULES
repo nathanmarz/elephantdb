@@ -1,0 +1,8 @@
+elephantdb-thrift
+elephantdb-core
+elephantdb-client
+elephantdb-cascading
+elephantdb-cascalog
+elephantdb-bdb
+elephantdb-leveldb
+elephantdb-server

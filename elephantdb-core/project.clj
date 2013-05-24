@@ -1,4 +1,7 @@
-(defproject elephantdb/elephantdb-core "0.4.5-SNAPSHOT"
+(def ROOT-DIR (subs *file* 0 (- (count *file*) (count "project.clj"))))
+(def VERSION (-> ROOT-DIR (str "/../VERSION") slurp))
+
+(defproject elephantdb/elephantdb-core VERSION
   :min-lein-version "2.0.0"
   :repositories {"conjars.org" "http://conjars.org/repo"}
   :java-source-paths ["src/jvm"]
@@ -11,11 +14,11 @@
                  [jackknife "0.1.2"]
                  [hadoop-util "0.3.0"]
                  [metrics-clojure "1.0.1"]
-                 [elephantdb/elephantdb-thrift "0.4.5-SNAPSHOT"
+                 [elephantdb/elephantdb-thrift ~VERSION
                   :exclusions [org.slf4j/slf4j-api]]]
   :profiles {:provided
              {:dependencies [[org.apache.hadoop/hadoop-core "0.20.2"]]}
              :dev
              {:dependencies
-              [[midje "1.5.0"]]
-              :plugins [[lein-midje "3.0.0"]]}})
+              [[midje "1.5.1"]]
+              :plugins [[lein-midje "3.0.1"]]}})

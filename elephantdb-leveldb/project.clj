@@ -1,11 +1,14 @@
-(defproject elephantdb/elephantdb-leveldb "0.4.5-SNAPSHOT"
+(def ROOT-DIR (subs *file* 0 (- (count *file*) (count "project.clj"))))
+(def VERSION (-> ROOT-DIR (str "/../VERSION") slurp))
+
+(defproject elephantdb/elephantdb-leveldb VERSION
   :min-lein-version "2.0.0"
   :java-source-paths ["src/jvm"]
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :repositories {"fusesource.nexus.snapshot" "http://repo.fusesource.com/nexus/content/groups/public-snapshots"}
-  :dependencies [[elephantdb/elephantdb-core "0.4.5-SNAPSHOT"]
+  :dependencies [[elephantdb/elephantdb-core ~VERSION]
                  [org.fusesource.leveldbjni/leveldbjni-all "1.6.1"]]
   :profiles {:dev
              {:dependencies
-              [[midje "1.5.0"]]
-              :plugins [[lein-midje "3.0.0"]]}})
+              [[midje "1.5.1"]]
+              :plugins [[lein-midje "3.0.1"]]}})
