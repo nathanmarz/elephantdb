@@ -157,7 +157,8 @@ public class ElephantDBTap extends Hfs {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    @Override public boolean commitResource(JobConf conf) {
+    @Override
+    public boolean commitResource(JobConf conf) {
         try {
             DomainStore dstore = getDomainStore();
             dstore.getFileSystem().mkdirs(new Path(newVersionPath));
@@ -173,7 +174,8 @@ public class ElephantDBTap extends Hfs {
         }
     }
     
-    @Override public boolean rollbackResource(JobConf conf) throws IOException {
+    @Override
+    public boolean rollbackResource(JobConf conf) throws IOException {
         DomainStore dstore = getDomainStore();
         dstore.failVersion(newVersionPath);        
         
