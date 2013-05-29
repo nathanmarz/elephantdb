@@ -7,6 +7,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/clj"]
+  :java-source-paths ["src/java"]
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :jvm-opts ["-server" "-Xmx768m"]
   :dependencies [[elephantdb/elephantdb-cascading ~VERSION]]

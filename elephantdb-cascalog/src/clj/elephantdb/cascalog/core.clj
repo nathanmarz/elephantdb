@@ -10,7 +10,7 @@
   [root-path & {:keys [spec sink-fn ignore-spec] :as args}]
   (let [args (convert-args args)
         spec (when spec
-               (convert-clj-domain-spec spec))
+               (convert-domain-spec spec))
         ignore-spec (and (or spec false) (or ignore-spec false))
         source-tap (ElephantDBTap. root-path spec args ElephantDBTap$TapMode/SOURCE ignore-spec)
         sink-tap (ElephantDBTap. root-path spec args ElephantDBTap$TapMode/SINK ignore-spec)]
