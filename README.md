@@ -49,9 +49,8 @@ Clojars is a maven repo that is trivially easy to use with maven or
 leiningen. You should use this dependency when using ElephantDB within
 your MapReduce jobs to create ElephantDB datastores. ElephantDB
 contains a module elephantdb-cascading which allows you to easily create
-datastores from your Cascading workflows.
-[Cascalog](http://github.com/nathanmarz/cascalog) >= 1.10.1 also
-includes a module called cascalog-elephantdb for the same purpose.
+datastores from your Cascading workflows. elephantdb-cascalog is available
+for use with [Cascalog](http://github.com/nathanmarz/cascalog) >= 1.10.1.
 
 # Deploying ElephantDB server
 
