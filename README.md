@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/nathanmarz/elephantdb.png?branch=develop)](https://travis-ci.org/nathanmarz/elephantdb)
 
-# ElephantDB 0.4.4-SNAPSHOT
+# ElephantDB 0.4.5-SNAPSHOT
 
 # About
 
@@ -34,9 +34,13 @@ with a new set of shards without downtime.
 
 Google group: [elephantdb-user](http://groups.google.com/group/elephantdb-user)
 
+# Introduction
+
+[Introduction to ElephantDB](https://speakerdeck.com/sorenmacbeth/introduction-to-elephantdb)
+
 # Tutorials
 
-TODO: Write an updated tutorial for ElephantDB 0.4.0
+TODO: Write an updated tutorial for ElephantDB 0.4.x
 
 # Using ElephantDB in MapReduce Jobs
 
