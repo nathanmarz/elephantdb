@@ -18,11 +18,11 @@ public class DomainStore {
     DomainSpec spec;
 
     public DomainStore(FileSystem fs, String path) throws IOException {
-        this(new VersionedStore(fs, path), null, false);
+        this(new VersionedStore(fs, path), null);
     }
 
     public DomainStore(FileSystem fs, String path, DomainSpec spec) throws IOException {
-        this(new VersionedStore(fs, path), spec, false);
+        this(new VersionedStore(fs, path), spec);
     }
 
     public DomainStore(String path) throws IOException {
@@ -30,18 +30,14 @@ public class DomainStore {
     }
 
     public DomainStore(String path, DomainSpec spec) throws IOException {
-        this(new VersionedStore(path), spec, false);
+        this(new VersionedStore(path), spec);
     }
 
-    public DomainStore(String path, DomainSpec spec, boolean ignoreSpec) throws IOException {
-        this(new VersionedStore(path), spec, ignoreSpec);
-    }
-
-    protected DomainStore(VersionedStore vs, DomainSpec spec, boolean ignoreSpec) throws IOException {
+    protected DomainStore(VersionedStore vs, DomainSpec spec) throws IOException {
         this.vs = vs;
         String path = vs.getRoot();
         FileSystem fs = vs.getFileSystem();
-        if(DomainSpec.exists(fs, path) && !ignoreSpec) {
+        if(DomainSpec.exists(fs, path)) {
             this.spec = DomainSpec.readFromFileSystem(fs, path);
 
             if(spec!=null && !this.spec.equals(spec)) {
