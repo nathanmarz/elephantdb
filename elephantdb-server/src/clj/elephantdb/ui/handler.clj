@@ -8,7 +8,7 @@
             [compojure.route :as route]
             [elephantdb.client :as c]))
 
-(def VERSION "0.4.4-SNAPSHOT")
+(def VERSION "0.4.5")
 
 ;; ## Thrift client functions
 

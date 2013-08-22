@@ -50,10 +50,10 @@ public class ElephantDBTap extends Hfs {
     String newVersionPath;
     TapMode mode;
 
-    public ElephantDBTap(String dir, DomainSpec spec, Args args, TapMode mode, boolean ignoreSpec) throws IOException {
+    public ElephantDBTap(String dir, DomainSpec spec, Args args, TapMode mode) throws IOException {
         domainDir = dir;
         this.args = args;
-        this.spec = new DomainStore(dir, spec, ignoreSpec).getSpec();
+        this.spec = new DomainStore(dir, spec).getSpec();
         this.mode = mode;
 
         setStringPath(domainDir);
@@ -157,7 +157,8 @@ public class ElephantDBTap extends Hfs {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    @Override public boolean commitResource(JobConf conf) {
+    @Override
+    public boolean commitResource(JobConf conf) {
         try {
             DomainStore dstore = getDomainStore();
             dstore.getFileSystem().mkdirs(new Path(newVersionPath));
@@ -173,7 +174,8 @@ public class ElephantDBTap extends Hfs {
         }
     }
     
-    @Override public boolean rollbackResource(JobConf conf) throws IOException {
+    @Override
+    public boolean rollbackResource(JobConf conf) throws IOException {
         DomainStore dstore = getDomainStore();
         dstore.failVersion(newVersionPath);        
         

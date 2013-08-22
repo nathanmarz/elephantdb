@@ -1,4 +1,7 @@
-(defproject elephantdb/elephantdb-server "0.4.4"
+(def ROOT-DIR (subs *file* 0 (- (count *file*) (count "project.clj"))))
+(def VERSION (-> ROOT-DIR (str "/../VERSION") slurp))
+
+(defproject elephantdb/elephantdb-server VERSION
   :min-lein-version "2.0.0"
   :source-paths ["src/clj"]
   :jvm-opts ["-Xmx768m" "-server" "-Djava.net.preferIPv4Stack=true" "-XX:+UseCompressedOops"]
@@ -13,10 +16,10 @@
                  [hiccup-bootstrap "0.1.2"]
                  [ring/ring-core "1.1.8"]
                  [ring/ring-jetty-adapter "1.1.8"]
-                 [elephantdb/elephantdb-core "0.4.4"]
-                 [elephantdb/elephantdb-client "0.4.4"]
-                 [elephantdb/elephantdb-bdb "0.4.4"]
-                 [elephantdb/elephantdb-leveldb "0.4.4"]]
+                 [elephantdb/elephantdb-core ~VERSION]
+                 [elephantdb/elephantdb-client ~VERSION]
+                 [elephantdb/elephantdb-bdb ~VERSION]
+                 [elephantdb/elephantdb-leveldb ~VERSION]]
   :ring {:handler elephantdb.ui.handler/app}
   :plugins [[lein-ring "0.8.5"]]
   :profiles {:provided
@@ -25,6 +28,6 @@
              :dev
              {:dependencies
               [[ring-mock "0.1.3"]
-               [midje "1.5.0"]]
-              :plugins [[lein-midje "3.0.0"]]}}
+               [midje "1.5.1"]]
+              :plugins [[lein-midje "3.0.1"]]}}
   :main elephantdb.keyval.core)

@@ -59,5 +59,5 @@
   (let [fs (Utils/getFS source-dir (Configuration.))
         spec (read-domain-spec fs source-dir)
         new-spec (assoc spec :num-shards shard-count)]
-    (?- (keyval-tap target-dir :spec new-spec :ignore-spec true)
+    (?- (keyval-tap target-dir :spec new-spec)
         (keyval-tap source-dir))))

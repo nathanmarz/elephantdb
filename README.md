@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/nathanmarz/elephantdb.png?branch=develop)](https://travis-ci.org/nathanmarz/elephantdb)
 
-# ElephantDB 0.4.4
+# ElephantDB 0.4.5
 
 # About
 
@@ -34,9 +34,13 @@ with a new set of shards without downtime.
 
 Google group: [elephantdb-user](http://groups.google.com/group/elephantdb-user)
 
+# Introduction
+
+[Introduction to ElephantDB](https://speakerdeck.com/sorenmacbeth/introduction-to-elephantdb)
+
 # Tutorials
 
-TODO: Write an updated tutorial for ElephantDB 0.4.0
+TODO: Write an updated tutorial for ElephantDB 0.4.x
 
 # Using ElephantDB in MapReduce Jobs
 
@@ -45,9 +49,8 @@ Clojars is a maven repo that is trivially easy to use with maven or
 leiningen. You should use this dependency when using ElephantDB within
 your MapReduce jobs to create ElephantDB datastores. ElephantDB
 contains a module elephantdb-cascading which allows you to easily create
-datastores from your Cascading workflows.
-[Cascalog](http://github.com/nathanmarz/cascalog) >= 1.10.1 also
-includes a module called cascalog-elephantdb for the same purpose.
+datastores from your Cascading workflows. elephantdb-cascalog is available
+for use with [Cascalog](http://github.com/nathanmarz/cascalog) >= 1.10.1.
 
 # Deploying ElephantDB server
 

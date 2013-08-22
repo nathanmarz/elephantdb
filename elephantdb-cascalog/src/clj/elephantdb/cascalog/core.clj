@@ -7,13 +7,12 @@
            [org.apache.hadoop.conf Configuration]))
 
 (defn elephant-tap
-  [root-path & {:keys [spec sink-fn ignore-spec] :as args}]
+  [root-path & {:keys [spec sink-fn] :as args}]
   (let [args (convert-args args)
         spec (when spec
-               (convert-clj-domain-spec spec))
-        ignore-spec (and (or spec false) (or ignore-spec false))
-        source-tap (ElephantDBTap. root-path spec args ElephantDBTap$TapMode/SOURCE ignore-spec)
-        sink-tap (ElephantDBTap. root-path spec args ElephantDBTap$TapMode/SINK ignore-spec)]
+               (convert-domain-spec spec))
+        source-tap (ElephantDBTap. root-path spec args ElephantDBTap$TapMode/SOURCE)
+        sink-tap (ElephantDBTap. root-path spec args ElephantDBTap$TapMode/SINK)]
     (cascalog-tap source-tap
                   (if sink-fn
                     (fn [tuple-src]

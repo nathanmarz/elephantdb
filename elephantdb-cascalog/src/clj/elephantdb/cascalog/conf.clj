@@ -19,6 +19,11 @@
       (DomainSpec. coordinator shard-scheme num-shards args))
     (DomainSpec. coordinator shard-scheme num-shards)))
 
+(defn convert-domain-spec [spec]
+  (if (instance? DomainSpec spec)
+    spec
+    (convert-clj-domain-spec spec)))
+
 (defn read-domain-spec
   "A domain spec is stored with shards in the VersionedStore. Look to
   s3 for an example here."

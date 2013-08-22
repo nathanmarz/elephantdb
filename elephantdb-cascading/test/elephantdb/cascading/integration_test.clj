@@ -89,8 +89,7 @@
   (ElephantDBTap. path
                   (kv-spec shard-count)
                   (ElephantDBTap$Args.)
-                  tap-mode
-                  true))
+                  tap-mode))
 
 (defn connect!
   "Connect the supplied source and sink with the supplied pipe."
@@ -122,6 +121,7 @@
   supplied elephant-tap."
   [source elephant-sink]
   (connect! (-> (Pipe. "pipe")
+
                 (KeyValTailAssembly. elephant-sink))
             source
             elephant-sink))

@@ -93,12 +93,34 @@
                             ~@opts)]
        ~@body)))
 
+(defmacro with-jcascalog-kv-tap
+  [[sym shard-count & opts] & body]
+  `(test/with-fs-tmp [fs# tmp#]
+     (let [~sym (elephantdb.jcascalog.EDB/makeKeyValTap
+                  tmp#
+                  (convert-clj-domain-spec (mk-spec ~shard-count))
+                  (:args ~opts))]
+       ~@body)))
+
 (tabular
  (fact
    "Tuples sunk into an ElephantDB tap and read back out should
     match. (A map acts as a sequence of 2-tuples, perfect for
     ElephantDB key-val tests.)"
    (with-kv-tap [e-tap 4]
+
+     "Execute tuples into the keyval-tap"
+     (?- e-tap (serialize-str ?tuples))
+
+     "Do we get the same tuples back out?"
+     (deserialize-str e-tap) => (produces ?tuples)))
+ ?tuples
+ [["key" "val"]])
+
+(tabular
+ (fact
+   "ElephantDB taps should be usable via JCascalog"
+   (with-jcascalog-kv-tap [e-tap 4]
 
      "Execute tuples into the keyval-tap"
      (?- e-tap (serialize-str ?tuples))
@@ -143,9 +165,4 @@
       "One more iteration should work just fine."
       (reshard! tmp-a tmp-b 5)
       [fs tmp-b] => (spec-has {:num-shards 5})
-      (deserialize-str (keyval-tap tmp-b)) => (produces pairs)
-
-      "Resharding into the same path should work."
-      (reshard! tmp-b tmp-b 6)
-      [fs tmp-b] => (spec-has {:num-shards 6})
       (deserialize-str (keyval-tap tmp-b)) => (produces pairs))))
