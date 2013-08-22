@@ -12,10 +12,10 @@
   :jvm-opts ["-server" "-Xmx768m"]
   :exclusions [org.clojure/clojure]
   :dependencies [[elephantdb/elephantdb-cascading ~VERSION]]
-  :profiles {:provided {:dependencies [[cascalog/cascalog-core "1.10.2"]]}
+  :profiles {:provided {:dependencies [[org.clojure/clojure "1.5.1"]
+                                       [cascalog/cascalog-core "1.10.2"]]}
              :dev {:dependencies
-                   [[org.clojure/clojure "1.5.1"]
-                    [midje "1.5.1"]
+                   [[midje "1.5.1"]
                     [elephantdb/elephantdb-bdb ~VERSION]
                     [org.apache.hadoop/hadoop-core "0.20.2"]
                     [cascalog/midje-cascalog "1.10.2"]]
