@@ -1,7 +1,6 @@
 (ns elephantdb.cascalog.core
-  (:use cascalog.api
-        [elephantdb.cascalog conf])
-  (:require [cascalog.workflow :as w])
+  (:use [elephantdb.cascalog conf]
+        [cascalog.api :only (cascalog-tap)])
   (:import [elephantdb Utils]
            [elephantdb.cascading ElephantDBTap ElephantDBTap$TapMode]
            [org.apache.hadoop.conf Configuration]))
