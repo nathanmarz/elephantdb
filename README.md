@@ -1,6 +1,8 @@
 [![Build Status](https://travis-ci.org/nathanmarz/elephantdb.png?branch=develop)](https://travis-ci.org/nathanmarz/elephantdb)
 
-# ElephantDB 0.4.5
+# ElephantDB 0.5.0 (cascalog 2.x)
+
+## ElephantDB 0.4.5 (cascalog 1.x)
 
 # About
 
