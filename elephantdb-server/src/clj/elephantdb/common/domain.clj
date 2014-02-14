@@ -212,12 +212,16 @@
     (if (= version new-version)
       (log/info new-version " is already loaded.")
       (let [new-shards (retrieve-shards! domain new-version)]
-        (u/with-write-lock (.rwLock domain)
-          (reset! (.domainData domain)
-                  {:shards new-shards
-                   :version new-version}))
-        (status/to-ready domain)
-        (close-shards! shards)))))
+        (try
+          (u/with-write-lock (.rwLock domain)
+            (reset! (.domainData domain)
+                    {:shards new-shards
+                     :version new-version}))
+          (status/to-ready domain)
+          (close-shards! shards)
+          (catch Throwable e
+            (close-shards! new-shards)
+            (throw (RuntimeException. e))))))))
 
 (defn boot-domain!
   "if a version of data exists in the local store, go ahead and start
@@ -283,7 +287,7 @@
     (when-let [data (domain-data this)]
       (mapcat #(lazy-seq %)
               (vals (:shards data)))))
-  
+
   Shutdownable
   (shutdown [this]
     "Shutting down a domain requires closing all of its shards."
@@ -291,7 +295,7 @@
     (u/with-write-lock rwLock
       (close-shards! (-> (domain-data this)
                          (get :shards)))))
- 
+
   IStateful
   (get-status [_] @status)
   (to-ready [this]
@@ -427,7 +431,8 @@
         (catch Throwable e
           (log/error (format "Error updating version %s: %s" version e))
           (let [local-store (.localStore domain)
-                version-path (.versionPath local-store version)]
+                version-path (.versionPath local-store version)
+                {:keys [shards version] :as data} (domain-data domain)]
             (log/error (format "Failing version %s" version-path))
             (.failVersion local-store version-path))
           (when (status/loading? domain)
