@@ -1,8 +1,7 @@
 (ns elephantdb.cascalog.keyval
   (:use cascalog.api
         elephantdb.cascalog.conf)
-  (:require [cascalog.workflow :as w]
-            [elephantdb.cascalog.core :as core])
+  (:require [elephantdb.cascalog.core :as core])
   (:import [cascalog.ops IdentityBuffer]
            [org.apache.hadoop.conf Configuration]
            [elephantdb Utils]
@@ -17,14 +16,16 @@
 (def ^{:private true} byte-array?
   (test-array byte-array))
 
-(defmapop [shard [^ShardingScheme scheme shard-count]]
+(defn shard
   "Returns the shard to which the supplied shard-key should be
   routed."
-  [^bytes shard-key]
-  {:pre [(byte-array? shard-key)]}
-  (.shardIndex scheme shard-key shard-count))
+  [^ShardingScheme scheme shard-count]
+  (mapfn
+   [^bytes shard-key]
+   {:pre [(byte-array? shard-key)]}
+   (.shardIndex scheme shard-key shard-count)))
 
-(defmapop mk-sortable-key [^bytes shard-key]
+(defmapfn mk-sortable-key [^bytes shard-key]
   {:pre [(byte-array? shard-key)]}
   (BytesWritable. shard-key))
 
@@ -35,7 +36,7 @@
         shard-count (.getNumShards spec)]
     (<- [!shard !key !value]
         (kv-src !keyraw !valueraw)
-        (shard [scheme shard-count] !keyraw :> !shard)
+        ((shard scheme shard-count) !keyraw :> !shard)
         (mk-sortable-key !keyraw :> !sort-key)
         (:sort !sort-key)
         ((IdentityBuffer.) !keyraw !valueraw :> !key !value))))

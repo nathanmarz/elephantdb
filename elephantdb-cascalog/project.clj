@@ -13,10 +13,10 @@
   :exclusions [org.clojure/clojure]
   :dependencies [[elephantdb/elephantdb-cascading ~VERSION]]
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.5.1"]
-                                       [cascalog/cascalog-core "1.10.2"]]}
+                                       [cascalog/cascalog-core "2.0.0-SNAPSHOT"]]}
              :dev {:dependencies
                    [[midje "1.5.1"]
                     [elephantdb/elephantdb-bdb ~VERSION]
                     [org.apache.hadoop/hadoop-core "0.20.2"]
-                    [cascalog/midje-cascalog "1.10.2"]]
+                    [cascalog/midje-cascalog "2.0.0-SNAPSHOT"]]
                    :plugins [[lein-midje "3.0.1"]]}})

@@ -1,5 +1,5 @@
 (ns elephantdb.cascalog.conf
-  (:require [cascalog.workflow :as w])
+  (:use [cascalog.cascading.util :only (fields)])
   (:import [elephantdb DomainSpec DomainSpec$Args]
            [elephantdb.cascading ElephantDBTap$Args]
            [java.util ArrayList HashMap]))
@@ -37,7 +37,7 @@
   (let [mk-list (fn [xs] (when xs (ArrayList. xs)))
         ret      (ElephantDBTap$Args.)]
     (when source-fields
-      (set! (.sourceFields ret) (w/fields source-fields)))
+      (set! (.sourceFields ret) (fields source-fields)))
     (set! (.tmpDirs ret) (mk-list tmp-dirs))
     (when timeout-ms
       (set! (.timeoutMs ret) timeout-ms))
