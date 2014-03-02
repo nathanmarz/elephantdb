@@ -1,5 +1,6 @@
 (def ROOT-DIR (subs *file* 0 (- (count *file*) (count "project.clj"))))
 (def VERSION (-> ROOT-DIR (str "/../VERSION") slurp))
+(def CASCALOG-VERSION "2.0.1-SNAPSHOT")
 
 (defproject elephantdb/elephantdb-cascalog VERSION
   :min-lein-version "2.0.0"
@@ -13,10 +14,10 @@
   :exclusions [org.clojure/clojure]
   :dependencies [[elephantdb/elephantdb-cascading ~VERSION]]
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.5.1"]
-                                       [cascalog/cascalog-core "2.0.0-SNAPSHOT"]]}
+                                       [cascalog/cascalog-core ~CASCALOG-VERSION]]}
              :dev {:dependencies
                    [[midje "1.5.1"]
                     [elephantdb/elephantdb-bdb ~VERSION]
-                    [org.apache.hadoop/hadoop-core "0.20.2"]
-                    [cascalog/midje-cascalog "2.0.0-SNAPSHOT"]]
+                    [org.apache.hadoop/hadoop-core "1.2.1"]
+                    [cascalog/midje-cascalog ~CASCALOG-VERSION]]
                    :plugins [[lein-midje "3.0.1"]]}})

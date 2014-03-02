@@ -8,15 +8,15 @@
   :jvm-opts ["-server" "-Xmx768m"]
   :repositories {"conjars" "http://conjars.org/repo"}
   :dependencies [[elephantdb/elephantdb-core ~VERSION]
-                 [cascading/cascading-hadoop "2.1.6"
+                 [cascading/cascading-hadoop "2.5.2"
                   :exclusions [org.codehaus.janino/janino
                                org.apache.hadoop/hadoop-core]]]
   :profiles {:provided
-             {:dependencies [[org.apache.hadoop/hadoop-core "0.20.2"]]}
+             {:dependencies [[org.apache.hadoop/hadoop-core "1.2.1"]]}
              :dev
              {:dependencies
               [[elephantdb/elephantdb-bdb ~VERSION]
                [hadoop-util "0.3.0"]
-               [jackknife "0.1.2"]
+               [jackknife "0.1.6"]
                [midje "1.5.1"]]
               :plugins [[lein-midje "3.0.1"]]}})
