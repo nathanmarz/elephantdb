@@ -2,7 +2,7 @@
 (def MODULES (-> "MODULES" slurp (.split "\n")))
 (def DEPENDENCIES (for [m MODULES] [(symbol (str "elephantdb/" m)) VERSION]))
 
-(eval `(defproject elephantdb ~VERSION
+(eval `(defproject elephantdb/elephantdb ~VERSION
          :description "Distributed database specialized in exporting key/value data from Hadoop"
          :url "https://github.com/nathanmarz/elephantdb"
          :license {:name "Eclipse Public License"
