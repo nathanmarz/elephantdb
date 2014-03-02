@@ -6,9 +6,10 @@
         [elephantdb.ui thrift middleware])
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
-            [elephantdb.client :as c]))
+            [elephantdb.client :as c
+             clojure.pprint :as pp]))
 
-(def VERSION "0.4.6-SNAPSHOT")
+(def VERSION "0.5.2-SNAPSHOT")
 
 ;; ## Thrift client functions
 
@@ -67,7 +68,7 @@
              [:p "Configuration"]
              [:pre
               (let [sw (java.io.StringWriter.)]
-                (clojure.pprint/pprint conf-map sw)
+                (pp/pprint conf-map sw)
                 (str sw))]
              ]))
 

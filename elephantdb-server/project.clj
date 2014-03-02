@@ -24,7 +24,7 @@
   :plugins [[lein-ring "0.8.5"]]
   :profiles {:provided
              {:dependencies
-              [[org.apache.hadoop/hadoop-core "0.20.2"]]}
+              [[org.apache.hadoop/hadoop-core "1.2.1"]]}
              :dev
              {:dependencies
               [[ring-mock "0.1.3"]
