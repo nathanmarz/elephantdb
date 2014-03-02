@@ -10,7 +10,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [jvyaml "1.0.0"]
                  [org.yaml/snakeyaml "1.9"]
-                 [commons-io "1.4"]
+                 [commons-io "2.1"]
                  [jackknife "0.1.6"]
                  [hadoop-util "0.3.0"]
                  [metrics-clojure "1.0.1"]
