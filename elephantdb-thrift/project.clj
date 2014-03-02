@@ -5,7 +5,7 @@
   :min-lein-version "2.0.0"
   :java-source-paths ["src/jvm"]
   :javac-options ["-source" "1.6" "-target" "1.6"]
-  :dependencies [[org.apache.thrift/libthrift "0.8.0"]]
+  :dependencies [[org.apache.thrift/libthrift "0.9.1"]]
   :profiles {:dev
              {:dependencies
               [[org.clojure/clojure "1.5.1"]
