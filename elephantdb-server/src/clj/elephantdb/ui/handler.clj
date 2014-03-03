@@ -6,8 +6,8 @@
         [elephantdb.ui thrift middleware])
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
-            [elephantdb.client :as c
-             clojure.pprint :as pp]))
+            [elephantdb.client :as c]
+            [clojure.pprint :as pp]))
 
 (def VERSION "0.5.2-SNAPSHOT")
 
