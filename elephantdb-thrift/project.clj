@@ -9,5 +9,5 @@
   :profiles {:dev
              {:dependencies
               [[org.clojure/clojure "1.5.1"]
-               [midje "1.5.1"]]
-              :plugins [[lein-midje "3.0.1"]]}})
+               [midje "1.6.3"]]
+              :plugins [[lein-midje "3.1.3"]]}})

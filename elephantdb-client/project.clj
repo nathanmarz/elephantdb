@@ -8,6 +8,6 @@
                  [elephantdb/elephantdb-thrift ~VERSION
                   :exclusions [org.slf4j/slf4j-api]]]
   :profiles {:dev
-             {:dependencies [[midje "1.5.1"]]
-              :plugins [[lein-midje "3.0.1"]]}}
+             {:dependencies [[midje "1.6.3"]]
+              :plugins [[lein-midje "3.1.3"]]}}
   :source-paths ["src/clj"])

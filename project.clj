@@ -12,7 +12,7 @@
                         :post "elephantdb-user@googlegroups.com"}
          :min-lein-version "2.0.0"
          :dependencies [~@DEPENDENCIES]
-         :plugins [[~'lein-sub "0.2.1"]]
+         :plugins [[~'lein-sub "0.3.0"]]
          :sub [~@MODULES]
-         :profiles {:dev {:dependencies [[~'midje "1.5.1"]]
-                          :plugins [[~'lein-midje "3.0.1"]]}}))
+         :profiles {:dev {:dependencies [[~'midje "1.6.3"]]
+                          :plugins [[~'lein-midje "3.1.3"]]}}))

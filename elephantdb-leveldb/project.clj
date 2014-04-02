@@ -7,8 +7,8 @@
   :javac-options ["-source" "1.6" "-target" "1.6"]
   :repositories {"fusesource.nexus.snapshot" "http://repo.fusesource.com/nexus/content/groups/public-snapshots"}
   :dependencies [[elephantdb/elephantdb-core ~VERSION]
-                 [org.fusesource.leveldbjni/leveldbjni-all "1.6.1"]]
+                 [org.fusesource.leveldbjni/leveldbjni-all "1.7"]]
   :profiles {:dev
              {:dependencies
-              [[midje "1.5.1"]]
-              :plugins [[lein-midje "3.0.1"]]}})
+              [[midje "1.6.3"]]
+              :plugins [[lein-midje "3.1.3"]]}})

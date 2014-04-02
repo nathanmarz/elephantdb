@@ -10,5 +10,5 @@
                  [com.sleepycat/je "5.0.58"]]
   :profiles {:dev
              {:dependencies
-              [[midje "1.5.1"]]
-              :plugins [[lein-midje "3.0.1"]]}})
+              [[midje "1.6.3"]]
+              :plugins [[lein-midje "3.1.3"]]}})
