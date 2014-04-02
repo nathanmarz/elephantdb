@@ -28,6 +28,7 @@
              :dev
              {:dependencies
               [[ring-mock "0.1.3"]
+               [clj-time "0.6.0"]
                [midje "1.6.3"]]
               :plugins [[lein-midje "3.1.3"]]}}
   :aot :all
