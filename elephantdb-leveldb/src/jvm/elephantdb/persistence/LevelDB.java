@@ -37,8 +37,8 @@ public class LevelDB implements Coordinator {
         Options dboptions;
         DB db;
         boolean readOnly;
-        
-        public LevelDBPersistence(String root, Map options, 
+
+        public LevelDBPersistence(String root, Map options,
                                   boolean readOnly, boolean allowCreate) throws IOException {
             this.readOnly = readOnly;
             new File(root).mkdirs();
@@ -78,12 +78,12 @@ public class LevelDB implements Coordinator {
             return new CloseableIterator<KeyValDocument>() {
                 DBIterator cursor = null;
                 KeyValDocument next = null;
-                
+
                 private void cacheNext() {
                     if (cursor.hasNext()) {
                         byte[] k = cursor.peekNext().getKey();
                         byte[] v = cursor.peekNext().getValue();
-                    
+
                         next = new KeyValDocument(k, v);
                         cursor.next();
                     } else {

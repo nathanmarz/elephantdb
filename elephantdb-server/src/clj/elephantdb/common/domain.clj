@@ -152,33 +152,34 @@
   "Closes the supplied Persistence. Returns nil on success. throws
    IOException when some sort of failure occurs."
   [lp & {:keys [error-msg]}]
-  (try (.close lp)
-       (catch java.io.IOException t
-         (log/error t error-msg)
-         (throw t))))
+  (try
+    (.close lp)
+    (catch Throwable e
+      (log/error e error-msg)
+      (throw e))))
 
 (defn close-shards!
   "Closes all shards in the supplied shard-map. (A shard map is a map
   of index->Persistence instance.)"
   [shard-map]
   (doseq [[idx shard] shard-map]
-    (log/info "Closing shard #: " idx)
+    (log/debug "Closing shard #: " idx)
     (close-shard! shard)
-    (log/info "Closed shard #: " idx)))
+    (log/debug "Closed shard #: " idx)))
 
 (defn open-shard!
   "Opens and returns a Persistence object standing in for the shard
   with the supplied index."
   [domain-store shard-idx version & {:keys [allow-writes]}]
   (let [fs (.getFileSystem domain-store)]
-    (log/info "Opening shard #: " shard-idx " at " (.getRoot domain-store))
+    (log/debug "Opening shard #: " shard-idx " at " (.getRoot domain-store))
     (when-not (.exists fs (h/path (.shardPath domain-store shard-idx)))
-      (log/info "Shard doesn't exist. Creating shard # " shard-idx)
+      (log/debug "Shard doesn't exist. Creating shard # " shard-idx)
       (.createShard domain-store shard-idx))
     (u/with-ret (if allow-writes
                   (.openShardForAppend domain-store shard-idx)
                   (.openShardForRead domain-store shard-idx))
-      (log/info "Opened shard #: " shard-idx))))
+      (log/debug "Opened shard #: " shard-idx))))
 
 (defn retrieve-shards!
   "Accepts a domain object. On success, returns a sequence of opened
@@ -210,18 +211,18 @@
              (has-version? new-version))]}
   (let [{:keys [shards version] :as data} (domain-data domain)]
     (if (= version new-version)
-      (log/info new-version " is already loaded.")
-      (let [new-shards (retrieve-shards! domain new-version)]
-        (try
+      (log/warning new-version " is already loaded.")
+      (try
+        (let [new-shards (retrieve-shards! domain new-version)]
           (u/with-write-lock (.rwLock domain)
             (reset! (.domainData domain)
                     {:shards new-shards
-                     :version new-version}))
-          (status/to-ready domain)
-          (close-shards! shards)
-          (catch Throwable e
-            (close-shards! new-shards)
-            (throw (RuntimeException. e))))))))
+                     :version new-version})))
+        (status/to-ready domain)
+        (close-shards! shards)
+        (catch Throwable e
+          (log/error (format "Error loading version %s: %s" new-version e))
+          (throw e))))))
 
 (defn boot-domain!
   "if a version of data exists in the local store, go ahead and start
@@ -370,14 +371,14 @@
     (if (.exists remote-fs (h/path remote-path))
       (do
         (try
-          (log/info (format "Copying %s to %s" remote-path local-path))
+          (log/debug (format "Copying %s to %s" remote-path local-path))
           (transfer/rcopy remote-fs remote-path local-path
                           :throttle throttle)
-          (log/info (format "Copied %s to %s" remote-path local-path))
+          (log/debug (format "Copied %s to %s" remote-path local-path))
           (catch Throwable e
             (log/error (format "Error transferring shard %s to %s: %s" remote-path local-path e))
             (throw e))))
-      (do (log/info "Shard doesn't exist. Creating shard # " idx)
+      (do (log/debug "Shard doesn't exist. Creating shard # " idx)
           (.createShard local-store idx version)))))
 
 (defn transfer-version!
@@ -422,6 +423,7 @@
   [domain & {:keys [version]}]
   (let [version (or version (.mostRecentVersion (.remoteStore domain)))]
     (when (transfer-possible? domain version)
+      (log/info (format "New version %s detected" version))
       (try
         (doto domain
           (status/to-loading)
