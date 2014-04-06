@@ -6,8 +6,11 @@
       <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
-  
+
   <!-- <logger name="jackknife.logging" level="debug" /> -->
+
+  <logger name="org.jets3t.service.impl.rest.httpclient.RestS3Service" level="ERROR" />
+  <logger name="org.apache.hadoop.fs.s3native.NativeS3FileSystem" level="WARN" />
 
   <root level="info">
     <appender-ref ref="STDOUT" />
