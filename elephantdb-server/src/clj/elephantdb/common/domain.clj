@@ -193,23 +193,17 @@
                         (open-shard! local-store idx version
                                      :allow-writes (.allowWrites domain))
                         (catch Throwable e
-                          (log/error (format "Error opening shard %s of version %s for domain %s: %s"
-                                             idx version domain e))
-                          (throw e))))
-        close! (fn [idx]
-                 (let [shard (open-shard! local-store idx version
-                                          :allow-writes (.allowWrites domain))]
-                   (close-shard! shard)))]
+                          (log/error (format "Error opening shard %s of version %s for domain %s: %s" idx version domain e))
+                          nil)))]
     (assert (has-version? local-store version)
             (str version "  doesn't exist."))
-    (try
-      (u/with-ret (->> (doall (map open! shards))
-                       (zipmap shards))
-        (log/info "Finished opening domain at " (.getRoot local-store)))
-      (catch Exception e
-        (map close! shards)
-        (log/error (format "Error retrieving shards for version %s: %s" version e))
-        (throw e)))))
+    (u/with-ret (let [lps (map open! shards)]
+                  (if (some nil? lps)
+                    (do
+                      (map close-shard! (filter nil? lps))
+                      (u/throw-runtime (format "Error retrieving shards for version %s" version)))
+                    (zipmap shards lps)))
+      (log/info "Finished opening domain at " (.getRoot local-store)))))
 
 (defn load-version!
   "Takes a domain, a version number (a long!), and a read-write lock,
