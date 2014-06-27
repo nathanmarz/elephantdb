@@ -61,8 +61,13 @@ public class ElephantDBTap extends Hfs {
             this.args.sinkFields, this.spec));
     }
 
+    private transient DomainStore domainStore;
+
     public DomainStore getDomainStore() throws IOException {
-        return new DomainStore(domainDir, spec);
+        if (domainStore == null) {
+            domainStore = new DomainStore(domainDir, spec);
+        }
+        return domainStore;
     }
 
     public DomainSpec getSpec() {
